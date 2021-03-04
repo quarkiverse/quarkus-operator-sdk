@@ -1,0 +1,5 @@
+name: quarkiverse-project
+title: Quarkiverse <YOUR_PROJECT>
+version: dev
+nav:
+  - modules/ROOT/nav.adoc

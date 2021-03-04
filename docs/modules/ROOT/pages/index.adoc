@@ -1,0 +1,22 @@
+= Your Quarkiverse Extension
+:extension-status: preview
+
+Describe what the extension does here.
+
+== Installation
+
+If you want to use this extension, you need to add the `quarkiverse-<YOUR_EXTENSION>` extension first.
+In your `pom.xml` file, add:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.quarkiverse</groupId>
+    <artifactId>quarkiverse-freemarker</artifactId>
+</dependency>
+----
+
+[[extension-configuration-reference]]
+== Extension Configuration Reference
+
+include::config.adoc[leveloffset=+1, opts=optional]
