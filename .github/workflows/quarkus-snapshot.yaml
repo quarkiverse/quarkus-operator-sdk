@@ -16,7 +16,7 @@ env:
   # Repo specific setting #
   #########################
 
-  ECOSYSTEM_CI_REPO_PATH: quarkus-<YOUR_REPOSITORY>
+  ECOSYSTEM_CI_REPO_PATH: quarkiverse-operator-sdk
 
 jobs:
   build:
