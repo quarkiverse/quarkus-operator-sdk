@@ -1,0 +1,11 @@
+name: Quarkus - Operator SDK
+description: Quarkus extension for the Java Operator SDK (https://javaoperatorsdk.io)
+metadata:
+keywords:
+  - operator
+  - kubernetes
+  - openshift
+#  guide: ...
+#  categories:
+#    - "miscellaneous"
+#  status: "preview"
