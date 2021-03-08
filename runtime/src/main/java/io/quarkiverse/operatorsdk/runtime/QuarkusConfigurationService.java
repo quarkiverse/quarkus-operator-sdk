@@ -1,5 +1,7 @@
 package io.quarkiverse.operatorsdk.runtime;
 
+import java.util.List;
+
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -8,7 +10,6 @@ import io.javaoperatorsdk.operator.api.config.AbstractConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
 import io.quarkus.arc.runtime.ClientProxyUnwrapper;
-import java.util.List;
 
 public class QuarkusConfigurationService extends AbstractConfigurationService {
 
@@ -17,10 +18,10 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     private final boolean checkCRDAndValidateLocalModel;
 
     public QuarkusConfigurationService(
-        Version version,
-        List<ControllerConfiguration> configurations,
-        KubernetesClient client,
-        boolean checkCRDAndValidateLocalModel) {
+            Version version,
+            List<ControllerConfiguration> configurations,
+            KubernetesClient client,
+            boolean checkCRDAndValidateLocalModel) {
         super(version);
         this.client = client;
         if (configurations != null && !configurations.isEmpty()) {
@@ -36,7 +37,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
 
     @Override
     public <R extends CustomResource> ControllerConfiguration<R> getConfigurationFor(
-        ResourceController<R> controller) {
+            ResourceController<R> controller) {
         final var unwrapped = unwrap(controller);
         return super.getConfigurationFor(unwrapped);
     }
@@ -47,7 +48,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     }
 
     private static <R extends CustomResource> ResourceController<R> unwrap(
-        ResourceController<R> controller) {
+            ResourceController<R> controller) {
         return (ResourceController<R>) unwrapper.apply(controller);
     }
 }

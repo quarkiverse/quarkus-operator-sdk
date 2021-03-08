@@ -1,16 +1,18 @@
 package io.quarkiverse.operatorsdk.it;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 
 @Path("/operator")
 public class OperatorSDKResource {
@@ -36,11 +38,11 @@ public class OperatorSDKResource {
     @Path("{name}/config")
     public JSONControllerConfiguration getConfig(@PathParam("name") String name) {
         final var configuration = controllers.stream()
-            .map(c -> configurationService.getConfigurationFor(c))
-            .filter(c -> c.getName().equals(name))
-            .findFirst()
-            .map(JSONControllerConfiguration::new)
-            .orElse(null);
+                .map(c -> configurationService.getConfigurationFor(c))
+                .filter(c -> c.getName().equals(name))
+                .findFirst()
+                .map(JSONControllerConfiguration::new)
+                .orElse(null);
         return configuration;
     }
 

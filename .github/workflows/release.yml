@@ -2,7 +2,7 @@ name: Quarkiverse Release
 
 on:
   pull_request:
-    types: [closed]
+    types: [ closed ]
     paths:
       - '.github/project.yml'
 

@@ -1,43 +1,44 @@
 package io.quarkiverse.operatorsdk.runtime;
 
+import java.util.Collections;
+import java.util.Set;
+
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.config.AbstractControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.quarkus.runtime.annotations.RecordableConstructor;
-import java.util.Collections;
-import java.util.Set;
 
 public class QuarkusControllerConfiguration<R extends CustomResource>
-    extends AbstractControllerConfiguration<R> {
+        extends AbstractControllerConfiguration<R> {
 
     private final String crClass;
     private Class<R> clazz;
 
     @RecordableConstructor
     public QuarkusControllerConfiguration(
-        String associatedControllerClassName,
-        String name,
-        String crdName,
-        String finalizer,
-        boolean generationAware,
-        Set<String> namespaces,
-        String crClass,
-        RetryConfiguration retryConfiguration) {
+            String associatedControllerClassName,
+            String name,
+            String crdName,
+            String finalizer,
+            boolean generationAware,
+            Set<String> namespaces,
+            String crClass,
+            RetryConfiguration retryConfiguration) {
         super(
-            associatedControllerClassName,
-            name,
-            crdName,
-            finalizer,
-            generationAware,
-            namespaces,
-            retryConfiguration);
+                associatedControllerClassName,
+                name,
+                crdName,
+                finalizer,
+                generationAware,
+                namespaces,
+                retryConfiguration);
         this.crClass = crClass;
     }
 
     public static Set<String> asSet(String[] namespaces) {
         return namespaces == null || namespaces.length == 0
-            ? Collections.emptySet()
-            : Set.of(namespaces);
+                ? Collections.emptySet()
+                : Set.of(namespaces);
     }
 
     // Needed for Quarkus to find the associated constructor parameter

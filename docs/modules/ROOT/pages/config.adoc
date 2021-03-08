@@ -3,24 +3,34 @@
 //
 [.configuration-legend]
 icon:lock[title=Fixed at build time] Configuration property fixed at build time - All other configuration properties are overridable at runtime
-[.configuration-reference.searchable, cols="80,.^10,.^10"]
+[.configuration-reference.searchable,cols="80,.^10,.^10"]
+
 |===
 
-h|[[quarkus-freemarker_configuration]]link:#quarkus-freemarker_configuration[Configuration property]
+h|
+[[quarkus-freemarker_configuration]]
+link:#quarkus-freemarker_configuration[Configuration property]
 
 h|Type
 h|Default
 
-a|icon:lock[title=Fixed at build time] [[quarkus-freemarker_quarkus.freemarker.resource-paths]]`link:#quarkus-freemarker_quarkus.freemarker.resource-paths[quarkus.freemarker.resource-paths]`
+a|icon:lock[title=Fixed at build time]
+
+[[quarkus-freemarker_quarkus.freemarker.resource-paths]]
+`link:#quarkus-freemarker_quarkus.freemarker.resource-paths[quarkus.freemarker.resource-paths]`
 
 [.description]
 --
-Comma-separated list of absolute resource paths to scan recursively for templates. All tree folder from 'resource-paths' will be added as a resource. Unprefixed locations or locations starting with classpath will be processed in the same way.
+Comma-separated list of absolute resource paths to scan recursively for templates.
+All tree folder from 'resource-paths' will be added as a resource.
+Unprefixed locations or locations starting with classpath will be processed in the same way.
 --|list of string
 |`freemarker/templates`
 
 
-a| [[quarkus-freemarker_quarkus.freemarker.file-paths]]`link:#quarkus-freemarker_quarkus.freemarker.file-paths[quarkus.freemarker.file-paths]`
+a|
+[[quarkus-freemarker_quarkus.freemarker.file-paths]]
+`link:#quarkus-freemarker_quarkus.freemarker.file-paths[quarkus.freemarker.file-paths]`
 
 [.description]
 --
@@ -29,7 +39,9 @@ Comma-separated of file system paths where freemarker templates are located
 |
 
 
-a| [[quarkus-freemarker_quarkus.freemarker.default-encoding]]`link:#quarkus-freemarker_quarkus.freemarker.default-encoding[quarkus.freemarker.default-encoding]`
+a|
+[[quarkus-freemarker_quarkus.freemarker.default-encoding]]
+`link:#quarkus-freemarker_quarkus.freemarker.default-encoding[quarkus.freemarker.default-encoding]`
 
 [.description]
 --
@@ -38,7 +50,9 @@ Set the preferred charset template files are stored in.
 |
 
 
-a| [[quarkus-freemarker_quarkus.freemarker.template-exception-handler]]`link:#quarkus-freemarker_quarkus.freemarker.template-exception-handler[quarkus.freemarker.template-exception-handler]`
+a|
+[[quarkus-freemarker_quarkus.freemarker.template-exception-handler]]
+`link:#quarkus-freemarker_quarkus.freemarker.template-exception-handler[quarkus.freemarker.template-exception-handler]`
 
 [.description]
 --
@@ -47,7 +61,9 @@ Sets how errors will appear. rethrow, debug, html-debug, ignore.
 |
 
 
-a| [[quarkus-freemarker_quarkus.freemarker.log-template-exceptions]]`link:#quarkus-freemarker_quarkus.freemarker.log-template-exceptions[quarkus.freemarker.log-template-exceptions]`
+a|
+[[quarkus-freemarker_quarkus.freemarker.log-template-exceptions]]
+`link:#quarkus-freemarker_quarkus.freemarker.log-template-exceptions[quarkus.freemarker.log-template-exceptions]`
 
 [.description]
 --
@@ -56,7 +72,9 @@ If false, don't log exceptions inside FreeMarker that it will be thrown at you a
 |
 
 
-a| [[quarkus-freemarker_quarkus.freemarker.wrap-unchecked-exceptions]]`link:#quarkus-freemarker_quarkus.freemarker.wrap-unchecked-exceptions[quarkus.freemarker.wrap-unchecked-exceptions]`
+a|
+[[quarkus-freemarker_quarkus.freemarker.wrap-unchecked-exceptions]]
+`link:#quarkus-freemarker_quarkus.freemarker.wrap-unchecked-exceptions[quarkus.freemarker.wrap-unchecked-exceptions]`
 
 [.description]
 --
@@ -65,7 +83,9 @@ Wrap unchecked exceptions thrown during template processing into TemplateExcepti
 |
 
 
-a| [[quarkus-freemarker_quarkus.freemarker.fallback-on-null-loop-variable]]`link:#quarkus-freemarker_quarkus.freemarker.fallback-on-null-loop-variable[quarkus.freemarker.fallback-on-null-loop-variable]`
+a|
+[[quarkus-freemarker_quarkus.freemarker.fallback-on-null-loop-variable]]
+`link:#quarkus-freemarker_quarkus.freemarker.fallback-on-null-loop-variable[quarkus.freemarker.fallback-on-null-loop-variable]`
 
 [.description]
 --
@@ -74,7 +94,9 @@ If false, do not fall back to higher scopes when reading a null loop variable.
 |
 
 
-a| [[quarkus-freemarker_quarkus.freemarker.boolean-format]]`link:#quarkus-freemarker_quarkus.freemarker.boolean-format[quarkus.freemarker.boolean-format]`
+a|
+[[quarkus-freemarker_quarkus.freemarker.boolean-format]]
+`link:#quarkus-freemarker_quarkus.freemarker.boolean-format[quarkus.freemarker.boolean-format]`
 
 [.description]
 --
@@ -83,7 +105,9 @@ The string value for the boolean `true` and `false` values, usually intended for
 |
 
 
-a| [[quarkus-freemarker_quarkus.freemarker.number-format]]`link:#quarkus-freemarker_quarkus.freemarker.number-format[quarkus.freemarker.number-format]`
+a|
+[[quarkus-freemarker_quarkus.freemarker.number-format]]
+`link:#quarkus-freemarker_quarkus.freemarker.number-format[quarkus.freemarker.number-format]`
 
 [.description]
 --
@@ -92,7 +116,9 @@ Sets the default number format used to convert numbers to strings.
 |
 
 
-a| [[quarkus-freemarker_quarkus.freemarker.object-wrapper-expose-fields]]`link:#quarkus-freemarker_quarkus.freemarker.object-wrapper-expose-fields[quarkus.freemarker.object-wrapper-expose-fields]`
+a|
+[[quarkus-freemarker_quarkus.freemarker.object-wrapper-expose-fields]]
+`link:#quarkus-freemarker_quarkus.freemarker.object-wrapper-expose-fields[quarkus.freemarker.object-wrapper-expose-fields]`
 
 [.description]
 --
@@ -101,7 +127,10 @@ If true, the object wrapper will be configured to expose fields.
 |
 
 
-a|icon:lock[title=Fixed at build time] [[quarkus-freemarker_quarkus.freemarker.directive-directive]]`link:#quarkus-freemarker_quarkus.freemarker.directive-directive[quarkus.freemarker.directive]`
+a|icon:lock[title=Fixed at build time]
+
+[[quarkus-freemarker_quarkus.freemarker.directive-directive]]
+`link:#quarkus-freemarker_quarkus.freemarker.directive-directive[quarkus.freemarker.directive]`
 
 [.description]
 --

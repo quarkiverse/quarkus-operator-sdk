@@ -5,10 +5,11 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 
+import org.junit.jupiter.api.Test;
+
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.kubernetes.client.KubernetesServerTestResource;
-import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 @QuarkusTestResource(KubernetesServerTestResource.class)
@@ -27,7 +28,7 @@ public class OperatorSDKResourceTest {
         // given the name of the TestController, the app should reply true meaning that it is indeed
         // injected
         given().when().get("/operator/" + TestController.NAME).then().statusCode(200)
-            .body(is("true"));
+                .body(is("true"));
     }
 
     @Test
@@ -36,24 +37,24 @@ public class OperatorSDKResourceTest {
         // expectations
         final var resourceName = ChildTestResource.class.getCanonicalName();
         given()
-            .when()
-            .get("/operator/" + TestController.NAME + "/config")
-            .then()
-            .statusCode(200)
-            .body(
-                "customResourceClass", equalTo(resourceName),
-                "name", equalTo(TestController.NAME));
+                .when()
+                .get("/operator/" + TestController.NAME + "/config")
+                .then()
+                .statusCode(200)
+                .body(
+                        "customResourceClass", equalTo(resourceName),
+                        "name", equalTo(TestController.NAME));
     }
 
     @Test
     void applicationPropertiesShouldOverrideDefaultAndAnnotation() {
         given()
-            .when()
-            .get("/operator/" + ConfiguredController.NAME + "/config")
-            .then()
-            .statusCode(200)
-            .body(
-                "finalizer", equalTo("from-property/finalizer"),
-                "namespaces", hasItem("bar"));
+                .when()
+                .get("/operator/" + ConfiguredController.NAME + "/config")
+                .then()
+                .statusCode(200)
+                .body(
+                        "finalizer", equalTo("from-property/finalizer"),
+                        "namespaces", hasItem("bar"));
     }
 }

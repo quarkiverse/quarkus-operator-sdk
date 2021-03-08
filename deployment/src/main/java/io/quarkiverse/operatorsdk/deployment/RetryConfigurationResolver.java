@@ -14,11 +14,12 @@
  */
 package io.quarkiverse.operatorsdk.deployment;
 
+import java.util.Optional;
+
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.quarkiverse.operatorsdk.runtime.ExternalIntervalConfiguration;
 import io.quarkiverse.operatorsdk.runtime.ExternalRetryConfiguration;
 import io.quarkiverse.operatorsdk.runtime.PlainRetryConfiguration;
-import java.util.Optional;
 
 /**
  * @author <a href="claprun@redhat.com">Christophe Laprun</a>
@@ -29,17 +30,17 @@ public class RetryConfigurationResolver implements RetryConfiguration {
 
     private RetryConfigurationResolver(Optional<ExternalRetryConfiguration> retry) {
         delegate = retry
-            .<RetryConfiguration>map(ExternalRetryConfigurationAdapter::new)
-            .orElse(RetryConfiguration.DEFAULT);
+                .<RetryConfiguration> map(ExternalRetryConfigurationAdapter::new)
+                .orElse(RetryConfiguration.DEFAULT);
     }
 
     public static RetryConfiguration resolve(Optional<ExternalRetryConfiguration> retry) {
         final var delegate = new RetryConfigurationResolver(retry);
         return new PlainRetryConfiguration(
-            delegate.getMaxAttempts(),
-            delegate.getInitialInterval(),
-            delegate.getIntervalMultiplier(),
-            delegate.getMaxInterval());
+                delegate.getMaxAttempts(),
+                delegate.getInitialInterval(),
+                delegate.getIntervalMultiplier(),
+                delegate.getMaxInterval());
     }
 
     @Override
@@ -70,8 +71,8 @@ public class RetryConfigurationResolver implements RetryConfiguration {
         public ExternalRetryConfigurationAdapter(ExternalRetryConfiguration config) {
             maxAttempts = config.maxAttempts.orElse(RetryConfiguration.DEFAULT.getMaxAttempts());
             interval = config.interval
-                .map(IntervalConfigurationAdapter::new)
-                .orElse(new IntervalConfigurationAdapter());
+                    .map(IntervalConfigurationAdapter::new)
+                    .orElse(new IntervalConfigurationAdapter());
         }
 
         @Override
@@ -104,7 +105,7 @@ public class RetryConfigurationResolver implements RetryConfiguration {
         IntervalConfigurationAdapter(ExternalIntervalConfiguration config) {
             initial = config.initial.orElse(RetryConfiguration.DEFAULT.getInitialInterval());
             multiplier = config.multiplier
-                .orElse(RetryConfiguration.DEFAULT.getIntervalMultiplier());
+                    .orElse(RetryConfiguration.DEFAULT.getIntervalMultiplier());
             max = config.max.orElse(RetryConfiguration.DEFAULT.getMaxInterval());
         }
 

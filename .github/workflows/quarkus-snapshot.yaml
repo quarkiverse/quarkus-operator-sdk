@@ -2,10 +2,10 @@ name: "Quarkus ecosystem CI"
 on:
   workflow_dispatch:
   watch:
-    types: [started]
+    types: [ started ]
 
-# For this CI to work, ECOSYSTEM_CI_TOKEN needs to contain a GitHub with rights to close the Quarkus issue that the user/bot has opened,
- # while 'ECOSYSTEM_CI_REPO_PATH' needs to be set to the corresponding path in the 'quarkusio/quarkus-ecosystem-ci' repository
+  # For this CI to work, ECOSYSTEM_CI_TOKEN needs to contain a GitHub with rights to close the Quarkus issue that the user/bot has opened,
+  # while 'ECOSYSTEM_CI_REPO_PATH' needs to be set to the corresponding path in the 'quarkusio/quarkus-ecosystem-ci' repository
 
 env:
   ECOSYSTEM_CI_REPO: quarkusio/quarkus-ecosystem-ci
