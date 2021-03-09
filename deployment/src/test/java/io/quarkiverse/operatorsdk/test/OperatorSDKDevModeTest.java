@@ -1,4 +1,4 @@
-package io.quarkiverse.operatorsdk.operator.sdk.test;
+package io.quarkiverse.operatorsdk.test;
 
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
