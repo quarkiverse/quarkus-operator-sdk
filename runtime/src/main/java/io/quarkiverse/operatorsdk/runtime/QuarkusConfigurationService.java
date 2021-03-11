@@ -36,10 +36,10 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     }
 
     @Override
-    public <R extends CustomResource> ControllerConfiguration<R> getConfigurationFor(
+    public <R extends CustomResource> QuarkusControllerConfiguration<R> getConfigurationFor(
             ResourceController<R> controller) {
         final var unwrapped = unwrap(controller);
-        return super.getConfigurationFor(unwrapped);
+        return (QuarkusControllerConfiguration<R>) super.getConfigurationFor(unwrapped);
     }
 
     @Override

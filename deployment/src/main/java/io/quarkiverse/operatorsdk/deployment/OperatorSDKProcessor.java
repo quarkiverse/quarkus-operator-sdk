@@ -1,25 +1,23 @@
 package io.quarkiverse.operatorsdk.deployment;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Instance;
+import javax.enterprise.inject.spi.CDI;
 import javax.inject.Singleton;
 
-import org.jboss.jandex.AnnotationInstance;
-import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.ControllerUtils;
-import io.javaoperatorsdk.operator.api.Controller;
+import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -33,7 +31,10 @@ import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.Version;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
+import io.quarkus.arc.deployment.ObserverRegistrationPhaseBuildItem;
+import io.quarkus.arc.deployment.ObserverRegistrationPhaseBuildItem.ObserverConfiguratorBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
+import io.quarkus.arc.processor.ObserverConfigurator;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
@@ -43,6 +44,9 @@ import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.deployment.util.JandexUtil;
+import io.quarkus.gizmo.AssignableResultHandle;
+import io.quarkus.gizmo.MethodDescriptor;
+import io.quarkus.gizmo.ResultHandle;
 
 class OperatorSDKProcessor {
 
@@ -51,7 +55,7 @@ class OperatorSDKProcessor {
     private static final String FEATURE = "operator-sdk";
     private static final DotName RESOURCE_CONTROLLER = DotName
             .createSimple(ResourceController.class.getName());
-    private static final DotName CONTROLLER = DotName.createSimple(Controller.class.getName());
+
     private static final DotName APPLICATION_SCOPED = DotName
             .createSimple(ApplicationScoped.class.getName());
 
@@ -102,6 +106,72 @@ class OperatorSDKProcessor {
         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorProducer.class));
     }
 
+    /**
+     * This looks for all resource controllers, to find those that want a delayed registration, and
+     * creates one CDI observer for each, that will call operator.register on them when the event is
+     * fired.
+     */
+    @BuildStep
+    void createDelayedRegistrationObservers(
+            CombinedIndexBuildItem combinedIndexBuildItem,
+            ObserverRegistrationPhaseBuildItem observerRegistrationPhase,
+            BuildProducer<ObserverConfiguratorBuildItem> observerConfigurators) {
+
+        final var index = combinedIndexBuildItem.getIndex();
+        for (ClassInfo info : index.getAllKnownImplementors(RESOURCE_CONTROLLER)) {
+            final var controllerClassName = info.name().toString();
+
+            // extract the configuration from annotation and/or external configuration
+            final var configExtractor = new HybridControllerConfiguration(
+                    controllerClassName, externalConfiguration, info);
+
+            if (configExtractor.delayedRegistration()) {
+                ObserverConfigurator configurator = observerRegistrationPhase
+                        .getContext()
+                        .configure()
+                        .observedType(configExtractor.eventType())
+                        .beanClass(
+                                DotName.createSimple(controllerClassName + "_registration_observer"))
+                        .notify(
+                                mc -> {
+                                    MethodDescriptor cdiMethod = MethodDescriptor
+                                            .ofMethod(CDI.class, "current", CDI.class);
+                                    MethodDescriptor selectMethod = MethodDescriptor.ofMethod(
+                                            CDI.class, "select", Instance.class, Class.class,
+                                            Annotation[].class);
+                                    MethodDescriptor getMethod = MethodDescriptor
+                                            .ofMethod(Instance.class, "get", Object.class);
+                                    AssignableResultHandle cdiVar = mc.createVariable(CDI.class);
+                                    mc.assign(cdiVar, mc.invokeStaticMethod(cdiMethod));
+                                    ResultHandle operatorInstance = mc.invokeVirtualMethod(
+                                            selectMethod,
+                                            cdiVar,
+                                            mc.loadClass(Operator.class),
+                                            mc.newArray(Annotation.class, 0));
+                                    ResultHandle operator = mc.checkCast(
+                                            mc.invokeInterfaceMethod(getMethod, operatorInstance),
+                                            Operator.class);
+                                    ResultHandle resourceInstance = mc.invokeVirtualMethod(
+                                            selectMethod,
+                                            cdiVar,
+                                            mc.loadClass(controllerClassName),
+                                            mc.newArray(Annotation.class, 0));
+                                    ResultHandle resource = mc.checkCast(
+                                            mc.invokeInterfaceMethod(getMethod, resourceInstance),
+                                            ResourceController.class);
+                                    mc.invokeVirtualMethod(
+                                            MethodDescriptor.ofMethod(
+                                                    Operator.class, "register", void.class,
+                                                    ResourceController.class),
+                                            operator,
+                                            resource);
+                                    mc.returnValue(null);
+                                });
+                observerConfigurators.produce(new ObserverConfiguratorBuildItem(configurator));
+            }
+        }
+    }
+
     private ControllerConfiguration createControllerConfiguration(
             ClassInfo info,
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
@@ -143,43 +213,25 @@ class OperatorSDKProcessor {
         registerForReflection(reflectionClasses, cr.getSpec());
         registerForReflection(reflectionClasses, cr.getStatus());
 
-        // retrieve the Controller annotation if it exists
-        final var controllerAnnotation = info.classAnnotation(CONTROLLER);
+        // extract the configuration from annotation and/or external configuration
+        final var configExtractor = new HybridControllerConfiguration(resourceControllerClassName,
+                externalConfiguration,
+                info);
 
-        // retrieve the controller's name
-        final var defaultControllerName = ControllerUtils
-                .getDefaultResourceControllerName(resourceControllerClassName);
-        final var name = annotationValueOrDefault(
-                controllerAnnotation, "name", AnnotationValue::asString, () -> defaultControllerName);
-
-        // check if we have externalized configuration to provide values
-        final var extContConfig = externalConfiguration.controllers.get(name);
-
-        final var extractor = new ValueExtractor(controllerAnnotation, extContConfig);
+        // create the configuration
+        final var name = configExtractor.name();
 
         // create the configuration
         final var configuration = new QuarkusControllerConfiguration(
                 resourceControllerClassName,
                 name,
                 crdName,
-                extractor.extract(
-                        c -> c.finalizer,
-                        "finalizerName",
-                        AnnotationValue::asString,
-                        () -> ControllerUtils.getDefaultFinalizerName(crdName)),
-                extractor.extract(
-                        c -> c.generationAware,
-                        "generationAwareEventProcessing",
-                        AnnotationValue::asBoolean,
-                        () -> true),
-                QuarkusControllerConfiguration.asSet(
-                        extractor.extract(
-                                c -> c.namespaces.map(l -> l.toArray(new String[0])),
-                                "namespaces",
-                                AnnotationValue::asStringArray,
-                                () -> new String[] {})),
+                configExtractor.finalizer(crdName),
+                configExtractor.generationAware(),
+                QuarkusControllerConfiguration.asSet(configExtractor.namespaces()),
                 crType,
-                retryConfiguration(extContConfig));
+                configExtractor.retryConfiguration(),
+                configExtractor.delayedRegistration());
 
         log.infov(
                 "Processed ''{0}'' controller named ''{1}'' for ''{2}'' CR (version ''{3}'')",
@@ -201,72 +253,6 @@ class OperatorSDKProcessor {
 
     private RetryConfiguration retryConfiguration(ExternalControllerConfiguration extConfig) {
         return extConfig == null ? null : RetryConfigurationResolver.resolve(extConfig.retry);
-    }
-
-    private static class ValueExtractor {
-
-        private final AnnotationInstance controllerAnnotation;
-        private final ExternalControllerConfiguration extContConfig;
-
-        ValueExtractor(
-                AnnotationInstance controllerAnnotation,
-                ExternalControllerConfiguration extContConfig) {
-            this.controllerAnnotation = controllerAnnotation;
-            this.extContConfig = extContConfig;
-        }
-
-        /**
-         * Extracts the appropriate configuration value for the controller checking first any annotation
-         * configuration, then potentially overriding it by a properties-provided value or returning a
-         * default value if neither is provided.
-         *
-         * @param extractor a Function extracting the optional value we're interested in from the
-         *        external configuration
-         * @param annotationField the name of the {@link Controller} annotation we're want to retrieve
-         *        if present
-         * @param converter a Function converting the annotation value to the type we're
-         *        expecting
-         * @param defaultValue a Supplier that computes/retrieve a default value when needed
-         * @param <T> the expected type of the configuration value we're trying to extract
-         * @return the extracted configuration value
-         */
-        <T> T extract(
-                Function<ExternalControllerConfiguration, Optional<T>> extractor,
-                String annotationField,
-                Function<AnnotationValue, T> converter,
-                Supplier<T> defaultValue) {
-            // first check if we have an external configuration
-            if (extContConfig != null) {
-                // extract value from config if present
-                return extractor
-                        .apply(extContConfig)
-                        // or get from the annotation or default
-                        .orElse(annotationValueOrDefault(annotationField, converter, defaultValue));
-            } else {
-                // get from annotation or default
-                return annotationValueOrDefault(annotationField, converter, defaultValue);
-            }
-        }
-
-        private <T> T annotationValueOrDefault(
-                String name, Function<AnnotationValue, T> converter, Supplier<T> defaultValue) {
-            return OperatorSDKProcessor
-                    .annotationValueOrDefault(controllerAnnotation, name, converter, defaultValue);
-        }
-    }
-
-    private static <T> T annotationValueOrDefault(
-            AnnotationInstance annotation,
-            String name,
-            Function<AnnotationValue, T> converter,
-            Supplier<T> defaultValue) {
-        return annotation != null
-                ?
-                // get converted annotation value of get default
-                Optional.ofNullable(annotation.value(name)).map(converter).orElseGet(defaultValue)
-                :
-                // get default
-                defaultValue.get();
     }
 
     private Class<?> loadClass(String className) {

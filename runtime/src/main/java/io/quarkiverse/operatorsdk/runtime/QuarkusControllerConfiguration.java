@@ -13,6 +13,7 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
 
     private final String crClass;
     private Class<R> clazz;
+    private final boolean registrationDelayed;
 
     @RecordableConstructor
     public QuarkusControllerConfiguration(
@@ -23,7 +24,8 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
             boolean generationAware,
             Set<String> namespaces,
             String crClass,
-            RetryConfiguration retryConfiguration) {
+            RetryConfiguration retryConfiguration,
+            boolean registrationDelayed) {
         super(
                 associatedControllerClassName,
                 name,
@@ -33,6 +35,7 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
                 namespaces,
                 retryConfiguration);
         this.crClass = crClass;
+        this.registrationDelayed = registrationDelayed;
     }
 
     public static Set<String> asSet(String[] namespaces) {
@@ -49,6 +52,10 @@ public class QuarkusControllerConfiguration<R extends CustomResource>
     // Needed for Quarkus to find the associated constructor parameter
     public String getCrClass() {
         return crClass;
+    }
+
+    public boolean isRegistrationDelayed() {
+        return registrationDelayed;
     }
 
     @Override

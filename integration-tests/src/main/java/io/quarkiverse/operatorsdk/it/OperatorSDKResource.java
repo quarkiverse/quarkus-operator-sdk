@@ -1,8 +1,11 @@
 package io.quarkiverse.operatorsdk.it;
 
+import javax.enterprise.event.Event;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 
@@ -13,6 +16,7 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
+import io.quarkiverse.operatorsdk.it.TestController.RegisterEvent;
 
 @Path("/operator")
 public class OperatorSDKResource {
@@ -21,6 +25,26 @@ public class OperatorSDKResource {
     Instance<ResourceController<? extends CustomResource>> controllers;
     @Inject
     ConfigurationService configurationService;
+    @Inject
+    Event<RegisterEvent> event;
+
+    @POST
+    @Path("register")
+    public void registerController() {
+        event.fire(new TestController.RegisterEvent());
+    }
+
+    @GET
+    @Path("registered/{name}")
+    public boolean getRegisteredController(@PathParam("name") String name) {
+        for (ResourceController<?> cont : controllers) {
+            if (configurationService.getConfigurationFor(cont).getName().equals(name)
+                    && cont instanceof RegistrableController) {
+                return ((RegistrableController<?>) cont).isInitialized();
+            }
+        }
+        throw new NotFoundException("Could not find controller: " + name);
+    }
 
     @GET
     @Path("validateCR")
