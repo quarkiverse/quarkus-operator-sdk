@@ -24,4 +24,10 @@ public class ExternalConfiguration {
      */
     @ConfigItem(defaultValue = "true")
     public Optional<Boolean> checkCRDAndValidateLocalModel;
+
+    /**
+     * The directory where the CRDs will be generated, relative to the project's output directory.
+     */
+    @ConfigItem(defaultValue = "kubernetes")
+    public String crdOutputDirectory;
 }

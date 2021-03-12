@@ -16,6 +16,8 @@ import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
 
+import io.fabric8.crd.generator.CRDGenerator;
+import io.fabric8.crd.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.ResourceController;
@@ -43,6 +45,7 @@ import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
+import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.deployment.util.JandexUtil;
 import io.quarkus.gizmo.AssignableResultHandle;
 import io.quarkus.gizmo.MethodDescriptor;
@@ -60,6 +63,7 @@ class OperatorSDKProcessor {
             .createSimple(ApplicationScoped.class.getName());
 
     private ExternalConfiguration externalConfiguration;
+    private final CRDGenerator generator = new CRDGenerator();
 
     @BuildStep
     void indexSDKDependencies(
@@ -73,6 +77,7 @@ class OperatorSDKProcessor {
     @BuildStep
     @Record(ExecutionTime.STATIC_INIT)
     void createConfigurationServiceAndOperator(
+            OutputTargetBuildItem outputTarget,
             CombinedIndexBuildItem combinedIndexBuildItem,
             BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
@@ -85,6 +90,13 @@ class OperatorSDKProcessor {
                 .filter(ci -> !Modifier.isAbstract(ci.flags()))
                 .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses, index))
                 .collect(Collectors.toList());
+
+        // generate CRDs
+        final var outputDir = outputTarget.getOutputDirectory().resolve(externalConfiguration.crdOutputDirectory).toFile();
+        if (!outputDir.exists()) {
+            outputDir.mkdirs();
+        }
+        generator.inOutputDir(outputDir).generate();
 
         final var version = Utils.loadFromProperties();
         final var validateCustomResources = Utils.isValidateCustomResourcesEnvVarSet()
@@ -194,6 +206,9 @@ class OperatorSDKProcessor {
 
         // load CR class
         final Class<CustomResource> crClass = (Class<CustomResource>) loadClass(crType);
+
+        // process the CR to generate the CRD
+        generator.customResources(CustomResourceInfo.fromClass(crClass));
 
         // Instantiate CR to check that it's properly annotated
         final CustomResource cr;

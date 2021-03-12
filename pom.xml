@@ -25,9 +25,17 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.version>1.12.2.Final</quarkus.version>
     <java-operator-sdk.version>1.8.0</java-operator-sdk.version>
+    <kubernetes-client.version>5.2.0</kubernetes-client.version>
   </properties>
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>io.fabric8</groupId>
+        <artifactId>kubernetes-client-bom</artifactId>
+        <version>${kubernetes-client.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
       <dependency>
         <groupId>io.quarkus</groupId>
         <artifactId>quarkus-bom</artifactId>
