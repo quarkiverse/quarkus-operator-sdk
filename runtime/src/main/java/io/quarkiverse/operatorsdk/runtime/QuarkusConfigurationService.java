@@ -19,14 +19,10 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
 
     public QuarkusConfigurationService(
             Version version,
-            List<ControllerConfiguration> configurations,
             KubernetesClient client,
             boolean checkCRDAndValidateLocalModel) {
         super(version);
         this.client = client;
-        if (configurations != null && !configurations.isEmpty()) {
-            configurations.forEach(this::register);
-        }
         this.checkCRDAndValidateLocalModel = checkCRDAndValidateLocalModel;
     }
 
@@ -45,6 +41,12 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     @Override
     public boolean checkCRDAndValidateLocalModel() {
         return checkCRDAndValidateLocalModel;
+    }
+
+    void register(List<ControllerConfiguration> controllerConfigs) {
+        if (controllerConfigs != null && !controllerConfigs.isEmpty()) {
+            controllerConfigs.forEach(this::register);
+        }
     }
 
     private static <R extends CustomResource> ResourceController<R> unwrap(

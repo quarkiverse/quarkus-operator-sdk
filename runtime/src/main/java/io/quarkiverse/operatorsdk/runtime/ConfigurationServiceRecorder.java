@@ -15,12 +15,15 @@ public class ConfigurationServiceRecorder {
 
     public Supplier<ConfigurationService> configurationServiceSupplier(
             Version version,
-            List<ControllerConfiguration> controllerConfigs,
             boolean validateCustomResources) {
         return () -> new QuarkusConfigurationService(
                 version,
-                controllerConfigs,
                 Arc.container().instance(KubernetesClient.class).get(),
                 validateCustomResources);
+    }
+
+    public void registerControllerConfigurations(QuarkusConfigurationService service,
+            List<ControllerConfiguration> controllerConfigs) {
+        service.register(controllerConfigs);
     }
 }

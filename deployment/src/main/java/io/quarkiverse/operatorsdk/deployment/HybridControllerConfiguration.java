@@ -12,8 +12,8 @@ import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.quarkiverse.operatorsdk.runtime.DelayRegistrationUntil;
-import io.quarkiverse.operatorsdk.runtime.ExternalConfiguration;
 import io.quarkiverse.operatorsdk.runtime.ExternalControllerConfiguration;
+import io.quarkiverse.operatorsdk.runtime.OperatorRunTimeConfiguration;
 
 /**
  * Encapsulates controller configuration values that might come from either annotation or external
@@ -38,7 +38,7 @@ class HybridControllerConfiguration {
      */
     public HybridControllerConfiguration(
             String resourceControllerClassName,
-            ExternalConfiguration externalConfiguration,
+            OperatorRunTimeConfiguration externalConfiguration,
             ClassInfo info) {
         this.controllerAnnotation = info.classAnnotation(
                 DotName.createSimple(Controller.class.getName()));
