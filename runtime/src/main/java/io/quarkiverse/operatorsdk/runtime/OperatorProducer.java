@@ -26,7 +26,6 @@ public class OperatorProducer {
                 operator.register(controller);
             }
         }
-        controllers.stream().forEach(operator::register);
         return operator;
     }
 }
