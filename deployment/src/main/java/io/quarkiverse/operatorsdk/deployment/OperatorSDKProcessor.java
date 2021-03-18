@@ -16,8 +16,6 @@ import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
 
-import io.fabric8.crd.generator.CRDGenerator;
-import io.fabric8.crd.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.ResourceController;
@@ -63,7 +61,9 @@ class OperatorSDKProcessor {
             .createSimple(ApplicationScoped.class.getName());
 
     private ExternalConfiguration externalConfiguration;
-    private final CRDGenerator generator = new CRDGenerator();
+
+    // todo: reactivate when CRD generation from API works properly
+    //    private final CRDGenerator generator = new CRDGenerator();
 
     @BuildStep
     void indexSDKDependencies(
@@ -91,12 +91,15 @@ class OperatorSDKProcessor {
                 .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses, index))
                 .collect(Collectors.toList());
 
-        // generate CRDs
-        final var outputDir = outputTarget.getOutputDirectory().resolve(externalConfiguration.crdOutputDirectory).toFile();
-        if (!outputDir.exists()) {
-            outputDir.mkdirs();
-        }
-        generator.inOutputDir(outputDir).generate();
+        // todo: reactivate when CRD generation from API works properly
+        /*
+         * // generate CRDs
+         * final var outputDir = outputTarget.getOutputDirectory().resolve(externalConfiguration.crdOutputDirectory).toFile();
+         * if (!outputDir.exists()) {
+         * outputDir.mkdirs();
+         * }
+         * generator.inOutputDir(outputDir).generate();
+         */
 
         final var version = Utils.loadFromProperties();
         final var validateCustomResources = Utils.isValidateCustomResourcesEnvVarSet()
@@ -207,8 +210,9 @@ class OperatorSDKProcessor {
         // load CR class
         final Class<CustomResource> crClass = (Class<CustomResource>) loadClass(crType);
 
+        // todo: reactivate when CRD generation from API works properly
         // process the CR to generate the CRD
-        generator.customResources(CustomResourceInfo.fromClass(crClass));
+        //        generator.customResources(CustomResourceInfo.fromClass(crClass));
 
         // Instantiate CR to check that it's properly annotated
         final CustomResource cr;
