@@ -15,6 +15,7 @@
     <module>deployment</module>
     <module>runtime</module>
     <module>integration-tests</module>
+    <module>samples</module>
   </modules>
   <properties>
     <compiler-plugin.version>3.8.1</compiler-plugin.version>
@@ -24,7 +25,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.version>1.12.2.Final</quarkus.version>
-    <java-operator-sdk.version>1.8.0</java-operator-sdk.version>
+    <java-operator-sdk.version>1.8.1</java-operator-sdk.version>
     <kubernetes-client.version>5.2.1</kubernetes-client.version>
   </properties>
   <dependencyManagement>

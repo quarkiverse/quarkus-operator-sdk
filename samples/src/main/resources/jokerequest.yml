@@ -1,0 +1,6 @@
+apiVersion: "samples.javaoperatorsdk.io/v1alpha1"
+kind: JokeRequest
+metadata:
+  name: jr-any
+spec:
+  category: Any
