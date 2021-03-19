@@ -19,6 +19,10 @@ Once the docs are ready to be published, please open a PR including this reposit
 the [Quarkiverse Docs Antora playbook](https://github.com/quarkiverse/quarkiverse-docs/blob/master/antora-playbook.yml#L7)
 . See an example [here](https://github.com/quarkiverse/quarkiverse-docs/pull/1).
 
+## Releasing
+
+Follow the [Quarkiverse release process](https://github.com/quarkiverse/quarkiverse/wiki/Release).
+
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
