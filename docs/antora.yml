@@ -1,5 +1,5 @@
-name: quarkiverse-project
-title: Quarkiverse <YOUR_PROJECT>
+name: quarkus-operator-sdk
+title: Quarkiverse Operator SDK
 version: dev
 nav:
   - modules/ROOT/nav.adoc
