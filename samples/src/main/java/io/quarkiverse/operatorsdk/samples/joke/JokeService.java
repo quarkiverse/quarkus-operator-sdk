@@ -24,7 +24,6 @@ import org.jboss.resteasy.annotations.jaxrs.QueryParam;
 
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestSpec.Category;
 
-// https://v2.jokeapi.dev/joke/any?blacklistFlags=nsfw,sexist,racist&type=single
 @RegisterRestClient(configKey = "joke-api")
 public interface JokeService {
 
