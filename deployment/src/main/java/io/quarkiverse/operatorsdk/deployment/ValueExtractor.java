@@ -7,14 +7,16 @@ import java.util.function.Supplier;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 
-import io.quarkiverse.operatorsdk.runtime.ExternalControllerConfiguration;
+class ValueExtractor<C> {
 
-class ValueExtractor {
+    private final C extContConfig;
 
-    private final ExternalControllerConfiguration extContConfig;
-
-    ValueExtractor(ExternalControllerConfiguration extContConfig) {
+    ValueExtractor(C extContConfig) {
         this.extContConfig = extContConfig;
+    }
+
+    C getConfiguration() {
+        return extContConfig;
     }
 
     /**
@@ -34,7 +36,7 @@ class ValueExtractor {
      */
     <T> T extract(
             AnnotationInstance annotation,
-            Function<ExternalControllerConfiguration, Optional<T>> extractor,
+            Function<C, Optional<T>> extractor,
             String annotationField,
             Function<AnnotationValue, T> converter,
             Supplier<T> defaultValue) {

@@ -24,21 +24,8 @@ public class ExternalControllerConfiguration {
     public Optional<String> finalizer;
 
     /**
-     * Whether the controller should only process events if the associated resource generation has
-     * increased since last reconciliation, otherwise will process all events.
-     */
-    @ConfigItem(defaultValue = "true")
-    public Optional<Boolean> generationAware;
-
-    /**
      * The optional controller retry configuration
      */
     @ConfigItem
     public Optional<ExternalRetryConfiguration> retry;
-
-    /**
-     * The optional fully qualified name of a CDI event class that the controller will wait for before
-     * registering with the Operator.
-     */
-    public Optional<String> delayRegistrationUntilEvent;
 }

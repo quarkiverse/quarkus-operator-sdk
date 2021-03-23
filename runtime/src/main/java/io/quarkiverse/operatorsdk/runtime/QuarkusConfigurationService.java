@@ -1,6 +1,7 @@
 package io.quarkiverse.operatorsdk.runtime;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -19,10 +20,14 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
 
     public QuarkusConfigurationService(
             Version version,
+            List<ControllerConfiguration> configurations,
             KubernetesClient client,
             boolean checkCRDAndValidateLocalModel) {
         super(version);
         this.client = client;
+        if (configurations != null && !configurations.isEmpty()) {
+            configurations.forEach(this::register);
+        }
         this.checkCRDAndValidateLocalModel = checkCRDAndValidateLocalModel;
     }
 
@@ -43,12 +48,6 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
         return checkCRDAndValidateLocalModel;
     }
 
-    void register(List<ControllerConfiguration> controllerConfigs) {
-        if (controllerConfigs != null && !controllerConfigs.isEmpty()) {
-            controllerConfigs.forEach(this::register);
-        }
-    }
-
     private static <R extends CustomResource> ResourceController<R> unwrap(
             ResourceController<R> controller) {
         return (ResourceController<R>) unwrapper.apply(controller);
@@ -65,5 +64,13 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
             controllerName = controllerName.substring(0, i);
         }
         return controllerName;
+    }
+
+    public Stream<QuarkusControllerConfiguration> configurations() {
+        return controllerConfigurations().map(c -> (QuarkusControllerConfiguration) c);
+    }
+
+    public void updateConfiguration(QuarkusControllerConfiguration configuration) {
+        replace(configuration);
     }
 }

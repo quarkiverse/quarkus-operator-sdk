@@ -1,5 +1,6 @@
 package io.quarkiverse.operatorsdk.runtime;
 
+import java.util.Map;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.client.CustomResource;
@@ -22,4 +23,11 @@ public class OperatorBuildTimeConfiguration {
      */
     @ConfigItem(defaultValue = "kubernetes")
     public String crdOutputDirectory;
+
+    /**
+     * Maps a controller name to its configuration.
+     */
+    @ConfigItem
+    public Map<String, BuildTimeControllerConfiguration> controllers;
+
 }
