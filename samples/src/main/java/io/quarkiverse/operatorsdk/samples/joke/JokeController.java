@@ -47,30 +47,48 @@ public class JokeController implements ResourceController<JokeRequest> {
     @Override
     public UpdateControl<JokeRequest> createOrUpdateResource(JokeRequest jr, Context<JokeRequest> context) {
         final var spec = jr.getSpec();
-        // if we don't already have created this joke on the cluster, do so
-        final var fromApi = jokes.getRandom(spec.getCategory(),
-                String.join(",", Arrays.stream(spec.getExcluded()).map(ExcludedTopic::name).toArray(String[]::new)),
-                spec.isSafe());
-        final var status = JokeRequestStatus.from(fromApi);
-        if (!status.isError()) {
-            // create the joke
-            final var joke = new Joke(fromApi.id, fromApi.joke, fromApi.category, fromApi.safe, fromApi.lang);
 
-            final var flags = fromApi.flags.entrySet().stream().collect(Collectors.toMap(
+        // if the joke has already been created, ignore
+        if (State.CREATED == jr.getStatus().getState()) {
+            return UpdateControl.noUpdate();
+        }
+
+        JokeRequestStatus status;
+        try {
+            final JokeModel fromApi = jokes.getRandom(spec.getCategory(),
+                    String.join(",", Arrays.stream(spec.getExcluded()).map(ExcludedTopic::name).toArray(String[]::new)),
+                    spec.isSafe());
+            status = JokeRequestStatus.from(fromApi);
+            if (!status.isError()) {
+                // create the joke
+                final var joke = new Joke(fromApi.id, fromApi.joke, fromApi.category, fromApi.safe,
+                        fromApi.lang);
+
+                final var flags = fromApi.flags.entrySet().stream().collect(Collectors.toMap(
                     entry -> "joke_flag_" + entry.getKey(),
                     entry -> entry.getValue().toString()));
-            joke.getMetadata().setLabels(flags);
-            final var jokeResource = client.customResources(Joke.class).withName("" + fromApi.id);
-            final var existing = jokeResource.get();
-            if (existing != null) {
-                status.setMessage("Joke " + fromApi.id + " already exists");
-                status.setState(State.ALREADY_PRESENT);
-            } else {
-                final var result = jokeResource.create(joke);
-                status.setMessage("Joke " + fromApi.id + " created");
-                status.setState(State.CREATED);
+                joke.getMetadata().setLabels(flags);
+
+                // if we don't already have created this joke on the cluster, do so
+                final var jokeResource = client.customResources(Joke.class)
+                        .withName("" + fromApi.id);
+                final var existing = jokeResource.get();
+                if (existing != null) {
+                    status.setMessage("Joke " + fromApi.id + " already exists");
+                    status.setState(State.ALREADY_PRESENT);
+                } else {
+                    final var result = jokeResource.create(joke);
+                    status.setMessage("Joke " + fromApi.id + " created");
+                    status.setState(State.CREATED);
+                }
             }
+        } catch (Exception e) {
+            status = new JokeRequestStatus();
+            status.setMessage("Error querying API: " + e.getMessage());
+            status.setState(State.ERROR);
+            status.setError(true);
         }
+
         jr.setStatus(status);
         return UpdateControl.updateStatusSubResource(jr);
     }
