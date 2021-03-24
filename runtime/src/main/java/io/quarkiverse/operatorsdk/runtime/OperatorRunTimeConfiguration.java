@@ -27,5 +27,5 @@ public class OperatorRunTimeConfiguration {
      * Maps a controller name to its configuration.
      */
     @ConfigItem
-    public Map<String, ExternalControllerConfiguration> controllers;
+    public Map<String, RunTimeControllerConfiguration> controllers;
 }

@@ -7,7 +7,7 @@ import io.quarkus.runtime.annotations.ConfigGroup;
 import io.quarkus.runtime.annotations.ConfigItem;
 
 @ConfigGroup
-public class ExternalControllerConfiguration {
+public class RunTimeControllerConfiguration {
 
     /**
      * An optional list of comma-separated namespace names the controller should watch. If this
