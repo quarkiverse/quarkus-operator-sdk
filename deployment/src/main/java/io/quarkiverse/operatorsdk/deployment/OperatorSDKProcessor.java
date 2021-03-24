@@ -28,13 +28,13 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
+import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.ConfigurationServiceRecorder;
 import io.quarkiverse.operatorsdk.runtime.DelayRegistrationUntil;
-import io.quarkiverse.operatorsdk.runtime.OperatorBuildTimeConfiguration;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
-import io.quarkiverse.operatorsdk.runtime.OperatorRunTimeConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
+import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.Version;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.ObserverRegistrationPhaseBuildItem;
@@ -69,7 +69,7 @@ class OperatorSDKProcessor {
     private static final DotName CONTROLLER = DotName.createSimple(Controller.class.getName());
     private static final DotName DELAY_REGISTRATION = DotName.createSimple(DelayRegistrationUntil.class.getName());
 
-    private OperatorBuildTimeConfiguration buildTimeConfiguration;
+    private BuildTimeOperatorConfiguration buildTimeConfiguration;
 
     // todo: reactivate when CRD generation from API works properly
     //    private final CRDGenerator generator = new CRDGenerator();
@@ -87,7 +87,7 @@ class OperatorSDKProcessor {
     @Record(ExecutionTime.RUNTIME_INIT)
     void updateControllerConfigurations(
             ConfigurationServiceRecorder recorder,
-            OperatorRunTimeConfiguration runTimeConfiguration,
+            RunTimeOperatorConfiguration runTimeConfiguration,
             ConfigurationServiceBuildItem serviceBuildItem) {
         recorder.updateConfigurations(serviceBuildItem.getConfigurationService(), runTimeConfiguration);
     }

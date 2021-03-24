@@ -21,7 +21,7 @@ import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.runtime.annotations.ConfigRoot;
 
 @ConfigRoot(name = "operator-sdk", phase = ConfigPhase.RUN_TIME)
-public class OperatorRunTimeConfiguration {
+public class RunTimeOperatorConfiguration {
 
     /**
      * Maps a controller name to its configuration.
