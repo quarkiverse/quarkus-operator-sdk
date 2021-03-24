@@ -9,7 +9,7 @@ import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.runtime.annotations.ConfigRoot;
 
 @ConfigRoot(name = "operator-sdk", phase = ConfigPhase.BUILD_AND_RUN_TIME_FIXED)
-public class OperatorBuildTimeConfiguration {
+public class BuildTimeOperatorConfiguration {
     /**
      * Whether the operator should check that the CRD is properly deployed and that the associated
      * {@link CustomResource} implementation matches its information before registering the associated

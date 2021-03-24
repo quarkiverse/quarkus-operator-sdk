@@ -25,7 +25,7 @@ public class ConfigurationServiceRecorder {
     }
 
     public void updateConfigurations(Supplier<QuarkusConfigurationService> service,
-            OperatorRunTimeConfiguration runTimeConfiguration) {
+            RunTimeOperatorConfiguration runTimeConfiguration) {
         service.get().configurations().forEach(c -> {
             final var extConfig = runTimeConfiguration.controllers.get(c.getName());
             if (extConfig != null) {
