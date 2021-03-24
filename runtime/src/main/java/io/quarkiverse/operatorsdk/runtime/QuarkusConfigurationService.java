@@ -51,4 +51,17 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
             ResourceController<R> controller) {
         return (ResourceController<R>) unwrapper.apply(controller);
     }
+
+    @Override
+    protected String keyFor(ResourceController controller) {
+        String controllerName = super.keyFor(controller);
+        // heuristics: we're assuming that any class name with an '_' in it is a
+        // proxy / wrapped / generated class and that the "real" class name is located before the
+        // '_'. This probably won't work in all instances but should work most of the time.
+        final int i = controllerName.indexOf('_');
+        if (i > 0) {
+            controllerName = controllerName.substring(0, i);
+        }
+        return controllerName;
+    }
 }
