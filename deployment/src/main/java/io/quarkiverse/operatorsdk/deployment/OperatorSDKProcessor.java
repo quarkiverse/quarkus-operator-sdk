@@ -4,6 +4,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -26,11 +27,9 @@ import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.quarkiverse.operatorsdk.runtime.ConfigurationServiceRecorder;
 import io.quarkiverse.operatorsdk.runtime.DelayRegistrationUntil;
-import io.quarkiverse.operatorsdk.runtime.ExternalControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.OperatorBuildTimeConfiguration;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
 import io.quarkiverse.operatorsdk.runtime.OperatorRunTimeConfiguration;
@@ -85,26 +84,17 @@ class OperatorSDKProcessor {
     }
 
     @BuildStep
-    void createControllerConfigurations(
-            QuarkusConfigurationService service,
-            CombinedIndexBuildItem combinedIndexBuildItem,
-            OperatorRunTimeConfiguration runTimeConfiguration) {
-        final var index = combinedIndexBuildItem.getIndex();
-
-        service.configurations().forEach(c -> {
-            final var controller = index.getClassByName(DotName.createSimple(c.getAssociatedControllerClassName()));
-            final var extractor = new RunTimeHybridControllerConfiguration(
-                    runTimeConfiguration.controllers.get(c.getName()),
-                    controller.classAnnotation(CONTROLLER));
-            c.setFinalizer(extractor.finalizer(c.getCRDName()));
-            c.setNamespaces(QuarkusControllerConfiguration.asSet(extractor.namespaces()));
-            c.setRetryConfiguration(extractor.retryConfiguration());
-        });
+    @Record(ExecutionTime.RUNTIME_INIT)
+    void updateControllerConfigurations(
+            ConfigurationServiceRecorder recorder,
+            OperatorRunTimeConfiguration runTimeConfiguration,
+            ConfigurationServiceBuildItem serviceBuildItem) {
+        recorder.updateConfigurations(serviceBuildItem.getConfigurationService(), runTimeConfiguration);
     }
 
     @BuildStep
     @Record(ExecutionTime.STATIC_INIT)
-    void createConfigurationServiceAndOperator(
+    ConfigurationServiceBuildItem createConfigurationServiceAndOperator(
             OutputTargetBuildItem outputTarget,
             CombinedIndexBuildItem combinedIndexBuildItem,
             BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
@@ -144,11 +134,12 @@ class OperatorSDKProcessor {
                 SyntheticBeanBuildItem.configure(QuarkusConfigurationService.class)
                         .scope(Singleton.class)
                         .addType(ConfigurationService.class)
-                        .setRuntimeInit()
+                        // todo:                       .setRuntimeInit()
                         .supplier(supplier)
                         .done());
 
         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorProducer.class));
+        return new ConfigurationServiceBuildItem(supplier);
     }
 
     /**
@@ -277,7 +268,9 @@ class OperatorSDKProcessor {
                 crdName,
                 configExtractor.generationAware(),
                 crType,
-                configExtractor.delayedRegistration());
+                configExtractor.delayedRegistration(),
+                getNamespaces(controllerAnnotation),
+                getFinalizer(controllerAnnotation, crdName));
 
         log.infov(
                 "Processed ''{0}'' controller named ''{1}'' for ''{2}'' CR (version ''{3}'')",
@@ -292,6 +285,21 @@ class OperatorSDKProcessor {
                 controllerAnnotation, "name", AnnotationValue::asString, () -> defaultControllerName);
     }
 
+    private Set<String> getNamespaces(AnnotationInstance controllerAnnotation) {
+        return QuarkusControllerConfiguration.asSet(ValueExtractor.annotationValueOrDefault(
+                controllerAnnotation,
+                "namespaces",
+                AnnotationValue::asStringArray,
+                () -> new String[] {}));
+    }
+
+    private String getFinalizer(AnnotationInstance controllerAnnotation, String crdName) {
+        return ValueExtractor.annotationValueOrDefault(controllerAnnotation,
+                "finalizerName",
+                AnnotationValue::asString,
+                () -> ControllerUtils.getDefaultFinalizerName(crdName));
+    }
+
     private void registerForReflection(
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses, String className) {
         Optional.ofNullable(className)
@@ -301,10 +309,6 @@ class OperatorSDKProcessor {
                             reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, cn));
                             log.infov("Registered ''{0}'' for reflection", cn);
                         });
-    }
-
-    private RetryConfiguration retryConfiguration(ExternalControllerConfiguration extConfig) {
-        return extConfig == null ? null : RetryConfigurationResolver.resolve(extConfig.retry);
     }
 
     private Class<?> loadClass(String className) {
