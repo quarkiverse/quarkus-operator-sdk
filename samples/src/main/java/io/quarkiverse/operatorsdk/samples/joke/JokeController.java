@@ -65,8 +65,8 @@ public class JokeController implements ResourceController<JokeRequest> {
                         fromApi.lang);
 
                 final var flags = fromApi.flags.entrySet().stream().collect(Collectors.toMap(
-                    entry -> "joke_flag_" + entry.getKey(),
-                    entry -> entry.getValue().toString()));
+                        entry -> "joke_flag_" + entry.getKey(),
+                        entry -> entry.getValue().toString()));
                 joke.getMetadata().setLabels(flags);
 
                 // if we don't already have created this joke on the cluster, do so
