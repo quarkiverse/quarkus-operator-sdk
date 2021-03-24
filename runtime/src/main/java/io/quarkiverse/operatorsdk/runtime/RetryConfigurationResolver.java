@@ -12,14 +12,11 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package io.quarkiverse.operatorsdk.deployment;
+package io.quarkiverse.operatorsdk.runtime;
 
 import java.util.Optional;
 
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
-import io.quarkiverse.operatorsdk.runtime.ExternalIntervalConfiguration;
-import io.quarkiverse.operatorsdk.runtime.ExternalRetryConfiguration;
-import io.quarkiverse.operatorsdk.runtime.PlainRetryConfiguration;
 
 /**
  * @author <a href="claprun@redhat.com">Christophe Laprun</a>
