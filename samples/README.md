@@ -54,4 +54,5 @@ These files are found in their regular spots (`target/kubernetes` for the descri
 
 ### Native binary
 
-TODO
+To build a native binary for your platform, just run: `mvn package -Pnative`. The binary will be
+found in the `target` directory.
