@@ -16,6 +16,7 @@ import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.ResourceController;
@@ -59,6 +60,7 @@ class OperatorSDKProcessor {
 
     private static final DotName APPLICATION_SCOPED = DotName
             .createSimple(ApplicationScoped.class.getName());
+    private static final DotName CUSTOM_RESOURCE = DotName.createSimple(CustomResource.class.getName());
 
     private ExternalConfiguration externalConfiguration;
 
@@ -214,14 +216,6 @@ class OperatorSDKProcessor {
         // process the CR to generate the CRD
         //        generator.customResources(CustomResourceInfo.fromClass(crClass));
 
-        // Instantiate CR to check that it's properly annotated
-        final CustomResource cr;
-        try {
-            cr = crClass.getConstructor().newInstance();
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Cannot instantiate '" + crType + "' CR class", e);
-        }
-
         // retrieve CRD name from CR type
         final var crdName = CustomResource.getCRDName(crClass);
 
@@ -229,8 +223,10 @@ class OperatorSDKProcessor {
         reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, crType));
 
         // register spec and status for introspection
-        registerForReflection(reflectionClasses, cr.getSpec());
-        registerForReflection(reflectionClasses, cr.getStatus());
+        final var crParamTypes = JandexUtil
+                .resolveTypeParameters(DotName.createSimple(crType), CUSTOM_RESOURCE, index);
+        registerForReflection(reflectionClasses, crParamTypes.get(0).name().toString());
+        registerForReflection(reflectionClasses, crParamTypes.get(1).name().toString());
 
         // extract the configuration from annotation and/or external configuration
         final var configExtractor = new HybridControllerConfiguration(resourceControllerClassName,
@@ -254,19 +250,19 @@ class OperatorSDKProcessor {
 
         log.infov(
                 "Processed ''{0}'' controller named ''{1}'' for ''{2}'' CR (version ''{3}'')",
-                info.name().toString(), name, cr.getCRDName(), cr.getApiVersion());
+                info.name().toString(), name, crdName, HasMetadata.getApiVersion(crClass));
 
         return configuration;
     }
 
     private void registerForReflection(
-            BuildProducer<ReflectiveClassBuildItem> reflectionClasses, Object specOrStatus) {
-        Optional.ofNullable(specOrStatus)
-                .map(s -> specOrStatus.getClass().getCanonicalName())
+            BuildProducer<ReflectiveClassBuildItem> reflectionClasses, String className) {
+        Optional.ofNullable(className)
+                .filter(s -> !Void.TYPE.getName().equals(className))
                 .ifPresent(
                         cn -> {
                             reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, cn));
-                            System.out.println("Registered " + cn);
+                            log.infov("Registered ''{0}'' for reflection", cn);
                         });
     }
 
