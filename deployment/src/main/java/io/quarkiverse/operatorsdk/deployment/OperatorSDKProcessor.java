@@ -122,7 +122,7 @@ class OperatorSDKProcessor {
 
         final List<ControllerConfiguration> controllerConfigs = resourceControllers.stream()
                 .filter(ci -> !Modifier.isAbstract(ci.flags()))
-                .map(ci -> createBuildControllerConfiguration(ci, additionalBeans, reflectionClasses,
+                .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses,
                         index))
                 .collect(Collectors.toList());
 
@@ -212,7 +212,7 @@ class OperatorSDKProcessor {
         }
     }
 
-    private ControllerConfiguration createBuildControllerConfiguration(
+    private ControllerConfiguration createControllerConfiguration(
             ClassInfo info,
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
