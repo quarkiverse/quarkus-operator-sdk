@@ -43,12 +43,10 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-smallrye-health-deployment</artifactId>
     </dependency>
-    <!--
-    // todo: reactivate when CRD generation from API works properly
     <dependency>
       <groupId>io.fabric8</groupId>
       <artifactId>crd-generator-api</artifactId>
-    </dependency>-->
+    </dependency>
   </dependencies>
   <build>
     <plugins>

@@ -19,6 +19,8 @@ import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
 
+import io.fabric8.crd.generator.CRDGenerator;
+import io.fabric8.crd.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
@@ -71,8 +73,7 @@ class OperatorSDKProcessor {
 
     private BuildTimeOperatorConfiguration buildTimeConfiguration;
 
-    // todo: reactivate when CRD generation from API works properly
-    //    private final CRDGenerator generator = new CRDGenerator();
+    private final CRDGenerator generator = new CRDGenerator();
 
     @BuildStep
     void indexSDKDependencies(
@@ -102,16 +103,6 @@ class OperatorSDKProcessor {
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             ConfigurationServiceRecorder recorder) {
 
-        // todo: reactivate when CRD generation from API works properly
-        /*
-         * // generate CRDs
-         * final var outputDir = outputTarget.getOutputDirectory().resolve(externalConfiguration.crdOutputDirectory).toFile();
-         * if (!outputDir.exists()) {
-         * outputDir.mkdirs();
-         * }
-         * generator.inOutputDir(outputDir).generate();
-         */
-
         final var version = Utils.loadFromProperties();
         final var validateCustomResources = Utils.isValidateCustomResourcesEnvVarSet()
                 ? Utils.shouldCheckCRDAndValidateLocalModel()
@@ -125,6 +116,13 @@ class OperatorSDKProcessor {
                 .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses,
                         index))
                 .collect(Collectors.toList());
+
+        final var outputDir = outputTarget.getOutputDirectory()
+                .resolve(buildTimeConfiguration.crdOutputDirectory).toFile();
+        if (!outputDir.exists()) {
+            outputDir.mkdirs();
+        }
+        generator.inOutputDir(outputDir).generate();
 
         final var supplier = recorder.configurationServiceSupplier(
                 new Version(version.getSdkVersion(), version.getCommit(), version.getBuiltTime()),
@@ -235,9 +233,7 @@ class OperatorSDKProcessor {
         // load CR class
         final Class<CustomResource> crClass = (Class<CustomResource>) loadClass(crType);
 
-        // todo: reactivate when CRD generation from API works properly
-        // process the CR to generate the CRD
-        //        generator.customResources(CustomResourceInfo.fromClass(crClass));
+        generator.customResources(CustomResourceInfo.fromClass(crClass));
 
         // retrieve CRD name from CR type
         final var crdName = CustomResource.getCRDName(crClass);
