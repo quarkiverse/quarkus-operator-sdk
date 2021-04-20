@@ -30,6 +30,7 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
+import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
 import io.quarkiverse.operatorsdk.runtime.ConfigurationServiceRecorder;
 import io.quarkiverse.operatorsdk.runtime.DelayRegistrationUntil;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
@@ -113,9 +114,10 @@ class OperatorSDKProcessor {
             ConfigurationServiceRecorder recorder) {
 
         final var version = Utils.loadFromProperties();
+        final Optional<CRDConfiguration> crdConfig = buildTimeConfiguration.crd;
         final var validateCustomResources = Utils.isValidateCustomResourcesEnvVarSet()
                 ? Utils.shouldCheckCRDAndValidateLocalModel()
-                : buildTimeConfiguration.checkCRDAndValidateLocalModel.orElse(true);
+                : crdConfig.map(crd -> crd.validate).orElse(asBoolean(CRDConfiguration.DEFAULT_VALIDATE));
 
         final var index = combinedIndexBuildItem.getIndex();
         final var resourceControllers = index.getAllKnownImplementors(RESOURCE_CONTROLLER);
@@ -126,18 +128,29 @@ class OperatorSDKProcessor {
                         index))
                 .collect(Collectors.toList());
 
-        final var outputDir = outputTarget.getOutputDirectory()
-                .resolve(buildTimeConfiguration.crdOutputDirectory).toFile();
-        if (!outputDir.exists()) {
-            outputDir.mkdirs();
+        if (crdConfig.map(crd -> crd.generate)
+                .orElse(asBoolean(CRDConfiguration.DEFAULT_GENERATE))) {
+            final String outputDirName = crdConfig.map(crd -> crd.outputDirectory)
+                    .orElse(CRDConfiguration.DEFAULT_OUTPUT_DIRECTORY);
+            final var outputDir = outputTarget.getOutputDirectory().resolve(outputDirName).toFile();
+            if (!outputDir.exists()) {
+                outputDir.mkdirs();
+            }
+            generator
+                    .forCRDVersions(crdConfig.map(crd -> crd.versions)
+                            .orElse(List.of(CRDConfiguration.DEFAULT_VERSIONS.split(","))))
+                    .inOutputDir(outputDir).generate();
         }
-        generator.inOutputDir(outputDir).generate();
 
         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorProducer.class));
         return new ConfigurationServiceBuildItem(
                 new Version(version.getSdkVersion(), version.getCommit(), version.getBuiltTime()),
                 controllerConfigs,
                 validateCustomResources);
+    }
+
+    private boolean asBoolean(String value) {
+        return Boolean.parseBoolean(value);
     }
 
     /**
