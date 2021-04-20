@@ -53,6 +53,12 @@ public class OperatorSDKResource {
     }
 
     @GET
+    @Path("maxThreads")
+    public int maxThreads() {
+        return configurationService.concurrentReconciliationThreads();
+    }
+
+    @GET
     @Path("{name}")
     public boolean getController(@PathParam("name") String name) {
         return configurationService.getKnownControllerNames().contains(name);
