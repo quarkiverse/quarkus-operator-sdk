@@ -27,7 +27,6 @@ import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.ConfigurationServiceRecorder;
@@ -88,8 +87,19 @@ class OperatorSDKProcessor {
     void updateControllerConfigurations(
             ConfigurationServiceRecorder recorder,
             RunTimeOperatorConfiguration runTimeConfiguration,
+            BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
             ConfigurationServiceBuildItem serviceBuildItem) {
-        recorder.updateConfigurations(serviceBuildItem.getConfigurationService(), runTimeConfiguration);
+        final var supplier = recorder
+                .configurationServiceSupplier(serviceBuildItem.getVersion(),
+                        serviceBuildItem.getControllerConfigs(),
+                        serviceBuildItem.isValidateCustomResources(), runTimeConfiguration);
+        syntheticBeanBuildItemBuildProducer.produce(
+                SyntheticBeanBuildItem.configure(QuarkusConfigurationService.class)
+                        .scope(Singleton.class)
+                        .addType(ConfigurationService.class)
+                        .setRuntimeInit()
+                        .supplier(supplier)
+                        .done());
     }
 
     @BuildStep
@@ -97,7 +107,6 @@ class OperatorSDKProcessor {
     ConfigurationServiceBuildItem createConfigurationServiceAndOperator(
             OutputTargetBuildItem outputTarget,
             CombinedIndexBuildItem combinedIndexBuildItem,
-            BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             ConfigurationServiceRecorder recorder) {
@@ -110,7 +119,7 @@ class OperatorSDKProcessor {
         final var index = combinedIndexBuildItem.getIndex();
         final var resourceControllers = index.getAllKnownImplementors(RESOURCE_CONTROLLER);
 
-        final List<ControllerConfiguration> controllerConfigs = resourceControllers.stream()
+        final List<QuarkusControllerConfiguration> controllerConfigs = resourceControllers.stream()
                 .filter(ci -> !Modifier.isAbstract(ci.flags()))
                 .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses,
                         index))
@@ -124,20 +133,11 @@ class OperatorSDKProcessor {
         // todo: reactivate when crd generation from api is fixed
         //        generator.inOutputDir(outputDir).generate();
 
-        final var supplier = recorder.configurationServiceSupplier(
+        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorProducer.class));
+        return new ConfigurationServiceBuildItem(
                 new Version(version.getSdkVersion(), version.getCommit(), version.getBuiltTime()),
                 controllerConfigs,
                 validateCustomResources);
-        syntheticBeanBuildItemBuildProducer.produce(
-                SyntheticBeanBuildItem.configure(QuarkusConfigurationService.class)
-                        .scope(Singleton.class)
-                        .addType(ConfigurationService.class)
-                        // todo:                       .setRuntimeInit()
-                        .supplier(supplier)
-                        .done());
-
-        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorProducer.class));
-        return new ConfigurationServiceBuildItem(supplier);
     }
 
     /**
@@ -210,7 +210,7 @@ class OperatorSDKProcessor {
         }
     }
 
-    private ControllerConfiguration createControllerConfiguration(
+    private QuarkusControllerConfiguration createControllerConfiguration(
             ClassInfo info,
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,

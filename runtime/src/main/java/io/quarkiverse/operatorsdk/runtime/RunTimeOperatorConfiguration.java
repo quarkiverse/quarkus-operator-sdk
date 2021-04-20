@@ -15,6 +15,7 @@
 package io.quarkiverse.operatorsdk.runtime;
 
 import java.util.Map;
+import java.util.Optional;
 
 import io.quarkus.runtime.annotations.ConfigItem;
 import io.quarkus.runtime.annotations.ConfigPhase;
@@ -28,4 +29,10 @@ public class RunTimeOperatorConfiguration {
      */
     @ConfigItem
     public Map<String, RunTimeControllerConfiguration> controllers;
+
+    /**
+     * The max number of concurrent dispatches of reconciliation requests to controllers.
+     */
+    @ConfigItem
+    public Optional<Integer> concurrentReconciliationThreads;
 }

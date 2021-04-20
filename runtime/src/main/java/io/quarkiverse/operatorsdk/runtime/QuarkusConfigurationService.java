@@ -1,14 +1,12 @@
 package io.quarkiverse.operatorsdk.runtime;
 
 import java.util.List;
-import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.AbstractConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
 import io.quarkus.arc.runtime.ClientProxyUnwrapper;
 
@@ -17,18 +15,20 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     private static final ClientProxyUnwrapper unwrapper = new ClientProxyUnwrapper();
     private final KubernetesClient client;
     private final boolean checkCRDAndValidateLocalModel;
+    private final int concurrentReconciliationThreads;
 
     public QuarkusConfigurationService(
             Version version,
-            List<ControllerConfiguration> configurations,
+            List<QuarkusControllerConfiguration> configurations,
             KubernetesClient client,
-            boolean checkCRDAndValidateLocalModel) {
+            boolean checkCRDAndValidateLocalModel, int maxThreads) {
         super(version);
         this.client = client;
         if (configurations != null && !configurations.isEmpty()) {
             configurations.forEach(this::register);
         }
         this.checkCRDAndValidateLocalModel = checkCRDAndValidateLocalModel;
+        this.concurrentReconciliationThreads = maxThreads;
     }
 
     @Override
@@ -66,11 +66,8 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
         return controllerName;
     }
 
-    public Stream<QuarkusControllerConfiguration> configurations() {
-        return controllerConfigurations().map(c -> (QuarkusControllerConfiguration) c);
-    }
-
-    public void updateConfiguration(QuarkusControllerConfiguration configuration) {
-        replace(configuration);
+    @Override
+    public int concurrentReconciliationThreads() {
+        return this.concurrentReconciliationThreads;
     }
 }
