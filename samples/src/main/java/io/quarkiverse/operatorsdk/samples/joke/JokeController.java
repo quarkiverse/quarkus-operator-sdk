@@ -49,11 +49,11 @@ public class JokeController implements ResourceController<JokeRequest> {
         final var spec = jr.getSpec();
 
         // if the joke has already been created, ignore
-        if (State.CREATED == jr.getStatus().getState()) {
+        JokeRequestStatus status = jr.getStatus();
+        if (status != null && State.CREATED == status.getState()) {
             return UpdateControl.noUpdate();
         }
 
-        JokeRequestStatus status;
         try {
             final JokeModel fromApi = jokes.getRandom(spec.getCategory(),
                     String.join(",", Arrays.stream(spec.getExcluded()).map(ExcludedTopic::name).toArray(String[]::new)),
