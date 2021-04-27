@@ -20,6 +20,7 @@ import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
 
 import io.fabric8.crd.generator.CRDGenerator;
+import io.fabric8.crd.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
@@ -130,8 +131,7 @@ class OperatorSDKProcessor {
         if (!outputDir.exists()) {
             outputDir.mkdirs();
         }
-        // todo: reactivate when crd generation from api is fixed
-        //        generator.inOutputDir(outputDir).generate();
+        generator.inOutputDir(outputDir).generate();
 
         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorProducer.class));
         return new ConfigurationServiceBuildItem(
@@ -233,8 +233,7 @@ class OperatorSDKProcessor {
         // load CR class
         final Class<CustomResource> crClass = (Class<CustomResource>) loadClass(crType);
 
-        // todo: reactivate when crd generation from api is fixed
-        //        generator.customResources(CustomResourceInfo.fromClass(crClass));
+        generator.customResources(CustomResourceInfo.fromClass(crClass));
 
         // retrieve CRD name from CR type
         final var crdName = CustomResource.getCRDName(crClass);

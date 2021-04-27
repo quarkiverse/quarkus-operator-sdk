@@ -33,12 +33,6 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-rest-client-jackson</artifactId>
     </dependency>
-    <dependency>
-      <groupId>io.fabric8</groupId>
-      <artifactId>crd-generator-apt</artifactId>
-      <scope>compile</scope>
-    </dependency>
-
   </dependencies>
 
   <build>
