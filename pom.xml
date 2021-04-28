@@ -27,9 +27,16 @@
     <quarkus.version>1.13.2.Final</quarkus.version>
     <java-operator-sdk.version>1.8.3</java-operator-sdk.version>
     <kubernetes-client.version>5.3.1</kubernetes-client.version>
+    <sundrio.version>0.30.6</sundrio.version>
   </properties>
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>io.sundr</groupId>
+        <artifactId>sundr-codegen</artifactId>
+        <version>${sundrio.version}</version>
+        <scope>provided</scope>
+      </dependency>
       <dependency>
         <groupId>io.fabric8</groupId>
         <artifactId>kubernetes-client-bom</artifactId>
