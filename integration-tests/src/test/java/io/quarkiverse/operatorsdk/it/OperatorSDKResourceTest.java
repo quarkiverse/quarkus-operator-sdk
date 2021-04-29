@@ -17,12 +17,14 @@ public class OperatorSDKResourceTest {
 
     @Test
     void shouldNotValidateCRs() {
-        given().when().get("/operator/validateCR").then().statusCode(200).body(is("false"));
+        given().when().get("/operator/config").then().statusCode(200).body(
+                "validate", equalTo(false));
     }
 
     @Test
     void shouldHavePropertiesDefinedReconciliationThreads() {
-        given().when().get("/operator/maxThreads").then().statusCode(200).body(is("10"));
+        given().when().get("/operator/config").then().statusCode(200).body(
+                "maxThreads", equalTo(10));
     }
 
     @Test

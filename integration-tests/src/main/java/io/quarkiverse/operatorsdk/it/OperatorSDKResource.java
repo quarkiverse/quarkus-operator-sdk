@@ -1,5 +1,7 @@
 package io.quarkiverse.operatorsdk.it;
 
+import java.util.Set;
+
 import javax.enterprise.event.Event;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
@@ -16,6 +18,7 @@ import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
+import io.javaoperatorsdk.operator.api.config.Version;
 import io.quarkiverse.operatorsdk.it.TestController.RegisterEvent;
 
 @Path("/operator")
@@ -47,15 +50,9 @@ public class OperatorSDKResource {
     }
 
     @GET
-    @Path("validateCR")
-    public boolean validateCR() {
-        return configurationService.checkCRDAndValidateLocalModel();
-    }
-
-    @GET
-    @Path("maxThreads")
-    public int maxThreads() {
-        return configurationService.concurrentReconciliationThreads();
+    @Path("config")
+    public JSONConfiguration config() {
+        return new JSONConfiguration(configurationService);
     }
 
     @GET
@@ -74,6 +71,32 @@ public class OperatorSDKResource {
                 .map(JSONControllerConfiguration::new)
                 .orElse(null);
         return configuration;
+    }
+
+    static class JSONConfiguration {
+        private final ConfigurationService conf;
+
+        public JSONConfiguration(ConfigurationService conf) {
+            this.conf = conf;
+        }
+
+        public Set<String> getKnownControllerNames() {
+            return conf.getKnownControllerNames();
+        }
+
+        public Version getVersion() {
+            return conf.getVersion();
+        }
+
+        @JsonProperty("validate")
+        public boolean validate() {
+            return conf.checkCRDAndValidateLocalModel();
+        }
+
+        @JsonProperty("maxThreads")
+        public int concurrentReconciliationThreads() {
+            return conf.concurrentReconciliationThreads();
+        }
     }
 
     static class JSONControllerConfiguration {
