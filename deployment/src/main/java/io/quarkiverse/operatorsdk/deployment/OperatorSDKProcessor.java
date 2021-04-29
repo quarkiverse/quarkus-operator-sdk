@@ -114,10 +114,10 @@ class OperatorSDKProcessor {
             ConfigurationServiceRecorder recorder) {
 
         final var version = Utils.loadFromProperties();
-        final Optional<CRDConfiguration> crdConfig = buildTimeConfiguration.crd;
+        final CRDConfiguration crdConfig = buildTimeConfiguration.crd;
         final var validateCustomResources = Utils.isValidateCustomResourcesEnvVarSet()
                 ? Utils.shouldCheckCRDAndValidateLocalModel()
-                : crdConfig.map(crd -> crd.validate).orElse(asBoolean(CRDConfiguration.DEFAULT_VALIDATE));
+                : crdConfig.validate;
 
         final var index = combinedIndexBuildItem.getIndex();
         final var resourceControllers = index.getAllKnownImplementors(RESOURCE_CONTROLLER);
@@ -128,18 +128,13 @@ class OperatorSDKProcessor {
                         index))
                 .collect(Collectors.toList());
 
-        if (crdConfig.map(crd -> crd.generate)
-                .orElse(asBoolean(CRDConfiguration.DEFAULT_GENERATE))) {
-            final String outputDirName = crdConfig.map(crd -> crd.outputDirectory)
-                    .orElse(CRDConfiguration.DEFAULT_OUTPUT_DIRECTORY);
+        if (crdConfig.generate) {
+            final String outputDirName = crdConfig.outputDirectory;
             final var outputDir = outputTarget.getOutputDirectory().resolve(outputDirName).toFile();
             if (!outputDir.exists()) {
                 outputDir.mkdirs();
             }
-            generator
-                    .forCRDVersions(crdConfig.map(crd -> crd.versions)
-                            .orElse(List.of(CRDConfiguration.DEFAULT_VERSIONS.split(","))))
-                    .inOutputDir(outputDir).generate();
+            generator.forCRDVersions(crdConfig.versions).inOutputDir(outputDir).generate();
         }
 
         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorProducer.class));

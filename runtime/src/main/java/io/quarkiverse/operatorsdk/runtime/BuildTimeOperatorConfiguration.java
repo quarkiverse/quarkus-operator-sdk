@@ -1,7 +1,6 @@
 package io.quarkiverse.operatorsdk.runtime;
 
 import java.util.Map;
-import java.util.Optional;
 
 import io.quarkus.runtime.annotations.ConfigItem;
 import io.quarkus.runtime.annotations.ConfigPhase;
@@ -20,6 +19,6 @@ public class BuildTimeOperatorConfiguration {
      * The optional CRD-related configuration options
      */
     @ConfigItem
-    public Optional<CRDConfiguration> crd;
+    public CRDConfiguration crd;
 
 }
