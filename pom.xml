@@ -25,7 +25,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.version>1.13.6.Final</quarkus.version>
-    <java-operator-sdk.version>1.8.4</java-operator-sdk.version>
+    <java-operator-sdk.version>1.9.0-SNAPSHOT</java-operator-sdk.version>
     <kubernetes-client.version>5.3.1</kubernetes-client.version>
     <sundrio.version>0.30.6</sundrio.version>
   </properties>

@@ -3,6 +3,8 @@ package io.quarkiverse.operatorsdk.runtime;
 import java.util.List;
 import java.util.function.Supplier;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.quarkus.arc.Arc;
@@ -30,6 +32,7 @@ public class ConfigurationServiceRecorder {
                 version,
                 configurations,
                 Arc.container().instance(KubernetesClient.class).get(),
-                validateCustomResources, maxThreads);
+                validateCustomResources, maxThreads,
+                Arc.container().instance(ObjectMapper.class).get());
     }
 }

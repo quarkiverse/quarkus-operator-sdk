@@ -4,8 +4,6 @@ import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
 import javax.inject.Singleton;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
@@ -19,8 +17,8 @@ public class OperatorProducer {
     @DefaultBean
     @Singleton
     Operator operator(KubernetesClient client, QuarkusConfigurationService configuration,
-            Instance<ResourceController<? extends CustomResource>> controllers, ObjectMapper objectMapper) {
-        final var operator = new Operator(client, configuration, objectMapper);
+            Instance<ResourceController<? extends CustomResource>> controllers) {
+        final var operator = new Operator(client, configuration);
         for (ResourceController<? extends CustomResource> controller : controllers) {
             QuarkusControllerConfiguration<? extends CustomResource> config = configuration
                     .getConfigurationFor(controller);
