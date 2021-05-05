@@ -7,6 +7,7 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.quarkus.runtime.annotations.RecordableConstructor;
@@ -23,6 +24,7 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
     private final String crClass;
     private Class<R> clazz;
     private final boolean registrationDelayed;
+    private ConfigurationService parent;
 
     @RecordableConstructor
     public QuarkusControllerConfiguration(
@@ -123,6 +125,16 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
     @Override
     public RetryConfiguration getRetryConfiguration() {
         return retryConfiguration;
+    }
+
+    @Override
+    public ConfigurationService getConfigurationService() {
+        return parent;
+    }
+
+    @Override
+    public void setConfigurationService(ConfigurationService configurationService) {
+        this.parent = configurationService;
     }
 
     public void setRetryConfiguration(RetryConfiguration retryConfiguration) {

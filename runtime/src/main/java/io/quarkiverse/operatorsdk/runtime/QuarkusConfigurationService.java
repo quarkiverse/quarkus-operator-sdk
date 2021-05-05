@@ -2,6 +2,8 @@ package io.quarkiverse.operatorsdk.runtime;
 
 import java.util.List;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -16,16 +18,22 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     private final KubernetesClient client;
     private final boolean checkCRDAndValidateLocalModel;
     private final int concurrentReconciliationThreads;
+    private final ObjectMapper mapper;
 
     public QuarkusConfigurationService(
             Version version,
             List<QuarkusControllerConfiguration> configurations,
             KubernetesClient client,
-            boolean checkCRDAndValidateLocalModel, int maxThreads) {
+            boolean checkCRDAndValidateLocalModel, int maxThreads,
+            ObjectMapper mapper) {
         super(version);
         this.client = client;
+        this.mapper = mapper;
         if (configurations != null && !configurations.isEmpty()) {
-            configurations.forEach(this::register);
+            configurations.forEach(c -> {
+                register(c);
+                c.setConfigurationService(this);
+            });
         }
         this.checkCRDAndValidateLocalModel = checkCRDAndValidateLocalModel;
         this.concurrentReconciliationThreads = maxThreads;
@@ -69,5 +77,10 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     @Override
     public int concurrentReconciliationThreads() {
         return this.concurrentReconciliationThreads;
+    }
+
+    @Override
+    public ObjectMapper getObjectMapper() {
+        return this.mapper;
     }
 }
