@@ -27,7 +27,7 @@
     <quarkus.version>1.13.4.Final</quarkus.version>
     <java-operator-sdk.version>1.8.4</java-operator-sdk.version>
     <kubernetes-client.version>5.3.1</kubernetes-client.version>
-    <sundrio.version>0.30.6</sundrio.version>
+    <sundrio.version>0.40.1</sundrio.version>
   </properties>
   <dependencyManagement>
     <dependencies>
