@@ -30,10 +30,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
         this.client = client;
         this.mapper = mapper;
         if (configurations != null && !configurations.isEmpty()) {
-            configurations.forEach(c -> {
-                register(c);
-                c.setConfigurationService(this);
-            });
+            configurations.forEach(this::register);
         }
         this.checkCRDAndValidateLocalModel = checkCRDAndValidateLocalModel;
         this.concurrentReconciliationThreads = maxThreads;
