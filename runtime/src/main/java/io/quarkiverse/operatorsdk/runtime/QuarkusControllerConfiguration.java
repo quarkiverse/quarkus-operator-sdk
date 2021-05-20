@@ -10,6 +10,7 @@ import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
+import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
 public class QuarkusControllerConfiguration<R extends CustomResource> implements ControllerConfiguration<R> {
@@ -140,5 +141,11 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
     public void setRetryConfiguration(RetryConfiguration retryConfiguration) {
         this.retryConfiguration = retryConfiguration != null ? retryConfiguration
                 : ControllerConfiguration.super.getRetryConfiguration();
+    }
+
+    @IgnoreProperty
+    @Override
+    public Set<String> getEffectiveNamespaces() {
+        return ControllerConfiguration.super.getEffectiveNamespaces();
     }
 }
