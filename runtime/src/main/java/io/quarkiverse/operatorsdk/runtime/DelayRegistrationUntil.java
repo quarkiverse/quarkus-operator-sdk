@@ -22,7 +22,7 @@ import java.lang.annotation.Target;
 /**
  * Delay registration until specified CDI event is fired.
  */
-@Retention(RetentionPolicy.SOURCE)
+@Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE })
 public @interface DelayRegistrationUntil {
 

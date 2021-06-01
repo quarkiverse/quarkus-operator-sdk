@@ -19,7 +19,7 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
-import io.quarkiverse.operatorsdk.it.TestController.RegisterEvent;
+import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 
 @Path("/operator")
 public class OperatorSDKResource {
@@ -29,12 +29,12 @@ public class OperatorSDKResource {
     @Inject
     ConfigurationService configurationService;
     @Inject
-    Event<RegisterEvent> event;
+    Event<DelayedController.RegisterEvent> event;
 
     @POST
     @Path("register")
     public void registerController() {
-        event.fire(new TestController.RegisterEvent());
+        event.fire(new DelayedController.RegisterEvent());
     }
 
     @GET
@@ -147,6 +147,11 @@ public class OperatorSDKResource {
 
         public RetryConfiguration getRetryConfiguration() {
             return conf.getRetryConfiguration();
+        }
+
+        public boolean isDelayed() {
+            return conf instanceof QuarkusControllerConfiguration
+                    && ((QuarkusControllerConfiguration) conf).isRegistrationDelayed();
         }
     }
 }
