@@ -35,4 +35,11 @@ public class RunTimeOperatorConfiguration {
      */
     @ConfigItem
     public Optional<Integer> concurrentReconciliationThreads;
+
+    /**
+     * Amount of seconds the SDK waits for reconciliation threads to terminate before shutting down.
+     */
+    @ConfigItem
+    public Optional<Integer> terminationTimeoutSeconds;
+
 }

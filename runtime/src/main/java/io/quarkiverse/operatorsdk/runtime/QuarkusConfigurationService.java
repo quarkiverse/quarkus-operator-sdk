@@ -19,13 +19,14 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     private final boolean checkCRDAndValidateLocalModel;
     private final int concurrentReconciliationThreads;
     private final ObjectMapper mapper;
+    private int terminationTimeout;
 
     public QuarkusConfigurationService(
             Version version,
             List<QuarkusControllerConfiguration> configurations,
             KubernetesClient client,
             boolean checkCRDAndValidateLocalModel, int maxThreads,
-            ObjectMapper mapper) {
+            int timeout, ObjectMapper mapper) {
         super(version);
         this.client = client;
         this.mapper = mapper;
@@ -34,6 +35,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
         }
         this.checkCRDAndValidateLocalModel = checkCRDAndValidateLocalModel;
         this.concurrentReconciliationThreads = maxThreads;
+        this.terminationTimeout = timeout;
     }
 
     @Override
@@ -80,4 +82,10 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     public ObjectMapper getObjectMapper() {
         return this.mapper;
     }
+
+    @Override
+    public int getTerminationTimeoutSeconds() {
+        return terminationTimeout;
+    }
+
 }
