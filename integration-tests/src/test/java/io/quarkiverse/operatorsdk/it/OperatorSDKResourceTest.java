@@ -69,6 +69,13 @@ public class OperatorSDKResourceTest {
                 .body(
                         "finalizer", equalTo("from-property/finalizer"),
                         "namespaces", hasItem("bar"));
+
+        given()
+                .when()
+                .get("/operator/" + ApplicationScopedController.NAME + "/config")
+                .then()
+                .statusCode(200)
+                .body("namespaces", hasItem("default"));
     }
 
     @Test
