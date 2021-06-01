@@ -12,6 +12,7 @@ public abstract class AbstractController<T extends TestResource> implements
 
     @Override
     public void init(EventSourceManager eventSourceManager) {
+        // this method gets called when the controller gets registered
         initialized = true;
     }
 
