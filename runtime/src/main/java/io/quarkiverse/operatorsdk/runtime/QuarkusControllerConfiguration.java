@@ -99,8 +99,7 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
 
     public void setFinalizer(String finalizer) {
         this.finalizer = finalizer != null && !finalizer.isBlank() ? finalizer
-                : ControllerUtils
-                        .getDefaultFinalizerName(crdName);
+                : ControllerUtils.getDefaultFinalizerName(crdName);
     }
 
     @Override
@@ -118,7 +117,7 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
         return namespaces;
     }
 
-    public void setNamespaces(Collection<String> namespaces) {
+    void setNamespaces(Collection<String> namespaces) {
         // todo:       this.namespaces = namespaces != null && !namespaces.isEmpty() ? Set.copyOf(namespaces) : Collections.emptySet();
         this.namespaces = namespaces != null && !namespaces.isEmpty() ? new HashSet<>(namespaces) : Collections.emptySet();
     }
@@ -138,7 +137,7 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
         this.parent = configurationService;
     }
 
-    public void setRetryConfiguration(RetryConfiguration retryConfiguration) {
+    void setRetryConfiguration(RetryConfiguration retryConfiguration) {
         this.retryConfiguration = retryConfiguration != null ? retryConfiguration
                 : ControllerConfiguration.super.getRetryConfiguration();
     }

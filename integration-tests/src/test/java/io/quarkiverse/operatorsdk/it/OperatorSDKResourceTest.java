@@ -28,6 +28,12 @@ public class OperatorSDKResourceTest {
     }
 
     @Test
+    void shouldHavePropertiesDefinedTerminationTimeout() {
+        given().when().get("/operator/config").then().statusCode(200).body(
+                "timeout", equalTo(20));
+    }
+
+    @Test
     void controllerShouldExist() {
         // first check that we're not always returning true for any controller name :)
         given().when().get("/operator/does_not_exist").then().statusCode(200).body(is("false"));

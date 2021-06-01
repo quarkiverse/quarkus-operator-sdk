@@ -18,6 +18,8 @@ public class ConfigurationServiceRecorder {
             boolean validateCustomResources, RunTimeOperatorConfiguration runTimeConfiguration) {
         final var maxThreads = runTimeConfiguration.concurrentReconciliationThreads
                 .orElse(ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
+        final var timeout = runTimeConfiguration.terminationTimeoutSeconds
+                .orElse(ConfigurationService.DEFAULT_TERMINATION_TIMEOUT_SECONDS);
 
         configurations.forEach(c -> {
             final var extConfig = runTimeConfiguration.controllers.get(c.getName());
@@ -32,7 +34,7 @@ public class ConfigurationServiceRecorder {
                 version,
                 configurations,
                 Arc.container().instance(KubernetesClient.class).get(),
-                validateCustomResources, maxThreads,
+                validateCustomResources, maxThreads, timeout,
                 Arc.container().instance(ObjectMapper.class).get());
     }
 }

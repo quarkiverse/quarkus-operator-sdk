@@ -97,6 +97,11 @@ public class OperatorSDKResource {
         public int concurrentReconciliationThreads() {
             return conf.concurrentReconciliationThreads();
         }
+
+        @JsonProperty("timeout")
+        public int timeout() {
+            return conf.getTerminationTimeoutSeconds();
+        }
     }
 
     static class JSONControllerConfiguration {
