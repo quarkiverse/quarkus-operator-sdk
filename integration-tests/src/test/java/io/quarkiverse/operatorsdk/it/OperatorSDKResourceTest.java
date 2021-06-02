@@ -5,7 +5,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import io.quarkus.test.common.QuarkusTestResource;
@@ -73,7 +72,6 @@ public class OperatorSDKResourceTest {
     }
 
     @Test
-    @Disabled("Generated event listener cannot currently find the DelayedController class. See: https://github.com/quarkusio/quarkus/issues/17626")
     void delayedControllerShouldWaitForEventToRegister() {
         // first check that the delayed controller is not registered, though it should be a known controller
         given().when().get("/operator/registered/" + DelayedController.NAME).then().statusCode(200).body(is("false"));

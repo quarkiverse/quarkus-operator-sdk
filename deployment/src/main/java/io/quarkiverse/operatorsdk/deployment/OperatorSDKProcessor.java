@@ -195,8 +195,7 @@ class OperatorSDKProcessor {
                         .getContext()
                         .configure()
                         .observedType(configExtractor.eventType())
-                        .beanClass(
-                                DotName.createSimple(controllerClassName + "_registration_observer"))
+                        .beanClass(info.name())
                         .notify(
                                 mc -> {
                                     MethodDescriptor cdiMethod = MethodDescriptor
