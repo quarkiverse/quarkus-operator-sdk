@@ -1,5 +1,6 @@
 package io.quarkiverse.operatorsdk.deployment;
 
+import java.io.Closeable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.util.List;
@@ -47,6 +48,7 @@ import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
+import io.quarkus.deployment.builditem.AdditionalIndexedClassesBuildItem;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
@@ -74,6 +76,11 @@ class OperatorSDKProcessor {
     private BuildTimeOperatorConfiguration buildTimeConfiguration;
 
     private final CRDGenerator generator = new CRDGenerator();
+
+    @BuildStep
+    AdditionalIndexedClassesBuildItem indexExtraClasses() {
+        return new AdditionalIndexedClassesBuildItem(Closeable.class.getName(), AutoCloseable.class.getName());
+    }
 
     @BuildStep
     void indexSDKDependencies(
