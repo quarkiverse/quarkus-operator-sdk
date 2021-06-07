@@ -52,6 +52,7 @@ import io.quarkus.deployment.builditem.AdditionalIndexedClassesBuildItem;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
+import io.quarkus.deployment.builditem.nativeimage.ForceNonWeakReflectiveClassBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.deployment.util.JandexUtil;
@@ -118,6 +119,7 @@ class OperatorSDKProcessor {
             CombinedIndexBuildItem combinedIndexBuildItem,
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
+            BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             ConfigurationServiceRecorder recorder) {
 
         final var version = Utils.loadFromProperties();
@@ -129,7 +131,7 @@ class OperatorSDKProcessor {
 
         final List<QuarkusControllerConfiguration> controllerConfigs = resourceControllers.stream()
                 .filter(ci -> !Modifier.isAbstract(ci.flags()))
-                .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses,
+                .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses, forcedReflectionClasses,
                         index))
                 .collect(Collectors.toList());
 
@@ -248,6 +250,7 @@ class OperatorSDKProcessor {
             ClassInfo info,
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
+            BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             IndexView index) {
         // first retrieve the custom resource class
         final var crType = JandexUtil.resolveTypeParameters(info.name(), RESOURCE_CONTROLLER, index)
@@ -274,6 +277,7 @@ class OperatorSDKProcessor {
 
         // register CR class for introspection
         reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, crType));
+        forcedReflectionClasses.produce(new ForceNonWeakReflectiveClassBuildItem(crType));
 
         // register spec and status for introspection
         final var crParamTypes = JandexUtil
