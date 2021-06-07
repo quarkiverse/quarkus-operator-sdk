@@ -1,5 +1,7 @@
 package io.quarkiverse.operatorsdk.runtime;
 
+import static io.quarkiverse.operatorsdk.runtime.ClassUtils.loadClass;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -72,14 +74,6 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
             clazz = (Class<R>) loadClass(crClass);
         }
         return clazz;
-    }
-
-    private Class<?> loadClass(String className) {
-        try {
-            return Thread.currentThread().getContextClassLoader().loadClass(className);
-        } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException("Couldn't find class " + className);
-        }
     }
 
     @Override

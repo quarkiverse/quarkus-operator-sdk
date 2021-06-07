@@ -1,5 +1,7 @@
 package io.quarkiverse.operatorsdk.deployment;
 
+import static io.quarkiverse.operatorsdk.runtime.ClassUtils.loadClass;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.util.List;
@@ -265,7 +267,7 @@ class OperatorSDKProcessor {
         final var crdName = CustomResource.getCRDName(crClass);
 
         // register CR class for introspection
-        reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, crType));
+        registerForReflection(reflectionClasses, crType);
 
         // register spec and status for introspection
         final var crParamTypes = JandexUtil
@@ -331,13 +333,5 @@ class OperatorSDKProcessor {
                             reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, cn));
                             log.infov("Registered ''{0}'' for reflection", cn);
                         });
-    }
-
-    private Class<?> loadClass(String className) {
-        try {
-            return Thread.currentThread().getContextClassLoader().loadClass(className);
-        } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException("Couldn't find class " + className);
-        }
     }
 }
