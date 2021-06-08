@@ -1,6 +1,6 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import java.util.List;
+import java.util.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -20,6 +20,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     private final int concurrentReconciliationThreads;
     private final ObjectMapper mapper;
     private int terminationTimeout;
+    private final Map<String, String> controllerClassToName;
 
     public QuarkusConfigurationService(
             Version version,
@@ -31,7 +32,13 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
         this.client = client;
         this.mapper = mapper;
         if (configurations != null && !configurations.isEmpty()) {
-            configurations.forEach(this::register);
+            controllerClassToName = new HashMap<>(configurations.size());
+            configurations.forEach(c -> {
+                controllerClassToName.put(c.getAssociatedControllerClassName(), c.getName());
+                register(c);
+            });
+        } else {
+            controllerClassToName = Collections.emptyMap();
         }
         this.checkCRDAndValidateLocalModel = checkCRDAndValidateLocalModel;
         this.concurrentReconciliationThreads = maxThreads;
@@ -62,13 +69,19 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
 
     @Override
     protected String keyFor(ResourceController controller) {
-        String controllerName = super.keyFor(controller);
+        // retrieve the controller name from its associated class name
+        // but we first need to check if the class is wrapped
         // heuristics: we're assuming that any class name with an '_' in it is a
         // proxy / wrapped / generated class and that the "real" class name is located before the
         // '_'. This probably won't work in all instances but should work most of the time.
-        final int i = controllerName.indexOf('_');
+        var controllerClass = controller.getClass().getName();
+        final int i = controllerClass.indexOf('_');
         if (i > 0) {
-            controllerName = controllerName.substring(0, i);
+            controllerClass = controllerClass.substring(0, i);
+        }
+        String controllerName = controllerClassToName.get(controllerClass);
+        if (controllerName == null) {
+            throw new IllegalArgumentException("Unknown controller " + controllerClass);
         }
         return controllerName;
     }
