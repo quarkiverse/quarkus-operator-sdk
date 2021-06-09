@@ -20,6 +20,8 @@ import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.fabric8.crd.generator.CRDGenerator;
 import io.fabric8.crd.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -43,6 +45,7 @@ import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.ObserverRegistrationPhaseBuildItem;
 import io.quarkus.arc.deployment.ObserverRegistrationPhaseBuildItem.ObserverConfiguratorBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
+import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
 import io.quarkus.arc.processor.ObserverConfigurator;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -84,12 +87,14 @@ class OperatorSDKProcessor {
     }
 
     @BuildStep
-    void indexSDKDependencies(
-            BuildProducer<IndexDependencyBuildItem> indexDependency,
-            BuildProducer<FeatureBuildItem> features) {
+    void setup(BuildProducer<IndexDependencyBuildItem> indexDependency,
+            BuildProducer<FeatureBuildItem> features,
+            BuildProducer<UnremovableBeanBuildItem> unremovableBeans) {
         features.produce(new FeatureBuildItem(FEATURE));
         indexDependency.produce(
                 new IndexDependencyBuildItem("io.javaoperatorsdk", "operator-framework-core"));
+        // mark ObjectMapper as non-removable
+        unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(ObjectMapper.class));
     }
 
     @BuildStep
