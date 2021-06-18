@@ -24,7 +24,6 @@ import org.jboss.logging.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.fabric8.crd.generator.CRDGenerator;
-import io.fabric8.crd.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
@@ -33,15 +32,7 @@ import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.Utils;
-import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
-import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
-import io.quarkiverse.operatorsdk.runtime.ConfigurationServiceRecorder;
-import io.quarkiverse.operatorsdk.runtime.DelayRegistrationUntil;
-import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
-import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
-import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
-import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
-import io.quarkiverse.operatorsdk.runtime.Version;
+import io.quarkiverse.operatorsdk.runtime.*;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.ObserverRegistrationPhaseBuildItem;
 import io.quarkus.arc.deployment.ObserverRegistrationPhaseBuildItem.ObserverConfiguratorBuildItem;
@@ -102,7 +93,8 @@ class OperatorSDKProcessor {
         final var supplier = recorder
                 .configurationServiceSupplier(serviceBuildItem.getVersion(),
                         serviceBuildItem.getControllerConfigs(),
-                        serviceBuildItem.isValidateCustomResources(), runTimeConfiguration);
+                        serviceBuildItem.getCRDGenerationInfo(),
+                        runTimeConfiguration);
         syntheticBeanBuildItemBuildProducer.produce(
                 SyntheticBeanBuildItem.configure(QuarkusConfigurationService.class)
                         .scope(Singleton.class)
@@ -129,26 +121,20 @@ class OperatorSDKProcessor {
         final var index = combinedIndexBuildItem.getIndex();
         final var resourceControllers = index.getAllKnownImplementors(RESOURCE_CONTROLLER);
 
+        final var crdGeneration = new CRDGeneration(crdConfig.generate);
         final List<QuarkusControllerConfiguration> controllerConfigs = resourceControllers.stream()
                 .filter(ci -> !Modifier.isAbstract(ci.flags()))
                 .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses, forcedReflectionClasses,
-                        index))
+                        index, crdGeneration))
                 .collect(Collectors.toList());
 
-        if (crdConfig.generate) {
-            final String outputDirName = crdConfig.outputDirectory;
-            final var outputDir = outputTarget.getOutputDirectory().resolve(outputDirName).toFile();
-            if (!outputDir.exists()) {
-                outputDir.mkdirs();
-            }
-            generator.forCRDVersions(crdConfig.versions).inOutputDir(outputDir).generate();
-        }
+        CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, crdConfig, validateCustomResources);
 
         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorProducer.class));
         return new ConfigurationServiceBuildItem(
                 new Version(version.getSdkVersion(), version.getCommit(), version.getBuiltTime()),
                 controllerConfigs,
-                validateCustomResources);
+                crdInfo);
     }
 
     private boolean shouldValidateCustomResources() {
@@ -250,7 +236,7 @@ class OperatorSDKProcessor {
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
-            IndexView index) {
+            IndexView index, CRDGeneration crdGeneration) {
         // first retrieve the custom resource class
         final var crType = JandexUtil.resolveTypeParameters(info.name(), RESOURCE_CONTROLLER, index)
                 .get(0)
@@ -269,10 +255,10 @@ class OperatorSDKProcessor {
         // load CR class
         final Class<CustomResource> crClass = (Class<CustomResource>) loadClass(crType);
 
-        generator.customResources(CustomResourceInfo.fromClass(crClass));
-
         // retrieve CRD name from CR type
         final var crdName = CustomResource.getCRDName(crClass);
+
+        crdGeneration.withCustomResource(crClass, crdName);
 
         // register CR class for introspection
         registerForReflection(reflectionClasses, crType);

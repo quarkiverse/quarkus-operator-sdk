@@ -2,6 +2,7 @@ package io.quarkiverse.operatorsdk.deployment;
 
 import java.util.List;
 
+import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.Version;
 import io.quarkus.builder.item.SimpleBuildItem;
@@ -10,13 +11,13 @@ public final class ConfigurationServiceBuildItem extends SimpleBuildItem {
 
     private final Version version;
     private final List<QuarkusControllerConfiguration> controllerConfigs;
-    private final boolean validateCustomResources;
+    private final CRDGenerationInfo crdInfo;
 
     public ConfigurationServiceBuildItem(Version version,
-            List<QuarkusControllerConfiguration> controllerConfigs, boolean validateCustomResources) {
+            List<QuarkusControllerConfiguration> controllerConfigs, CRDGenerationInfo crdInfo) {
         this.version = version;
         this.controllerConfigs = controllerConfigs;
-        this.validateCustomResources = validateCustomResources;
+        this.crdInfo = crdInfo;
     }
 
     public Version getVersion() {
@@ -27,7 +28,7 @@ public final class ConfigurationServiceBuildItem extends SimpleBuildItem {
         return controllerConfigs;
     }
 
-    public boolean isValidateCustomResources() {
-        return validateCustomResources;
+    public CRDGenerationInfo getCRDGenerationInfo() {
+        return crdInfo;
     }
 }
