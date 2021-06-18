@@ -15,7 +15,7 @@ public class ConfigurationServiceRecorder {
 
     public Supplier<QuarkusConfigurationService> configurationServiceSupplier(Version version,
             List<QuarkusControllerConfiguration> configurations,
-            boolean validateCustomResources, RunTimeOperatorConfiguration runTimeConfiguration) {
+            CRDGenerationInfo crdInfo, RunTimeOperatorConfiguration runTimeConfiguration) {
         final var maxThreads = runTimeConfiguration.concurrentReconciliationThreads
                 .orElse(ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
         final var timeout = runTimeConfiguration.terminationTimeoutSeconds
@@ -34,7 +34,9 @@ public class ConfigurationServiceRecorder {
                 version,
                 configurations,
                 Arc.container().instance(KubernetesClient.class).get(),
-                validateCustomResources, maxThreads, timeout,
+                crdInfo,
+                maxThreads,
+                timeout,
                 Arc.container().instance(ObjectMapper.class).get());
     }
 }

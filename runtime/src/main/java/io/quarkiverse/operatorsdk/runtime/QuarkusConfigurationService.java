@@ -16,7 +16,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
 
     private static final ClientProxyUnwrapper unwrapper = new ClientProxyUnwrapper();
     private final KubernetesClient client;
-    private final boolean checkCRDAndValidateLocalModel;
+    private final CRDGenerationInfo crdInfo;
     private final int concurrentReconciliationThreads;
     private final ObjectMapper mapper;
     private int terminationTimeout;
@@ -26,7 +26,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
             Version version,
             List<QuarkusControllerConfiguration> configurations,
             KubernetesClient client,
-            boolean checkCRDAndValidateLocalModel, int maxThreads,
+            CRDGenerationInfo crdInfo, int maxThreads,
             int timeout, ObjectMapper mapper) {
         super(version);
         this.client = client;
@@ -40,7 +40,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
         } else {
             controllerClassToName = Collections.emptyMap();
         }
-        this.checkCRDAndValidateLocalModel = checkCRDAndValidateLocalModel;
+        this.crdInfo = crdInfo;
         this.concurrentReconciliationThreads = maxThreads;
         this.terminationTimeout = timeout;
     }
@@ -59,7 +59,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
 
     @Override
     public boolean checkCRDAndValidateLocalModel() {
-        return checkCRDAndValidateLocalModel;
+        return crdInfo.isValidateCRDs();
     }
 
     private static <R extends CustomResource> ResourceController<R> unwrap(
@@ -101,4 +101,11 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
         return terminationTimeout;
     }
 
+    public boolean isApplyCRDs() {
+        return crdInfo.isApplyCRDs();
+    }
+
+    public CRDGenerationInfo getCRDGenerationInfo() {
+        return crdInfo;
+    }
 }
