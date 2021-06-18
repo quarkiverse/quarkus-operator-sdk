@@ -12,7 +12,7 @@ public class CRDConfiguration {
     public static final String DEFAULT_OUTPUT_DIRECTORY = "kubernetes";
     public static final String DEFAULT_VALIDATE = "true";
     public static final String DEFAULT_GENERATE = "true";
-    public static final String DEFAULT_APPLY = "true";
+    public static final String DEFAULT_APPLY = "false";
     public static final String DEFAULT_VERSIONS = "v1";
     /**
      * Whether the operator should check that the CRD is properly deployed and that the associated
