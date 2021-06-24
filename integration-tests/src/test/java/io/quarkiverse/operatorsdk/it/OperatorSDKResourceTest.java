@@ -68,7 +68,9 @@ public class OperatorSDKResourceTest {
                 .statusCode(200)
                 .body(
                         "finalizer", equalTo("from-property/finalizer"),
-                        "namespaces", hasItem("bar"));
+                        "namespaces", hasItem("bar"),
+                        "retryConfiguration.maxAttempts", equalTo(10),
+                        "retryConfiguration.initialInterval", equalTo(20000));
 
         given()
                 .when()

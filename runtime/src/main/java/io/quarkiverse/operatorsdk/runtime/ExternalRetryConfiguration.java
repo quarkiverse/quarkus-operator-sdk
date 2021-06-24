@@ -18,5 +18,5 @@ public class ExternalRetryConfiguration {
      * The configuration of the retry interval.
      */
     @ConfigItem
-    public Optional<ExternalIntervalConfiguration> interval;
+    public ExternalIntervalConfiguration interval;
 }

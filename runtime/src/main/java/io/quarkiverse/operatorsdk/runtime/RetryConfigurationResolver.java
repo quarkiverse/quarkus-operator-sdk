@@ -25,13 +25,13 @@ public class RetryConfigurationResolver implements RetryConfiguration {
 
     private final RetryConfiguration delegate;
 
-    private RetryConfigurationResolver(Optional<ExternalRetryConfiguration> retry) {
-        delegate = retry
+    private RetryConfigurationResolver(ExternalRetryConfiguration retry) {
+        delegate = Optional.ofNullable(retry)
                 .<RetryConfiguration> map(ExternalRetryConfigurationAdapter::new)
                 .orElse(RetryConfiguration.DEFAULT);
     }
 
-    public static RetryConfiguration resolve(Optional<ExternalRetryConfiguration> retry) {
+    public static RetryConfiguration resolve(ExternalRetryConfiguration retry) {
         final var delegate = new RetryConfigurationResolver(retry);
         return new PlainRetryConfiguration(
                 delegate.getMaxAttempts(),
@@ -67,7 +67,7 @@ public class RetryConfigurationResolver implements RetryConfiguration {
 
         public ExternalRetryConfigurationAdapter(ExternalRetryConfiguration config) {
             maxAttempts = config.maxAttempts.orElse(RetryConfiguration.DEFAULT.getMaxAttempts());
-            interval = config.interval
+            interval = Optional.ofNullable(config.interval)
                     .map(IntervalConfigurationAdapter::new)
                     .orElse(new IntervalConfigurationAdapter());
         }
@@ -100,9 +100,8 @@ public class RetryConfigurationResolver implements RetryConfiguration {
         private final long max;
 
         IntervalConfigurationAdapter(ExternalIntervalConfiguration config) {
-            initial = config.initial.orElse(RetryConfiguration.DEFAULT.getInitialInterval());
-            multiplier = config.multiplier
-                    .orElse(RetryConfiguration.DEFAULT.getIntervalMultiplier());
+            initial = config.initial;
+            multiplier = config.multiplier;
             max = config.max.orElse(RetryConfiguration.DEFAULT.getMaxInterval());
         }
 

@@ -27,5 +27,6 @@ public class RunTimeControllerConfiguration {
      * The optional controller retry configuration
      */
     @ConfigItem
-    public Optional<ExternalRetryConfiguration> retry;
+    //    public Optional<ExternalRetryConfiguration> retry;
+    public ExternalRetryConfiguration retry;
 }
