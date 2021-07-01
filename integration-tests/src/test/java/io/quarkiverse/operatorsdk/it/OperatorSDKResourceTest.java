@@ -56,7 +56,7 @@ public class OperatorSDKResourceTest {
     }
 
     @Test
-    void configurationForControllerShouldExist() {
+    void configurationForControllerShouldExistAndUseOperatorLevelConfigurationWhenSet() {
         // check that the config for the test controller can be retrieved and is conform to our
         // expectations
         final var resourceName = ChildTestResource.class.getCanonicalName();
@@ -67,7 +67,10 @@ public class OperatorSDKResourceTest {
                 .statusCode(200)
                 .body(
                         "customResourceClass", equalTo(resourceName),
-                        "name", equalTo(TestController.NAME));
+                        "name", equalTo(TestController.NAME),
+                        "useFinalizer", equalTo(false),
+                        "watchCurrentNamespace", equalTo(true),
+                        "generationAware", equalTo(false));
     }
 
     @Test

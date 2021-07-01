@@ -182,7 +182,8 @@ class OperatorSDKProcessor {
                     controllerAnnotation);
 
             // extract the configuration from annotation and/or external configuration
-            final var configExtractor = new BuildTimeHybridControllerConfiguration(buildTimeConfiguration.controllers.get(name),
+            final var configExtractor = new BuildTimeHybridControllerConfiguration(buildTimeConfiguration,
+                    buildTimeConfiguration.controllers.get(name),
                     controllerAnnotation, info.classAnnotation(DELAY_REGISTRATION));
 
             if (configExtractor.delayedRegistration()) {
@@ -277,7 +278,8 @@ class OperatorSDKProcessor {
         // retrieve the controller's name
         final String name = getControllerName(resourceControllerClassName, controllerAnnotation);
 
-        final var configExtractor = new BuildTimeHybridControllerConfiguration(buildTimeConfiguration.controllers.get(name),
+        final var configExtractor = new BuildTimeHybridControllerConfiguration(buildTimeConfiguration,
+                buildTimeConfiguration.controllers.get(name),
                 controllerAnnotation, delayedRegistrationAnnotation);
 
         // create the configuration

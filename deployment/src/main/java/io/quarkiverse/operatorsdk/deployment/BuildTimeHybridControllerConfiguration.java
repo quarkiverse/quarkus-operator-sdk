@@ -1,5 +1,7 @@
 package io.quarkiverse.operatorsdk.deployment;
 
+import java.util.Optional;
+
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.DotName;
@@ -8,17 +10,20 @@ import org.jboss.jandex.Type.Kind;
 
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeControllerConfiguration;
+import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 
 class BuildTimeHybridControllerConfiguration {
 
+    private final BuildTimeOperatorConfiguration operatorConfiguration;
     private final BuildTimeControllerConfiguration externalConfiguration;
     private final AnnotationInstance controllerAnnotation;
     private final AnnotationInstance delayRegistrationAnnotation;
 
     public BuildTimeHybridControllerConfiguration(
-            BuildTimeControllerConfiguration externalConfiguration,
+            BuildTimeOperatorConfiguration operatorConfiguration, BuildTimeControllerConfiguration externalConfiguration,
             AnnotationInstance controllerAnnotation,
             AnnotationInstance delayRegistrationAnnotation) {
+        this.operatorConfiguration = operatorConfiguration;
         this.externalConfiguration = externalConfiguration;
         this.controllerAnnotation = controllerAnnotation;
         this.delayRegistrationAnnotation = delayRegistrationAnnotation;
@@ -30,29 +35,36 @@ class BuildTimeHybridControllerConfiguration {
                 controllerAnnotation, c -> c.generationAware,
                 "generationAwareEventProcessing",
                 AnnotationValue::asBoolean,
-                () -> true);
+                () -> operatorConfiguration.generationAware.orElse(true));
     }
 
     Type eventType() {
         return ValueExtractor.extract(
                 externalConfiguration,
-                delayRegistrationAnnotation, c -> c.delayRegistrationUntilEvent
-                        .filter(s -> void.class.getName().equals(s))
-                        .map(DotName::createSimple)
-                        .map(dn -> Type.create(dn, Kind.CLASS)),
+                delayRegistrationAnnotation, c -> fromName(c.delayRegistrationUntilEvent),
                 "event",
                 AnnotationValue::asClass,
-                () -> null);
+                () -> fromName(operatorConfiguration.delayRegistrationUntilEvent).orElse(null));
+    }
+
+    private Optional<Type> fromName(Optional<String> className) {
+        return className.filter(s -> void.class.getName().equals(s))
+                .map(DotName::createSimple)
+                .map(dn -> Type.create(dn, Kind.CLASS));
     }
 
     boolean delayedRegistration() {
         return ValueExtractor.extract(
                 externalConfiguration,
                 delayRegistrationAnnotation,
-                c -> c.delayRegistrationUntilEvent.map(s -> void.class.getName().equals(s)),
+                c -> hasNonVoidRegistrationEvent(c.delayRegistrationUntilEvent),
                 "event",
                 v -> v.asClass().kind() != Kind.VOID,
-                () -> false);
+                () -> hasNonVoidRegistrationEvent(operatorConfiguration.delayRegistrationUntilEvent).orElse(false));
+    }
+
+    private Optional<Boolean> hasNonVoidRegistrationEvent(Optional<String> className) {
+        return className.map(s -> void.class.getName().equals(s));
     }
 
     String name(String resourceControllerClassName) {
