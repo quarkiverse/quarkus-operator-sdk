@@ -5,11 +5,7 @@ import java.util.Set;
 import javax.enterprise.event.Event;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
+import javax.ws.rs.*;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -59,6 +55,13 @@ public class OperatorSDKResource {
     @Path("{name}")
     public boolean getController(@PathParam("name") String name) {
         return configurationService.getKnownControllerNames().contains(name);
+    }
+
+    @GET
+    @Path("controllers")
+    @Produces("application/json")
+    public Set<String> getControllerNames() {
+        return config().getKnownControllerNames();
     }
 
     @GET

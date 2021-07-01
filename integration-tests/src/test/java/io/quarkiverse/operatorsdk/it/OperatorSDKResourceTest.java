@@ -1,9 +1,8 @@
 package io.quarkiverse.operatorsdk.it;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 import org.junit.jupiter.api.Test;
 
@@ -42,6 +41,18 @@ public class OperatorSDKResourceTest {
         // injected
         given().when().get("/operator/" + TestController.NAME).then().statusCode(200)
                 .body(is("true"));
+    }
+
+    @Test
+    void allControllersShouldHaveAssociatedConfiguration() {
+        final var names = given().when().get("/operator/controllers").then()
+                .statusCode(200)
+                .contentType("application/json")
+                .extract()
+                .as(String[].class);
+        assertThat(names.length, equalTo(4));
+        assertThat(names, arrayContainingInAnyOrder(ApplicationScopedController.NAME, ConfiguredController.NAME,
+                DelayedController.NAME, TestController.NAME));
     }
 
     @Test
