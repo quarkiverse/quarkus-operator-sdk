@@ -7,17 +7,7 @@ import java.util.function.Supplier;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 
-class ValueExtractor<C> {
-
-    private final C extContConfig;
-
-    ValueExtractor(C extContConfig) {
-        this.extContConfig = extContConfig;
-    }
-
-    C getConfiguration() {
-        return extContConfig;
-    }
+class ValueExtractor {
 
     /**
      * Extracts the appropriate configuration value for the controller checking first any annotation
@@ -25,6 +15,7 @@ class ValueExtractor<C> {
      * default value if neither is provided.
      *
      * @param <T> the expected type of the configuration value we're trying to extract
+     * @param <C> the type of the external configuration values can be overridden from
      * @param annotation the annotation from which a field is to be extracted
      * @param extractor a Function extracting the optional value we're interested in from the
      *        external configuration
@@ -34,17 +25,18 @@ class ValueExtractor<C> {
      * @param defaultValue a Supplier that computes/retrieve a default value when needed
      * @return the extracted configuration value
      */
-    <T> T extract(
+    static <C, T> T extract(
+            C externalConfig,
             AnnotationInstance annotation,
             Function<C, Optional<T>> extractor,
             String annotationField,
             Function<AnnotationValue, T> converter,
             Supplier<T> defaultValue) {
         // first check if we have an external configuration
-        if (extContConfig != null) {
+        if (externalConfig != null) {
             // extract value from config if present
             return extractor
-                    .apply(extContConfig)
+                    .apply(externalConfig)
                     // or get from the annotation or default
                     .orElse(
                             annotationValueOrDefault(annotation, annotationField, converter, defaultValue));

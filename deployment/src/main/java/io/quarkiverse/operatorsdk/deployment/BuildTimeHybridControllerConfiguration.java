@@ -11,7 +11,7 @@ import io.quarkiverse.operatorsdk.runtime.BuildTimeControllerConfiguration;
 
 class BuildTimeHybridControllerConfiguration {
 
-    private final ValueExtractor<BuildTimeControllerConfiguration> extractor;
+    private final BuildTimeControllerConfiguration externalConfiguration;
     private final AnnotationInstance controllerAnnotation;
     private final AnnotationInstance delayRegistrationAnnotation;
 
@@ -19,13 +19,14 @@ class BuildTimeHybridControllerConfiguration {
             BuildTimeControllerConfiguration externalConfiguration,
             AnnotationInstance controllerAnnotation,
             AnnotationInstance delayRegistrationAnnotation) {
-        this.extractor = new ValueExtractor<>(externalConfiguration);
+        this.externalConfiguration = externalConfiguration;
         this.controllerAnnotation = controllerAnnotation;
         this.delayRegistrationAnnotation = delayRegistrationAnnotation;
     }
 
     boolean generationAware() {
-        return extractor.extract(
+        return ValueExtractor.extract(
+                externalConfiguration,
                 controllerAnnotation, c -> c.generationAware,
                 "generationAwareEventProcessing",
                 AnnotationValue::asBoolean,
@@ -33,7 +34,8 @@ class BuildTimeHybridControllerConfiguration {
     }
 
     Type eventType() {
-        return extractor.extract(
+        return ValueExtractor.extract(
+                externalConfiguration,
                 delayRegistrationAnnotation, c -> c.delayRegistrationUntilEvent
                         .filter(s -> void.class.getName().equals(s))
                         .map(DotName::createSimple)
@@ -44,7 +46,8 @@ class BuildTimeHybridControllerConfiguration {
     }
 
     boolean delayedRegistration() {
-        return extractor.extract(
+        return ValueExtractor.extract(
+                externalConfiguration,
                 delayRegistrationAnnotation,
                 c -> c.delayRegistrationUntilEvent.map(s -> void.class.getName().equals(s)),
                 "event",
