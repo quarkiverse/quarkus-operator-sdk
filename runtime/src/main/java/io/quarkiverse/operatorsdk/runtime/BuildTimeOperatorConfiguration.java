@@ -34,4 +34,16 @@ public class BuildTimeOperatorConfiguration {
     @ConfigItem
     public CRDConfiguration crd;
 
+    /**
+     * Whether controllers should only process events if the associated resource generation has
+     * increased since last reconciliation, otherwise will process all events. Sets the default value for all controllers.
+     */
+    @ConfigItem(defaultValue = "true")
+    public Optional<Boolean> generationAware;
+
+    /**
+     * The optional fully qualified name of a CDI event class that controllers will wait for before
+     * registering with the Operator. Sets the default value for all controllers.
+     */
+    public Optional<String> delayRegistrationUntilEvent;
 }

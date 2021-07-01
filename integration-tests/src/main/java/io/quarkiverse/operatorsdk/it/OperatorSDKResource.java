@@ -144,8 +144,14 @@ public class OperatorSDKResource {
             return (String[]) conf.getNamespaces().toArray(new String[0]);
         }
 
+        @JsonProperty("watchAllNamespaces")
         public boolean watchAllNamespaces() {
             return conf.watchAllNamespaces();
+        }
+
+        @JsonProperty("watchCurrentNamespace")
+        public boolean watchCurrentNamespace() {
+            return conf.watchCurrentNamespace();
         }
 
         public RetryConfiguration getRetryConfiguration() {
@@ -155,6 +161,11 @@ public class OperatorSDKResource {
         public boolean isDelayed() {
             return conf instanceof QuarkusControllerConfiguration
                     && ((QuarkusControllerConfiguration) conf).isRegistrationDelayed();
+        }
+
+        @JsonProperty("useFinalizer")
+        public boolean useFinalizer() {
+            return conf.useFinalizer();
         }
     }
 }
