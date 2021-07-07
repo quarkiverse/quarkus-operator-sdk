@@ -40,12 +40,13 @@ public class OperatorProducer {
                     if (crdInfo.isApplyCRDs()) {
                         final var crdName = config.getCRDName();
                         try {
-                            crdInfo.getCRDFiles(crdName).forEach((crdVersion, fileName) -> {
-                                final var crdFile = new File(fileName);
+                            crdInfo.getCRDFiles(crdName).forEach((crdVersion, info) -> {
+                                final var filePath = info.getFilePath();
+                                final var crdFile = new File(filePath);
                                 try {
                                     final var crd = mapper.readValue(crdFile, getCRDClassFor(crdVersion));
                                     apply(client, crdVersion, crd);
-                                    log.infov("Applied {0} CRD named ''{1}'' from {2}", crdVersion, crdName, fileName);
+                                    log.infov("Applied {0} CRD named ''{1}'' from {2}", crdVersion, crdName, filePath);
                                 } catch (Exception ex) {
                                     throw new RuntimeException(ex);
                                 }
