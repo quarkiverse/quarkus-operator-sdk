@@ -105,14 +105,12 @@ class OperatorSDKProcessor {
     }
 
     @BuildStep
-    @Record(ExecutionTime.STATIC_INIT)
     ConfigurationServiceBuildItem createConfigurationServiceAndOperator(
             OutputTargetBuildItem outputTarget,
             CombinedIndexBuildItem combinedIndexBuildItem,
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
-            BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
-            ConfigurationServiceRecorder recorder) {
+            BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses) {
 
         final var version = Utils.loadFromProperties();
         final CRDConfiguration crdConfig = buildTimeConfiguration.crd;
