@@ -30,7 +30,7 @@ class BuildTimeHybridControllerConfiguration {
     }
 
     boolean generationAware() {
-        return ValueExtractor.extract(
+        return ConfigurationUtils.extract(
                 externalConfiguration,
                 controllerAnnotation, c -> c.generationAware,
                 "generationAwareEventProcessing",
@@ -39,7 +39,7 @@ class BuildTimeHybridControllerConfiguration {
     }
 
     Type eventType() {
-        return ValueExtractor.extract(
+        return ConfigurationUtils.extract(
                 externalConfiguration,
                 delayRegistrationAnnotation, c -> fromName(c.delayRegistrationUntilEvent),
                 "event",
@@ -54,7 +54,7 @@ class BuildTimeHybridControllerConfiguration {
     }
 
     boolean delayedRegistration() {
-        return ValueExtractor.extract(
+        return ConfigurationUtils.extract(
                 externalConfiguration,
                 delayRegistrationAnnotation,
                 c -> hasNonVoidRegistrationEvent(c.delayRegistrationUntilEvent),
@@ -71,7 +71,7 @@ class BuildTimeHybridControllerConfiguration {
         // retrieve the controller's name
         final var defaultControllerName = ControllerUtils
                 .getDefaultResourceControllerName(resourceControllerClassName);
-        return ValueExtractor.annotationValueOrDefault(
+        return ConfigurationUtils.annotationValueOrDefault(
                 controllerAnnotation, "name", AnnotationValue::asString, () -> defaultControllerName);
     }
 }

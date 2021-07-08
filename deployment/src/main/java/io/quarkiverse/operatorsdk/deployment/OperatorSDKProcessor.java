@@ -116,7 +116,8 @@ class OperatorSDKProcessor {
 
         final var version = Utils.loadFromProperties();
         final CRDConfiguration crdConfig = buildTimeConfiguration.crd;
-        final boolean validateCustomResources = shouldValidateCustomResources();
+        final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(
+                buildTimeConfiguration.checkCRDAndValidateLocalModel, buildTimeConfiguration.crd.validate, log);
 
         final var index = combinedIndexBuildItem.getIndex();
         final var resourceControllers = index.getAllKnownImplementors(RESOURCE_CONTROLLER);
@@ -135,31 +136,6 @@ class OperatorSDKProcessor {
                 new Version(version.getSdkVersion(), version.getCommit(), version.getBuiltTime()),
                 controllerConfigs,
                 crdInfo);
-    }
-
-    private boolean shouldValidateCustomResources() {
-        if (Utils.isValidateCustomResourcesEnvVarSet()) {
-            return Utils.shouldCheckCRDAndValidateLocalModel();
-        }
-        var validateCustomResources = true;
-        var useDeprecated = false;
-        if (buildTimeConfiguration.checkCRDAndValidateLocalModel.isPresent()) {
-            validateCustomResources = buildTimeConfiguration.checkCRDAndValidateLocalModel.get();
-            useDeprecated = true;
-            log.warn("Use of deprecated check-crd-and-validate-local-model property. Use crd.validate instead.");
-        }
-        final var validate = buildTimeConfiguration.crd.validate;
-        if (useDeprecated && validate != validateCustomResources) {
-            log.warnv(
-                    "Deprecated property check-crd-and-validate-local-model with value ''{0}'' is overridden by crd.validate property value ''{1}''",
-                    validateCustomResources, validate);
-            validateCustomResources = validate;
-        }
-        return validateCustomResources;
-    }
-
-    private boolean asBoolean(String value) {
-        return Boolean.parseBoolean(value);
     }
 
     /**
@@ -302,12 +278,12 @@ class OperatorSDKProcessor {
 
     private String getControllerName(String resourceControllerClassName, AnnotationInstance controllerAnnotation) {
         final var defaultControllerName = ControllerUtils.getDefaultResourceControllerName(resourceControllerClassName);
-        return ValueExtractor.annotationValueOrDefault(
+        return ConfigurationUtils.annotationValueOrDefault(
                 controllerAnnotation, "name", AnnotationValue::asString, () -> defaultControllerName);
     }
 
     private Set<String> getNamespaces(AnnotationInstance controllerAnnotation) {
-        return QuarkusControllerConfiguration.asSet(ValueExtractor.annotationValueOrDefault(
+        return QuarkusControllerConfiguration.asSet(ConfigurationUtils.annotationValueOrDefault(
                 controllerAnnotation,
                 "namespaces",
                 AnnotationValue::asStringArray,
@@ -315,7 +291,7 @@ class OperatorSDKProcessor {
     }
 
     private String getFinalizer(AnnotationInstance controllerAnnotation, String crdName) {
-        return ValueExtractor.annotationValueOrDefault(controllerAnnotation,
+        return ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
                 "finalizerName",
                 AnnotationValue::asString,
                 () -> ControllerUtils.getDefaultFinalizerName(crdName));
