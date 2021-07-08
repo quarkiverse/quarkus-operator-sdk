@@ -7,7 +7,7 @@ import java.util.function.BiFunction;
 public class CRDGenerationInfo {
     private boolean apply;
     private boolean validate;
-    private Map<String, Map<String, String>> crds;
+    private Map<String, Map<String, CRDInfo>> crds;
 
     public CRDGenerationInfo() {
         this(false, true, Collections.emptyMap());
@@ -16,7 +16,13 @@ public class CRDGenerationInfo {
     private CRDGenerationInfo(boolean apply, boolean validate, Map<String, Map<String, String>> crds) {
         this.apply = apply;
         this.validate = validate;
-        this.crds = Collections.unmodifiableMap(crds);
+        final var converted = new HashMap<String, Map<String, CRDInfo>>();
+        crds.forEach((crdName, initialVersionToCRDInfoMap) -> {
+            final var versionToCRDInfo = converted.computeIfAbsent(crdName, s -> new HashMap<>());
+            initialVersionToCRDInfoMap
+                    .forEach((version, path) -> versionToCRDInfo.put(version, new CRDInfo(crdName, path)));
+        });
+        this.crds = Collections.unmodifiableMap(converted);
     }
 
     public boolean isApply() {
@@ -35,11 +41,11 @@ public class CRDGenerationInfo {
         this.validate = validate;
     }
 
-    public Map<String, Map<String, String>> getCrds() {
+    public Map<String, Map<String, CRDInfo>> getCrds() {
         return crds;
     }
 
-    public void setCrds(Map<String, Map<String, String>> crds) {
+    public void setCrds(Map<String, Map<String, CRDInfo>> crds) {
         this.crds = crds;
     }
 
@@ -51,7 +57,7 @@ public class CRDGenerationInfo {
         return apply;
     }
 
-    public Map<String, String> getCRDFiles(String crdName) {
+    public Map<String, CRDInfo> getCRDFiles(String crdName) {
         return crds.get(crdName);
     }
 
