@@ -41,7 +41,7 @@ public class OperatorProducer {
                         final var crdName = config.getCRDName();
                         try {
                             crdInfo.getCRDFiles(crdName).forEach((crdVersion, fileName) -> {
-                                final var crdFile = new File(fileName);
+                                final var crdFile = new File(fileName.getPath());
                                 try {
                                     final var crd = mapper.readValue(crdFile, getCRDClassFor(crdVersion));
                                     apply(client, crdVersion, crd);
