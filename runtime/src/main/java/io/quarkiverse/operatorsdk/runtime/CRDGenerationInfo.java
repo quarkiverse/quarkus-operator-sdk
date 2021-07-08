@@ -33,10 +33,6 @@ public class CRDGenerationInfo {
         this.apply = apply;
     }
 
-    public boolean isValidate() {
-        return validate;
-    }
-
     public void setValidate(boolean validate) {
         this.validate = validate;
     }
