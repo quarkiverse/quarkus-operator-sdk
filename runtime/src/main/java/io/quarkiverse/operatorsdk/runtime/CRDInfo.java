@@ -1,8 +1,11 @@
 package io.quarkiverse.operatorsdk.runtime;
 
 public class CRDInfo {
-    private final String name;
-    private final String path;
+    private String name;
+    private String path;
+
+    public CRDInfo() {
+    }
 
     public CRDInfo(String name, String path) {
         this.name = name;
@@ -15,5 +18,13 @@ public class CRDInfo {
 
     public String getPath() {
         return path;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 }
