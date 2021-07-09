@@ -19,6 +19,10 @@ class CRDGeneration {
         this.generate = generate;
     }
 
+    public boolean wantCRDGenerated() {
+        return generate;
+    }
+
     /**
      * Generates the CRD in the location specified by the output target, using the specified CRD generation configuration
      * 

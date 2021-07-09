@@ -101,10 +101,6 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
         return terminationTimeout;
     }
 
-    public boolean isApplyCRDs() {
-        return crdInfo.isApplyCRDs();
-    }
-
     public CRDGenerationInfo getCRDGenerationInfo() {
         return crdInfo;
     }

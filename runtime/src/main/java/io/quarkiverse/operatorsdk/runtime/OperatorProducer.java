@@ -40,7 +40,7 @@ public class OperatorProducer {
                     if (crdInfo.isApplyCRDs()) {
                         final var crdName = config.getCRDName();
                         try {
-                            crdInfo.getCRDFiles(crdName).forEach((crdVersion, info) -> {
+                            crdInfo.getCRDInfosFor(crdName).forEach((crdVersion, info) -> {
                                 final var filePath = info.getFilePath();
                                 final var crdFile = new File(filePath);
                                 try {
