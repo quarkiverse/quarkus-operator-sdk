@@ -4,9 +4,7 @@ import static io.quarkiverse.operatorsdk.runtime.ClassUtils.loadClass;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -46,6 +44,7 @@ import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
+import io.quarkus.deployment.builditem.LiveReloadBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ForceNonWeakReflectiveClassBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
@@ -110,7 +109,8 @@ class OperatorSDKProcessor {
             CombinedIndexBuildItem combinedIndexBuildItem,
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
-            BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses) {
+            BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
+            LiveReloadBuildItem liveReload) {
 
         final var version = Utils.loadFromProperties();
         final CRDConfiguration crdConfig = buildTimeConfiguration.crd;
@@ -124,10 +124,11 @@ class OperatorSDKProcessor {
         final List<QuarkusControllerConfiguration> controllerConfigs = resourceControllers.stream()
                 .filter(ci -> !Modifier.isAbstract(ci.flags()))
                 .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses, forcedReflectionClasses,
-                        index, crdGeneration))
+                        index, crdGeneration, liveReload))
                 .collect(Collectors.toList());
 
         CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, crdConfig, validateCustomResources);
+        liveReload.setContextObject(CRDGenerationInfo.class, crdInfo); // record CRD generation info in context for future use
 
         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorProducer.class));
         return new ConfigurationServiceBuildItem(
@@ -211,7 +212,7 @@ class OperatorSDKProcessor {
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
-            IndexView index, CRDGeneration crdGeneration) {
+            IndexView index, CRDGeneration crdGeneration, LiveReloadBuildItem liveReload) {
         // first retrieve the custom resource class
         final var crType = JandexUtil.resolveTypeParameters(info.name(), RESOURCE_CONTROLLER, index)
                 .get(0)
@@ -233,7 +234,37 @@ class OperatorSDKProcessor {
         // retrieve CRD name from CR type
         final var crdName = CustomResource.getCRDName(crClass);
 
-        crdGeneration.withCustomResource(crClass, crdName);
+        // check if we need to regenerate the CRD
+        if (crdGeneration.wantCRDGenerated()) {
+            // check whether we already have generated CRDs
+            var crdInfo = liveReload.getContextObject(CRDGenerationInfo.class);
+
+            final boolean[] generateCurrent = { true }; // request CRD generation by default
+
+            // When we have a live reload, check if we need to regenerate the associated CRD
+            if (liveReload.isLiveReload() && crdInfo != null && !crdInfo.isEmpty()) {
+                final var crdInfos = crdInfo.getCRDInfosFor(crdName);
+
+                // check for all CRD spec version requested
+                buildTimeConfiguration.crd.versions.forEach(v -> {
+                    final var crd = crdInfos.get(v);
+                    // if dependent classes have been changed
+                    for (String changedClass : liveReload.getChangeInformation().getChangedClasses()) {
+                        if (crd.getDependentClassNames().contains(changedClass)) {
+                            return; // a dependent class has been changed, so we'll need to generate the CRD
+                        }
+                    }
+
+                    // we've looked at all the changed classes and none have been changed for this CR/version: do not regenerate CRD
+                    generateCurrent[0] = false;
+                    log.infov("''{0}'' CRD generation was skipped for ''{1}'' because no changes impacting the CRD were detected", v, crdName);
+                });
+            }
+            // if we still need to generate the CRD, add the CR to the set to be generated
+            if (generateCurrent[0]) {
+                crdGeneration.withCustomResource(crClass, crdName);
+            }
+        }
 
         // register CR class for introspection
         registerForReflection(reflectionClasses, crType);

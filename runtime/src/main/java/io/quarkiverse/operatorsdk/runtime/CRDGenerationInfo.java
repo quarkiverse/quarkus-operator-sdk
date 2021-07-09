@@ -53,11 +53,15 @@ public class CRDGenerationInfo {
         return apply;
     }
 
-    public Map<String, CRDInfo> getCRDFiles(String crdName) {
+    public Map<String, CRDInfo> getCRDInfosFor(String crdName) {
         return crds.get(crdName);
     }
 
     public boolean isValidateCRDs() {
         return validate;
+    }
+
+    public boolean isEmpty() {
+        return crds.isEmpty();
     }
 }
