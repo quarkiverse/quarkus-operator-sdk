@@ -213,26 +213,34 @@ class OperatorSDKProcessor {
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             IndexView index, CRDGeneration crdGeneration, LiveReloadBuildItem liveReload) {
-        // first retrieve the custom resource class
+        // first retrieve the custom resource class name
         final var crType = JandexUtil.resolveTypeParameters(info.name(), RESOURCE_CONTROLLER, index)
                 .get(0)
                 .name()
                 .toString();
 
         // create ResourceController bean
-        final var resourceControllerClassName = info.name().toString();
+        final var controllerClassName = info.name().toString();
         additionalBeans.produce(
                 AdditionalBeanBuildItem.builder()
-                        .addBeanClass(resourceControllerClassName)
+                        .addBeanClass(controllerClassName)
                         .setUnremovable()
                         .setDefaultScope(APPLICATION_SCOPED)
                         .build());
 
-        // load CR class
-        final Class<CustomResource> crClass = (Class<CustomResource>) loadClass(crType);
+        // register CR class for introspection
+        registerForReflection(reflectionClasses, crType);
+        forcedReflectionClasses.produce(new ForceNonWeakReflectiveClassBuildItem(crType));
 
-        // retrieve CRD name from CR type
-        final var crdName = CustomResource.getCRDName(crClass);
+        // register spec and status for introspection
+        final var crParamTypes = JandexUtil
+                .resolveTypeParameters(DotName.createSimple(crType), CUSTOM_RESOURCE, index);
+        registerForReflection(reflectionClasses, crParamTypes.get(0).name().toString());
+        registerForReflection(reflectionClasses, crParamTypes.get(1).name().toString());
+
+        // now check if there's more work to do, depending on reloaded state
+        Class<CustomResource> crClass = null;
+        String crdName = null;
 
         // check if we need to regenerate the CRD
         if (crdGeneration.wantCRDGenerated()) {
@@ -241,8 +249,12 @@ class OperatorSDKProcessor {
 
             final boolean[] generateCurrent = { true }; // request CRD generation by default
 
+            crClass = (Class<CustomResource>) loadClass(crType);
+            crdName = CustomResource.getCRDName(crClass);
+
             // When we have a live reload, check if we need to regenerate the associated CRD
             if (liveReload.isLiveReload() && crdInfo != null && !crdInfo.isEmpty()) {
+                final var finalCrdName = crdName;
                 final var crdInfos = crdInfo.getCRDInfosFor(crdName);
 
                 // check for all CRD spec version requested
@@ -257,7 +269,9 @@ class OperatorSDKProcessor {
 
                     // we've looked at all the changed classes and none have been changed for this CR/version: do not regenerate CRD
                     generateCurrent[0] = false;
-                    log.infov("''{0}'' CRD generation was skipped for ''{1}'' because no changes impacting the CRD were detected", v, crdName);
+                    log.infov(
+                            "''{0}'' CRD generation was skipped for ''{1}'' because no changes impacting the CRD were detected",
+                            v, finalCrdName);
                 });
             }
             // if we still need to generate the CRD, add the CR to the set to be generated
@@ -266,41 +280,76 @@ class OperatorSDKProcessor {
             }
         }
 
-        // register CR class for introspection
-        registerForReflection(reflectionClasses, crType);
-        forcedReflectionClasses.produce(new ForceNonWeakReflectiveClassBuildItem(crType));
+        // check if we need to regenerate the configuration for this controller
+        QuarkusControllerConfiguration configuration = null;
+        boolean regenerateConfig = true;
+        var storedConfigurations = liveReload.getContextObject(ContextStoredControllerConfigurations.class);
+        if (liveReload.isLiveReload()) {
+            if (storedConfigurations != null) {
+                // check if we've already generated a configuration for this controller
+                configuration = storedConfigurations.getConfigurations().get(controllerClassName);
+                if (configuration != null) {
+                    /*
+                     * A configuration needs to be regenerated if:
+                     * - the ResourceController annotation has changed
+                     * - the associated CustomResource metadata has changed
+                     * - the configuration properties have changed as follows:
+                     * + extension-wide properties affecting all controllers have changed
+                     * + controller-specific properties have changed
+                     *
+                     * Here, we only perform a simplified check: either the class holding the ResourceController annotation has
+                     * changed, or the associated CustomResource class or application.properties as a whole has changed. This
+                     * could be optimized further if needed.
+                     *
+                     */
+                    final var changedClasses = liveReload.getChangeInformation().getChangedClasses();
+                    regenerateConfig = changedClasses.contains(controllerClassName) || changedClasses.contains(crType)
+                            || liveReload.getChangedResources().contains("application.properties");
+                }
+            }
+        }
 
-        // register spec and status for introspection
-        final var crParamTypes = JandexUtil
-                .resolveTypeParameters(DotName.createSimple(crType), CUSTOM_RESOURCE, index);
-        registerForReflection(reflectionClasses, crParamTypes.get(0).name().toString());
-        registerForReflection(reflectionClasses, crParamTypes.get(1).name().toString());
+        if (regenerateConfig) {
+            // extract the configuration from annotation and/or external configuration
+            final var controllerAnnotation = info.classAnnotation(CONTROLLER);
+            final var delayedRegistrationAnnotation = info.classAnnotation(DELAY_REGISTRATION);
 
-        // extract the configuration from annotation and/or external configuration
-        final var controllerAnnotation = info.classAnnotation(CONTROLLER);
-        final var delayedRegistrationAnnotation = info.classAnnotation(DELAY_REGISTRATION);
+            // retrieve the controller's name
+            final String name = getControllerName(controllerClassName, controllerAnnotation);
 
-        // retrieve the controller's name
-        final String name = getControllerName(resourceControllerClassName, controllerAnnotation);
+            final var configExtractor = new BuildTimeHybridControllerConfiguration(buildTimeConfiguration,
+                    buildTimeConfiguration.controllers.get(name),
+                    controllerAnnotation, delayedRegistrationAnnotation);
 
-        final var configExtractor = new BuildTimeHybridControllerConfiguration(buildTimeConfiguration,
-                buildTimeConfiguration.controllers.get(name),
-                controllerAnnotation, delayedRegistrationAnnotation);
+            if (crdName == null) {
+                crClass = (Class<CustomResource>) loadClass(crType);
+                crdName = CustomResource.getCRDName(crClass);
+            }
 
-        // create the configuration
-        final var configuration = new QuarkusControllerConfiguration(
-                resourceControllerClassName,
-                name,
-                crdName,
-                configExtractor.generationAware(),
-                crType,
-                configExtractor.delayedRegistration(),
-                getNamespaces(controllerAnnotation),
-                getFinalizer(controllerAnnotation, crdName));
+            // create the configuration
+            configuration = new QuarkusControllerConfiguration(
+                    controllerClassName,
+                    name,
+                    crdName,
+                    configExtractor.generationAware(),
+                    crType,
+                    configExtractor.delayedRegistration(),
+                    getNamespaces(controllerAnnotation),
+                    getFinalizer(controllerAnnotation, crdName));
 
-        log.infov(
-                "Processed ''{0}'' controller named ''{1}'' for ''{2}'' CR (version ''{3}'')",
-                info.name().toString(), name, crdName, HasMetadata.getApiVersion(crClass));
+            log.infov(
+                    "Processed ''{0}'' controller named ''{1}'' for ''{2}'' CR (version ''{3}'')",
+                    controllerClassName, name, crdName, HasMetadata.getApiVersion(crClass));
+        } else {
+            log.infov("Skipped configuration reload for ''{0}'' controller as no changes were detected", controllerClassName);
+        }
+
+        // store the configuration in the live reload context
+        if (storedConfigurations == null) {
+            storedConfigurations = new ContextStoredControllerConfigurations();
+        }
+        storedConfigurations.getConfigurations().put(controllerClassName, configuration);
+        liveReload.setContextObject(ContextStoredControllerConfigurations.class, storedConfigurations);
 
         return configuration;
     }
