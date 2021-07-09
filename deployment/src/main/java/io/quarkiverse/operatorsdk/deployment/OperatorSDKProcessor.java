@@ -265,6 +265,11 @@ class OperatorSDKProcessor {
                 // check for all CRD spec version requested
                 buildTimeConfiguration.crd.versions.forEach(v -> {
                     final var crd = crdInfos.get(v);
+                    // if we don't have any information about this CRD version, we need to generate the CRD
+                    if (crd == null) {
+                        return;
+                    }
+
                     // if dependent classes have been changed
                     for (String changedClass : liveReload.getChangeInformation().getChangedClasses()) {
                         if (crd.getDependentClassNames().contains(changedClass)) {
