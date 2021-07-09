@@ -128,7 +128,12 @@ class OperatorSDKProcessor {
                 .collect(Collectors.toList());
 
         CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, crdConfig, validateCustomResources);
-        liveReload.setContextObject(CRDGenerationInfo.class, crdInfo); // record CRD generation info in context for future use
+        var storedCRDInfos = liveReload.getContextObject(ContextStoredCRDInfos.class);
+        if (storedCRDInfos == null) {
+            storedCRDInfos = new ContextStoredCRDInfos();
+        }
+        storedCRDInfos.putAll(crdInfo.getCrds());
+        liveReload.setContextObject(ContextStoredCRDInfos.class, storedCRDInfos); // record CRD generation info in context for future use
 
         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorProducer.class));
         return new ConfigurationServiceBuildItem(
@@ -245,7 +250,7 @@ class OperatorSDKProcessor {
         // check if we need to regenerate the CRD
         if (crdGeneration.wantCRDGenerated()) {
             // check whether we already have generated CRDs
-            var crdInfo = liveReload.getContextObject(CRDGenerationInfo.class);
+            var storedCRDInfos = liveReload.getContextObject(ContextStoredCRDInfos.class);
 
             final boolean[] generateCurrent = { true }; // request CRD generation by default
 
@@ -253,9 +258,9 @@ class OperatorSDKProcessor {
             crdName = CustomResource.getCRDName(crClass);
 
             // When we have a live reload, check if we need to regenerate the associated CRD
-            if (liveReload.isLiveReload() && crdInfo != null && !crdInfo.isEmpty()) {
+            if (liveReload.isLiveReload() && storedCRDInfos != null) {
                 final var finalCrdName = crdName;
-                final var crdInfos = crdInfo.getCRDInfosFor(crdName);
+                final var crdInfos = storedCRDInfos.getCRDInfosFor(crdName);
 
                 // check for all CRD spec version requested
                 buildTimeConfiguration.crd.versions.forEach(v -> {
