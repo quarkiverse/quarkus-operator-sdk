@@ -14,7 +14,7 @@ public class OperatorSDKHotReplacementSetup implements HotReplacementSetup {
     public void setupHotDeployment(HotReplacementContext context) {
         executor.scheduleAtFixedRate(() -> {
             try {
-                System.out.println("Reload: " + context.doScan(false));
+                context.doScan(false);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
