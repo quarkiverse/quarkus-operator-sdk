@@ -248,6 +248,7 @@ class OperatorSDKProcessor {
         String crdName = null;
 
         // check if we need to regenerate the CRD
+        final var changeInformation = liveReload.getChangeInformation();
         if (crdGeneration.wantCRDGenerated()) {
             // check whether we already have generated CRDs
             var storedCRDInfos = liveReload.getContextObject(ContextStoredCRDInfos.class);
@@ -271,9 +272,11 @@ class OperatorSDKProcessor {
                     }
 
                     // if dependent classes have been changed
-                    for (String changedClass : liveReload.getChangeInformation().getChangedClasses()) {
-                        if (crd.getDependentClassNames().contains(changedClass)) {
-                            return; // a dependent class has been changed, so we'll need to generate the CRD
+                    if (changeInformation != null) {
+                        for (String changedClass : changeInformation.getChangedClasses()) {
+                            if (crd.getDependentClassNames().contains(changedClass)) {
+                                return; // a dependent class has been changed, so we'll need to generate the CRD
+                            }
                         }
                     }
 
@@ -312,7 +315,8 @@ class OperatorSDKProcessor {
                      * could be optimized further if needed.
                      *
                      */
-                    final var changedClasses = liveReload.getChangeInformation().getChangedClasses();
+                    final var changedClasses = changeInformation == null ? Collections.emptySet()
+                            : changeInformation.getChangedClasses();
                     regenerateConfig = changedClasses.contains(controllerClassName) || changedClasses.contains(crType)
                             || liveReload.getChangedResources().contains("application.properties");
                 }
