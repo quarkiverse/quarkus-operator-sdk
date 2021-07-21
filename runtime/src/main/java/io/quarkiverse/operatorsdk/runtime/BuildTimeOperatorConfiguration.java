@@ -45,5 +45,6 @@ public class BuildTimeOperatorConfiguration {
      * The optional fully qualified name of a CDI event class that controllers will wait for before
      * registering with the Operator. Sets the default value for all controllers.
      */
+    @ConfigItem
     public Optional<String> delayRegistrationUntilEvent;
 }
