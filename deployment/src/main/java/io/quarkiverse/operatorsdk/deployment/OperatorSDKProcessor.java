@@ -52,6 +52,7 @@ import io.quarkus.deployment.util.JandexUtil;
 import io.quarkus.gizmo.AssignableResultHandle;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
+import io.quarkus.runtime.QuarkusApplication;
 
 class OperatorSDKProcessor {
 
@@ -136,6 +137,12 @@ class OperatorSDKProcessor {
         liveReload.setContextObject(ContextStoredCRDInfos.class, storedCRDInfos); // record CRD generation info in context for future use
 
         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorProducer.class));
+
+        // if the app doesn't provide a main class, add the StartupListener
+        if (index.getAllKnownImplementors(DotName.createSimple(QuarkusApplication.class.getName())).isEmpty()) {
+            additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(StartupListener.class));
+        }
+
         return new ConfigurationServiceBuildItem(
                 new Version(version.getSdkVersion(), version.getCommit(), version.getBuiltTime()),
                 controllerConfigs,
