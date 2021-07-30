@@ -29,7 +29,6 @@ import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.Utils;
 import io.quarkiverse.operatorsdk.runtime.*;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.ObserverRegistrationPhaseBuildItem;
@@ -113,7 +112,6 @@ class OperatorSDKProcessor {
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             LiveReloadBuildItem liveReload) {
 
-        final var version = Utils.loadFromProperties();
         final CRDConfiguration crdConfig = buildTimeConfiguration.crd;
         final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(
                 buildTimeConfiguration.checkCRDAndValidateLocalModel, buildTimeConfiguration.crd.validate, log);
@@ -141,14 +139,12 @@ class OperatorSDKProcessor {
         // if the app doesn't provide a main class, add the StartupListener
         if (index.getAllKnownImplementors(DotName.createSimple(QuarkusApplication.class.getName())).isEmpty()) {
             additionalBeans.produce(AdditionalBeanBuildItem.builder()
-                    .addBeanClass(StartupListener.class).setDefaultScope(DotName.createSimple(Singleton.class.getName())).setUnremovable()
+                    .addBeanClass(StartupListener.class).setDefaultScope(DotName.createSimple(Singleton.class.getName()))
+                    .setUnremovable()
                     .build());
         }
 
-        return new ConfigurationServiceBuildItem(
-                new Version(version.getSdkVersion(), version.getCommit(), version.getBuiltTime()),
-                controllerConfigs,
-                crdInfo);
+        return new ConfigurationServiceBuildItem(Version.loadFromProperties(), controllerConfigs, crdInfo);
     }
 
     /**
