@@ -140,7 +140,9 @@ class OperatorSDKProcessor {
 
         // if the app doesn't provide a main class, add the StartupListener
         if (index.getAllKnownImplementors(DotName.createSimple(QuarkusApplication.class.getName())).isEmpty()) {
-            additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(StartupListener.class));
+            additionalBeans.produce(AdditionalBeanBuildItem.builder()
+                    .addBeanClass(StartupListener.class).setDefaultScope(DotName.createSimple(Singleton.class.getName())).setUnremovable()
+                    .build());
         }
 
         return new ConfigurationServiceBuildItem(
