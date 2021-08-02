@@ -11,10 +11,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
+import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 
 @Path("/operator")
@@ -23,7 +23,7 @@ public class OperatorSDKResource {
     @Inject
     Instance<ResourceController<? extends CustomResource>> controllers;
     @Inject
-    ConfigurationService configurationService;
+    QuarkusConfigurationService configurationService;
     @Inject
     Event<DelayedController.RegisterEvent> event;
 
@@ -77,9 +77,9 @@ public class OperatorSDKResource {
     }
 
     static class JSONConfiguration {
-        private final ConfigurationService conf;
+        private final QuarkusConfigurationService conf;
 
-        public JSONConfiguration(ConfigurationService conf) {
+        public JSONConfiguration(QuarkusConfigurationService conf) {
             this.conf = conf;
         }
 
@@ -104,6 +104,11 @@ public class OperatorSDKResource {
         @JsonProperty("timeout")
         public int timeout() {
             return conf.getTerminationTimeoutSeconds();
+        }
+
+        @JsonProperty("applyCRDs")
+        public boolean apply() {
+            return conf.getCRDGenerationInfo().isApplyCRDs();
         }
     }
 
