@@ -119,7 +119,8 @@ class OperatorSDKProcessor {
         final var index = combinedIndexBuildItem.getIndex();
         final var resourceControllers = index.getAllKnownImplementors(RESOURCE_CONTROLLER);
 
-        final var crdGeneration = new CRDGeneration(crdConfig.generate);
+        // apply should imply generate: we cannot apply if we're not generating!
+        final var crdGeneration = new CRDGeneration(crdConfig.generate || crdConfig.apply);
         final List<QuarkusControllerConfiguration> controllerConfigs = resourceControllers.stream()
                 .filter(ci -> !Modifier.isAbstract(ci.flags()))
                 .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses, forcedReflectionClasses,
