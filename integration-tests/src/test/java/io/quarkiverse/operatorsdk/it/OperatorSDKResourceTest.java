@@ -21,6 +21,12 @@ public class OperatorSDKResourceTest {
     }
 
     @Test
+    void shouldNotApplyCRDsByDefault() {
+        given().when().get("/operator/config").then().statusCode(200).body(
+                "applyCRDs", equalTo(false));
+    }
+
+    @Test
     void shouldHavePropertiesDefinedReconciliationThreads() {
         given().when().get("/operator/config").then().statusCode(200).body(
                 "maxThreads", equalTo(10));
