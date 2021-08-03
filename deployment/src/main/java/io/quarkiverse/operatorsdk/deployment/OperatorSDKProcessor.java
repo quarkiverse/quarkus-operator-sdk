@@ -49,6 +49,7 @@ import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.deployment.util.JandexUtil;
 import io.quarkus.gizmo.AssignableResultHandle;
+import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
 import io.quarkus.runtime.QuarkusApplication;
@@ -191,33 +192,36 @@ class OperatorSDKProcessor {
                                             .ofMethod(Instance.class, "get", Object.class);
                                     AssignableResultHandle cdiVar = mc.createVariable(CDI.class);
                                     mc.assign(cdiVar, mc.invokeStaticMethod(cdiMethod));
-                                    ResultHandle operatorInstance = mc.invokeVirtualMethod(
-                                            selectMethod,
-                                            cdiVar,
-                                            mc.loadClass(Operator.class),
-                                            mc.newArray(Annotation.class, 0));
-                                    ResultHandle operator = mc.checkCast(
-                                            mc.invokeInterfaceMethod(getMethod, operatorInstance),
-                                            Operator.class);
-                                    ResultHandle resourceInstance = mc.invokeVirtualMethod(
-                                            selectMethod,
-                                            cdiVar,
-                                            mc.loadClass(controllerClassName),
-                                            mc.newArray(Annotation.class, 0));
-                                    ResultHandle resource = mc.checkCast(
-                                            mc.invokeInterfaceMethod(getMethod, resourceInstance),
-                                            ResourceController.class);
-                                    mc.invokeVirtualMethod(
+                                    ResultHandle operator = getHandleFromCDI(mc, selectMethod, getMethod, cdiVar,
+                                            Operator.class, null);
+                                    ResultHandle resource = getHandleFromCDI(mc, selectMethod, getMethod, cdiVar,
+                                            ResourceController.class, controllerClassName);
+                                    ResultHandle config = getHandleFromCDI(mc, selectMethod, getMethod, cdiVar,
+                                            QuarkusConfigurationService.class, null);
+                                    mc.invokeStaticMethod(
                                             MethodDescriptor.ofMethod(
-                                                    Operator.class, "register", void.class,
-                                                    ResourceController.class),
-                                            operator,
-                                            resource);
+                                                    OperatorProducer.class,
+                                                    "applyCRDIfNeededAndRegister",
+                                                    void.class,
+                                                    Operator.class, ResourceController.class,
+                                                    QuarkusConfigurationService.class),
+                                            operator, resource, config);
                                     mc.returnValue(null);
                                 });
                 observerConfigurators.produce(new ObserverConfiguratorBuildItem(configurator));
             }
         }
+    }
+
+    private ResultHandle getHandleFromCDI(MethodCreator mc, MethodDescriptor selectMethod, MethodDescriptor getMethod,
+            AssignableResultHandle cdiVar, Class<?> handleClass, String optionalImplClass) {
+        ResultHandle operatorInstance = mc.invokeVirtualMethod(
+                selectMethod,
+                cdiVar,
+                optionalImplClass != null ? mc.loadClass(optionalImplClass) : mc.loadClass(handleClass),
+                mc.newArray(Annotation.class, 0));
+        ResultHandle operator = mc.checkCast(mc.invokeInterfaceMethod(getMethod, operatorInstance), handleClass);
+        return operator;
     }
 
     private QuarkusControllerConfiguration createControllerConfiguration(

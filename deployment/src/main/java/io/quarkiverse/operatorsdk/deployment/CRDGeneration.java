@@ -1,6 +1,7 @@
 package io.quarkiverse.operatorsdk.deployment;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import io.fabric8.crd.generator.CRDGenerator;
@@ -37,6 +38,8 @@ class CRDGeneration {
             boolean validateCustomResources, Map<String, Map<String, CRDInfo>> existing) {
         // initialize CRDInfo with existing data to always have a full view even if we don't generate anything
         final var converted = new HashMap<>(existing);
+        // record which CRDs got generated so that we only apply the changed ones
+        final var generated = new HashSet<String>();
 
         if (needGeneration) {
             final String outputDirName = crdConfig.outputDirectory;
@@ -49,6 +52,7 @@ class CRDGeneration {
 
             crdDetailsPerNameAndVersion.forEach((crdName, initialVersionToCRDInfoMap) -> {
                 OperatorSDKProcessor.log.infov("Generated {0} CRD:", crdName);
+                generated.add(crdName);
 
                 final var versionToCRDInfo = converted.computeIfAbsent(crdName, s -> new HashMap<>());
                 initialVersionToCRDInfoMap
@@ -60,7 +64,7 @@ class CRDGeneration {
                         });
             });
         }
-        return new CRDGenerationInfo(crdConfig.apply, validateCustomResources, converted);
+        return new CRDGenerationInfo(crdConfig.apply, validateCustomResources, converted, generated);
     }
 
     public void withCustomResource(Class<CustomResource> crClass, String crdName) {

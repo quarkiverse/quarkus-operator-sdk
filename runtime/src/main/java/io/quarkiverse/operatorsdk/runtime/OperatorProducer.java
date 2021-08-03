@@ -33,37 +33,52 @@ public class OperatorProducer {
             QuarkusControllerConfiguration<? extends CustomResource> config = configuration
                     .getConfigurationFor(controller);
             if (!config.isRegistrationDelayed()) {
-                try {
-                    operator.register(controller);
-                } catch (MissingCRDException e) {
-                    final var crdInfo = configuration.getCRDGenerationInfo();
-                    if (crdInfo.isApplyCRDs()) {
-                        final var crdName = config.getCRDName();
-                        try {
-                            crdInfo.getCRDInfosFor(crdName).forEach((crdVersion, info) -> {
-                                final var filePath = info.getFilePath();
-                                final var crdFile = new File(filePath);
-                                try {
-                                    final var crd = mapper.readValue(crdFile, getCRDClassFor(crdVersion));
-                                    apply(client, crdVersion, crd);
-                                    log.infov("Applied {0} CRD named ''{1}'' from {2}", crdVersion, crdName, filePath);
-                                } catch (Exception ex) {
-                                    throw new RuntimeException(ex);
-                                }
-                            });
-                        } catch (Exception exception) {
-                            log.debugv(exception, "Couldn't apply ''{0}'' CRD", crdName);
-                        }
-
-                        // re-register the controller
-                        operator.register(controller);
-                    } else {
-                        throw e;
-                    }
-                }
+                applyCRDIfNeededAndRegister(operator, controller, configuration);
             }
         }
         return operator;
+    }
+
+    public static void applyCRDIfNeededAndRegister(Operator operator, ResourceController<? extends CustomResource> controller,
+            QuarkusConfigurationService configuration) {
+        QuarkusControllerConfiguration<? extends CustomResource> config = configuration.getConfigurationFor(controller);
+        final var crdInfo = configuration.getCRDGenerationInfo();
+        if (crdInfo.isApplyCRDs()) {
+            final var crdName = config.getCRDName();
+            // if the CRD just got generated, apply it
+            if (crdInfo.shouldApplyCRD(crdName)) {
+                applyCRD(operator, crdInfo, crdName);
+            }
+
+            // try to register the controller, if we get a MissingCRDException, apply the CRD and re-attempt registration
+            try {
+                operator.register(controller);
+            } catch (MissingCRDException e) {
+                applyCRD(operator, crdInfo, crdName);
+                operator.register(controller);
+            }
+
+        } else {
+            operator.register(controller);
+        }
+    }
+
+    private static void applyCRD(Operator operator, CRDGenerationInfo crdInfo, String crdName) {
+        try {
+            crdInfo.getCRDInfosFor(crdName).forEach((crdVersion, info) -> {
+                final var filePath = info.getFilePath();
+                final var crdFile = new File(filePath);
+                try {
+                    final var crd = mapper.readValue(crdFile, getCRDClassFor(crdVersion));
+                    apply(operator.getKubernetesClient(), crdVersion, crd);
+                    log.infov("Applied {0} CRD named ''{1}'' from {2}", crdVersion, crdName, filePath);
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            });
+        } catch (Exception exception) {
+            log.debugv(exception, "Couldn't apply ''{0}'' CRD", crdName);
+        }
     }
 
     private static void apply(KubernetesClient client, String v, Object crd) {
