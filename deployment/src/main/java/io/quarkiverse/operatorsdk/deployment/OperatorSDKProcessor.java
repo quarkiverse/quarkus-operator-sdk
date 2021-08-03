@@ -55,7 +55,7 @@ import io.quarkus.runtime.QuarkusApplication;
 
 class OperatorSDKProcessor {
 
-    private static final Logger log = Logger.getLogger(OperatorSDKProcessor.class.getName());
+    static final Logger log = Logger.getLogger(OperatorSDKProcessor.class.getName());
 
     private static final String FEATURE = "operator-sdk";
     private static final DotName RESOURCE_CONTROLLER = DotName
@@ -127,11 +127,13 @@ class OperatorSDKProcessor {
                         index, crdGeneration, liveReload))
                 .collect(Collectors.toList());
 
-        CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, crdConfig, validateCustomResources);
+        // retrieve the known CRD information to make sure we always have a full view 
         var storedCRDInfos = liveReload.getContextObject(ContextStoredCRDInfos.class);
         if (storedCRDInfos == null) {
             storedCRDInfos = new ContextStoredCRDInfos();
         }
+        CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, crdConfig, validateCustomResources,
+                storedCRDInfos.getExisting());
         storedCRDInfos.putAll(crdInfo.getCrds());
         liveReload.setContextObject(ContextStoredCRDInfos.class, storedCRDInfos); // record CRD generation info in context for future use
 

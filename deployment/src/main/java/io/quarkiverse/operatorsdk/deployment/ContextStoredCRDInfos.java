@@ -8,8 +8,12 @@ import io.quarkiverse.operatorsdk.runtime.CRDInfo;
 public class ContextStoredCRDInfos {
     private Map<String, Map<String, CRDInfo>> infos = new HashMap<>();
 
-    public Map<String, CRDInfo> getCRDInfosFor(String crdName) {
+    Map<String, CRDInfo> getCRDInfosFor(String crdName) {
         return infos.computeIfAbsent(crdName, k -> new HashMap<>());
+    }
+
+    public Map<String, Map<String, CRDInfo>> getExisting() {
+        return infos;
     }
 
     void putAll(Map<String, Map<String, CRDInfo>> toAdd) {
