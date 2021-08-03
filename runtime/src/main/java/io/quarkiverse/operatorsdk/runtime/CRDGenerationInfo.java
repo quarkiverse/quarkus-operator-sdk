@@ -1,47 +1,22 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
+
+import io.quarkus.runtime.annotations.RecordableConstructor;
 
 public class CRDGenerationInfo {
-    private boolean apply;
-    private boolean validate;
-    private Map<String, Map<String, CRDInfo>> crds;
+    private final boolean applyCRDs;
+    private final boolean validateCRDs;
+    private final Map<String, Map<String, CRDInfo>> crds;
+    private final Set<String> generated;
 
-    // Needed by Quarkus: class needs to be serializable
-    public CRDGenerationInfo() {
-        this(false, true, Collections.emptyMap());
-    }
-
-    public CRDGenerationInfo(boolean apply, boolean validate, Map<String, Map<String, CRDInfo>> crdInfos) {
-        this.apply = apply;
-        this.validate = validate;
-        this.crds = Collections.unmodifiableMap(crdInfos);
-    }
-
-    // Needed by Quarkus: class needs to be serializable
-    public void setApply(boolean apply) {
-        this.apply = apply;
-    }
-
-    // Needed by Quarkus: class needs to be serializable
-    public void setValidate(boolean validate) {
-        this.validate = validate;
-    }
-
-    // Needed by Quarkus: class needs to be serializable
-    public void setCrds(Map<String, Map<String, CRDInfo>> crds) {
-        this.crds = crds;
-    }
-
-    // Needed by Quarkus: if this method isn't present, state is not properly set
-    public boolean isApply() {
-        return apply;
-    }
-
-    // Needed by Quarkus: if this method isn't present, state is not properly set
-    public boolean isValidate() {
-        return validate;
+    @RecordableConstructor // constructor needs to be recordable for the class to be passed around by Quarkus
+    public CRDGenerationInfo(boolean applyCRDs, boolean validateCRDs, Map<String, Map<String, CRDInfo>> crds,
+            Set<String> generated) {
+        this.applyCRDs = applyCRDs;
+        this.validateCRDs = validateCRDs;
+        this.crds = Collections.unmodifiableMap(crds);
+        this.generated = generated;
     }
 
     // Needed by Quarkus: if this method isn't present, state is not properly set
@@ -49,8 +24,17 @@ public class CRDGenerationInfo {
         return crds;
     }
 
+    // Needed by Quarkus: if this method isn't present, state is not properly set
+    public Set<String> getGenerated() {
+        return generated;
+    }
+
     public boolean isApplyCRDs() {
-        return apply;
+        return applyCRDs;
+    }
+
+    public boolean shouldApplyCRD(String name) {
+        return generated.contains(name);
     }
 
     public Map<String, CRDInfo> getCRDInfosFor(String crdName) {
@@ -58,10 +42,6 @@ public class CRDGenerationInfo {
     }
 
     public boolean isValidateCRDs() {
-        return validate;
-    }
-
-    public boolean isEmpty() {
-        return crds.isEmpty();
+        return validateCRDs;
     }
 }
