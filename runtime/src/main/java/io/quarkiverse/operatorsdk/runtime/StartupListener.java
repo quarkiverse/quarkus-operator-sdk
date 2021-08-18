@@ -24,7 +24,7 @@ public class StartupListener {
             final var branch = !version.getExtensionBranch().equals(Version.UNKNOWN)
                     ? " on branch: " + version.getExtensionBranch()
                     : "";
-            log.info("Quakus Java Operator SDK extension {} (commit: {}{})", version.getExtensionVersion(),
+            log.info("Quarkus Java Operator SDK extension {} (commit: {}{})", version.getExtensionVersion(),
                     version.getExtensionCommit(), branch);
         }
         operator.start();
