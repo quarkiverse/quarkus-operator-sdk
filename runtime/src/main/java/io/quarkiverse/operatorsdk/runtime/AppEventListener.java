@@ -6,14 +6,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.javaoperatorsdk.operator.Operator;
+import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 
-public class StartupListener {
-    private static final Logger log = LoggerFactory.getLogger(StartupListener.class);
+public class AppEventListener {
+    private static final Logger log = LoggerFactory.getLogger(AppEventListener.class);
     private final Operator operator;
     private final QuarkusConfigurationService configurationService;
 
-    public StartupListener(Operator operator, QuarkusConfigurationService configurationService) {
+    public AppEventListener(Operator operator, QuarkusConfigurationService configurationService) {
         this.operator = operator;
         this.configurationService = configurationService;
     }
@@ -28,5 +29,10 @@ public class StartupListener {
                     version.getExtensionCommit(), branch);
         }
         operator.start();
+    }
+
+    public void onShutdown(@Observes ShutdownEvent event) {
+        log.info("Quarkus Java Operator SDK extension is shutting down");
+        operator.close();
     }
 }
