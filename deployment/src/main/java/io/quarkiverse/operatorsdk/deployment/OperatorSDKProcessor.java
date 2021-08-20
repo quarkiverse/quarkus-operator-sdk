@@ -140,10 +140,10 @@ class OperatorSDKProcessor {
 
         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorProducer.class));
 
-        // if the app doesn't provide a main class, add the StartupListener
+        // if the app doesn't provide a main class, add the AppEventListener
         if (index.getAllKnownImplementors(DotName.createSimple(QuarkusApplication.class.getName())).isEmpty()) {
             additionalBeans.produce(AdditionalBeanBuildItem.builder()
-                    .addBeanClass(StartupListener.class).setDefaultScope(DotName.createSimple(Singleton.class.getName()))
+                    .addBeanClass(AppEventListener.class).setDefaultScope(DotName.createSimple(Singleton.class.getName()))
                     .setUnremovable()
                     .build());
         }
