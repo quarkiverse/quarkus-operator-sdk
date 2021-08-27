@@ -33,6 +33,5 @@ public class AppEventListener {
 
     public void onShutdown(@Observes ShutdownEvent event) {
         log.info("Quarkus Java Operator SDK extension is shutting down");
-        operator.close();
     }
 }

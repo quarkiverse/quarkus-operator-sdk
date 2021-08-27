@@ -2,6 +2,7 @@ package io.quarkiverse.operatorsdk.runtime;
 
 import java.io.File;
 
+import javax.annotation.PreDestroy;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
 import javax.inject.Singleton;
@@ -22,13 +23,14 @@ import io.quarkus.arc.DefaultBean;
 public class OperatorProducer {
     private static final YAMLMapper mapper = new YAMLMapper();
     private static final Logger log = Logger.getLogger(OperatorProducer.class.getName());
+    private Operator operator;
 
     @Produces
     @DefaultBean
     @Singleton
     Operator operator(KubernetesClient client, QuarkusConfigurationService configuration,
             Instance<ResourceController<? extends CustomResource>> controllers) {
-        final var operator = new Operator(client, configuration);
+        operator = new Operator(client, configuration);
         for (ResourceController<? extends CustomResource> controller : controllers) {
             QuarkusControllerConfiguration<? extends CustomResource> config = configuration
                     .getConfigurationFor(controller);
@@ -37,6 +39,13 @@ public class OperatorProducer {
             }
         }
         return operator;
+    }
+
+    @PreDestroy
+    public void destroy() {
+        if (operator != null) {
+            operator.close();
+        }
     }
 
     public static void applyCRDIfNeededAndRegister(Operator operator, ResourceController<? extends CustomResource> controller,
