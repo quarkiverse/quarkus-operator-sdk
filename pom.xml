@@ -24,7 +24,7 @@
     <maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <quarkus.version>2.2.0.Final</quarkus.version>
+    <quarkus.version>2.2.1.Final</quarkus.version>
     <java-operator-sdk.version>1.9.5</java-operator-sdk.version>
     <kubernetes-client.version>5.7.0</kubernetes-client.version>
   </properties>
