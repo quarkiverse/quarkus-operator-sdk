@@ -14,6 +14,7 @@ cluster. You can just follow the steps below to get started quickly:
 
 - Connect to your cluster of choice using `kubectl/oc`, select the appropriate namespace/project.
   The operator will automatically connect to that cluster/namespace combination when started.
+- Run `mvn install` on the parent directory `quarkus-operator-sdk` to build and install the `quarkus-operator-sdk-samples-2.0.0.Beta5-SNAPSHOT` artifact locally.
 - Run `mvn package` to build the operator. This will automatically generate several resources for
   you, in particular the CRDs associated with the custom resources we will be dealing with. These
   CRDs are generated in `target/classes/META-INF/fabric8` and come in two flavors: `v1`
