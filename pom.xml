@@ -26,7 +26,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.version>2.2.1.Final</quarkus.version>
     <java-operator-sdk.version>1.9.5</java-operator-sdk.version>
-    <kubernetes-client.version>5.7.0</kubernetes-client.version>
+    <kubernetes-client.version>5.7.1</kubernetes-client.version>
   </properties>
   <dependencyManagement>
     <dependencies>
