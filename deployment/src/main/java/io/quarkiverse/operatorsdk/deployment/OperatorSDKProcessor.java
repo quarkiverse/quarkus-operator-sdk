@@ -21,7 +21,6 @@ import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.fabric8.crd.generator.CRDGenerator;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
@@ -29,6 +28,7 @@ import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.processing.ConfiguredController;
 import io.quarkiverse.operatorsdk.runtime.*;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.ObserverRegistrationPhaseBuildItem;
@@ -59,18 +59,14 @@ class OperatorSDKProcessor {
     static final Logger log = Logger.getLogger(OperatorSDKProcessor.class.getName());
 
     private static final String FEATURE = "operator-sdk";
-    private static final DotName RESOURCE_CONTROLLER = DotName
-            .createSimple(ResourceController.class.getName());
-
-    private static final DotName APPLICATION_SCOPED = DotName
-            .createSimple(ApplicationScoped.class.getName());
+    private static final DotName RESOURCE_CONTROLLER = DotName.createSimple(ResourceController.class.getName());
+    private static final DotName CONFIGURED_CONTROLLER = DotName.createSimple(ConfiguredController.class.getName());
+    private static final DotName APPLICATION_SCOPED = DotName.createSimple(ApplicationScoped.class.getName());
     private static final DotName CUSTOM_RESOURCE = DotName.createSimple(CustomResource.class.getName());
     private static final DotName CONTROLLER = DotName.createSimple(Controller.class.getName());
     private static final DotName DELAY_REGISTRATION = DotName.createSimple(DelayRegistrationUntil.class.getName());
 
     private BuildTimeOperatorConfiguration buildTimeConfiguration;
-
-    private final CRDGenerator generator = new CRDGenerator();
 
     @BuildStep
     void setup(BuildProducer<IndexDependencyBuildItem> indexDependency,
@@ -123,9 +119,11 @@ class OperatorSDKProcessor {
         // apply should imply generate: we cannot apply if we're not generating!
         final var crdGeneration = new CRDGeneration(crdConfig.generate || crdConfig.apply);
         final List<QuarkusControllerConfiguration> controllerConfigs = resourceControllers.stream()
-                .filter(ci -> !Modifier.isAbstract(ci.flags()))
+                .filter(this::keep)
                 .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses, forcedReflectionClasses,
                         index, crdGeneration, liveReload))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .collect(Collectors.toList());
 
         // retrieve the known CRD information to make sure we always have a full view 
@@ -149,6 +147,16 @@ class OperatorSDKProcessor {
         }
 
         return new ConfigurationServiceBuildItem(Version.loadFromProperties(), controllerConfigs, crdInfo);
+    }
+
+    private boolean keep(ClassInfo ci) {
+        if (Modifier.isAbstract(ci.flags())) {
+            log.debugv("Skipping ''{0}'' controller because it's abstract", ci.name());
+            return false;
+        }
+
+        // Ignore ConfiguredController class
+        return !ci.name().equals(CONFIGURED_CONTROLLER);
     }
 
     /**
@@ -224,7 +232,7 @@ class OperatorSDKProcessor {
         return operator;
     }
 
-    private QuarkusControllerConfiguration createControllerConfiguration(
+    private Optional<QuarkusControllerConfiguration> createControllerConfiguration(
             ClassInfo info,
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
@@ -236,8 +244,16 @@ class OperatorSDKProcessor {
                 .name()
                 .toString();
 
-        // create ResourceController bean
         final var controllerClassName = info.name().toString();
+
+        // if we get CustomResource instead of a subclass, ignore the controller since we cannot do anything with it
+        if (crType == null || crType.equals(CUSTOM_RESOURCE.toString())) {
+            log.infov("Skipped processing of ''{0}'' controller as it's not parameterized with a CustomResource sub-class",
+                    controllerClassName);
+            return Optional.empty();
+        }
+
+        // create ResourceController bean
         additionalBeans.produce(
                 AdditionalBeanBuildItem.builder()
                         .addBeanClass(controllerClassName)
@@ -377,7 +393,7 @@ class OperatorSDKProcessor {
         storedConfigurations.getConfigurations().put(controllerClassName, configuration);
         liveReload.setContextObject(ContextStoredControllerConfigurations.class, storedConfigurations);
 
-        return configuration;
+        return Optional.of(configuration);
     }
 
     private String getControllerName(String resourceControllerClassName, AnnotationInstance controllerAnnotation) {
