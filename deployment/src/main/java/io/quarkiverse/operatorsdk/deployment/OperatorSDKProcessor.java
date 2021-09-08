@@ -389,7 +389,8 @@ class OperatorSDKProcessor {
                     crType,
                     configExtractor.delayedRegistration(),
                     getNamespaces(controllerAnnotation),
-                    getFinalizer(controllerAnnotation, crdName));
+                    getFinalizer(controllerAnnotation, crdName),
+                    getLabelSelector(controllerAnnotation));
 
             log.infov(
                     "Processed ''{0}'' controller named ''{1}'' for ''{2}'' CR (version ''{3}'')",
@@ -427,6 +428,13 @@ class OperatorSDKProcessor {
                 "finalizerName",
                 AnnotationValue::asString,
                 () -> ControllerUtils.getDefaultFinalizerName(crdName));
+    }
+
+    private String getLabelSelector(AnnotationInstance controllerAnnotation) {
+        return ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
+                "labelSelector",
+                AnnotationValue::asString,
+                () -> null);
     }
 
     private void registerForReflection(

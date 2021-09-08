@@ -27,6 +27,7 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
     private final String crClass;
     private Class<R> clazz;
     private final boolean registrationDelayed;
+    private String labelSelector;
     private ConfigurationService parent;
 
     @RecordableConstructor
@@ -36,7 +37,7 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
             String crdName,
             boolean generationAware,
             String crClass,
-            boolean registrationDelayed, Set<String> namespaces, String finalizer) {
+            boolean registrationDelayed, Set<String> namespaces, String finalizer, String labelSelector) {
         this.associatedControllerClassName = associatedControllerClassName;
         this.name = name;
         this.crdName = crdName;
@@ -46,6 +47,7 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
         this.retryConfiguration = ControllerConfiguration.super.getRetryConfiguration();
         setNamespaces(namespaces);
         setFinalizer(finalizer);
+        this.labelSelector = labelSelector;
     }
 
     public static Set<String> asSet(String[] namespaces) {
@@ -140,5 +142,14 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
     @Override
     public Set<String> getEffectiveNamespaces() {
         return ControllerConfiguration.super.getEffectiveNamespaces();
+    }
+
+    @Override
+    public String getLabelSelector() {
+        return labelSelector;
+    }
+
+    public void setLabelSelector(String labelSelector) {
+        this.labelSelector = labelSelector;
     }
 }
