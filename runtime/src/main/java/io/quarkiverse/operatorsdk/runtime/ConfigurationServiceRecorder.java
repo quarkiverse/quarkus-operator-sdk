@@ -31,6 +31,7 @@ public class ConfigurationServiceRecorder {
             if (extConfig != null) {
                 extConfig.finalizer.ifPresent(c::setFinalizer);
                 extConfig.namespaces.ifPresent(c::setNamespaces);
+                extConfig.selector.ifPresent(c::setLabelSelector);
                 c.setRetryConfiguration(RetryConfigurationResolver.resolve(extConfig.retry));
             }
         });

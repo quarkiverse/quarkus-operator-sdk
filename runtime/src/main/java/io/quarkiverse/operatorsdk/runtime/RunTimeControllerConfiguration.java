@@ -27,6 +27,12 @@ public class RunTimeControllerConfiguration {
      * The optional controller retry configuration
      */
     @ConfigItem
-    //    public Optional<ExternalRetryConfiguration> retry;
     public ExternalRetryConfiguration retry;
+
+    /**
+     * An optional list of comma-separated label selectors that Custom Resources must match to trigger the controller.
+     * See https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/ for more details on selectors.
+     */
+    @ConfigItem
+    public Optional<String> selector;
 }

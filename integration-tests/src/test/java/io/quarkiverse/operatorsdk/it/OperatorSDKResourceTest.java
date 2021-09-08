@@ -90,7 +90,8 @@ public class OperatorSDKResourceTest {
                         "finalizer", equalTo("from-property/finalizer"),
                         "namespaces", hasItem("bar"),
                         "retryConfiguration.maxAttempts", equalTo(10),
-                        "retryConfiguration.initialInterval", equalTo(20000));
+                        "retryConfiguration.initialInterval", equalTo(20000),
+                        "labelSelector", equalTo("environment=production,tier!=frontend"));
 
         given()
                 .when()

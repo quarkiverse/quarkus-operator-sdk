@@ -172,5 +172,9 @@ public class OperatorSDKResource {
         public boolean useFinalizer() {
             return conf.useFinalizer();
         }
+
+        public String getLabelSelector() {
+            return conf.getLabelSelector();
+        }
     }
 }
