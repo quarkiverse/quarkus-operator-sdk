@@ -3,7 +3,10 @@ package io.quarkiverse.operatorsdk.deployment;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -97,13 +100,25 @@ class CRDGeneration {
             });
 
             controllerToCSVBuilders.forEach((controllerName, csvBuilder) -> {
-                final var csv = csvBuilder.build();
                 final File file = new File(outputDir, controllerName + ".csv.yml");
-                try (var outputStream = new FileOutputStream(file)) {
+
+                // deal with icon
+                try (var iconAsStream = Thread.currentThread().getContextClassLoader()
+                        .getResourceAsStream(controllerName + ".icon.png");
+                        var outputStream = new FileOutputStream(file)) {
+                    if (iconAsStream != null) {
+                        final byte[] iconAsBase64 = Base64.getEncoder().encode(iconAsStream.readAllBytes());
+                        csvBuilder.editOrNewSpec().addNewIcon()
+                                .withBase64data(new String(iconAsBase64))
+                                .withMediatype("image/png")
+                                .endIcon().endSpec();
+                    }
+
+                    final var csv = csvBuilder.build();
                     YAML_MAPPER.writeValue(outputStream, csv);
                     OperatorSDKProcessor.log.infov("Generated CSV for {0} controller -> {1}", controllerName, file);
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    e.printStackTrace();
                 }
             });
         }
