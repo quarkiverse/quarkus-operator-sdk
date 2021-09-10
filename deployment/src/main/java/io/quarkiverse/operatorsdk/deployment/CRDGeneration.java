@@ -98,9 +98,10 @@ class CRDGeneration {
 
             controllerToCSVBuilders.forEach((controllerName, csvBuilder) -> {
                 final var csv = csvBuilder.build();
-                try {
-                    final var outputStream = new FileOutputStream(new File(outputDir, controllerName + ".csv.yml"));
+                final File file = new File(outputDir, controllerName + ".csv.yml");
+                try (var outputStream = new FileOutputStream(file)) {
                     YAML_MAPPER.writeValue(outputStream, csv);
+                    OperatorSDKProcessor.log.infov("Generated CSV for {0} controller -> {1}", controllerName, file);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
