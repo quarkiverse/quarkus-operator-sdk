@@ -256,7 +256,10 @@ class OperatorSDKProcessor {
                 .name()
                 .toString();
 
+        // retrieve the controller's name
         final var controllerClassName = info.name().toString();
+        final var controllerAnnotation = info.classAnnotation(CONTROLLER);
+        final String name = getControllerName(controllerClassName, controllerAnnotation);
 
         // if we get CustomResource instead of a subclass, ignore the controller since we cannot do anything with it
         if (crType == null || crType.equals(CUSTOM_RESOURCE.toString())) {
@@ -329,7 +332,7 @@ class OperatorSDKProcessor {
             }
             // if we still need to generate the CRD, add the CR to the set to be generated
             if (generateCurrent[0]) {
-                crdGeneration.withCustomResource(crClass, crdName);
+                crdGeneration.withCustomResource(crClass, crdName, name);
             }
         }
 
@@ -365,11 +368,7 @@ class OperatorSDKProcessor {
 
         if (regenerateConfig) {
             // extract the configuration from annotation and/or external configuration
-            final var controllerAnnotation = info.classAnnotation(CONTROLLER);
             final var delayedRegistrationAnnotation = info.classAnnotation(DELAY_REGISTRATION);
-
-            // retrieve the controller's name
-            final String name = getControllerName(controllerClassName, controllerAnnotation);
 
             final var configExtractor = new BuildTimeHybridControllerConfiguration(buildTimeConfiguration,
                     buildTimeConfiguration.controllers.get(name),
