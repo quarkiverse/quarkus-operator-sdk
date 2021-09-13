@@ -90,4 +90,28 @@ public class CustomResourceInfo {
     public String getControllerName() {
         return controllerName;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+
+        CustomResourceInfo that = (CustomResourceInfo) o;
+
+        if (!group.equals(that.group))
+            return false;
+        if (!version.equals(that.version))
+            return false;
+        return kind.equals(that.kind);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = group.hashCode();
+        result = 31 * result + version.hashCode();
+        result = 31 * result + kind.hashCode();
+        return result;
+    }
 }

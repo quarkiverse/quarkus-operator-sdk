@@ -44,4 +44,15 @@ public class CRDGenerationInfo {
     public boolean isValidateCRDs() {
         return validateCRDs;
     }
+
+    public Map<String, CustomResourceInfo> getCRInfosFor(String crdName) {
+        final var crdVersionToInfo = crds.get(crdName);
+        if (crdVersionToInfo == null) {
+            throw new IllegalStateException("Should have information associated with '" + crdName + "'");
+        }
+
+        Map<String, CustomResourceInfo> crVersionToCRInfo = new HashMap<>(7);
+        crdVersionToInfo.forEach((crdVersion, cri) -> crVersionToCRInfo.putAll(cri.getVersions()));
+        return crVersionToCRInfo;
+    }
 }

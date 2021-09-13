@@ -1,22 +1,12 @@
 package io.quarkiverse.operatorsdk.deployment;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
-
 import io.fabric8.crd.generator.CRDGenerator;
 import io.fabric8.crd.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionBuilder;
 import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
@@ -27,16 +17,6 @@ class CRDGeneration {
     private final boolean generate;
     private boolean needGeneration;
     private final CustomResourceControllerMapping crMappings = new CustomResourceControllerMapping();
-
-    private static final ObjectMapper YAML_MAPPER;
-    static {
-        YAML_MAPPER = new ObjectMapper((new YAMLFactory()).enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
-                .enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS)
-                .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
-        YAML_MAPPER.configure(SerializationFeature.INDENT_OUTPUT, true);
-        YAML_MAPPER.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
-        YAML_MAPPER.configure(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS, false);
-    }
 
     public CRDGeneration(boolean generate) {
         this.generate = generate;
@@ -71,24 +51,11 @@ class CRDGeneration {
             final var info = generator.forCRDVersions(crdConfig.versions).inOutputDir(outputDir).detailedGenerate();
             final var crdDetailsPerNameAndVersion = info.getCRDDetailsPerNameAndVersion();
 
-            final var controllerToCSVBuilders = new HashMap<String, ClusterServiceVersionBuilder>(7);
-
             crdDetailsPerNameAndVersion.forEach((crdName, initialVersionToCRDInfoMap) -> {
                 OperatorSDKProcessor.log.infov("Generated {0} CRD:", crdName);
                 generated.add(crdName);
 
                 final var versions = crMappings.getCustomResourceInfos(crdName);
-                versions.forEach((version, cri) -> controllerToCSVBuilders
-                        .computeIfAbsent(cri.getControllerName(), s -> new ClusterServiceVersionBuilder()
-                                .withNewMetadata().withName(s).endMetadata())
-                        .editOrNewSpec()
-                        .editOrNewCustomresourcedefinitions()
-                        .addNewOwned()
-                        .withName(crdName)
-                        .withVersion(version)
-                        .withKind(cri.getKind())
-                        .endOwned().endCustomresourcedefinitions().endSpec());
-
                 final var versionToCRDInfo = converted.computeIfAbsent(crdName, s -> new HashMap<>());
                 initialVersionToCRDInfoMap
                         .forEach((version, crdInfo) -> {
@@ -97,29 +64,6 @@ class CRDGeneration {
                             versionToCRDInfo.put(version, new CRDInfo(crdInfo.getCrdName(),
                                     version, filePath, crdInfo.getDependentClassNames(), versions));
                         });
-            });
-
-            controllerToCSVBuilders.forEach((controllerName, csvBuilder) -> {
-                final File file = new File(outputDir, controllerName + ".csv.yml");
-
-                // deal with icon
-                try (var iconAsStream = Thread.currentThread().getContextClassLoader()
-                        .getResourceAsStream(controllerName + ".icon.png");
-                        var outputStream = new FileOutputStream(file)) {
-                    if (iconAsStream != null) {
-                        final byte[] iconAsBase64 = Base64.getEncoder().encode(iconAsStream.readAllBytes());
-                        csvBuilder.editOrNewSpec().addNewIcon()
-                                .withBase64data(new String(iconAsBase64))
-                                .withMediatype("image/png")
-                                .endIcon().endSpec();
-                    }
-
-                    final var csv = csvBuilder.build();
-                    YAML_MAPPER.writeValue(outputStream, csv);
-                    OperatorSDKProcessor.log.infov("Generated CSV for {0} controller -> {1}", controllerName, file);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
             });
         }
         return new CRDGenerationInfo(crdConfig.apply, validateCustomResources, converted, generated);

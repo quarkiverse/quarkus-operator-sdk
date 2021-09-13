@@ -47,6 +47,7 @@ import io.quarkus.deployment.builditem.LiveReloadBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ForceNonWeakReflectiveClassBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.deployment.metrics.MetricsCapabilityBuildItem;
+import io.quarkus.deployment.pkg.builditem.DeploymentResultBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.deployment.util.JandexUtil;
 import io.quarkus.gizmo.AssignableResultHandle;
@@ -97,11 +98,13 @@ class OperatorSDKProcessor {
             ConfigurationServiceRecorder recorder,
             RunTimeOperatorConfiguration runTimeConfiguration,
             BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
-            ConfigurationServiceBuildItem serviceBuildItem) {
+            GeneratedCRDInfoBuildItem generatedCRDs,
+            ConfigurationServiceBuildItem serviceBuildItem,
+            GeneratedCSVBuildItem ignored) {
         final var supplier = recorder
                 .configurationServiceSupplier(serviceBuildItem.getVersion(),
                         serviceBuildItem.getControllerConfigs(),
-                        serviceBuildItem.getCRDGenerationInfo(),
+                        generatedCRDs.getCRDGenerationInfo(),
                         runTimeConfiguration);
         syntheticBeanBuildItemBuildProducer.produce(
                 SyntheticBeanBuildItem.configure(QuarkusConfigurationService.class)
@@ -113,12 +116,22 @@ class OperatorSDKProcessor {
     }
 
     @BuildStep
+    void generateCSV(OutputTargetBuildItem outputTarget, GeneratedCRDInfoBuildItem generatedCRDs,
+            BuildProducer<GeneratedCSVBuildItem> ignored,
+            DeploymentResultBuildItem sync
+    // needed to ensure that this step runs after the container image has been built
+    /* @SuppressWarnings("unused") List<ArtifactResultBuildItem> artifactResults */) {
+        CSVGenerator.generate(outputTarget, generatedCRDs.getCRDGenerationInfo());
+    }
+
+    @BuildStep
     ConfigurationServiceBuildItem createConfigurationServiceAndOperator(
             OutputTargetBuildItem outputTarget,
             CombinedIndexBuildItem combinedIndexBuildItem,
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
+            BuildProducer<GeneratedCRDInfoBuildItem> generatedCRDInfo,
             LiveReloadBuildItem liveReload) {
 
         final CRDConfiguration crdConfig = buildTimeConfiguration.crd;
@@ -158,7 +171,9 @@ class OperatorSDKProcessor {
                     .build());
         }
 
-        return new ConfigurationServiceBuildItem(Version.loadFromProperties(), controllerConfigs, crdInfo);
+        generatedCRDInfo.produce(new GeneratedCRDInfoBuildItem(crdInfo));
+
+        return new ConfigurationServiceBuildItem(Version.loadFromProperties(), controllerConfigs);
     }
 
     private boolean keep(ClassInfo ci) {
