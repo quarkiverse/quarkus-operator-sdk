@@ -54,6 +54,7 @@ import io.quarkus.gizmo.AssignableResultHandle;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
+import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.metrics.MetricsFactory;
 
@@ -118,10 +119,8 @@ class OperatorSDKProcessor {
     @BuildStep
     void generateCSV(OutputTargetBuildItem outputTarget, GeneratedCRDInfoBuildItem generatedCRDs,
             BuildProducer<GeneratedCSVBuildItem> ignored,
-            DeploymentResultBuildItem sync
-    // needed to ensure that this step runs after the container image has been built
-    /* @SuppressWarnings("unused") List<ArtifactResultBuildItem> artifactResults */) {
-        CSVGenerator.generate(outputTarget, generatedCRDs.getCRDGenerationInfo());
+            List<GeneratedKubernetesResourceBuildItem> generatedKubernetesManifests) {
+        CSVGenerator.generate(outputTarget, generatedCRDs.getCRDGenerationInfo(), generatedKubernetesManifests);
     }
 
     @BuildStep

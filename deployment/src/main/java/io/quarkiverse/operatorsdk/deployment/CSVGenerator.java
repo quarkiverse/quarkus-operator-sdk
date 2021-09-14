@@ -2,12 +2,13 @@ package io.quarkiverse.operatorsdk.deployment;
 
 import static io.quarkus.kubernetes.deployment.Constants.KUBERNETES;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,7 +17,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 
 import io.dekorate.utils.Serialization;
-import io.fabric8.kubernetes.api.model.KubernetesList;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.openshift.api.model.ClusterRole;
@@ -25,6 +25,7 @@ import io.fabric8.openshift.api.model.Role;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionBuilder;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
+import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 
 public class CSVGenerator {
     private static final ObjectMapper YAML_MAPPER;
@@ -38,45 +39,43 @@ public class CSVGenerator {
         YAML_MAPPER.configure(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS, false);
     }
 
-    public static void generate(OutputTargetBuildItem outputTarget, CRDGenerationInfo info) {
+    public static void generate(OutputTargetBuildItem outputTarget, CRDGenerationInfo info,
+            List<GeneratedKubernetesResourceBuildItem> generatedKubernetesManifests) {
         // load generated manifests
         final var outputDir = outputTarget.getOutputDirectory().resolve(KUBERNETES);
-        File manifest = outputDir.resolve("kubernetes.yml").toFile();
-
         final var serviceAccountName = new String[1];
         final var clusterRole = new ClusterRole[1];
         final var role = new Role[1];
         final var deployment = new Deployment[1];
-        if (manifest.exists()) {
-            KubernetesList manifests;
-            try (FileInputStream fis = new FileInputStream(manifest)) {
-                manifests = Serialization.unmarshalAsList(fis);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
 
-            manifests.getItems().forEach(i -> {
-                if (i instanceof ServiceAccount) {
-                    serviceAccountName[0] = i.getMetadata().getName();
-                    return;
-                }
+        generatedKubernetesManifests.stream()
+                .filter(bi -> bi.getName().equals("kubernetes.yml"))
+                .findAny()
+                .ifPresent(
+                        bi -> {
+                            final var resources = Serialization.unmarshalAsList(new ByteArrayInputStream(bi.getContent()));
+                            resources.getItems().forEach(r -> {
+                                if (r instanceof ServiceAccount) {
+                                    serviceAccountName[0] = r.getMetadata().getName();
+                                    return;
+                                }
 
-                if (i instanceof ClusterRole) {
-                    clusterRole[0] = (ClusterRole) i;
-                    return;
-                }
+                                if (r instanceof ClusterRole) {
+                                    clusterRole[0] = (ClusterRole) r;
+                                    return;
+                                }
 
-                if (i instanceof Role) {
-                    role[0] = (Role) i;
-                    return;
-                }
+                                if (r instanceof Role) {
+                                    role[0] = (Role) r;
+                                    return;
+                                }
 
-                if (i instanceof Deployment) {
-                    deployment[0] = (Deployment) i;
-                    return;
-                }
-            });
-        }
+                                if (r instanceof Deployment) {
+                                    deployment[0] = (Deployment) r;
+                                    return;
+                                }
+                            });
+                        });
 
         final var controllerToCSVBuilders = new HashMap<String, ClusterServiceVersionBuilder>(7);
         info.getCrds().forEach((crdName, crdVersionToInfo) -> {
