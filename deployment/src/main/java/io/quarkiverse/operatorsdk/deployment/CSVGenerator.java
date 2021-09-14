@@ -136,7 +136,9 @@ public class CSVGenerator {
                             .endDeployment();
                 }
 
+                // do not forget to end the elements!!
                 installSpec.endSpec().endInstall();
+                csvSpec.endSpec();
 
                 final var csv = csvBuilder.build();
                 YAML_MAPPER.writeValue(outputStream, csv);
