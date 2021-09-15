@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -19,9 +18,8 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import io.dekorate.utils.Serialization;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.openshift.api.model.ClusterRole;
-import io.fabric8.openshift.api.model.PolicyRule;
-import io.fabric8.openshift.api.model.Role;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
+import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionBuilder;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
@@ -114,8 +112,7 @@ public class CSVGenerator {
                     installSpec
                             .addNewClusterPermission()
                             .withServiceAccountName(serviceAccountName[0])
-                            .addAllToRules(clusterRole[0].getRules().stream().map(CSVGenerator::convertPolicyRule)
-                                    .collect(Collectors.toSet()))
+                            .addAllToRules(clusterRole[0].getRules())
                             .endClusterPermission();
                 }
 
@@ -123,9 +120,7 @@ public class CSVGenerator {
                     installSpec
                             .addNewPermission()
                             .withServiceAccountName(serviceAccountName[0])
-                            .addAllToRules(
-                                    role[0].getRules().stream().map(CSVGenerator::convertPolicyRule)
-                                            .collect(Collectors.toSet()))
+                            .addAllToRules(role[0].getRules())
                             .endPermission();
                 }
 
@@ -148,10 +143,4 @@ public class CSVGenerator {
             }
         });
     }
-
-    private static io.fabric8.kubernetes.api.model.rbac.PolicyRule convertPolicyRule(PolicyRule pr) {
-        return new io.fabric8.kubernetes.api.model.rbac.PolicyRule(pr.getApiGroups(), pr.getNonResourceURLs(),
-                pr.getResourceNames(), pr.getResources(), pr.getVerbs());
-    }
-
 }
