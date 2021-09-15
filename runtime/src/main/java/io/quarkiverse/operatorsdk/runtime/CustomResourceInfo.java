@@ -18,12 +18,12 @@ public class CustomResourceInfo {
     private final String crClassName;
     private final Optional<String> specClassName;
     private final Optional<String> statusClassName;
-    private final String controllerName;
+    private final String csvGroupName;
 
     @RecordableConstructor
     public CustomResourceInfo(String group, String version, String kind, String singular, String plural, String[] shortNames,
             boolean storage, boolean served, Scope scope, String crClassName, Optional<String> specClassName,
-            Optional<String> statusClassName, String controllerName) {
+            Optional<String> statusClassName, String csvGroupName) {
         this.group = group;
         this.version = version;
         this.kind = kind;
@@ -36,7 +36,7 @@ public class CustomResourceInfo {
         this.crClassName = crClassName;
         this.specClassName = specClassName;
         this.statusClassName = statusClassName;
-        this.controllerName = controllerName;
+        this.csvGroupName = csvGroupName;
     }
 
     public String getGroup() {
@@ -87,8 +87,8 @@ public class CustomResourceInfo {
         return statusClassName;
     }
 
-    public String getControllerName() {
-        return controllerName;
+    public String getCsvGroupName() {
+        return csvGroupName;
     }
 
     @Override
