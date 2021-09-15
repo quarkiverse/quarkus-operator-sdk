@@ -346,7 +346,11 @@ class OperatorSDKProcessor {
             }
             // if we still need to generate the CRD, add the CR to the set to be generated
             if (generateCurrent[0]) {
-                crdGeneration.withCustomResource(crClass, crdName, name);
+                // figure out which group should be used to generate CSV
+                final var groupNameAnnotation = info.classAnnotation(DotName.createSimple(CSVGroupName.class.getName()));
+                final var groupName = ConfigurationUtils.annotationValueOrDefault(groupNameAnnotation, "value",
+                        AnnotationValue::asString, () -> name);
+                crdGeneration.withCustomResource(crClass, crdName, groupName);
             }
         }
 

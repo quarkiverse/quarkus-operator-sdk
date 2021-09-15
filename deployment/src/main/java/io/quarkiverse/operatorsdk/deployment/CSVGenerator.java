@@ -79,7 +79,7 @@ public class CSVGenerator {
         info.getCrds().forEach((crdName, crdVersionToInfo) -> {
             final var versions = info.getCRInfosFor(crdName);
             versions.forEach((version, cri) -> controllerToCSVBuilders
-                    .computeIfAbsent(cri.getControllerName(), s -> new ClusterServiceVersionBuilder()
+                    .computeIfAbsent(cri.getCsvGroupName(), s -> new ClusterServiceVersionBuilder()
                             .withNewMetadata().withName(s).endMetadata())
                     .editOrNewSpec()
                     .editOrNewCustomresourcedefinitions()

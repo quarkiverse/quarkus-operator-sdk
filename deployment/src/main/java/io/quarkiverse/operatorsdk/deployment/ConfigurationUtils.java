@@ -51,13 +51,13 @@ class ConfigurationUtils {
 
     static <T> T annotationValueOrDefault(
             AnnotationInstance annotation,
-            String name,
+            String annotationFieldName,
             Function<AnnotationValue, T> converter,
             Supplier<T> defaultValue) {
         return annotation != null
                 ?
                 // get converted annotation value of get default
-                Optional.ofNullable(annotation.value(name)).map(converter).orElseGet(defaultValue)
+                Optional.ofNullable(annotation.value(annotationFieldName)).map(converter).orElseGet(defaultValue)
                 :
                 // get default
                 defaultValue.get();
