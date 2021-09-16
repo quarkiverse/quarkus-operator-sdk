@@ -7,6 +7,12 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE })
-public @interface CSVGroupName {
-    String value() default "";
+public @interface CSVMetadata {
+    String name() default "";
+
+    String description() default "";
+
+    String displayName() default "";
+
+    String[] keywords() default "";
 }
