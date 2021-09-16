@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -22,6 +23,7 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionBuilder;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
+import io.quarkiverse.operatorsdk.runtime.CSVMetadataHolder;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 
@@ -38,6 +40,7 @@ public class CSVGenerator {
     }
 
     public static void generate(OutputTargetBuildItem outputTarget, CRDGenerationInfo info,
+            Map<String, CSVMetadataHolder> csvMetadata,
             List<GeneratedKubernetesResourceBuildItem> generatedKubernetesManifests) {
         // load generated manifests
         final var outputDir = outputTarget.getOutputDirectory().resolve(KUBERNETES);
@@ -78,16 +81,23 @@ public class CSVGenerator {
         final var controllerToCSVBuilders = new HashMap<String, ClusterServiceVersionBuilder>(7);
         info.getCrds().forEach((crdName, crdVersionToInfo) -> {
             final var versions = info.getCRInfosFor(crdName);
-            versions.forEach((version, cri) -> controllerToCSVBuilders
-                    .computeIfAbsent(cri.getCsvGroupName(), s -> new ClusterServiceVersionBuilder()
-                            .withNewMetadata().withName(s).endMetadata())
-                    .editOrNewSpec()
-                    .editOrNewCustomresourcedefinitions()
-                    .addNewOwned()
-                    .withName(crdName)
-                    .withVersion(version)
-                    .withKind(cri.getKind())
-                    .endOwned().endCustomresourcedefinitions().endSpec());
+            versions.forEach((version, cri) -> {
+                final var csvGroupName = cri.getCsvGroupName();
+                final var metadata = csvMetadata.get(csvGroupName);
+                controllerToCSVBuilders
+                        .computeIfAbsent(csvGroupName, s -> new ClusterServiceVersionBuilder()
+                                .withNewMetadata().withName(s).endMetadata())
+                        .editOrNewSpec()
+                        .withDescription(metadata.description)
+                        .withDisplayName(metadata.displayName)
+                        .withKeywords(metadata.keywords)
+                        .editOrNewCustomresourcedefinitions()
+                        .addNewOwned()
+                        .withName(crdName)
+                        .withVersion(version)
+                        .withKind(cri.getKind())
+                        .endOwned().endCustomresourcedefinitions().endSpec();
+            });
         });
 
         controllerToCSVBuilders.forEach((controllerName, csvBuilder) -> {
