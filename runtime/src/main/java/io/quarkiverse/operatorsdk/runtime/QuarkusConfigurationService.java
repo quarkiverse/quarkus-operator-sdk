@@ -2,6 +2,9 @@ package io.quarkiverse.operatorsdk.runtime;
 
 import java.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.fabric8.kubernetes.client.Config;
@@ -14,6 +17,7 @@ import io.javaoperatorsdk.operator.api.config.Version;
 import io.quarkus.arc.runtime.ClientProxyUnwrapper;
 
 public class QuarkusConfigurationService extends AbstractConfigurationService {
+    private static final Logger log = LoggerFactory.getLogger(QuarkusConfigurationService.class);
 
     private static final ClientProxyUnwrapper unwrapper = new ClientProxyUnwrapper();
     private final KubernetesClient client;
@@ -106,6 +110,11 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
 
     public CRDGenerationInfo getCRDGenerationInfo() {
         return crdInfo;
+    }
+
+    @Override
+    protected void logMissingControllerWarning(String controllerName, String knowControllersMessage) {
+        log.warn("Cannot find configuration for '{}' controller. {}", controllerName, knowControllersMessage);
     }
 
     @Override
