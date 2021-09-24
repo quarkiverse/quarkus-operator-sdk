@@ -15,4 +15,26 @@ public @interface CSVMetadata {
     String displayName() default "";
 
     String[] keywords() default "";
+
+    String maturity() default "";
+
+    String version() default "";
+
+    String replaces() default "";
+
+    Maintainer[] maintainers() default {};
+
+    Provider provider();
+
+    @interface Maintainer {
+        String email() default "";
+
+        String name() default "";
+    }
+
+    @interface Provider {
+        String name() default "";
+
+        String url() default "";
+    }
 }
