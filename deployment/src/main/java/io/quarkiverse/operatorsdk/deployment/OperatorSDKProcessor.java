@@ -436,33 +436,62 @@ class OperatorSDKProcessor {
                 .filter(t -> t.name().equals(SHARED_CSV_METADATA))
                 .findFirst()
                 .map(t -> {
-                    /*
-                     * final var metadataHolder = JandexUtil.resolveTypeParameters(t.name(), SHARED_CSV_METADATA, index)
-                     * .get(0);
-                     */
                     final var metadataHolderType = t.asParameterizedType().arguments().get(0);
                     // need to get the associated ClassInfo to properly resolve the annotations
                     final var metadataHolder = index.getClassByName(metadataHolderType.name());
                     final var csvMetadata = metadataHolder.classAnnotation(CSV_METADATA);
-                    return createMetadataHolder(csvMetadata, controllerName, null, null, null);
+                    return createMetadataHolder(csvMetadata, new CSVMetadataHolder(controllerName));
 
                 })
-                .map(mh -> createMetadataHolder(info.classAnnotation(CSV_METADATA), mh.name, mh.description, mh.displayName,
-                        mh.keywords))
-                .orElse(new CSVMetadataHolder(controllerName, null, null, null));
+                .map(mh -> createMetadataHolder(info.classAnnotation(CSV_METADATA), new CSVMetadataHolder(mh)))
+                .orElse(new CSVMetadataHolder(controllerName));
     }
 
-    private CSVMetadataHolder createMetadataHolder(AnnotationInstance csvMetadata, String defaultName,
-            String defaultDescription, String defaultDisplayName, String[] defaultKeywords) {
+    private CSVMetadataHolder createMetadataHolder(AnnotationInstance csvMetadata, CSVMetadataHolder mh) {
+        final var providerField = csvMetadata.value("provider");
+        String providerName = null;
+        String providerURL = null;
+        if (providerField != null) {
+            final var provider = providerField.asNested();
+            providerName = ConfigurationUtils.annotationValueOrDefault(provider, "name",
+                    AnnotationValue::asString, () -> mh.providerName);
+            providerURL = ConfigurationUtils.annotationValueOrDefault(provider, "url",
+                    AnnotationValue::asString, () -> mh.providerURL);
+        }
+
+        final var maintainersField = csvMetadata.value("maintainers");
+        CSVMetadataHolder.Maintainer[] maintainers = null;
+        if (maintainersField != null) {
+            final var maintainersAnn = maintainersField.asNestedArray();
+            maintainers = new CSVMetadataHolder.Maintainer[maintainersAnn.length];
+            for (int i = 0; i < maintainersAnn.length; i++) {
+                maintainers[i] = new CSVMetadataHolder.Maintainer(
+                        ConfigurationUtils.annotationValueOrDefault(maintainersAnn[i], "name",
+                                AnnotationValue::asString, () -> null),
+                        ConfigurationUtils.annotationValueOrDefault(maintainersAnn[i], "email",
+                                AnnotationValue::asString, () -> null));
+            }
+        } else {
+            maintainers = mh.maintainers;
+        }
+
         return new CSVMetadataHolder(
                 ConfigurationUtils.annotationValueOrDefault(csvMetadata, "name",
-                        AnnotationValue::asString, () -> defaultName),
+                        AnnotationValue::asString, () -> mh.name),
                 ConfigurationUtils.annotationValueOrDefault(csvMetadata, "description",
-                        AnnotationValue::asString, () -> defaultDescription),
+                        AnnotationValue::asString, () -> mh.description),
                 ConfigurationUtils.annotationValueOrDefault(csvMetadata, "displayName",
-                        AnnotationValue::asString, () -> defaultDisplayName),
+                        AnnotationValue::asString, () -> mh.displayName),
                 ConfigurationUtils.annotationValueOrDefault(csvMetadata, "keywords",
-                        AnnotationValue::asStringArray, () -> defaultKeywords));
+                        AnnotationValue::asStringArray, () -> mh.keywords),
+                providerName, providerURL,
+                ConfigurationUtils.annotationValueOrDefault(csvMetadata, "replaces",
+                        AnnotationValue::asString, () -> mh.replaces),
+                ConfigurationUtils.annotationValueOrDefault(csvMetadata, "version",
+                        AnnotationValue::asString, () -> mh.version),
+                ConfigurationUtils.annotationValueOrDefault(csvMetadata, "maturity",
+                        AnnotationValue::asString, () -> mh.maturity),
+                maintainers);
     }
 
     private String getControllerName(String resourceControllerClassName, AnnotationInstance controllerAnnotation) {

@@ -84,13 +84,31 @@ public class CSVGenerator {
             versions.forEach((version, cri) -> {
                 final var csvGroupName = cri.getCsvGroupName();
                 final var metadata = csvMetadata.get(csvGroupName);
-                controllerToCSVBuilders
+                final var csvSpecBuilder = controllerToCSVBuilders
                         .computeIfAbsent(csvGroupName, s -> new ClusterServiceVersionBuilder()
                                 .withNewMetadata().withName(s).endMetadata())
                         .editOrNewSpec()
                         .withDescription(metadata.description)
                         .withDisplayName(metadata.displayName)
                         .withKeywords(metadata.keywords)
+                        .withReplaces(metadata.replaces)
+                        .withVersion(metadata.version)
+                        .withMaturity(metadata.maturity);
+
+                if (metadata.providerName != null) {
+                    csvSpecBuilder.withNewProvider()
+                            .withName(metadata.providerName)
+                            .withUrl(metadata.providerURL)
+                            .endProvider();
+                }
+
+                if (metadata.maintainers != null && metadata.maintainers.length > 0) {
+                    for (CSVMetadataHolder.Maintainer maintainer : metadata.maintainers) {
+                        csvSpecBuilder.addNewMaintainer(maintainer.email, maintainer.name);
+                    }
+                }
+
+                csvSpecBuilder
                         .editOrNewCustomresourcedefinitions()
                         .addNewOwned()
                         .withName(crdName)
