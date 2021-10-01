@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.AbstractConfigurationService;
 import io.javaoperatorsdk.operator.api.config.Version;
@@ -21,16 +22,18 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     private final ObjectMapper mapper;
     private int terminationTimeout;
     private final Map<String, String> controllerClassToName;
+    private final Metrics metrics;
 
     public QuarkusConfigurationService(
             Version version,
             List<QuarkusControllerConfiguration> configurations,
             KubernetesClient client,
             CRDGenerationInfo crdInfo, int maxThreads,
-            int timeout, ObjectMapper mapper) {
+            int timeout, ObjectMapper mapper, Metrics metrics) {
         super(version);
         this.client = client;
         this.mapper = mapper;
+        this.metrics = metrics;
         if (configurations != null && !configurations.isEmpty()) {
             controllerClassToName = new HashMap<>(configurations.size());
             configurations.forEach(c -> {
@@ -103,5 +106,10 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
 
     public CRDGenerationInfo getCRDGenerationInfo() {
         return crdInfo;
+    }
+
+    @Override
+    public Metrics getMetrics() {
+        return metrics;
     }
 }
