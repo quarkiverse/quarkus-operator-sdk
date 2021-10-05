@@ -73,12 +73,22 @@ class OperatorSDKProcessor {
     @BuildStep
     void setup(BuildProducer<IndexDependencyBuildItem> indexDependency,
             BuildProducer<FeatureBuildItem> features,
-            BuildProducer<UnremovableBeanBuildItem> unremovableBeans) {
+            BuildProducer<UnremovableBeanBuildItem> unremovableBeans,
+            Optional<MetricsCapabilityBuildItem> metricsCapability, BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
         features.produce(new FeatureBuildItem(FEATURE));
         indexDependency.produce(
                 new IndexDependencyBuildItem("io.javaoperatorsdk", "operator-framework-core"));
         // mark ObjectMapper as non-removable
         unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(ObjectMapper.class));
+
+        // only add micrometer support if the capability is supported
+        if (metricsCapability.isPresent() && metricsCapability.get().metricsSupported(MetricsFactory.MICROMETER)) {
+            // we use the class name to not import any micrometer-related dependencies to prevent activation
+            additionalBeans.produce(
+                    AdditionalBeanBuildItem.unremovableOf("io.quarkiverse.operatorsdk.runtime.MicrometerMetricsProvider"));
+        } else {
+            additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(NoOpMetricsProvider.class));
+        }
     }
 
     @BuildStep
@@ -109,8 +119,7 @@ class OperatorSDKProcessor {
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
-            LiveReloadBuildItem liveReload,
-            Optional<MetricsCapabilityBuildItem> metricsCapability) {
+            LiveReloadBuildItem liveReload) {
 
         final CRDConfiguration crdConfig = buildTimeConfiguration.crd;
         final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(
@@ -140,9 +149,6 @@ class OperatorSDKProcessor {
         liveReload.setContextObject(ContextStoredCRDInfos.class, storedCRDInfos); // record CRD generation info in context for future use
 
         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorProducer.class));
-        if (metricsCapability.isPresent() && metricsCapability.get().metricsSupported(MetricsFactory.MICROMETER)) {
-            additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(MetricsMeterBinder.class));
-        }
 
         // if the app doesn't provide a main class, add the AppEventListener
         if (index.getAllKnownImplementors(DotName.createSimple(QuarkusApplication.class.getName())).isEmpty()) {
