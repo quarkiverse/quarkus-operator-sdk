@@ -25,6 +25,11 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>io.javaoperatorsdk</groupId>
+      <artifactId>micrometer-support</artifactId>
+      <version>${java-operator-sdk.version}</version>
+    </dependency>
+    <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-core</artifactId>
     </dependency>
@@ -51,6 +56,7 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-micrometer</artifactId>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
   <build>

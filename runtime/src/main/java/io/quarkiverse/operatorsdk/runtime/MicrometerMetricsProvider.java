@@ -4,16 +4,17 @@ import javax.enterprise.inject.Produces;
 import javax.inject.Singleton;
 
 import io.javaoperatorsdk.operator.Metrics;
+import io.javaoperatorsdk.operator.micrometer.MicrometerMetrics;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
 
 @Singleton
-public class MetricsMeterBinder implements MeterBinder {
+public class MicrometerMetricsProvider implements MeterBinder {
     private Metrics metrics = Metrics.NOOP;
 
     @Override
     public void bindTo(MeterRegistry registry) {
-        metrics = new Metrics(registry);
+        metrics = new MicrometerMetrics(registry);
     }
 
     @Produces
