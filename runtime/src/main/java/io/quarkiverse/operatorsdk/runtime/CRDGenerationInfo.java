@@ -2,6 +2,7 @@ package io.quarkiverse.operatorsdk.runtime;
 
 import java.util.*;
 
+import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
 public class CRDGenerationInfo {
@@ -37,6 +38,7 @@ public class CRDGenerationInfo {
         return generated.contains(name);
     }
 
+    @IgnoreProperty
     public Map<String, CRDInfo> getCRDInfosFor(String crdName) {
         return crds.get(crdName);
     }
@@ -45,7 +47,8 @@ public class CRDGenerationInfo {
         return validateCRDs;
     }
 
-    public Map<String, CustomResourceInfo> getCRInfosFor(String crdName) {
+    @IgnoreProperty
+    public Map<String, CustomResourceInfo> getCRInfosByCRVersionFor(String crdName) {
         final var crdVersionToInfo = crds.get(crdName);
         if (crdVersionToInfo == null) {
             throw new IllegalStateException("Should have information associated with '" + crdName + "'");
