@@ -8,8 +8,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -20,10 +22,16 @@ import io.dekorate.utils.Serialization;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionBuilder;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionFluent;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionSpecFluent;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.NamedInstallStrategyFluent;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkiverse.operatorsdk.runtime.CSVMetadataHolder;
+import io.quarkiverse.operatorsdk.runtime.CustomResourceInfo;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 
@@ -79,9 +87,13 @@ public class CSVGenerator {
                         });
 
         final var controllerToCSVBuilders = new HashMap<String, ClusterServiceVersionBuilder>(7);
+        final var groupToCRInfo = new HashMap<String, Set<CustomResourceInfo>>(7);
         info.getCrds().forEach((crdName, crdVersionToInfo) -> {
-            final var versions = info.getCRInfosFor(crdName);
+            final var versions = info.getCRInfosByCRVersionFor(crdName);
             versions.forEach((version, cri) -> {
+                // record group name and associated CustomResourceInfos
+                groupToCRInfo.computeIfAbsent(cri.getGroup(), s -> new HashSet<>()).add(cri);
+
                 final var csvGroupName = cri.getCsvGroupName();
                 final var metadata = csvMetadata.get(csvGroupName);
                 final var csvSpecBuilder = controllerToCSVBuilders
@@ -114,7 +126,41 @@ public class CSVGenerator {
                         .withName(crdName)
                         .withVersion(version)
                         .withKind(cri.getKind())
-                        .endOwned().endCustomresourcedefinitions().endSpec();
+                        .endOwned().endCustomresourcedefinitions();
+
+                // make sure that we add permissions for our own CR
+                final var installSpec = csvSpecBuilder.editOrNewInstall().editOrNewSpec();
+                final Integer[] ruleIndex = new Integer[1];
+                final Integer[] clusterPermissionIndex = new Integer[] { 0 };
+                final Boolean hasMatchingClusterPermission = hasMatchingClusterPermission(cri, installSpec, ruleIndex,
+                        clusterPermissionIndex);
+                final var clusterPermission = hasMatchingClusterPermission
+                        ? installSpec.editClusterPermission(clusterPermissionIndex[0])
+                        : installSpec.addNewClusterPermission();
+
+                // if we found a matching rule, so retrieve it and add our resource, otherwise create a new rule
+                final PolicyRuleBuilder rule = ruleIndex[0] != null
+                        ? new PolicyRuleBuilder(clusterPermission.getRule(ruleIndex[0]))
+                        : new PolicyRuleBuilder();
+                final var plural = cri.getPlural();
+                rule.addNewResource(plural);
+
+                // if the resource has a non-Void status, also add the status resource
+                cri.getStatusClassName().ifPresent(statusClass -> {
+                    if (!"java.lang.Void".equals(statusClass)) {
+                        rule.addNewResource(plural + "/status");
+                    }
+                });
+                if (ruleIndex[0] != null) {
+                    clusterPermission.setToRules(ruleIndex[0], rule.build());
+                } else {
+                    clusterPermission.addToRules(rule.addNewApiGroup(cri.getGroup())
+                            .addToVerbs("get", "list", "watch", "create", "delete", "patch", "update")
+                            .build());
+                }
+                clusterPermission.endClusterPermission();
+                installSpec.endSpec().endInstall();
+                csvSpecBuilder.endSpec();
             });
         });
 
@@ -137,6 +183,10 @@ public class CSVGenerator {
                 final var installSpec = csvSpec.editOrNewInstall()
                         .editOrNewSpec();
                 if (clusterRole[0] != null) {
+                    // todo: check if we have our CR group in the cluster role fragment and remove the one we added
+                    // before since we presume that if the user defined a fragment for permissions associated with their
+                    // CR we want that fragment to take precedence over automatically generated code
+
                     installSpec
                             .addNewClusterPermission()
                             .withServiceAccountName(serviceAccountName[0])
@@ -170,5 +220,24 @@ public class CSVGenerator {
                 e.printStackTrace();
             }
         });
+    }
+
+    private static Boolean hasMatchingClusterPermission(CustomResourceInfo cri,
+            NamedInstallStrategyFluent.SpecNested<ClusterServiceVersionSpecFluent.InstallNested<ClusterServiceVersionFluent.SpecNested<ClusterServiceVersionBuilder>>> installSpec,
+            Integer[] ruleIndex, Integer[] clusterPermissionIndex) {
+        final var hasMatchingClusterPermission = installSpec
+                .hasMatchingClusterPermission(cp -> {
+                    int i = 0;
+                    for (PolicyRule rule : cp.getRules()) {
+                        if (rule.getApiGroups().contains(cri.getGroup())) {
+                            ruleIndex[0] = i;
+                            return true;
+                        }
+                        i++;
+                    }
+                    clusterPermissionIndex[0]++;
+                    return false;
+                });
+        return hasMatchingClusterPermission;
     }
 }
