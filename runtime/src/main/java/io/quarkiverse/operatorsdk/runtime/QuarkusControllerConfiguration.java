@@ -71,6 +71,7 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
     }
 
     @Override
+    @IgnoreProperty
     public Class<R> getCustomResourceClass() {
         if (clazz == null) {
             clazz = (Class<R>) loadClass(crClass);
