@@ -118,11 +118,13 @@ class OperatorSDKProcessor {
             CSVMetadataBuildItem csvMetadata,
             BuildProducer<GeneratedCSVBuildItem> ignored,
             List<GeneratedKubernetesResourceBuildItem> generatedKubernetesManifests) {
-        try {
-            CSVGenerator.generate(outputTarget, generatedCRDs.getCRDGenerationInfo(), csvMetadata.getCSVMetadata(),
-                    generatedKubernetesManifests);
-        } catch (Exception e) {
-            log.infov(e, "Couldn't generate CSV:");
+        if (buildTimeConfiguration.generateCSV.orElse(false)) {
+            try {
+                CSVGenerator.generate(outputTarget, generatedCRDs.getCRDGenerationInfo(), csvMetadata.getCSVMetadata(),
+                        generatedKubernetesManifests);
+            } catch (Exception e) {
+                log.infov(e, "Couldn't generate CSV:");
+            }
         }
     }
 

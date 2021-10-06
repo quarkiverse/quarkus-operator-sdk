@@ -47,4 +47,10 @@ public class BuildTimeOperatorConfiguration {
      */
     @ConfigItem
     public Optional<String> delayRegistrationUntilEvent;
+
+    /**
+     * Whether the extension should generate a ClusterServiceVersion manifest for controllers.
+     */
+    @ConfigItem(defaultValue = "false")
+    public Optional<Boolean> generateCSV;
 }
