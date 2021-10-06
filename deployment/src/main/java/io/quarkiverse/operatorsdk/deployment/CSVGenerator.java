@@ -9,9 +9,11 @@ import java.io.IOException;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -183,14 +185,54 @@ public class CSVGenerator {
                 final var installSpec = csvSpec.editOrNewInstall()
                         .editOrNewSpec();
                 if (clusterRole[0] != null) {
-                    // todo: check if we have our CR group in the cluster role fragment and remove the one we added
+                    // check if we have our CR group in the cluster role fragment and remove the one we added
                     // before since we presume that if the user defined a fragment for permissions associated with their
-                    // CR we want that fragment to take precedence over automatically generated code
+                    // CR they want that fragment to take precedence over automatically generated code
+                    final var rules = clusterRole[0].getRules();
+                    final var clusterPermissions = installSpec.buildClusterPermissions();
+                    groupToCRInfo.forEach((group, infos) -> {
 
+                        final Predicate<PolicyRule> hasGroup = pr -> pr.getApiGroups().contains(group);
+                        final var nowEmptyPermissions = new LinkedList<Integer>();
+                        final var permissionPosition = new Integer[] { 0 };
+                        if (rules.stream().anyMatch(hasGroup)) {
+                            clusterPermissions.forEach(p -> {
+                                // record the position of all rules that match the group
+                                Integer[] index = new Integer[] { 0 };
+                                List<Integer> matchingRuleIndices = new LinkedList<>();
+                                p.getRules().forEach(r -> {
+                                    if (hasGroup.test(r)) {
+                                        matchingRuleIndices.add(index[0]);
+                                    }
+                                    index[0]++;
+                                });
+
+                                // remove the group from all matching rules
+                                matchingRuleIndices.forEach(i -> {
+                                    final var groups = p.getRules().get(i).getApiGroups();
+                                    groups.remove(group);
+                                    // if the rule doesn't have any groups anymore, remove it
+                                    if (groups.isEmpty()) {
+                                        p.getRules().remove(i.intValue());
+                                        // if the permission doesn't have any rules anymore, mark it for removal
+                                        if (p.getRules().isEmpty()) {
+                                            nowEmptyPermissions.add(permissionPosition[0]);
+                                        }
+                                    }
+                                });
+
+                                permissionPosition[0]++;
+                            });
+
+                            // remove now empty permissions
+                            nowEmptyPermissions.forEach(i -> clusterPermissions.remove(i.intValue()));
+                            installSpec.addAllToClusterPermissions(clusterPermissions);
+                        }
+                    });
                     installSpec
                             .addNewClusterPermission()
                             .withServiceAccountName(serviceAccountName[0])
-                            .addAllToRules(clusterRole[0].getRules())
+                            .addAllToRules(rules)
                             .endClusterPermission();
                 }
 
