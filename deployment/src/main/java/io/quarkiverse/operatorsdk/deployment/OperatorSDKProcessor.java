@@ -1,7 +1,9 @@
 package io.quarkiverse.operatorsdk.deployment;
 
 import static io.quarkiverse.operatorsdk.runtime.ClassUtils.loadClass;
+import static io.quarkus.kubernetes.deployment.Constants.KUBERNETES;
 
+import java.io.ByteArrayInputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -17,7 +19,12 @@ import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.dekorate.utils.Serialization;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
+import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.Operator;
@@ -120,8 +127,44 @@ class OperatorSDKProcessor {
             List<GeneratedKubernetesResourceBuildItem> generatedKubernetesManifests) {
         if (buildTimeConfiguration.generateCSV.orElse(false)) {
             try {
-                CSVGenerator.generate(outputTarget, generatedCRDs.getCRDGenerationInfo(), csvMetadata.getCSVMetadata(),
-                        generatedKubernetesManifests);
+                final var outputDir = outputTarget.getOutputDirectory().resolve(KUBERNETES);
+                final var serviceAccountName = new String[1];
+                final var clusterRole = new ClusterRole[1];
+                final var role = new Role[1];
+                final var deployment = new Deployment[1];
+
+                generatedKubernetesManifests.stream()
+                        .filter(bi -> bi.getName().equals("kubernetes.yml"))
+                        .findAny()
+                        .ifPresent(
+                                bi -> {
+                                    final var resources = Serialization
+                                            .unmarshalAsList(new ByteArrayInputStream(bi.getContent()));
+                                    resources.getItems().forEach(r -> {
+                                        if (r instanceof ServiceAccount) {
+                                            serviceAccountName[0] = r.getMetadata().getName();
+                                            return;
+                                        }
+
+                                        if (r instanceof ClusterRole) {
+                                            clusterRole[0] = (ClusterRole) r;
+                                            return;
+                                        }
+
+                                        if (r instanceof Role) {
+                                            role[0] = (Role) r;
+                                            return;
+                                        }
+
+                                        if (r instanceof Deployment) {
+                                            deployment[0] = (Deployment) r;
+                                            return;
+                                        }
+                                    });
+                                });
+
+                CSVGenerator.generate(outputDir, generatedCRDs.getCRDGenerationInfo(), csvMetadata.getCSVMetadata(),
+                        serviceAccountName[0], clusterRole[0], role[0], deployment[0]);
             } catch (Exception e) {
                 log.infov(e, "Couldn't generate CSV:");
             }
