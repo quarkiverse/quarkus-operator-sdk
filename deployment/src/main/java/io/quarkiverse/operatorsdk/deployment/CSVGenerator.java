@@ -1,11 +1,9 @@
 package io.quarkiverse.operatorsdk.deployment;
 
-import static io.quarkus.kubernetes.deployment.Constants.KUBERNETES;
-
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,8 +18,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 
-import io.dekorate.utils.Serialization;
-import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
@@ -34,8 +30,6 @@ import io.fabric8.openshift.api.model.operatorhub.v1alpha1.NamedInstallStrategyF
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkiverse.operatorsdk.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.runtime.CustomResourceInfo;
-import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
-import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 
 public class CSVGenerator {
     private static final ObjectMapper YAML_MAPPER;
@@ -49,44 +43,10 @@ public class CSVGenerator {
         YAML_MAPPER.configure(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS, false);
     }
 
-    public static void generate(OutputTargetBuildItem outputTarget, CRDGenerationInfo info,
+    public static void generate(Path outputDir, CRDGenerationInfo info,
             Map<String, CSVMetadataHolder> csvMetadata,
-            List<GeneratedKubernetesResourceBuildItem> generatedKubernetesManifests) {
+            String serviceAccountName, ClusterRole clusterRole, Role role, Deployment deployment) {
         // load generated manifests
-        final var outputDir = outputTarget.getOutputDirectory().resolve(KUBERNETES);
-        final var serviceAccountName = new String[1];
-        final var clusterRole = new ClusterRole[1];
-        final var role = new Role[1];
-        final var deployment = new Deployment[1];
-
-        generatedKubernetesManifests.stream()
-                .filter(bi -> bi.getName().equals("kubernetes.yml"))
-                .findAny()
-                .ifPresent(
-                        bi -> {
-                            final var resources = Serialization.unmarshalAsList(new ByteArrayInputStream(bi.getContent()));
-                            resources.getItems().forEach(r -> {
-                                if (r instanceof ServiceAccount) {
-                                    serviceAccountName[0] = r.getMetadata().getName();
-                                    return;
-                                }
-
-                                if (r instanceof ClusterRole) {
-                                    clusterRole[0] = (ClusterRole) r;
-                                    return;
-                                }
-
-                                if (r instanceof Role) {
-                                    role[0] = (Role) r;
-                                    return;
-                                }
-
-                                if (r instanceof Deployment) {
-                                    deployment[0] = (Deployment) r;
-                                    return;
-                                }
-                            });
-                        });
 
         final var controllerToCSVBuilders = new HashMap<String, ClusterServiceVersionBuilder>(7);
         final var groupToCRInfo = new HashMap<String, Set<CustomResourceInfo>>(7);
@@ -184,11 +144,11 @@ public class CSVGenerator {
 
                 final var installSpec = csvSpec.editOrNewInstall()
                         .editOrNewSpec();
-                if (clusterRole[0] != null) {
+                if (clusterRole != null) {
                     // check if we have our CR group in the cluster role fragment and remove the one we added
                     // before since we presume that if the user defined a fragment for permissions associated with their
                     // CR they want that fragment to take precedence over automatically generated code
-                    final var rules = clusterRole[0].getRules();
+                    final var rules = clusterRole.getRules();
                     final var clusterPermissions = installSpec.buildClusterPermissions();
                     groupToCRInfo.forEach((group, infos) -> {
 
@@ -231,23 +191,23 @@ public class CSVGenerator {
                     });
                     installSpec
                             .addNewClusterPermission()
-                            .withServiceAccountName(serviceAccountName[0])
+                            .withServiceAccountName(serviceAccountName)
                             .addAllToRules(rules)
                             .endClusterPermission();
                 }
 
-                if (role[0] != null) {
+                if (role != null) {
                     installSpec
                             .addNewPermission()
-                            .withServiceAccountName(serviceAccountName[0])
-                            .addAllToRules(role[0].getRules())
+                            .withServiceAccountName(serviceAccountName)
+                            .addAllToRules(role.getRules())
                             .endPermission();
                 }
 
-                if (deployment[0] != null) {
+                if (deployment != null) {
                     installSpec.addNewDeployment()
-                            .withName(deployment[0].getMetadata().getName())
-                            .withSpec(deployment[0].getSpec())
+                            .withName(deployment.getMetadata().getName())
+                            .withSpec(deployment.getSpec())
                             .endDeployment();
                 }
 
