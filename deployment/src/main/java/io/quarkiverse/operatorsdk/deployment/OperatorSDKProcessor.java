@@ -3,7 +3,6 @@ package io.quarkiverse.operatorsdk.deployment;
 import static io.quarkiverse.operatorsdk.runtime.ClassUtils.loadClass;
 import static io.quarkus.kubernetes.deployment.Constants.KUBERNETES;
 
-import java.io.ByteArrayInputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -19,9 +18,7 @@ import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.dekorate.utils.Serialization;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.Role;
@@ -56,7 +53,6 @@ import io.quarkus.gizmo.AssignableResultHandle;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
-import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.metrics.MetricsFactory;
 
@@ -123,8 +119,11 @@ class OperatorSDKProcessor {
     @BuildStep
     void generateCSV(OutputTargetBuildItem outputTarget, GeneratedCRDInfoBuildItem generatedCRDs,
             CSVMetadataBuildItem csvMetadata,
-            BuildProducer<GeneratedCSVBuildItem> ignored,
-            List<GeneratedKubernetesResourceBuildItem> generatedKubernetesManifests) {
+            BuildProducer<GeneratedCSVBuildItem> ignored/*
+                                                         * ,
+                                                         * List<GeneratedKubernetesResourceBuildItem>
+                                                         * generatedKubernetesManifests
+                                                         */) {
         if (buildTimeConfiguration.generateCSV.orElse(false)) {
             try {
                 final var outputDir = outputTarget.getOutputDirectory().resolve(KUBERNETES);
@@ -133,36 +132,37 @@ class OperatorSDKProcessor {
                 final var role = new Role[1];
                 final var deployment = new Deployment[1];
 
-                generatedKubernetesManifests.stream()
-                        .filter(bi -> bi.getName().equals("kubernetes.yml"))
-                        .findAny()
-                        .ifPresent(
-                                bi -> {
-                                    final var resources = Serialization
-                                            .unmarshalAsList(new ByteArrayInputStream(bi.getContent()));
-                                    resources.getItems().forEach(r -> {
-                                        if (r instanceof ServiceAccount) {
-                                            serviceAccountName[0] = r.getMetadata().getName();
-                                            return;
-                                        }
-
-                                        if (r instanceof ClusterRole) {
-                                            clusterRole[0] = (ClusterRole) r;
-                                            return;
-                                        }
-
-                                        if (r instanceof Role) {
-                                            role[0] = (Role) r;
-                                            return;
-                                        }
-
-                                        if (r instanceof Deployment) {
-                                            deployment[0] = (Deployment) r;
-                                            return;
-                                        }
-                                    });
-                                });
-
+                /*
+                 * generatedKubernetesManifests.stream()
+                 * .filter(bi -> bi.getName().equals("kubernetes.yml"))
+                 * .findAny()
+                 * .ifPresent(
+                 * bi -> {
+                 * final var resources = Serialization
+                 * .unmarshalAsList(new ByteArrayInputStream(bi.getContent()));
+                 * resources.getItems().forEach(r -> {
+                 * if (r instanceof ServiceAccount) {
+                 * serviceAccountName[0] = r.getMetadata().getName();
+                 * return;
+                 * }
+                 * 
+                 * if (r instanceof ClusterRole) {
+                 * clusterRole[0] = (ClusterRole) r;
+                 * return;
+                 * }
+                 * 
+                 * if (r instanceof Role) {
+                 * role[0] = (Role) r;
+                 * return;
+                 * }
+                 * 
+                 * if (r instanceof Deployment) {
+                 * deployment[0] = (Deployment) r;
+                 * return;
+                 * }
+                 * });
+                 * });
+                 */
                 CSVGenerator.generate(outputDir, generatedCRDs.getCRDGenerationInfo(), csvMetadata.getCSVMetadata(),
                         serviceAccountName[0], clusterRole[0], role[0], deployment[0]);
             } catch (Exception e) {
