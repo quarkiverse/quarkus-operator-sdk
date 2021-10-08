@@ -3,7 +3,7 @@ package io.quarkiverse.operatorsdk.deployment;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.quarkiverse.operatorsdk.runtime.CustomResourceInfo;
+import io.quarkiverse.operatorsdk.common.CustomResourceInfo;
 
 public class CustomResourceControllerMapping {
     private final Map<String, Map<String, CustomResourceInfo>> crdNameToCRVersionToCRInfos = new HashMap<>(7);

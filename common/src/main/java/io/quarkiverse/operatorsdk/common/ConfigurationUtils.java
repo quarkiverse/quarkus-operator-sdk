@@ -1,4 +1,4 @@
-package io.quarkiverse.operatorsdk.deployment;
+package io.quarkiverse.operatorsdk.common;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -10,7 +10,7 @@ import org.jboss.logging.Logger;
 
 import io.javaoperatorsdk.operator.api.config.Utils;
 
-class ConfigurationUtils {
+public class ConfigurationUtils {
 
     /**
      * Extracts the appropriate configuration value for the controller checking first any annotation
@@ -49,7 +49,7 @@ class ConfigurationUtils {
         }
     }
 
-    static <T> T annotationValueOrDefault(
+    public static <T> T annotationValueOrDefault(
             AnnotationInstance annotation,
             String annotationFieldName,
             Function<AnnotationValue, T> converter,
@@ -75,7 +75,7 @@ class ConfigurationUtils {
      * @return the value specified by {@link Utils#CHECK_CRD_ENV_KEY} if set, the value specified by the new supported
      *         configuration property otherwise (the deprecated configuration property value is always overridden)
      */
-    static boolean shouldValidateCustomResources(Optional<Boolean> oldValidateCRD, boolean newValidateCRD, Logger log) {
+    public static boolean shouldValidateCustomResources(Optional<Boolean> oldValidateCRD, boolean newValidateCRD, Logger log) {
         if (Utils.isValidateCustomResourcesEnvVarSet()) {
             return Utils.shouldCheckCRDAndValidateLocalModel();
         }
