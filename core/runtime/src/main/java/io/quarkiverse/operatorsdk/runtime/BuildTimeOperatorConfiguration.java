@@ -15,7 +15,7 @@ public class BuildTimeOperatorConfiguration {
      * Whether the operator should check that the CRD is properly deployed and that the associated
      * {@link CustomResource} implementation matches its information before registering the associated
      * controller.
-     * 
+     *
      * @deprecated Use {@link CRDConfiguration#validate} instead
      */
     @ConfigItem
@@ -47,10 +47,4 @@ public class BuildTimeOperatorConfiguration {
      */
     @ConfigItem
     public Optional<String> delayRegistrationUntilEvent;
-
-    /**
-     * Whether the extension should generate a ClusterServiceVersion manifest for controllers.
-     */
-    @ConfigItem(defaultValue = "false")
-    public Optional<Boolean> generateCSV;
 }
