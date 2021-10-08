@@ -16,11 +16,11 @@ public class CustomResourceControllerMapping {
         return customResourceInfos;
     }
 
-    public void add(io.fabric8.crd.generator.CustomResourceInfo info, String crdName, String csvGroupName) {
+    public void add(io.fabric8.crd.generator.CustomResourceInfo info, String crdName) {
         final var converted = new CustomResourceInfo(
                 info.group(), info.version(), info.kind(), info.singular(), info.plural(), info.shortNames(), info.storage(),
                 info.served(), info.scope(), info.crClassName(),
-                info.specClassName(), info.statusClassName(), csvGroupName);
+                info.specClassName(), info.statusClassName());
         crdNameToCRVersionToCRInfos.computeIfAbsent(crdName, s -> new HashMap<>()).put(info.version(), converted);
     }
 }

@@ -14,7 +14,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.CDI;
 import javax.inject.Singleton;
@@ -29,17 +28,25 @@ import org.jboss.logging.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
-import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.processing.ConfiguredController;
-import io.quarkiverse.operatorsdk.runtime.*;
+import io.quarkiverse.operatorsdk.common.ClassUtils;
+import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
+import io.quarkiverse.operatorsdk.runtime.AppEventListener;
+import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
+import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
+import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
+import io.quarkiverse.operatorsdk.runtime.ConfigurationServiceRecorder;
+import io.quarkiverse.operatorsdk.runtime.DelayRegistrationUntil;
+import io.quarkiverse.operatorsdk.runtime.NoOpMetricsProvider;
+import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
+import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
+import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
+import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
+import io.quarkiverse.operatorsdk.runtime.Version;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.ObserverRegistrationPhaseBuildItem;
 import io.quarkus.arc.deployment.ObserverRegistrationPhaseBuildItem.ObserverConfiguratorBuildItem;
@@ -104,8 +111,7 @@ class OperatorSDKProcessor {
             RunTimeOperatorConfiguration runTimeConfiguration,
             BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
             GeneratedCRDInfoBuildItem generatedCRDs,
-            ConfigurationServiceBuildItem serviceBuildItem,
-            GeneratedCSVBuildItem ignored) {
+            ConfigurationServiceBuildItem serviceBuildItem) {
         final var supplier = recorder
                 .configurationServiceSupplier(serviceBuildItem.getVersion(),
                         serviceBuildItem.getControllerConfigs(),
@@ -121,61 +127,6 @@ class OperatorSDKProcessor {
     }
 
     @BuildStep
-    void generateCSV(OutputTargetBuildItem outputTarget, GeneratedCRDInfoBuildItem generatedCRDs,
-            CSVMetadataBuildItem csvMetadata,
-            BuildProducer<GeneratedCSVBuildItem> ignored/*
-                                                         * ,
-                                                         * List<GeneratedKubernetesResourceBuildItem>
-                                                         * generatedKubernetesManifests
-                                                         */) {
-        if (buildTimeConfiguration.generateCSV.orElse(false)) {
-            try {
-                final var outputDir = outputTarget.getOutputDirectory().resolve(KUBERNETES);
-                final var serviceAccountName = new String[1];
-                final var clusterRole = new ClusterRole[1];
-                final var role = new Role[1];
-                final var deployment = new Deployment[1];
-
-                /*
-                 * generatedKubernetesManifests.stream()
-                 * .filter(bi -> bi.getName().equals("kubernetes.yml"))
-                 * .findAny()
-                 * .ifPresent(
-                 * bi -> {
-                 * final var resources = Serialization
-                 * .unmarshalAsList(new ByteArrayInputStream(bi.getContent()));
-                 * resources.getItems().forEach(r -> {
-                 * if (r instanceof ServiceAccount) {
-                 * serviceAccountName[0] = r.getMetadata().getName();
-                 * return;
-                 * }
-                 * 
-                 * if (r instanceof ClusterRole) {
-                 * clusterRole[0] = (ClusterRole) r;
-                 * return;
-                 * }
-                 * 
-                 * if (r instanceof Role) {
-                 * role[0] = (Role) r;
-                 * return;
-                 * }
-                 * 
-                 * if (r instanceof Deployment) {
-                 * deployment[0] = (Deployment) r;
-                 * return;
-                 * }
-                 * });
-                 * });
-                 */
-                CSVGenerator.generate(outputDir, generatedCRDs.getCRDGenerationInfo(), csvMetadata.getCSVMetadata(),
-                        serviceAccountName[0], clusterRole[0], role[0], deployment[0]);
-            } catch (Exception e) {
-                log.infov(e, "Couldn't generate CSV:");
-            }
-        }
-    }
-
-    @BuildStep
     ConfigurationServiceBuildItem createConfigurationServiceAndOperator(
             OutputTargetBuildItem outputTarget,
             CombinedIndexBuildItem combinedIndexBuildItem,
@@ -183,22 +134,18 @@ class OperatorSDKProcessor {
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             BuildProducer<GeneratedCRDInfoBuildItem> generatedCRDInfo,
-            BuildProducer<CSVMetadataBuildItem> csvMetatada,
             LiveReloadBuildItem liveReload) {
 
         final CRDConfiguration crdConfig = buildTimeConfiguration.crd;
         final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(
                 buildTimeConfiguration.checkCRDAndValidateLocalModel, buildTimeConfiguration.crd.validate, log);
 
-        // record CSV metadata
-        final var csvGroupMetadata = new HashMap<String, CSVMetadataHolder>();
-
         // apply should imply generate: we cannot apply if we're not generating!
         final var crdGeneration = new CRDGeneration(crdConfig.generate || crdConfig.apply);
         final var index = combinedIndexBuildItem.getIndex();
         final List<QuarkusControllerConfiguration> controllerConfigs = ClassUtils.getKnownResourceControllers(index, log)
                 .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses, forcedReflectionClasses,
-                        index, crdGeneration, liveReload, csvGroupMetadata))
+                        index, crdGeneration, liveReload))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
@@ -224,7 +171,6 @@ class OperatorSDKProcessor {
         }
 
         generatedCRDInfo.produce(new GeneratedCRDInfoBuildItem(crdInfo));
-        csvMetatada.produce(new CSVMetadataBuildItem(csvGroupMetadata));
 
         return new ConfigurationServiceBuildItem(Version.loadFromProperties(), controllerConfigs);
     }
@@ -307,8 +253,7 @@ class OperatorSDKProcessor {
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
-            IndexView index, CRDGeneration crdGeneration, LiveReloadBuildItem liveReload,
-            Map<String, CSVMetadataHolder> csvGroupMetadata) {
+            IndexView index, CRDGeneration crdGeneration, LiveReloadBuildItem liveReload) {
         // first retrieve the custom resource class name
         final var crType = JandexUtil.resolveTypeParameters(info.name(), RESOURCE_CONTROLLER, index)
                 .get(0)
@@ -391,10 +336,7 @@ class OperatorSDKProcessor {
             }
             // if we still need to generate the CRD, add the CR to the set to be generated
             if (generateCurrent[0]) {
-                // figure out which group should be used to generate CSV
-                final var csvMetadata = getCSVMetadata(info, name, index);
-                csvGroupMetadata.put(csvMetadata.name, csvMetadata);
-                crdGeneration.withCustomResource(crClass, crdName, csvMetadata.name);
+                crdGeneration.withCustomResource(crClass, crdName);
             }
         }
 
@@ -468,69 +410,6 @@ class OperatorSDKProcessor {
         liveReload.setContextObject(ContextStoredControllerConfigurations.class, storedConfigurations);
 
         return Optional.of(configuration);
-    }
-
-    private CSVMetadataHolder getCSVMetadata(ClassInfo info, String controllerName, IndexView index) {
-        return info.interfaceTypes().stream()
-                .filter(t -> t.name().equals(SHARED_CSV_METADATA))
-                .findFirst()
-                .map(t -> {
-                    final var metadataHolderType = t.asParameterizedType().arguments().get(0);
-                    // need to get the associated ClassInfo to properly resolve the annotations
-                    final var metadataHolder = index.getClassByName(metadataHolderType.name());
-                    final var csvMetadata = metadataHolder.classAnnotation(CSV_METADATA);
-                    return createMetadataHolder(csvMetadata, new CSVMetadataHolder(controllerName));
-
-                })
-                .map(mh -> createMetadataHolder(info.classAnnotation(CSV_METADATA), new CSVMetadataHolder(mh)))
-                .orElse(new CSVMetadataHolder(controllerName));
-    }
-
-    private CSVMetadataHolder createMetadataHolder(AnnotationInstance csvMetadata, CSVMetadataHolder mh) {
-        final var providerField = csvMetadata.value("provider");
-        String providerName = null;
-        String providerURL = null;
-        if (providerField != null) {
-            final var provider = providerField.asNested();
-            providerName = ConfigurationUtils.annotationValueOrDefault(provider, "name",
-                    AnnotationValue::asString, () -> mh.providerName);
-            providerURL = ConfigurationUtils.annotationValueOrDefault(provider, "url",
-                    AnnotationValue::asString, () -> mh.providerURL);
-        }
-
-        final var maintainersField = csvMetadata.value("maintainers");
-        CSVMetadataHolder.Maintainer[] maintainers = null;
-        if (maintainersField != null) {
-            final var maintainersAnn = maintainersField.asNestedArray();
-            maintainers = new CSVMetadataHolder.Maintainer[maintainersAnn.length];
-            for (int i = 0; i < maintainersAnn.length; i++) {
-                maintainers[i] = new CSVMetadataHolder.Maintainer(
-                        ConfigurationUtils.annotationValueOrDefault(maintainersAnn[i], "name",
-                                AnnotationValue::asString, () -> null),
-                        ConfigurationUtils.annotationValueOrDefault(maintainersAnn[i], "email",
-                                AnnotationValue::asString, () -> null));
-            }
-        } else {
-            maintainers = mh.maintainers;
-        }
-
-        return new CSVMetadataHolder(
-                ConfigurationUtils.annotationValueOrDefault(csvMetadata, "name",
-                        AnnotationValue::asString, () -> mh.name),
-                ConfigurationUtils.annotationValueOrDefault(csvMetadata, "description",
-                        AnnotationValue::asString, () -> mh.description),
-                ConfigurationUtils.annotationValueOrDefault(csvMetadata, "displayName",
-                        AnnotationValue::asString, () -> mh.displayName),
-                ConfigurationUtils.annotationValueOrDefault(csvMetadata, "keywords",
-                        AnnotationValue::asStringArray, () -> mh.keywords),
-                providerName, providerURL,
-                ConfigurationUtils.annotationValueOrDefault(csvMetadata, "replaces",
-                        AnnotationValue::asString, () -> mh.replaces),
-                ConfigurationUtils.annotationValueOrDefault(csvMetadata, "version",
-                        AnnotationValue::asString, () -> mh.version),
-                ConfigurationUtils.annotationValueOrDefault(csvMetadata, "maturity",
-                        AnnotationValue::asString, () -> mh.maturity),
-                maintainers);
     }
 
     private String getControllerName(String resourceControllerClassName, AnnotationInstance controllerAnnotation) {
