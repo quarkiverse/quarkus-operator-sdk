@@ -4,11 +4,15 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.javaoperatorsdk.operator.ControllerUtils;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
+import org.jboss.jandex.ClassInfo;
 import org.jboss.logging.Logger;
 
 import io.javaoperatorsdk.operator.api.config.Utils;
+
+import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER;
 
 public class ConfigurationUtils {
 
@@ -92,5 +96,17 @@ public class ConfigurationUtils {
             log.warn(msg);
         }
         return newValidateCRD;
+    }
+
+    public static String getControllerName(ClassInfo info) {
+        final var controllerClassName = info.name().toString();
+        final var controllerAnnotation = info.classAnnotation(CONTROLLER);
+        return getControllerName(controllerClassName, controllerAnnotation);
+    }
+
+    public static String getControllerName(String resourceControllerClassName, AnnotationInstance controllerAnnotation) {
+        final var defaultControllerName = ControllerUtils.getDefaultResourceControllerName(resourceControllerClassName);
+        return ConfigurationUtils.annotationValueOrDefault(
+                controllerAnnotation, "name", AnnotationValue::asString, () -> defaultControllerName);
     }
 }
