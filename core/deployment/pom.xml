@@ -19,6 +19,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>io.quarkiverse.operatorsdk</groupId>
+      <artifactId>quarkus-operator-sdk-common</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-junit5-internal</artifactId>
       <scope>test</scope>

@@ -12,10 +12,11 @@
   <packaging>pom</packaging>
   <name>Quarkus - Operator SDK - Parent</name>
   <modules>
-    <module>integration-tests</module>
     <module>samples</module>
     <module>csv-generator</module>
     <module>core</module>
+    <module>common</module>
+    <module>integration-tests</module>
   </modules>
   <properties>
     <compiler-plugin.version>3.8.1</compiler-plugin.version>
@@ -43,6 +44,11 @@
         <version>${quarkus.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.javaoperatorsdk</groupId>
+        <artifactId>operator-framework-core</artifactId>
+        <version>${java-operator-sdk.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

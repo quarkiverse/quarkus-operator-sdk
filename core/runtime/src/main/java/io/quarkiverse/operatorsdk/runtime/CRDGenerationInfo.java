@@ -2,6 +2,7 @@ package io.quarkiverse.operatorsdk.runtime;
 
 import java.util.*;
 
+import io.quarkiverse.operatorsdk.common.CustomResourceInfo;
 import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 

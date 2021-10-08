@@ -10,13 +10,17 @@
   <name>Quarkus - Operator SDK - Core - Runtime</name>
   <dependencies>
     <dependency>
+      <groupId>io.quarkiverse.operatorsdk</groupId>
+      <artifactId>quarkus-operator-sdk-common</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-arc</artifactId>
     </dependency>
     <dependency>
       <groupId>io.javaoperatorsdk</groupId>
       <artifactId>operator-framework-core</artifactId>
-      <version>${java-operator-sdk.version}</version>
       <exclusions>
         <exclusion>
           <groupId>io.fabric8</groupId>

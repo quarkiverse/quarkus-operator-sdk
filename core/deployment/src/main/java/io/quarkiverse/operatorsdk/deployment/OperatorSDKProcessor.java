@@ -1,11 +1,17 @@
 package io.quarkiverse.operatorsdk.deployment;
 
-import static io.quarkiverse.operatorsdk.runtime.ClassUtils.loadClass;
-import static io.quarkus.kubernetes.deployment.Constants.KUBERNETES;
+import static io.quarkiverse.operatorsdk.common.ClassUtils.loadClass;
+import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER;
+import static io.quarkiverse.operatorsdk.common.Constants.CUSTOM_RESOURCE;
+import static io.quarkiverse.operatorsdk.common.Constants.RESOURCE_CONTROLLER;
+import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -13,7 +19,11 @@ import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.CDI;
 import javax.inject.Singleton;
 
-import org.jboss.jandex.*;
+import org.jboss.jandex.AnnotationInstance;
+import org.jboss.jandex.AnnotationValue;
+import org.jboss.jandex.ClassInfo;
+import org.jboss.jandex.DotName;
+import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -61,14 +71,8 @@ class OperatorSDKProcessor {
     static final Logger log = Logger.getLogger(OperatorSDKProcessor.class.getName());
 
     private static final String FEATURE = "operator-sdk";
-    private static final DotName RESOURCE_CONTROLLER = DotName.createSimple(ResourceController.class.getName());
-    private static final DotName CONFIGURED_CONTROLLER = DotName.createSimple(ConfiguredController.class.getName());
-    private static final DotName APPLICATION_SCOPED = DotName.createSimple(ApplicationScoped.class.getName());
-    private static final DotName CUSTOM_RESOURCE = DotName.createSimple(CustomResource.class.getName());
-    private static final DotName CONTROLLER = DotName.createSimple(Controller.class.getName());
     private static final DotName DELAY_REGISTRATION = DotName.createSimple(DelayRegistrationUntil.class.getName());
-    public static final DotName SHARED_CSV_METADATA = DotName.createSimple(SharedCSVMetadata.class.getName());
-    public static final DotName CSV_METADATA = DotName.createSimple(CSVMetadata.class.getName());
+    public static final String CUSTOM_RESOURCE_DOTNAME_AS_STRING = CUSTOM_RESOURCE.toString();
 
     private BuildTimeOperatorConfiguration buildTimeConfiguration;
 
@@ -186,16 +190,13 @@ class OperatorSDKProcessor {
         final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(
                 buildTimeConfiguration.checkCRDAndValidateLocalModel, buildTimeConfiguration.crd.validate, log);
 
-        final var index = combinedIndexBuildItem.getIndex();
-        final var resourceControllers = index.getAllKnownImplementors(RESOURCE_CONTROLLER);
-
         // record CSV metadata
         final var csvGroupMetadata = new HashMap<String, CSVMetadataHolder>();
 
         // apply should imply generate: we cannot apply if we're not generating!
         final var crdGeneration = new CRDGeneration(crdConfig.generate || crdConfig.apply);
-        final List<QuarkusControllerConfiguration> controllerConfigs = resourceControllers.stream()
-                .filter(this::keep)
+        final var index = combinedIndexBuildItem.getIndex();
+        final List<QuarkusControllerConfiguration> controllerConfigs = ClassUtils.getKnownResourceControllers(index, log)
                 .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses, forcedReflectionClasses,
                         index, crdGeneration, liveReload, csvGroupMetadata))
                 .filter(Optional::isPresent)
@@ -226,16 +227,6 @@ class OperatorSDKProcessor {
         csvMetatada.produce(new CSVMetadataBuildItem(csvGroupMetadata));
 
         return new ConfigurationServiceBuildItem(Version.loadFromProperties(), controllerConfigs);
-    }
-
-    private boolean keep(ClassInfo ci) {
-        if (Modifier.isAbstract(ci.flags())) {
-            log.debugv("Skipping ''{0}'' controller because it's abstract", ci.name());
-            return false;
-        }
-
-        // Ignore ConfiguredController class
-        return !ci.name().equals(CONFIGURED_CONTROLLER);
     }
 
     /**
@@ -330,7 +321,7 @@ class OperatorSDKProcessor {
         final String name = getControllerName(controllerClassName, controllerAnnotation);
 
         // if we get CustomResource instead of a subclass, ignore the controller since we cannot do anything with it
-        if (crType == null || crType.equals(CUSTOM_RESOURCE.toString())) {
+        if (crType == null || crType.equals(CUSTOM_RESOURCE_DOTNAME_AS_STRING)) {
             log.infov("Skipped processing of ''{0}'' controller as it's not parameterized with a CustomResource sub-class",
                     controllerClassName);
             return Optional.empty();

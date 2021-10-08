@@ -1,6 +1,6 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import static io.quarkiverse.operatorsdk.runtime.ClassUtils.loadClass;
+import static io.quarkiverse.operatorsdk.common.ClassUtils.loadClass;
 
 import java.util.Collection;
 import java.util.Collections;
