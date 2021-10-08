@@ -12,10 +12,10 @@
   <packaging>pom</packaging>
   <name>Quarkus - Operator SDK - Parent</name>
   <modules>
-    <module>deployment</module>
-    <module>runtime</module>
     <module>integration-tests</module>
     <module>samples</module>
+    <module>csv-generator</module>
+    <module>core</module>
   </modules>
   <properties>
     <compiler-plugin.version>3.8.1</compiler-plugin.version>
