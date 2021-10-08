@@ -1,6 +1,7 @@
 package io.quarkiverse.operatorsdk.deployment;
 
 import static io.quarkiverse.operatorsdk.common.ClassUtils.loadClass;
+import static io.quarkiverse.operatorsdk.common.ConfigurationUtils.getControllerName;
 import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER;
 import static io.quarkiverse.operatorsdk.common.Constants.CUSTOM_RESOURCE;
 import static io.quarkiverse.operatorsdk.common.Constants.RESOURCE_CONTROLLER;
@@ -187,12 +188,10 @@ class OperatorSDKProcessor {
             BuildProducer<ObserverConfiguratorBuildItem> observerConfigurators) {
 
         final var index = combinedIndexBuildItem.getIndex();
-        for (ClassInfo info : index.getAllKnownImplementors(RESOURCE_CONTROLLER)) {
+        ClassUtils.getKnownResourceControllers(index, log).forEach(info -> {
             final var controllerClassName = info.name().toString();
-
             final var controllerAnnotation = info.classAnnotation(CONTROLLER);
-            final var name = getControllerName(controllerClassName,
-                    controllerAnnotation);
+            final var name = getControllerName(controllerClassName, controllerAnnotation);
 
             // extract the configuration from annotation and/or external configuration
             final var configExtractor = new BuildTimeHybridControllerConfiguration(buildTimeConfiguration,
@@ -234,7 +233,7 @@ class OperatorSDKProcessor {
                                 });
                 observerConfigurators.produce(new ObserverConfiguratorBuildItem(configurator));
             }
-        }
+        });
     }
 
     private ResultHandle getHandleFromCDI(MethodCreator mc, MethodDescriptor selectMethod, MethodDescriptor getMethod,
@@ -410,12 +409,6 @@ class OperatorSDKProcessor {
         liveReload.setContextObject(ContextStoredControllerConfigurations.class, storedConfigurations);
 
         return Optional.of(configuration);
-    }
-
-    private String getControllerName(String resourceControllerClassName, AnnotationInstance controllerAnnotation) {
-        final var defaultControllerName = ControllerUtils.getDefaultResourceControllerName(resourceControllerClassName);
-        return ConfigurationUtils.annotationValueOrDefault(
-                controllerAnnotation, "name", AnnotationValue::asString, () -> defaultControllerName);
     }
 
     private Set<String> getNamespaces(AnnotationInstance controllerAnnotation) {
