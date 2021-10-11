@@ -1,11 +1,9 @@
-package io.quarkiverse.operatorsdk.deployment;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+package io.quarkiverse.operatorsdk.common;
 
 import java.util.Optional;
 
 import org.jboss.logging.Logger;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.api.config.Utils;
@@ -14,7 +12,7 @@ public class ConfigurationUtilsTest {
     @Test
     void shouldUseSystemPropertyIfPresent() {
         if (Utils.isValidateCustomResourcesEnvVarSet()) {
-            assertEquals(Utils.shouldCheckCRDAndValidateLocalModel(),
+            Assertions.assertEquals(Utils.shouldCheckCRDAndValidateLocalModel(),
                     ConfigurationUtils.shouldValidateCustomResources(Optional.empty(), false, null));
         }
     }
@@ -30,7 +28,7 @@ public class ConfigurationUtilsTest {
     private void checkLogging(boolean fromOld, boolean fromNew) {
         var logger = new TestLogger("test", fromOld, fromNew);
         ConfigurationUtils.shouldValidateCustomResources(Optional.of(fromOld), fromNew, logger);
-        assertTrue(logger.wasCalled);
+        Assertions.assertTrue(logger.wasCalled);
     }
 
     private static class TestLogger extends Logger {
@@ -46,14 +44,14 @@ public class ConfigurationUtilsTest {
 
         @Override
         protected void doLog(Level level, String s, Object o, Object[] objects, Throwable throwable) {
-            assertEquals(Level.WARN, level);
-            assertTrue(o instanceof String);
+            Assertions.assertEquals(Level.WARN, level);
+            Assertions.assertTrue(o instanceof String);
             var stringValue = (String) o;
             if (fromOld != fromNew) {
-                assertTrue(stringValue.contains("check-crd-and-validate-local-model with value '" + fromOld)
+                Assertions.assertTrue(stringValue.contains("check-crd-and-validate-local-model with value '" + fromOld)
                         && stringValue.contains("crd.validate property value '" + fromNew));
             } else {
-                assertTrue(stringValue.contains("deprecated")
+                Assertions.assertTrue(stringValue.contains("deprecated")
                         && !stringValue.contains("'" + fromOld)
                         && !stringValue.contains("'" + fromNew));
             }
@@ -62,9 +60,9 @@ public class ConfigurationUtilsTest {
 
         @Override
         protected void doLogf(Level level, String s, String s1, Object[] objects, Throwable throwable) {
-            assertEquals(Level.WARN, level);
+            Assertions.assertEquals(Level.WARN, level);
             wasCalled = true;
-            assertTrue(s1.contains("deprecated"));
+            Assertions.assertTrue(s1.contains("deprecated"));
         }
 
         @Override

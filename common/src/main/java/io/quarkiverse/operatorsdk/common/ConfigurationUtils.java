@@ -1,18 +1,18 @@
 package io.quarkiverse.operatorsdk.common;
 
+import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER;
+
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import io.javaoperatorsdk.operator.ControllerUtils;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.logging.Logger;
 
+import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.config.Utils;
-
-import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER;
 
 public class ConfigurationUtils {
 
@@ -32,7 +32,7 @@ public class ConfigurationUtils {
      * @param defaultValue a Supplier that computes/retrieve a default value when needed
      * @return the extracted configuration value
      */
-    static <C, T> T extract(
+    public static <C, T> T extract(
             C externalConfig,
             AnnotationInstance annotation,
             Function<C, Optional<T>> extractor,

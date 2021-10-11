@@ -1,4 +1,4 @@
-package io.quarkiverse.operatorsdk.runtime;
+package io.quarkiverse.operatorsdk.csv.runtime;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

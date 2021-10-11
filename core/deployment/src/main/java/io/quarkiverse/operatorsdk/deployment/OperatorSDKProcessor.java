@@ -381,11 +381,14 @@ class OperatorSDKProcessor {
                 crdName = CustomResource.getCRDName(crClass);
             }
 
+            final var crVersion = HasMetadata.getVersion(crClass);
+
             // create the configuration
             configuration = new QuarkusControllerConfiguration(
                     controllerClassName,
                     name,
                     crdName,
+                    crVersion,
                     configExtractor.generationAware(),
                     crType,
                     configExtractor.delayedRegistration(),

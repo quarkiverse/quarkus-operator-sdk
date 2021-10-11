@@ -6,6 +6,6 @@ keywords:
   - kubernetes
   - openshift
 #  guide: ...
-#  categories:
-#    - "miscellaneous"
+categories:
+  - cloud
 #  status: "preview"

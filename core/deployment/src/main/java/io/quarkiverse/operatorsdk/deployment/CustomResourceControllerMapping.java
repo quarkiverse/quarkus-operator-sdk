@@ -20,7 +20,7 @@ public class CustomResourceControllerMapping {
         final var converted = new CustomResourceInfo(
                 info.group(), info.version(), info.kind(), info.singular(), info.plural(), info.shortNames(), info.storage(),
                 info.served(), info.scope(), info.crClassName(),
-                info.specClassName(), info.statusClassName());
+                info.specClassName(), info.statusClassName(), crdName);
         crdNameToCRVersionToCRInfos.computeIfAbsent(crdName, s -> new HashMap<>()).put(info.version(), converted);
     }
 }
