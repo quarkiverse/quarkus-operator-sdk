@@ -1,4 +1,4 @@
-package io.quarkiverse.operatorsdk.runtime;
+package io.quarkiverse.operatorsdk.csv.runtime;
 
 public class CSVMetadataHolder {
     public final String name;

@@ -20,6 +20,7 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
     private final String associatedControllerClassName;
     private final String name;
     private final String crdName;
+    private final String crVersion;
     private String finalizer;
     private final boolean generationAware;
     private Set<String> namespaces;
@@ -35,12 +36,13 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
             String associatedControllerClassName,
             String name,
             String crdName,
-            boolean generationAware,
+            String crVersion, boolean generationAware,
             String crClass,
             boolean registrationDelayed, Set<String> namespaces, String finalizer, String labelSelector) {
         this.associatedControllerClassName = associatedControllerClassName;
         this.name = name;
         this.crdName = crdName;
+        this.crVersion = crVersion;
         this.generationAware = generationAware;
         this.crClass = crClass;
         this.registrationDelayed = registrationDelayed;
@@ -87,6 +89,10 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
     @Override
     public String getCRDName() {
         return crdName;
+    }
+
+    public String getCrVersion() {
+        return crVersion;
     }
 
     @Override

@@ -1,4 +1,4 @@
-package io.quarkiverse.operatorsdk.deployment;
+package io.quarkiverse.operatorsdk.csv.deployment;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+
+import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -27,11 +29,11 @@ import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionFluent;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionSpecFluent;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.NamedInstallStrategyFluent;
-import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
-import io.quarkiverse.operatorsdk.runtime.CSVMetadataHolder;
-import io.quarkiverse.operatorsdk.runtime.CustomResourceInfo;
+import io.quarkiverse.operatorsdk.common.CustomResourceInfo;
+import io.quarkiverse.operatorsdk.csv.runtime.CSVMetadataHolder;
 
 public class CSVGenerator {
+    private static Logger log = Logger.getLogger(CSVGenerator.class);
     private static final ObjectMapper YAML_MAPPER;
 
     static {
@@ -43,87 +45,84 @@ public class CSVGenerator {
         YAML_MAPPER.configure(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS, false);
     }
 
-    public static void generate(Path outputDir, CRDGenerationInfo info,
+    public static void generate(Path outputDir, Map<String, AugmentedCustomResourceInfo> info,
             Map<String, CSVMetadataHolder> csvMetadata,
             String serviceAccountName, ClusterRole clusterRole, Role role, Deployment deployment) {
         // load generated manifests
 
         final var controllerToCSVBuilders = new HashMap<String, ClusterServiceVersionBuilder>(7);
         final var groupToCRInfo = new HashMap<String, Set<CustomResourceInfo>>(7);
-        info.getCrds().forEach((crdName, crdVersionToInfo) -> {
-            final var versions = info.getCRInfosByCRVersionFor(crdName);
-            versions.forEach((version, cri) -> {
-                // record group name and associated CustomResourceInfos
-                groupToCRInfo.computeIfAbsent(cri.getGroup(), s -> new HashSet<>()).add(cri);
+        info.forEach((crdName, cri) -> {
+            // record group name and associated CustomResourceInfos
+            groupToCRInfo.computeIfAbsent(cri.getGroup(), s -> new HashSet<>()).add(cri);
 
-                final var csvGroupName = cri.getCsvGroupName();
-                final var metadata = csvMetadata.get(csvGroupName);
-                final var csvSpecBuilder = controllerToCSVBuilders
-                        .computeIfAbsent(csvGroupName, s -> new ClusterServiceVersionBuilder()
-                                .withNewMetadata().withName(s).endMetadata())
-                        .editOrNewSpec()
-                        .withDescription(metadata.description)
-                        .withDisplayName(metadata.displayName)
-                        .withKeywords(metadata.keywords)
-                        .withReplaces(metadata.replaces)
-                        .withVersion(metadata.version)
-                        .withMaturity(metadata.maturity);
+            final var csvGroupName = cri.getCsvGroupName();
+            final var metadata = csvMetadata.get(csvGroupName);
+            final var csvSpecBuilder = controllerToCSVBuilders
+                    .computeIfAbsent(csvGroupName, s -> new ClusterServiceVersionBuilder()
+                            .withNewMetadata().withName(s).endMetadata())
+                    .editOrNewSpec()
+                    .withDescription(metadata.description)
+                    .withDisplayName(metadata.displayName)
+                    .withKeywords(metadata.keywords)
+                    .withReplaces(metadata.replaces)
+                    .withVersion(metadata.version)
+                    .withMaturity(metadata.maturity);
 
-                if (metadata.providerName != null) {
-                    csvSpecBuilder.withNewProvider()
-                            .withName(metadata.providerName)
-                            .withUrl(metadata.providerURL)
-                            .endProvider();
+            if (metadata.providerName != null) {
+                csvSpecBuilder.withNewProvider()
+                        .withName(metadata.providerName)
+                        .withUrl(metadata.providerURL)
+                        .endProvider();
+            }
+
+            if (metadata.maintainers != null && metadata.maintainers.length > 0) {
+                for (CSVMetadataHolder.Maintainer maintainer : metadata.maintainers) {
+                    csvSpecBuilder.addNewMaintainer(maintainer.email, maintainer.name);
                 }
+            }
 
-                if (metadata.maintainers != null && metadata.maintainers.length > 0) {
-                    for (CSVMetadataHolder.Maintainer maintainer : metadata.maintainers) {
-                        csvSpecBuilder.addNewMaintainer(maintainer.email, maintainer.name);
-                    }
+            csvSpecBuilder
+                    .editOrNewCustomresourcedefinitions()
+                    .addNewOwned()
+                    .withName(crdName)
+                    .withVersion(cri.getVersion())
+                    .withKind(cri.getKind())
+                    .endOwned().endCustomresourcedefinitions();
+
+            // make sure that we add permissions for our own CR
+            final var installSpec = csvSpecBuilder.editOrNewInstall().editOrNewSpec();
+            final Integer[] ruleIndex = new Integer[1];
+            final Integer[] clusterPermissionIndex = new Integer[] { 0 };
+            final Boolean hasMatchingClusterPermission = hasMatchingClusterPermission(cri, installSpec, ruleIndex,
+                    clusterPermissionIndex);
+            final var clusterPermission = hasMatchingClusterPermission
+                    ? installSpec.editClusterPermission(clusterPermissionIndex[0])
+                    : installSpec.addNewClusterPermission();
+
+            // if we found a matching rule, so retrieve it and add our resource, otherwise create a new rule
+            final PolicyRuleBuilder rule = ruleIndex[0] != null
+                    ? new PolicyRuleBuilder(clusterPermission.getRule(ruleIndex[0]))
+                    : new PolicyRuleBuilder();
+            final var plural = cri.getPlural();
+            rule.addNewResource(plural);
+
+            // if the resource has a non-Void status, also add the status resource
+            cri.getStatusClassName().ifPresent(statusClass -> {
+                if (!"java.lang.Void".equals(statusClass)) {
+                    rule.addNewResource(plural + "/status");
                 }
-
-                csvSpecBuilder
-                        .editOrNewCustomresourcedefinitions()
-                        .addNewOwned()
-                        .withName(crdName)
-                        .withVersion(version)
-                        .withKind(cri.getKind())
-                        .endOwned().endCustomresourcedefinitions();
-
-                // make sure that we add permissions for our own CR
-                final var installSpec = csvSpecBuilder.editOrNewInstall().editOrNewSpec();
-                final Integer[] ruleIndex = new Integer[1];
-                final Integer[] clusterPermissionIndex = new Integer[] { 0 };
-                final Boolean hasMatchingClusterPermission = hasMatchingClusterPermission(cri, installSpec, ruleIndex,
-                        clusterPermissionIndex);
-                final var clusterPermission = hasMatchingClusterPermission
-                        ? installSpec.editClusterPermission(clusterPermissionIndex[0])
-                        : installSpec.addNewClusterPermission();
-
-                // if we found a matching rule, so retrieve it and add our resource, otherwise create a new rule
-                final PolicyRuleBuilder rule = ruleIndex[0] != null
-                        ? new PolicyRuleBuilder(clusterPermission.getRule(ruleIndex[0]))
-                        : new PolicyRuleBuilder();
-                final var plural = cri.getPlural();
-                rule.addNewResource(plural);
-
-                // if the resource has a non-Void status, also add the status resource
-                cri.getStatusClassName().ifPresent(statusClass -> {
-                    if (!"java.lang.Void".equals(statusClass)) {
-                        rule.addNewResource(plural + "/status");
-                    }
-                });
-                if (ruleIndex[0] != null) {
-                    clusterPermission.setToRules(ruleIndex[0], rule.build());
-                } else {
-                    clusterPermission.addToRules(rule.addNewApiGroup(cri.getGroup())
-                            .addToVerbs("get", "list", "watch", "create", "delete", "patch", "update")
-                            .build());
-                }
-                clusterPermission.endClusterPermission();
-                installSpec.endSpec().endInstall();
-                csvSpecBuilder.endSpec();
             });
+            if (ruleIndex[0] != null) {
+                clusterPermission.setToRules(ruleIndex[0], rule.build());
+            } else {
+                clusterPermission.addToRules(rule.addNewApiGroup(cri.getGroup())
+                        .addToVerbs("get", "list", "watch", "create", "delete", "patch", "update")
+                        .build());
+            }
+            clusterPermission.endClusterPermission();
+            installSpec.endSpec().endInstall();
+            csvSpecBuilder.endSpec();
         });
 
         controllerToCSVBuilders.forEach((controllerName, csvBuilder) -> {
@@ -217,7 +216,7 @@ public class CSVGenerator {
 
                 final var csv = csvBuilder.build();
                 YAML_MAPPER.writeValue(outputStream, csv);
-                OperatorSDKProcessor.log.infov("Generated CSV for {0} controller -> {1}", controllerName, file);
+                log.infov("Generated CSV for {0} controller -> {1}", controllerName, file);
             } catch (IOException e) {
                 e.printStackTrace();
             }
