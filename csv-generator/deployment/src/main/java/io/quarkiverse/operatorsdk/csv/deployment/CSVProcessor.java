@@ -2,7 +2,9 @@ package io.quarkiverse.operatorsdk.csv.deployment;
 
 import static io.quarkus.kubernetes.deployment.Constants.KUBERNETES;
 
+import java.io.ByteArrayInputStream;
 import java.util.HashMap;
+import java.util.List;
 
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
@@ -11,6 +13,8 @@ import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
 
+import io.dekorate.utils.Serialization;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.Role;
@@ -28,6 +32,7 @@ import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
+import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 
 public class CSVProcessor {
     private static final Logger log = Logger.getLogger(CSVProcessor.class);
@@ -79,11 +84,8 @@ public class CSVProcessor {
     @BuildStep
     FeatureBuildItem generateCSV(OutputTargetBuildItem outputTarget,
             CSVMetadataBuildItem csvMetadata,
-            BuildProducer<GeneratedCSVBuildItem> ignored/*
-                                                         * ,
-                                                         * List<GeneratedKubernetesResourceBuildItem>
-                                                         * generatedKubernetesManifests
-                                                         */) {
+            BuildProducer<GeneratedCSVBuildItem> ignored,
+            List<GeneratedKubernetesResourceBuildItem> generatedKubernetesManifests) {
         if (configuration.generateCSV.orElse(false)) {
             try {
                 final var outputDir = outputTarget.getOutputDirectory().resolve(KUBERNETES);
@@ -92,37 +94,35 @@ public class CSVProcessor {
                 final var role = new Role[1];
                 final var deployment = new Deployment[1];
 
-                /*
-                 * generatedKubernetesManifests.stream()
-                 * .filter(bi -> bi.getName().equals("kubernetes.yml"))
-                 * .findAny()
-                 * .ifPresent(
-                 * bi -> {
-                 * final var resources = Serialization
-                 * .unmarshalAsList(new ByteArrayInputStream(bi.getContent()));
-                 * resources.getItems().forEach(r -> {
-                 * if (r instanceof ServiceAccount) {
-                 * serviceAccountName[0] = r.getMetadata().getName();
-                 * return;
-                 * }
-                 *
-                 * if (r instanceof ClusterRole) {
-                 * clusterRole[0] = (ClusterRole) r;
-                 * return;
-                 * }
-                 *
-                 * if (r instanceof Role) {
-                 * role[0] = (Role) r;
-                 * return;
-                 * }
-                 *
-                 * if (r instanceof Deployment) {
-                 * deployment[0] = (Deployment) r;
-                 * return;
-                 * }
-                 * });
-                 * });
-                 */
+                generatedKubernetesManifests.stream()
+                        .filter(bi -> bi.getName().equals("kubernetes.yml"))
+                        .findAny()
+                        .ifPresent(
+                                bi -> {
+                                    final var resources = Serialization
+                                            .unmarshalAsList(new ByteArrayInputStream(bi.getContent()));
+                                    resources.getItems().forEach(r -> {
+                                        if (r instanceof ServiceAccount) {
+                                            serviceAccountName[0] = r.getMetadata().getName();
+                                            return;
+                                        }
+
+                                        if (r instanceof ClusterRole) {
+                                            clusterRole[0] = (ClusterRole) r;
+                                            return;
+                                        }
+
+                                        if (r instanceof Role) {
+                                            role[0] = (Role) r;
+                                            return;
+                                        }
+
+                                        if (r instanceof Deployment) {
+                                            deployment[0] = (Deployment) r;
+                                            return;
+                                        }
+                                    });
+                                });
                 CSVGenerator.generate(outputDir, csvMetadata.getAugmentedCustomResourceInfos(), csvMetadata.getCSVMetadata(),
                         serviceAccountName[0], clusterRole[0], role[0], deployment[0]);
                 ignored.produce(new GeneratedCSVBuildItem());
