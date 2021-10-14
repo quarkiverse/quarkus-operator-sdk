@@ -6,8 +6,9 @@
 
 See [samples](samples/README.md) to get quickly started using an example
 
-## Documentation
-
+## [Documentation](https://quarkiverse.github.io/quarkiverse-docs/quarkus-operator-sdk/dev/index.html)
+                                                                                                            
+### Maintaining the documentation
 The documentation for this extension should be maintained as part of this repository and it is
 stored in the `docs/` directory.
 
