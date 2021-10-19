@@ -1,34 +1,12 @@
 package io.quarkiverse.operatorsdk.deployment;
 
-import java.io.Closeable;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Modifier;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.CDI;
-import javax.inject.Singleton;
-
-import org.jboss.jandex.AnnotationInstance;
-import org.jboss.jandex.AnnotationValue;
-import org.jboss.jandex.ClassInfo;
-import org.jboss.jandex.DotName;
-import org.jboss.jandex.IndexView;
-import org.jboss.logging.Logger;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.fabric8.crd.generator.CRDGenerator;
 import io.fabric8.crd.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.Utils;
@@ -60,22 +38,38 @@ import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.deployment.util.JandexUtil;
 import io.quarkus.gizmo.AssignableResultHandle;
+import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
+import org.jboss.jandex.AnnotationInstance;
+import org.jboss.jandex.AnnotationValue;
+import org.jboss.jandex.ClassInfo;
+import org.jboss.jandex.DotName;
+import org.jboss.jandex.IndexView;
+import org.jboss.logging.Logger;
+
+import javax.enterprise.inject.Instance;
+import javax.enterprise.inject.spi.CDI;
+import javax.inject.Singleton;
+import java.io.Closeable;
+import java.lang.annotation.Annotation;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static io.quarkiverse.operatorsdk.deployment.Constants.CONTROLLER;
+import static io.quarkiverse.operatorsdk.deployment.Constants.CUSTOM_RESOURCE;
+import static io.quarkiverse.operatorsdk.deployment.Constants.RESOURCE_CONTROLLER;
+import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 class OperatorSDKProcessor {
 
     private static final Logger log = Logger.getLogger(OperatorSDKProcessor.class.getName());
 
     private static final String FEATURE = "operator-sdk";
-    private static final DotName RESOURCE_CONTROLLER = DotName
-            .createSimple(ResourceController.class.getName());
-
-    private static final DotName APPLICATION_SCOPED = DotName
-            .createSimple(ApplicationScoped.class.getName());
-    private static final DotName CUSTOM_RESOURCE = DotName.createSimple(CustomResource.class.getName());
-    private static final DotName CONTROLLER = DotName.createSimple(Controller.class.getName());
     private static final DotName DELAY_REGISTRATION = DotName.createSimple(DelayRegistrationUntil.class.getName());
+    public static final String CUSTOM_RESOURCE_DOTNAME_AS_STRING = CUSTOM_RESOURCE.toString();
 
     private BuildTimeOperatorConfiguration buildTimeConfiguration;
 
@@ -132,12 +126,11 @@ class OperatorSDKProcessor {
         final boolean validateCustomResources = shouldValidateCustomResources();
 
         final var index = combinedIndexBuildItem.getIndex();
-        final var resourceControllers = index.getAllKnownImplementors(RESOURCE_CONTROLLER);
-
-        final List<QuarkusControllerConfiguration> controllerConfigs = resourceControllers.stream()
-                .filter(ci -> !Modifier.isAbstract(ci.flags()))
+        final List<QuarkusControllerConfiguration> controllerConfigs = ClassUtils.getKnownResourceControllers(index, log)
                 .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses, forcedReflectionClasses,
                         index))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .collect(Collectors.toList());
 
         if (crdConfig.generate) {
@@ -193,15 +186,14 @@ class OperatorSDKProcessor {
             BuildProducer<ObserverConfiguratorBuildItem> observerConfigurators) {
 
         final var index = combinedIndexBuildItem.getIndex();
-        for (ClassInfo info : index.getAllKnownImplementors(RESOURCE_CONTROLLER)) {
+        ClassUtils.getKnownResourceControllers(index, log).forEach(info -> {
             final var controllerClassName = info.name().toString();
-
             final var controllerAnnotation = info.classAnnotation(CONTROLLER);
-            final var name = getControllerName(controllerClassName,
-                    controllerAnnotation);
+            final var name = getControllerName(controllerClassName, controllerAnnotation);
 
             // extract the configuration from annotation and/or external configuration
-            final var configExtractor = new BuildTimeHybridControllerConfiguration(buildTimeConfiguration.controllers.get(name),
+            final var configExtractor = new BuildTimeHybridControllerConfiguration(
+                    buildTimeConfiguration.controllers.get(name),
                     controllerAnnotation, info.classAnnotation(DELAY_REGISTRATION));
 
             if (configExtractor.delayedRegistration()) {
@@ -221,22 +213,10 @@ class OperatorSDKProcessor {
                                             .ofMethod(Instance.class, "get", Object.class);
                                     AssignableResultHandle cdiVar = mc.createVariable(CDI.class);
                                     mc.assign(cdiVar, mc.invokeStaticMethod(cdiMethod));
-                                    ResultHandle operatorInstance = mc.invokeVirtualMethod(
-                                            selectMethod,
-                                            cdiVar,
-                                            mc.loadClass(Operator.class),
-                                            mc.newArray(Annotation.class, 0));
-                                    ResultHandle operator = mc.checkCast(
-                                            mc.invokeInterfaceMethod(getMethod, operatorInstance),
-                                            Operator.class);
-                                    ResultHandle resourceInstance = mc.invokeVirtualMethod(
-                                            selectMethod,
-                                            cdiVar,
-                                            mc.loadClass(controllerClassName),
-                                            mc.newArray(Annotation.class, 0));
-                                    ResultHandle resource = mc.checkCast(
-                                            mc.invokeInterfaceMethod(getMethod, resourceInstance),
-                                            ResourceController.class);
+                                    ResultHandle operator = getHandleFromCDI(mc, selectMethod, getMethod, cdiVar,
+                                            Operator.class, null);
+                                    ResultHandle resource = getHandleFromCDI(mc, selectMethod, getMethod, cdiVar,
+                                            ResourceController.class, controllerClassName);
                                     mc.invokeVirtualMethod(
                                             MethodDescriptor.ofMethod(
                                                     Operator.class, "register", void.class,
@@ -247,10 +227,21 @@ class OperatorSDKProcessor {
                                 });
                 observerConfigurators.produce(new ObserverConfiguratorBuildItem(configurator));
             }
-        }
+        });
     }
 
-    private QuarkusControllerConfiguration createControllerConfiguration(
+    private ResultHandle getHandleFromCDI(MethodCreator mc, MethodDescriptor selectMethod, MethodDescriptor getMethod,
+                                          AssignableResultHandle cdiVar, Class<?> handleClass, String optionalImplClass) {
+        ResultHandle operatorInstance = mc.invokeVirtualMethod(
+                selectMethod,
+                cdiVar,
+                optionalImplClass != null ? mc.loadClass(optionalImplClass) : mc.loadClass(handleClass),
+                mc.newArray(Annotation.class, 0));
+        ResultHandle operator = mc.checkCast(mc.invokeInterfaceMethod(getMethod, operatorInstance), handleClass);
+        return operator;
+    }
+
+    private Optional<QuarkusControllerConfiguration> createControllerConfiguration(
             ClassInfo info,
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
@@ -271,8 +262,18 @@ class OperatorSDKProcessor {
                         .setDefaultScope(APPLICATION_SCOPED)
                         .build());
 
+        // retrieve the controller's name
+        final var controllerAnnotation = info.classAnnotation(CONTROLLER);
+        final String name = getControllerName(resourceControllerClassName, controllerAnnotation);
+
         // load CR class
         final Class<CustomResource> crClass = (Class<CustomResource>) loadClass(crType);
+        // if we get CustomResource instead of a subclass, ignore the controller since we cannot do anything with it
+        if (crType == null || crType.equals(CUSTOM_RESOURCE_DOTNAME_AS_STRING)) {
+            log.infov("Skipped processing of ''{0}'' controller as it's not parameterized with a CustomResource sub-class",
+                    name);
+            return Optional.empty();
+        }
 
         generator.customResources(CustomResourceInfo.fromClass(crClass));
 
@@ -290,11 +291,7 @@ class OperatorSDKProcessor {
         registerForReflection(reflectionClasses, crParamTypes.get(1).name().toString());
 
         // extract the configuration from annotation and/or external configuration
-        final var controllerAnnotation = info.classAnnotation(CONTROLLER);
         final var delayedRegistrationAnnotation = info.classAnnotation(DELAY_REGISTRATION);
-
-        // retrieve the controller's name
-        final String name = getControllerName(resourceControllerClassName, controllerAnnotation);
 
         final var configExtractor = new BuildTimeHybridControllerConfiguration(buildTimeConfiguration.controllers.get(name),
                 controllerAnnotation, delayedRegistrationAnnotation);
@@ -314,7 +311,7 @@ class OperatorSDKProcessor {
                 "Processed ''{0}'' controller named ''{1}'' for ''{2}'' CR (version ''{3}'')",
                 info.name().toString(), name, crdName, HasMetadata.getApiVersion(crClass));
 
-        return configuration;
+        return Optional.of(configuration);
     }
 
     private String getControllerName(String resourceControllerClassName, AnnotationInstance controllerAnnotation) {
