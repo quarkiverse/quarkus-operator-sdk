@@ -1,10 +1,11 @@
 package io.quarkiverse.operatorsdk.deployment;
 
+import org.jboss.jandex.DotName;
+
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.api.Controller;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.processing.ConfiguredController;
-import org.jboss.jandex.DotName;
 
 public class Constants {
     public static final DotName RESOURCE_CONTROLLER = DotName.createSimple(ResourceController.class.getName());

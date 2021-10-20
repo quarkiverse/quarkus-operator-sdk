@@ -1,14 +1,14 @@
 package io.quarkiverse.operatorsdk.deployment;
 
-import org.jboss.jandex.ClassInfo;
-import org.jboss.jandex.IndexView;
-import org.jboss.logging.Logger;
+import static io.quarkiverse.operatorsdk.deployment.Constants.CONFIGURED_CONTROLLER;
+import static io.quarkiverse.operatorsdk.deployment.Constants.RESOURCE_CONTROLLER;
 
 import java.lang.reflect.Modifier;
 import java.util.stream.Stream;
 
-import static io.quarkiverse.operatorsdk.deployment.Constants.CONFIGURED_CONTROLLER;
-import static io.quarkiverse.operatorsdk.deployment.Constants.RESOURCE_CONTROLLER;
+import org.jboss.jandex.ClassInfo;
+import org.jboss.jandex.IndexView;
+import org.jboss.logging.Logger;
 
 public class ClassUtils {
     public static Class<?> loadClass(String className) {
