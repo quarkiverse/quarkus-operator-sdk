@@ -1,6 +1,30 @@
 package io.quarkiverse.operatorsdk.deployment;
 
+import static io.quarkiverse.operatorsdk.deployment.Constants.CONTROLLER;
+import static io.quarkiverse.operatorsdk.deployment.Constants.CUSTOM_RESOURCE;
+import static io.quarkiverse.operatorsdk.deployment.Constants.RESOURCE_CONTROLLER;
+import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
+
+import java.io.Closeable;
+import java.lang.annotation.Annotation;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.enterprise.inject.Instance;
+import javax.enterprise.inject.spi.CDI;
+import javax.inject.Singleton;
+
+import org.jboss.jandex.AnnotationInstance;
+import org.jboss.jandex.AnnotationValue;
+import org.jboss.jandex.ClassInfo;
+import org.jboss.jandex.DotName;
+import org.jboss.jandex.IndexView;
+import org.jboss.logging.Logger;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.fabric8.crd.generator.CRDGenerator;
 import io.fabric8.crd.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -41,27 +65,6 @@ import io.quarkus.gizmo.AssignableResultHandle;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
-import org.jboss.jandex.AnnotationInstance;
-import org.jboss.jandex.AnnotationValue;
-import org.jboss.jandex.ClassInfo;
-import org.jboss.jandex.DotName;
-import org.jboss.jandex.IndexView;
-import org.jboss.logging.Logger;
-
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.CDI;
-import javax.inject.Singleton;
-import java.io.Closeable;
-import java.lang.annotation.Annotation;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static io.quarkiverse.operatorsdk.deployment.Constants.CONTROLLER;
-import static io.quarkiverse.operatorsdk.deployment.Constants.CUSTOM_RESOURCE;
-import static io.quarkiverse.operatorsdk.deployment.Constants.RESOURCE_CONTROLLER;
-import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 class OperatorSDKProcessor {
 
@@ -231,7 +234,7 @@ class OperatorSDKProcessor {
     }
 
     private ResultHandle getHandleFromCDI(MethodCreator mc, MethodDescriptor selectMethod, MethodDescriptor getMethod,
-                                          AssignableResultHandle cdiVar, Class<?> handleClass, String optionalImplClass) {
+            AssignableResultHandle cdiVar, Class<?> handleClass, String optionalImplClass) {
         ResultHandle operatorInstance = mc.invokeVirtualMethod(
                 selectMethod,
                 cdiVar,

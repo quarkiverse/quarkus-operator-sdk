@@ -4,7 +4,6 @@ import java.util.Set;
 
 import javax.enterprise.event.Event;
 import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
@@ -14,6 +13,7 @@ import javax.ws.rs.PathParam;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -24,17 +24,30 @@ import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 @Path("/operator")
 public class OperatorSDKResource {
 
-    @Inject
-    Instance<ResourceController<? extends CustomResource>> controllers;
-    @Inject
-    ConfigurationService configurationService;
-    @Inject
-    Event<DelayedController.RegisterEvent> event;
+    private final Instance<ResourceController<? extends CustomResource>> controllers;
+    private final ConfigurationService configurationService;
+    private final Event<DelayedController.RegisterEvent> event;
+    private final Operator operator;
+
+    public OperatorSDKResource(Instance<ResourceController<? extends CustomResource>> controllers,
+            ConfigurationService configurationService, Event<DelayedController.RegisterEvent> event, Operator operator) {
+        this.controllers = controllers;
+        this.configurationService = configurationService;
+        this.event = event;
+        this.operator = operator;
+    }
 
     @POST
     @Path("register")
     public void registerController() {
         event.fire(new DelayedController.RegisterEvent());
+
+        // hack: we need to start the controller for its init method to be called, prior to the 1.9.8 upgrade, the
+        // controller was started as part of the registration process. This is now a separate step which gives more
+        // control over the lifecycle but that means that the trick that was previously used (set initialized to true in
+        // the controller's init method) doesn't work anymore as the controller is not started anymore on simple
+        // registration and init is therefore not called anymore as a result
+        operator.start();
     }
 
     @GET
