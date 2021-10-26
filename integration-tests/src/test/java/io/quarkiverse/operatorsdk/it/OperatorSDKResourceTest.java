@@ -2,7 +2,10 @@ package io.quarkiverse.operatorsdk.it;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
 
 import org.junit.jupiter.api.Test;
 
@@ -65,7 +68,7 @@ public class OperatorSDKResourceTest {
     void configurationForControllerShouldExistAndUseOperatorLevelConfigurationWhenSet() {
         // check that the config for the test controller can be retrieved and is conform to our
         // expectations
-        final var resourceName = ChildTestResource.class.getCanonicalName();
+        final var resourceName = io.quarkiverse.operatorsdk.it.Test.class.getCanonicalName();
         given()
                 .when()
                 .get("/operator/" + TestController.NAME + "/config")

@@ -70,9 +70,16 @@ class CRDGeneration {
     }
 
     public void withCustomResource(Class<CustomResource> crClass, String crdName, String associatedControllerName) {
-        final var info = CustomResourceInfo.fromClass(crClass);
-        crMappings.add(info, crdName, associatedControllerName);
-        generator.customResources(info);
-        needGeneration = true;
+        try {
+            final var info = CustomResourceInfo.fromClass(crClass);
+            crMappings.add(info, crdName, associatedControllerName);
+            generator.customResources(info);
+            needGeneration = true;
+        } catch (Exception e) {
+            throw new IllegalArgumentException(
+                    "Cannot process " + crClass.getName() + " custom resource for controller '" + associatedControllerName
+                            + "'",
+                    e);
+        }
     }
 }
