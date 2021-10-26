@@ -14,6 +14,7 @@ public class CRDGenerationInfo {
     private final boolean validateCRDs;
     private final Map<String, Map<String, CRDInfo>> crds;
     private final Set<String> generated;
+    private final Map<String, CustomResourceInfo> controllerToCRI;
 
     @RecordableConstructor // constructor needs to be recordable for the class to be passed around by Quarkus
     public CRDGenerationInfo(boolean applyCRDs, boolean validateCRDs, Map<String, Map<String, CRDInfo>> crds,
@@ -22,6 +23,14 @@ public class CRDGenerationInfo {
         this.validateCRDs = validateCRDs;
         this.crds = Collections.unmodifiableMap(crds);
         this.generated = generated;
+        final var mappings = new HashMap<String, CustomResourceInfo>(crds.size());
+        crds.values().forEach(crdInfos -> crdInfos.values().forEach(info -> info.getVersions().values().forEach(cri -> {
+            final var controllerName = cri.getControllerName();
+            if (!mappings.containsKey(controllerName)) {
+                mappings.put(controllerName, cri);
+            }
+        })));
+        this.controllerToCRI = Collections.unmodifiableMap(mappings);
     }
 
     // Needed by Quarkus: if this method isn't present, state is not properly set
@@ -53,13 +62,6 @@ public class CRDGenerationInfo {
 
     @IgnoreProperty
     public Map<String, CustomResourceInfo> getControllerToCustomResourceMappings() {
-        final var mappings = new HashMap<String, CustomResourceInfo>(crds.size());
-        crds.values().forEach(crdInfos -> crdInfos.values().forEach(info -> info.getVersions().values().forEach(cri -> {
-            final var controllerName = cri.getControllerName();
-            if (!mappings.containsKey(controllerName)) {
-                mappings.put(controllerName, cri);
-            }
-        })));
-        return mappings;
+        return controllerToCRI;
     }
 }
