@@ -48,7 +48,7 @@ public class OperatorSDKResourceTest {
     void configurationForControllerShouldExist() {
         // check that the config for the test controller can be retrieved and is conform to our
         // expectations
-        final var resourceName = ChildTestResource.class.getCanonicalName();
+        final var resourceName = io.quarkiverse.operatorsdk.it.Test.class.getCanonicalName();
         given()
                 .when()
                 .get("/operator/" + TestController.NAME + "/config")
