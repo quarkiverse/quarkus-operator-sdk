@@ -7,7 +7,9 @@ import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -129,9 +131,10 @@ class OperatorSDKProcessor {
         final boolean validateCustomResources = shouldValidateCustomResources();
 
         final var index = combinedIndexBuildItem.getIndex();
+        final var apiVersionToControllerName = new HashMap<String, String>();
         final List<QuarkusControllerConfiguration> controllerConfigs = ClassUtils.getKnownResourceControllers(index, log)
                 .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses, forcedReflectionClasses,
-                        index))
+                        index, apiVersionToControllerName))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
@@ -249,7 +252,7 @@ class OperatorSDKProcessor {
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
-            IndexView index) {
+            IndexView index, Map<String, String> apiVersionToControllerName) {
         // first retrieve the custom resource class
         final var crType = JandexUtil.resolveTypeParameters(info.name(), RESOURCE_CONTROLLER, index)
                 .get(0)
@@ -278,10 +281,21 @@ class OperatorSDKProcessor {
             return Optional.empty();
         }
 
-        generator.customResources(CustomResourceInfo.fromClass(crClass));
-
         // retrieve CRD name from CR type
         final var crdName = CustomResource.getCRDName(crClass);
+
+        // check if we have already processed a controller for that CRD
+        final var version = HasMetadata.getVersion(crClass);
+        final var key = crdName + "/" + version;
+        final var existing = apiVersionToControllerName.get(key);
+        if (existing != null) {
+            throw new IllegalStateException(
+                    "Cannot process controller '" + name +
+                            "' because a controller (" + existing
+                            + ") is already associated with CRD '" + crdName + "' (version: " + version + ")");
+        }
+
+        generator.customResources(CustomResourceInfo.fromClass(crClass));
 
         // register CR class for introspection
         reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, crType));
@@ -312,7 +326,10 @@ class OperatorSDKProcessor {
 
         log.infov(
                 "Processed ''{0}'' controller named ''{1}'' for ''{2}'' CR (version ''{3}'')",
-                info.name().toString(), name, crdName, HasMetadata.getApiVersion(crClass));
+                info.name().toString(), name, crdName, version);
+
+        // record CRD / controller association
+        apiVersionToControllerName.put(key, name);
 
         return Optional.of(configuration);
     }
