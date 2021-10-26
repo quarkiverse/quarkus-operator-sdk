@@ -334,7 +334,7 @@ class OperatorSDKProcessor {
             }
             // if we still need to generate the CRD, add the CR to the set to be generated
             if (generateCurrent[0]) {
-                crdGeneration.withCustomResource(crClass, crdName);
+                crdGeneration.withCustomResource(crClass, crdName, name);
             }
         }
 

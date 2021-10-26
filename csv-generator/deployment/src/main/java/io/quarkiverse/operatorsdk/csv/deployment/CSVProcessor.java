@@ -20,12 +20,10 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
-import io.quarkiverse.operatorsdk.common.CustomResourceInfo;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVGenerationConfiguration;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVMetadata;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.csv.runtime.SharedCSVMetadata;
-import io.quarkiverse.operatorsdk.deployment.ConfigurationServiceBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -43,25 +41,9 @@ public class CSVProcessor {
 
     @BuildStep
     CSVMetadataBuildItem gatherCSVMetadata(CombinedIndexBuildItem combinedIndexBuildItem,
-            GeneratedCRDInfoBuildItem generatedCRDs,
-            ConfigurationServiceBuildItem configurationServiceBI) {
+            GeneratedCRDInfoBuildItem generatedCRDs) {
         final var csvGroupMetadata = new HashMap<String, CSVMetadataHolder>();
 
-        // map controller name to associated CustomResourceInfo
-        final var controllerConfigs = configurationServiceBI.getControllerConfigs();
-        final var controllerToCRInfo = new HashMap<String, CustomResourceInfo>(controllerConfigs.size());
-        controllerConfigs.forEach(c -> {
-            final var crdVersionToInfos = generatedCRDs.getCRDGenerationInfo().getCRDInfosFor(c.getCRDName());
-            // find the first CustomResourceInfo that matches our defined CR version as all matching versions should be equal anyway
-            final var cri = crdVersionToInfos.values().stream()
-                    .filter(info -> info.getVersions().containsKey(c.getCrVersion()))
-                    .findFirst()
-                    .map(info -> info.getVersions().get(c.getCrVersion()))
-                    .orElseThrow();
-            controllerToCRInfo.put(c.getName(), cri);
-        });
-
-        final var crdGenerationInfo = generatedCRDs.getCRDGenerationInfo();
         final var augmentedCRInfos = new HashMap<String, AugmentedCustomResourceInfo>();
         final var index = combinedIndexBuildItem.getIndex();
         ClassUtils.getKnownResourceControllers(index, log)
@@ -70,7 +52,7 @@ public class CSVProcessor {
                     final var name = ConfigurationUtils.getControllerName(info);
                     final var csvMetadata = getCSVMetadata(info, name, index);
                     csvGroupMetadata.put(csvMetadata.name, csvMetadata);
-                    final var cri = controllerToCRInfo.get(name);
+                    final var cri = generatedCRDs.getCRDGenerationInfo().getControllerToCustomResourceMappings().get(name);
                     if (cri == null) {
                         throw new IllegalStateException(
                                 "There should be a CustomResourceInfo associated to controller: " + name);
