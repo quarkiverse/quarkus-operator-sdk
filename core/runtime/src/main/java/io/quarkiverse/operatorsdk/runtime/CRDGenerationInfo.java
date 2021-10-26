@@ -1,6 +1,9 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 import io.quarkiverse.operatorsdk.common.CustomResourceInfo;
 import io.quarkus.runtime.annotations.IgnoreProperty;
@@ -49,14 +52,14 @@ public class CRDGenerationInfo {
     }
 
     @IgnoreProperty
-    public Map<String, CustomResourceInfo> getCRInfosByCRVersionFor(String crdName) {
-        final var crdVersionToInfo = crds.get(crdName);
-        if (crdVersionToInfo == null) {
-            throw new IllegalStateException("Should have information associated with '" + crdName + "'");
-        }
-
-        Map<String, CustomResourceInfo> crVersionToCRInfo = new HashMap<>(7);
-        crdVersionToInfo.forEach((crdVersion, cri) -> crVersionToCRInfo.putAll(cri.getVersions()));
-        return crVersionToCRInfo;
+    public Map<String, CustomResourceInfo> getControllerToCustomResourceMappings() {
+        final var mappings = new HashMap<String, CustomResourceInfo>(crds.size());
+        crds.values().forEach(crdInfos -> crdInfos.values().forEach(info -> info.getVersions().values().forEach(cri -> {
+            final var controllerName = cri.getControllerName();
+            if (!mappings.containsKey(controllerName)) {
+                mappings.put(controllerName, cri);
+            }
+        })));
+        return mappings;
     }
 }
