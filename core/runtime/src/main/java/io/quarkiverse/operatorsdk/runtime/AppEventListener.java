@@ -25,8 +25,8 @@ public class AppEventListener {
             final var branch = !version.getExtensionBranch().equals(Version.UNKNOWN)
                     ? " on branch: " + version.getExtensionBranch()
                     : "";
-            log.info("Quarkus Java Operator SDK extension {} (commit: {}{})", version.getExtensionVersion(),
-                    version.getExtensionCommit(), branch);
+            log.info("Quarkus Java Operator SDK extension {} (commit: {}{}) built on {}", version.getExtensionVersion(),
+                    version.getExtensionCommit(), branch, version.getExtensionBuildTime());
         }
         operator.start();
     }
