@@ -57,7 +57,6 @@ import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
-import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
@@ -239,15 +238,10 @@ class OperatorSDKProcessor {
 
     @BuildStep
     public void addRBACForCustomResources(BuildProducer<DecoratorBuildItem> decorators,
-            ApplicationInfoBuildItem applicationInfo,
             GeneratedCRDInfoBuildItem generatedCRDs) {
-        decorators.produce(new DecoratorBuildItem(
-                new AddClusterRoleDecorator(generatedCRDs.getCRDGenerationInfo().getControllerToCustomResourceMappings(),
-                        buildTimeConfiguration.crd.validate)));
-        decorators.produce(new DecoratorBuildItem(
-                new AddClusterRoleBindingDecorator(
-                        generatedCRDs.getCRDGenerationInfo().getControllerToCustomResourceMappings().keySet(),
-                        applicationInfo.getName())));
+        final var mappings = generatedCRDs.getCRDGenerationInfo().getControllerToCustomResourceMappings();
+        decorators.produce(new DecoratorBuildItem(new AddClusterRoleDecorator(mappings, buildTimeConfiguration.crd.validate)));
+        decorators.produce(new DecoratorBuildItem(new AddClusterRoleBindingDecorator(mappings.keySet())));
     }
 
     private ResultHandle getHandleFromCDI(MethodCreator mc, MethodDescriptor selectMethod, MethodDescriptor getMethod,
