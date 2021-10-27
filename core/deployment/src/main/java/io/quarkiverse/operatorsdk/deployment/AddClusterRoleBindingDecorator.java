@@ -10,19 +10,21 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
 
 public class AddClusterRoleBindingDecorator extends ResourceProvidingDecorator<KubernetesListBuilder> {
     private final Set<String> controllerNames;
-    private final String serviceAccountName;
 
-    public AddClusterRoleBindingDecorator(Set<String> controllerNames, String serviceAccountName) {
+    public AddClusterRoleBindingDecorator(Set<String> controllerNames) {
         this.controllerNames = controllerNames;
-        this.serviceAccountName = serviceAccountName;
     }
 
     @Override
     public void visit(KubernetesListBuilder list) {
-        controllerNames.forEach(controllerName -> list.addToItems(new ClusterRoleBindingBuilder()
-                .withNewMetadata().withName(controllerName + "-cluster-role-binding").endMetadata()
-                .withNewRoleRef("rbac.authorization.k8s.io", "ClusterRole", getClusterRoleName(controllerName))
-                .addNewSubject(null, "ServiceAccount", serviceAccountName, null)
-                .build()));
+        final var serviceAccountName = getMandatoryDeploymentMetadata(list).getName();
+
+        controllerNames.forEach(controllerName -> {
+            list.addToItems(new ClusterRoleBindingBuilder()
+                    .withNewMetadata().withName(controllerName + "-cluster-role-binding").endMetadata()
+                    .withNewRoleRef("rbac.authorization.k8s.io", "ClusterRole", getClusterRoleName(controllerName))
+                    .addNewSubject(null, "ServiceAccount", serviceAccountName, null)
+                    .build());
+        });
     }
 }
