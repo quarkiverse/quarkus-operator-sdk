@@ -13,10 +13,25 @@
   <name>Quarkus - Operator SDK - Parent</name>
   <modules>
     <module>bom</module>
+    <module>build-parent</module>
     <module>samples</module>
     <module>csv-generator</module>
     <module>core</module>
     <module>common</module>
     <module>integration-tests</module>
   </modules>
+  <profiles>
+    <profile>
+      <id>it</id>
+      <activation>
+        <property>
+          <name>performRelease</name>
+          <value>!true</value>
+        </property>
+      </activation>
+      <modules>
+        <module>integration-tests</module>
+      </modules>
+    </profile>
+  </profiles>
 </project>
