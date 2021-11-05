@@ -57,7 +57,7 @@ public class JokeController implements ResourceController<JokeRequest> {
         try {
             final JokeModel fromApi = jokes.getRandom(spec.getCategory(),
                     String.join(",", Arrays.stream(spec.getExcluded()).map(ExcludedTopic::name).toArray(String[]::new)),
-                    spec.isSafe());
+                    spec.isSafe(), "single");
             status = JokeRequestStatus.from(fromApi);
             if (!status.isError()) {
                 // create the joke
