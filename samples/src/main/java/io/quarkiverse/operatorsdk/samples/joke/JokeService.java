@@ -14,6 +14,7 @@
  */
 package io.quarkiverse.operatorsdk.samples.joke;
 
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -28,8 +29,8 @@ import io.quarkiverse.operatorsdk.samples.joke.JokeRequestSpec.Category;
 public interface JokeService {
 
     @GET
-    @Path("/{category}/any?type=single")
+    @Path("/{category}/any")
     @Produces("application/json")
     JokeModel getRandom(@PathParam Category category, @QueryParam(value = "blacklistFlags") String excluded,
-            @QueryParam(value = "safe-mode") boolean safe);
+                        @QueryParam(value = "safe-mode") boolean safe, @DefaultValue("single") @QueryParam(value = "type") String type);
 }
