@@ -32,5 +32,5 @@ public interface JokeService {
     @Path("/{category}/any")
     @Produces("application/json")
     JokeModel getRandom(@PathParam Category category, @QueryParam(value = "blacklistFlags") String excluded,
-                        @QueryParam(value = "safe-mode") boolean safe, @DefaultValue("single") @QueryParam(value = "type") String type);
+            @QueryParam(value = "safe-mode") boolean safe, @DefaultValue("single") @QueryParam(value = "type") String type);
 }
