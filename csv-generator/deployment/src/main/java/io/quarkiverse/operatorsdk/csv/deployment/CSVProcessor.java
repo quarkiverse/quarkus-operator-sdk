@@ -28,7 +28,7 @@ import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
-import io.quarkus.deployment.builditem.FeatureBuildItem;
+import io.quarkus.deployment.pkg.builditem.ArtifactResultBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 
@@ -64,10 +64,12 @@ public class CSVProcessor {
     }
 
     @BuildStep
-    FeatureBuildItem generateCSV(OutputTargetBuildItem outputTarget,
+    void generateCSV(OutputTargetBuildItem outputTarget,
             CSVMetadataBuildItem csvMetadata,
-            BuildProducer<GeneratedCSVBuildItem> ignored,
-            List<GeneratedKubernetesResourceBuildItem> generatedKubernetesManifests) {
+            BuildProducer<GeneratedCSVBuildItem> generatedCSV,
+            List<GeneratedKubernetesResourceBuildItem> generatedKubernetesManifests,
+            // this is added to ensure that the build step will be run
+            BuildProducer<ArtifactResultBuildItem> forceExtensionToRun) {
         if (configuration.generateCSV.orElse(false)) {
             try {
                 final var outputDir = outputTarget.getOutputDirectory().resolve(KUBERNETES);
@@ -107,14 +109,11 @@ public class CSVProcessor {
                                 });
                 CSVGenerator.generate(outputDir, csvMetadata.getAugmentedCustomResourceInfos(), csvMetadata.getCSVMetadata(),
                         serviceAccountName[0], clusterRole[0], role[0], deployment[0]);
-                ignored.produce(new GeneratedCSVBuildItem());
+                generatedCSV.produce(new GeneratedCSVBuildItem());
             } catch (Exception e) {
                 log.infov(e, "Couldn't generate CSV:");
             }
         }
-
-        // generating a feature is a sure way to make sure this step will be executed by Quarkus
-        return new FeatureBuildItem("CSVGeneration");
     }
 
     private CSVMetadataHolder getCSVMetadata(ClassInfo info, String controllerName, IndexView index) {
