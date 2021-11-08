@@ -3,6 +3,8 @@ package io.quarkiverse.operatorsdk.csv.deployment;
 import static io.quarkus.kubernetes.deployment.Constants.KUBERNETES;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 
@@ -28,7 +30,7 @@ import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
-import io.quarkus.deployment.pkg.builditem.ArtifactResultBuildItem;
+import io.quarkus.deployment.builditem.GeneratedFileSystemResourceBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 
@@ -66,10 +68,9 @@ public class CSVProcessor {
     @BuildStep
     void generateCSV(OutputTargetBuildItem outputTarget,
             CSVMetadataBuildItem csvMetadata,
-            BuildProducer<GeneratedCSVBuildItem> generatedCSV,
+            BuildProducer<GeneratedCSVBuildItem> doneGeneratingCSV,
             List<GeneratedKubernetesResourceBuildItem> generatedKubernetesManifests,
-            // this is added to ensure that the build step will be run
-            BuildProducer<ArtifactResultBuildItem> forceExtensionToRun) {
+            BuildProducer<GeneratedFileSystemResourceBuildItem> generatedCSVs) {
         if (configuration.generateCSV.orElse(false)) {
             try {
                 final var outputDir = outputTarget.getOutputDirectory().resolve(KUBERNETES);
@@ -107,9 +108,23 @@ public class CSVProcessor {
                                         }
                                     });
                                 });
-                CSVGenerator.generate(outputDir, csvMetadata.getAugmentedCustomResourceInfos(), csvMetadata.getCSVMetadata(),
-                        serviceAccountName[0], clusterRole[0], role[0], deployment[0]);
-                generatedCSV.produce(new GeneratedCSVBuildItem());
+                final var generated = CSVGenerator.prepareGeneration(
+                        csvMetadata.getAugmentedCustomResourceInfos(), csvMetadata.getCSVMetadata());
+                generated.forEach(namedCSVBuilder -> {
+                    final var fileName = namedCSVBuilder.getFileName();
+                    try {
+                        generatedCSVs.produce(
+                                new GeneratedFileSystemResourceBuildItem(
+                                        Path.of(KUBERNETES, fileName).toString(),
+                                        namedCSVBuilder.getYAMLData(serviceAccountName[0],
+                                                clusterRole[0], role[0], deployment[0])));
+                        log.infov("Generating CSV for {0} controller -> {1}", namedCSVBuilder.getControllerName(),
+                                outputDir.resolve(fileName));
+                    } catch (IOException e) {
+                        log.errorv("Cannot generate CSV for {0}: {1}", namedCSVBuilder.getControllerName(), e.getMessage());
+                    }
+                });
+                doneGeneratingCSV.produce(new GeneratedCSVBuildItem());
             } catch (Exception e) {
                 log.infov(e, "Couldn't generate CSV:");
             }
