@@ -4,6 +4,8 @@ import static io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator.get
 
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import io.dekorate.kubernetes.decorator.ResourceProvidingDecorator;
 import io.fabric8.kubernetes.api.model.KubernetesListBuilder;
@@ -15,6 +17,7 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
 
     private final Map<String, QuarkusControllerConfiguration> configs;
     private final boolean validateCRDs;
+    private static final ConcurrentMap<String, Object> alreadyLogged = new ConcurrentHashMap<>();
 
     public AddRoleBindingsDecorator(Map<String, QuarkusControllerConfiguration> configs,
             boolean validateCRDs) {
@@ -40,9 +43,12 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
                         .build());
             } else if (config.watchAllNamespaces()) {
                 final var crBindingName = controllerName + "-cluster-role-binding";
-                OperatorSDKProcessor.log.warnv(
-                        "''{0}'' controller is configured to watch all namespaces, this requires a ClusterRoleBinding for which we MUST specify the namespace of the operator ServiceAccount. However, at this information is not known at build time, we are leaving it blank and needs to be provided by the user by editing the ''{1}'' ClusterRoleBinding to provide the namespace in which the operator will be deployed.",
-                        controllerName, crBindingName);
+                // the decorator can be called several times but we only want to output the warning once
+                if (alreadyLogged.putIfAbsent(controllerName, new Object()) != null) {
+                    OperatorSDKProcessor.log.warnv(
+                            "''{0}'' controller is configured to watch all namespaces, this requires a ClusterRoleBinding for which we MUST specify the namespace of the operator ServiceAccount. However, at this information is not known at build time, we are leaving it blank and needs to be provided by the user by editing the ''{1}'' ClusterRoleBinding to provide the namespace in which the operator will be deployed.",
+                            controllerName, crBindingName);
+                }
                 list.addToItems(new ClusterRoleBindingBuilder()
                         .withNewMetadata().withName(crBindingName)
                         .endMetadata()
