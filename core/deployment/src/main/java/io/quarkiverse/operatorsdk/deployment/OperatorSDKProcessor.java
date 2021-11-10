@@ -185,8 +185,8 @@ class OperatorSDKProcessor {
         final var configs = new HashMap<String, QuarkusControllerConfiguration>(controllerConfigs.size());
         controllerConfigs.forEach(c -> configs.put(c.getName(), c));
 
-        decorators.produce(new DecoratorBuildItem(new AddClusterRoleDecorator(mappings, buildTimeConfiguration.crd.validate)));
-        decorators.produce(new DecoratorBuildItem(new AddClusterRoleBindingDecorator(configs,
+        decorators.produce(new DecoratorBuildItem(new AddClusterRolesDecorator(mappings, buildTimeConfiguration.crd.validate)));
+        decorators.produce(new DecoratorBuildItem(new AddRoleBindingsDecorator(configs,
                 buildTimeConfiguration.crd.validate)));
     }
 
