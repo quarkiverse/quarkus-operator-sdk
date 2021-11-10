@@ -14,9 +14,12 @@ import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 public class AddClusterRoleBindingDecorator extends ResourceProvidingDecorator<KubernetesListBuilder> {
 
     private final Map<String, QuarkusControllerConfiguration> configs;
+    private final boolean validateCRDs;
 
-    public AddClusterRoleBindingDecorator(Map<String, QuarkusControllerConfiguration> configs) {
+    public AddClusterRoleBindingDecorator(Map<String, QuarkusControllerConfiguration> configs,
+            boolean validateCRDs) {
         this.configs = configs;
+        this.validateCRDs = validateCRDs;
     }
 
     @Override
@@ -58,6 +61,18 @@ public class AddClusterRoleBindingDecorator extends ResourceProvidingDecorator<K
                                         getClusterRoleName(controllerName))
                                 .addNewSubject(null, "ServiceAccount", serviceAccountName, null)
                                 .build()));
+            }
+
+            // if we validate the CRDs, also create a binding for the CRD validating role
+            if (validateCRDs) {
+                list.addToItems(new RoleBindingBuilder()
+                        .withNewMetadata()
+                        .withName(controllerName + "-crd-validating-role-binding")
+                        .endMetadata()
+                        .withNewRoleRef("rbac.authorization.k8s.io", "ClusterRole",
+                                AddClusterRoleDecorator.JOSDK_CRD_VALIDATING_CLUSTER_ROLE)
+                        .addNewSubject(null, "ServiceAccount", serviceAccountName, null)
+                        .build());
             }
         }
     }

@@ -186,7 +186,8 @@ class OperatorSDKProcessor {
         controllerConfigs.forEach(c -> configs.put(c.getName(), c));
 
         decorators.produce(new DecoratorBuildItem(new AddClusterRoleDecorator(mappings, buildTimeConfiguration.crd.validate)));
-        decorators.produce(new DecoratorBuildItem(new AddClusterRoleBindingDecorator(configs)));
+        decorators.produce(new DecoratorBuildItem(new AddClusterRoleBindingDecorator(configs,
+                buildTimeConfiguration.crd.validate)));
     }
 
     private ResultHandle getHandleFromCDI(MethodCreator mc, MethodDescriptor selectMethod, MethodDescriptor getMethod,
