@@ -11,10 +11,9 @@ import org.junit.jupiter.api.Test;
 
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.kubernetes.client.KubernetesServerTestResource;
 
 @QuarkusTest
-@QuarkusTestResource(KubernetesServerTestResource.class)
+@QuarkusTestResource(CustomKubernetesServerTestResource.class)
 public class OperatorSDKResourceTest {
 
     @Test
