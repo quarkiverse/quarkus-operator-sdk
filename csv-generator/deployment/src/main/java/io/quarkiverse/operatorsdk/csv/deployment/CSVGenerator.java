@@ -1,9 +1,6 @@
 package io.quarkiverse.operatorsdk.csv.deployment;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -11,7 +8,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 
@@ -27,7 +26,9 @@ import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionBuilder;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionFluent;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionFluent.SpecNested;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionSpecFluent;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionSpecFluent.InstallNested;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.NamedInstallStrategyFluent;
 import io.quarkiverse.operatorsdk.common.CustomResourceInfo;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVMetadataHolder;
@@ -45,22 +46,69 @@ public class CSVGenerator {
         YAML_MAPPER.configure(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS, false);
     }
 
-    public static void generate(Path outputDir, Map<String, AugmentedCustomResourceInfo> info,
-            Map<String, CSVMetadataHolder> csvMetadata,
-            String serviceAccountName, ClusterRole clusterRole, Role role, Deployment deployment) {
-        // load generated manifests
+    public static Set<NamedCSVBuilder> prepareGeneration(Map<String, AugmentedCustomResourceInfo> info,
+            Map<String, CSVMetadataHolder> csvMetadata) {
+        final var csvBuilders = new HashMap<String, NamedCSVBuilder>(7);
+        return info.values().parallelStream()
+                .map(cri -> csvBuilders.computeIfAbsent(cri.getCsvGroupName(),
+                        s -> new NamedCSVBuilder(cri, csvMetadata)))
+                .collect(Collectors.toSet());
+    }
 
-        final var controllerToCSVBuilders = new HashMap<String, ClusterServiceVersionBuilder>(7);
-        final var groupToCRInfo = new HashMap<String, Set<CustomResourceInfo>>(7);
-        info.forEach((crdName, cri) -> {
-            // record group name and associated CustomResourceInfos
+    private static Boolean hasMatchingClusterPermission(CustomResourceInfo cri,
+            NamedInstallStrategyFluent.SpecNested<ClusterServiceVersionSpecFluent.InstallNested<ClusterServiceVersionFluent.SpecNested<ClusterServiceVersionBuilder>>> installSpec,
+            Integer[] ruleIndex, Integer[] clusterPermissionIndex) {
+        final var hasMatchingClusterPermission = installSpec
+                .hasMatchingClusterPermission(cp -> {
+                    int i = 0;
+                    for (PolicyRule rule : cp.getRules()) {
+                        if (rule.getApiGroups().contains(cri.getGroup())) {
+                            ruleIndex[0] = i;
+                            return true;
+                        }
+                        i++;
+                    }
+                    clusterPermissionIndex[0]++;
+                    return false;
+                });
+        return hasMatchingClusterPermission;
+    }
+
+    static class NamedCSVBuilder {
+        private final String csvGroupName;
+        private final String controllerName;
+        private final ClusterServiceVersionBuilder csvBuilder;
+        final static Map<String, Set<CustomResourceInfo>> groupToCRInfo = new ConcurrentHashMap<>(7);
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            NamedCSVBuilder that = (NamedCSVBuilder) o;
+
+            return csvGroupName.equals(that.csvGroupName);
+        }
+
+        @Override
+        public int hashCode() {
+            return csvGroupName.hashCode();
+        }
+
+        public NamedCSVBuilder(AugmentedCustomResourceInfo cri, Map<String, CSVMetadataHolder> csvMetadata) {
+            // record group to CRI mapping
             groupToCRInfo.computeIfAbsent(cri.getGroup(), s -> new HashSet<>()).add(cri);
 
-            final var csvGroupName = cri.getCsvGroupName();
+            controllerName = cri.getControllerName();
+            csvGroupName = cri.getCsvGroupName();
             final var metadata = csvMetadata.get(csvGroupName);
-            final var csvSpecBuilder = controllerToCSVBuilders
-                    .computeIfAbsent(csvGroupName, s -> new ClusterServiceVersionBuilder()
-                            .withNewMetadata().withName(s).endMetadata())
+            csvBuilder = new ClusterServiceVersionBuilder()
+                    .withNewMetadata().withName(csvGroupName).endMetadata();
+            final var csvSpecBuilder = csvBuilder
                     .editOrNewSpec()
                     .withDescription(metadata.description)
                     .withDisplayName(metadata.displayName)
@@ -85,7 +133,7 @@ public class CSVGenerator {
             csvSpecBuilder
                     .editOrNewCustomresourcedefinitions()
                     .addNewOwned()
-                    .withName(crdName)
+                    .withName(cri.getCrdName())
                     .withVersion(cri.getVersion())
                     .withKind(cri.getKind())
                     .endOwned().endCustomresourcedefinitions();
@@ -94,7 +142,9 @@ public class CSVGenerator {
             final var installSpec = csvSpecBuilder.editOrNewInstall().editOrNewSpec();
             final Integer[] ruleIndex = new Integer[1];
             final Integer[] clusterPermissionIndex = new Integer[] { 0 };
-            final Boolean hasMatchingClusterPermission = hasMatchingClusterPermission(cri, installSpec, ruleIndex,
+            final Boolean hasMatchingClusterPermission = hasMatchingClusterPermission(
+                    cri,
+                    installSpec, ruleIndex,
                     clusterPermissionIndex);
             final var clusterPermission = hasMatchingClusterPermission
                     ? installSpec.editClusterPermission(clusterPermissionIndex[0])
@@ -117,128 +167,140 @@ public class CSVGenerator {
                 clusterPermission.setToRules(ruleIndex[0], rule.build());
             } else {
                 clusterPermission.addToRules(rule.addNewApiGroup(cri.getGroup())
-                        .addToVerbs("get", "list", "watch", "create", "delete", "patch", "update")
+                        .addToVerbs("get", "list", "watch", "create", "delete", "patch",
+                                "update")
                         .build());
             }
             clusterPermission.endClusterPermission();
             installSpec.endSpec().endInstall();
             csvSpecBuilder.endSpec();
-        });
+        }
 
-        controllerToCSVBuilders.forEach((controllerName, csvBuilder) -> {
-            final File file = new File(outputDir.toFile(), controllerName + ".csv.yml");
+        public String getFileName() {
+            return csvGroupName + ".csv.yml";
+        }
 
-            final var csvSpec = csvBuilder.editOrNewSpec();
+        private String getIconName() {
+            return csvGroupName + ".icon.png";
+        }
+
+        byte[] getYAMLData(String serviceAccountName, ClusterRole clusterRole, Role role,
+                Deployment deployment) throws IOException {
+            final var csvSpecBuilder = csvBuilder
+                    .editOrNewSpec();
+
             // deal with icon
             try (var iconAsStream = Thread.currentThread().getContextClassLoader()
-                    .getResourceAsStream(controllerName + ".icon.png");
-                    var outputStream = new FileOutputStream(file)) {
+                    .getResourceAsStream(getIconName())) {
                 if (iconAsStream != null) {
-                    final byte[] iconAsBase64 = Base64.getEncoder().encode(iconAsStream.readAllBytes());
-                    csvSpec.addNewIcon()
+                    final byte[] iconAsBase64 = Base64.getEncoder()
+                            .encode(iconAsStream.readAllBytes());
+                    csvSpecBuilder.addNewIcon()
                             .withBase64data(new String(iconAsBase64))
                             .withMediatype("image/png")
                             .endIcon();
                 }
+            } catch (IOException e) {
+                // ignore
+            }
 
-                final var installSpec = csvSpec.editOrNewInstall()
-                        .editOrNewSpec();
-                if (clusterRole != null) {
-                    // check if we have our CR group in the cluster role fragment and remove the one we added
-                    // before since we presume that if the user defined a fragment for permissions associated with their
-                    // CR they want that fragment to take precedence over automatically generated code
-                    final var rules = clusterRole.getRules();
-                    final var clusterPermissions = installSpec.buildClusterPermissions();
-                    groupToCRInfo.forEach((group, infos) -> {
+            final var installSpec = csvSpecBuilder.editOrNewInstall().editOrNewSpec();
+            handleClusterRole(serviceAccountName, clusterRole, groupToCRInfo, installSpec);
 
-                        final Predicate<PolicyRule> hasGroup = pr -> pr.getApiGroups().contains(group);
-                        final var nowEmptyPermissions = new LinkedList<Integer>();
-                        final var permissionPosition = new Integer[] { 0 };
-                        if (rules.stream().anyMatch(hasGroup)) {
-                            clusterPermissions.forEach(p -> {
-                                // record the position of all rules that match the group
-                                Integer[] index = new Integer[] { 0 };
-                                List<Integer> matchingRuleIndices = new LinkedList<>();
-                                p.getRules().forEach(r -> {
-                                    if (hasGroup.test(r)) {
-                                        matchingRuleIndices.add(index[0]);
-                                    }
-                                    index[0]++;
-                                });
+            handlerRole(serviceAccountName, role, installSpec);
 
-                                // remove the group from all matching rules
-                                matchingRuleIndices.forEach(i -> {
-                                    final var groups = p.getRules().get(i).getApiGroups();
-                                    groups.remove(group);
-                                    // if the rule doesn't have any groups anymore, remove it
-                                    if (groups.isEmpty()) {
-                                        p.getRules().remove(i.intValue());
-                                        // if the permission doesn't have any rules anymore, mark it for removal
-                                        if (p.getRules().isEmpty()) {
-                                            nowEmptyPermissions.add(permissionPosition[0]);
-                                        }
-                                    }
-                                });
+            handleDeployment(deployment, installSpec);
 
-                                permissionPosition[0]++;
+            // do not forget to end the elements!!
+            installSpec.endSpec().endInstall();
+            csvSpecBuilder.endSpec();
+
+            final var csv = csvBuilder.build();
+            return YAML_MAPPER.writeValueAsBytes(csv);
+
+        }
+
+        private void handleDeployment(Deployment deployment,
+                NamedInstallStrategyFluent.SpecNested<InstallNested<SpecNested<ClusterServiceVersionBuilder>>> installSpec) {
+            if (deployment != null) {
+                installSpec.addNewDeployment()
+                        .withName(deployment.getMetadata().getName())
+                        .withSpec(deployment.getSpec())
+                        .endDeployment();
+            }
+        }
+
+        private void handlerRole(String serviceAccountName, Role role,
+                NamedInstallStrategyFluent.SpecNested<InstallNested<SpecNested<ClusterServiceVersionBuilder>>> installSpec) {
+            if (role != null) {
+                installSpec
+                        .addNewPermission()
+                        .withServiceAccountName(serviceAccountName)
+                        .addAllToRules(role.getRules())
+                        .endPermission();
+            }
+        }
+
+        private void handleClusterRole(String serviceAccountName, ClusterRole clusterRole,
+                Map<String, Set<CustomResourceInfo>> groupToCRInfo,
+                NamedInstallStrategyFluent.SpecNested<InstallNested<SpecNested<ClusterServiceVersionBuilder>>> installSpec) {
+            if (clusterRole != null) {
+                // check if we have our CR group in the cluster role fragment and remove the one we added
+                // before since we presume that if the user defined a fragment for permissions associated with their
+                // CR they want that fragment to take precedence over automatically generated code
+                final var rules = clusterRole.getRules();
+                final var clusterPermissions = installSpec.buildClusterPermissions();
+                groupToCRInfo.forEach((group, infos) -> {
+
+                    final Predicate<PolicyRule> hasGroup = pr -> pr.getApiGroups()
+                            .contains(group);
+                    final var nowEmptyPermissions = new LinkedList<Integer>();
+                    final var permissionPosition = new Integer[] { 0 };
+                    if (rules.stream().anyMatch(hasGroup)) {
+                        clusterPermissions.forEach(p -> {
+                            // record the position of all rules that match the group
+                            Integer[] index = new Integer[] { 0 };
+                            List<Integer> matchingRuleIndices = new LinkedList<>();
+                            p.getRules().forEach(r -> {
+                                if (hasGroup.test(r)) {
+                                    matchingRuleIndices.add(index[0]);
+                                }
+                                index[0]++;
                             });
 
-                            // remove now empty permissions
-                            nowEmptyPermissions.forEach(i -> clusterPermissions.remove(i.intValue()));
-                            installSpec.addAllToClusterPermissions(clusterPermissions);
-                        }
-                    });
-                    installSpec
-                            .addNewClusterPermission()
-                            .withServiceAccountName(serviceAccountName)
-                            .addAllToRules(rules)
-                            .endClusterPermission();
-                }
+                            // remove the group from all matching rules
+                            matchingRuleIndices.forEach(i -> {
+                                final var groups = p.getRules().get(i).getApiGroups();
+                                groups.remove(group);
+                                // if the rule doesn't have any groups anymore, remove it
+                                if (groups.isEmpty()) {
+                                    p.getRules().remove(i.intValue());
+                                    // if the permission doesn't have any rules anymore, mark it for removal
+                                    if (p.getRules().isEmpty()) {
+                                        nowEmptyPermissions.add(permissionPosition[0]);
+                                    }
+                                }
+                            });
 
-                if (role != null) {
-                    installSpec
-                            .addNewPermission()
-                            .withServiceAccountName(serviceAccountName)
-                            .addAllToRules(role.getRules())
-                            .endPermission();
-                }
+                            permissionPosition[0]++;
+                        });
 
-                if (deployment != null) {
-                    installSpec.addNewDeployment()
-                            .withName(deployment.getMetadata().getName())
-                            .withSpec(deployment.getSpec())
-                            .endDeployment();
-                }
-
-                // do not forget to end the elements!!
-                installSpec.endSpec().endInstall();
-                csvSpec.endSpec();
-
-                final var csv = csvBuilder.build();
-                YAML_MAPPER.writeValue(outputStream, csv);
-                log.infov("Generated CSV for {0} controller -> {1}", controllerName, file);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-    }
-
-    private static Boolean hasMatchingClusterPermission(CustomResourceInfo cri,
-            NamedInstallStrategyFluent.SpecNested<ClusterServiceVersionSpecFluent.InstallNested<ClusterServiceVersionFluent.SpecNested<ClusterServiceVersionBuilder>>> installSpec,
-            Integer[] ruleIndex, Integer[] clusterPermissionIndex) {
-        final var hasMatchingClusterPermission = installSpec
-                .hasMatchingClusterPermission(cp -> {
-                    int i = 0;
-                    for (PolicyRule rule : cp.getRules()) {
-                        if (rule.getApiGroups().contains(cri.getGroup())) {
-                            ruleIndex[0] = i;
-                            return true;
-                        }
-                        i++;
+                        // remove now empty permissions
+                        nowEmptyPermissions.forEach(
+                                i -> clusterPermissions.remove(i.intValue()));
+                        installSpec.addAllToClusterPermissions(clusterPermissions);
                     }
-                    clusterPermissionIndex[0]++;
-                    return false;
                 });
-        return hasMatchingClusterPermission;
+                installSpec
+                        .addNewClusterPermission()
+                        .withServiceAccountName(serviceAccountName)
+                        .addAllToRules(rules)
+                        .endClusterPermission();
+            }
+        }
+
+        public String getControllerName() {
+            return controllerName;
+        }
     }
 }

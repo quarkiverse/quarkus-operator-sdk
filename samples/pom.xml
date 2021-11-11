@@ -38,6 +38,10 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-rest-client-jackson</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-openshift</artifactId>
+    </dependency>
     <!--  This dependency is needed only to ensure proper building order so that this module is build after the CSV extension -->
     <dependency>
       <groupId>io.quarkiverse.operatorsdk</groupId>
