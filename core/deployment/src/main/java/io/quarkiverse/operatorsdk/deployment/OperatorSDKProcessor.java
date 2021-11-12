@@ -9,6 +9,7 @@ import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.lang.annotation.Annotation;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -176,72 +177,17 @@ class OperatorSDKProcessor {
         return new ConfigurationServiceBuildItem(Version.loadFromProperties(), controllerConfigs);
     }
 
-    /**
-     * This looks for all resource controllers, to find those that want a delayed registration, and
-     * creates one CDI observer for each, that will call operator.register on them when the event is
-     * fired.
-     */
-    @BuildStep
-    void createDelayedRegistrationObservers(
-            CombinedIndexBuildItem combinedIndexBuildItem,
-            ObserverRegistrationPhaseBuildItem observerRegistrationPhase,
-            BuildProducer<ObserverConfiguratorBuildItem> observerConfigurators) {
-
-        final var index = combinedIndexBuildItem.getIndex();
-        ClassUtils.getKnownResourceControllers(index, log).forEach(info -> {
-            final var controllerClassName = info.name().toString();
-            final var controllerAnnotation = info.classAnnotation(CONTROLLER);
-            final var name = getControllerName(controllerClassName, controllerAnnotation);
-
-            // extract the configuration from annotation and/or external configuration
-            final var configExtractor = new BuildTimeHybridControllerConfiguration(buildTimeConfiguration,
-                    buildTimeConfiguration.controllers.get(name),
-                    controllerAnnotation, info.classAnnotation(DELAY_REGISTRATION));
-
-            if (configExtractor.delayedRegistration()) {
-                ObserverConfigurator configurator = observerRegistrationPhase
-                        .getContext()
-                        .configure()
-                        .observedType(configExtractor.eventType())
-                        .beanClass(info.name())
-                        .notify(
-                                mc -> {
-                                    MethodDescriptor cdiMethod = MethodDescriptor
-                                            .ofMethod(CDI.class, "current", CDI.class);
-                                    MethodDescriptor selectMethod = MethodDescriptor.ofMethod(
-                                            CDI.class, "select", Instance.class, Class.class,
-                                            Annotation[].class);
-                                    MethodDescriptor getMethod = MethodDescriptor
-                                            .ofMethod(Instance.class, "get", Object.class);
-                                    AssignableResultHandle cdiVar = mc.createVariable(CDI.class);
-                                    mc.assign(cdiVar, mc.invokeStaticMethod(cdiMethod));
-                                    ResultHandle operator = getHandleFromCDI(mc, selectMethod, getMethod, cdiVar,
-                                            Operator.class, null);
-                                    ResultHandle resource = getHandleFromCDI(mc, selectMethod, getMethod, cdiVar,
-                                            ResourceController.class, controllerClassName);
-                                    ResultHandle config = getHandleFromCDI(mc, selectMethod, getMethod, cdiVar,
-                                            QuarkusConfigurationService.class, null);
-                                    mc.invokeStaticMethod(
-                                            MethodDescriptor.ofMethod(
-                                                    OperatorProducer.class,
-                                                    "applyCRDIfNeededAndRegister",
-                                                    void.class,
-                                                    Operator.class, ResourceController.class,
-                                                    QuarkusConfigurationService.class),
-                                            operator, resource, config);
-                                    mc.returnValue(null);
-                                });
-                observerConfigurators.produce(new ObserverConfiguratorBuildItem(configurator));
-            }
-        });
-    }
-
     @BuildStep
     public void addRBACForCustomResources(BuildProducer<DecoratorBuildItem> decorators,
-            GeneratedCRDInfoBuildItem generatedCRDs) {
+            GeneratedCRDInfoBuildItem generatedCRDs, ConfigurationServiceBuildItem configurations) {
         final var mappings = generatedCRDs.getCRDGenerationInfo().getControllerToCustomResourceMappings();
-        decorators.produce(new DecoratorBuildItem(new AddClusterRoleDecorator(mappings, buildTimeConfiguration.crd.validate)));
-        decorators.produce(new DecoratorBuildItem(new AddClusterRoleBindingDecorator(mappings.keySet())));
+        final var controllerConfigs = configurations.getControllerConfigs();
+        final var configs = new HashMap<String, QuarkusControllerConfiguration>(controllerConfigs.size());
+        controllerConfigs.forEach(c -> configs.put(c.getName(), c));
+
+        decorators.produce(new DecoratorBuildItem(new AddClusterRolesDecorator(mappings, buildTimeConfiguration.crd.validate)));
+        decorators.produce(new DecoratorBuildItem(new AddRoleBindingsDecorator(configs,
+                buildTimeConfiguration.crd.validate)));
     }
 
     private ResultHandle getHandleFromCDI(MethodCreator mc, MethodDescriptor selectMethod, MethodDescriptor getMethod,
@@ -454,4 +400,69 @@ class OperatorSDKProcessor {
                             log.infov("Registered ''{0}'' for reflection", cn);
                         });
     }
+
+    /**
+     * This looks for all resource controllers, to find those that want a delayed registration, and
+     * creates one CDI observer for each, that will call operator.register on them when the event is
+     * fired.
+     */
+    @BuildStep
+    void createDelayedRegistrationObservers(
+            CombinedIndexBuildItem combinedIndexBuildItem,
+            ObserverRegistrationPhaseBuildItem observerRegistrationPhase,
+            BuildProducer<ObserverConfiguratorBuildItem> observerConfigurators) {
+
+        final var index = combinedIndexBuildItem.getIndex();
+        ClassUtils.getKnownResourceControllers(index, log).forEach(info -> {
+            final var controllerClassName = info.name().toString();
+            final var controllerAnnotation = info.classAnnotation(CONTROLLER);
+            final var name = getControllerName(controllerClassName, controllerAnnotation);
+
+            // extract the configuration from annotation and/or external configuration
+            final var configExtractor = new BuildTimeHybridControllerConfiguration(
+                    buildTimeConfiguration,
+                    buildTimeConfiguration.controllers.get(name),
+                    controllerAnnotation, info.classAnnotation(DELAY_REGISTRATION));
+
+            if (configExtractor.delayedRegistration()) {
+                ObserverConfigurator configurator = observerRegistrationPhase
+                        .getContext()
+                        .configure()
+                        .observedType(configExtractor.eventType())
+                        .beanClass(info.name())
+                        .notify(
+                                mc -> {
+                                    MethodDescriptor cdiMethod = MethodDescriptor
+                                            .ofMethod(CDI.class, "current", CDI.class);
+                                    MethodDescriptor selectMethod = MethodDescriptor.ofMethod(
+                                            CDI.class, "select", Instance.class, Class.class,
+                                            Annotation[].class);
+                                    MethodDescriptor getMethod = MethodDescriptor
+                                            .ofMethod(Instance.class, "get", Object.class);
+                                    AssignableResultHandle cdiVar = mc.createVariable(CDI.class);
+                                    mc.assign(cdiVar, mc.invokeStaticMethod(cdiMethod));
+                                    ResultHandle operator = getHandleFromCDI(mc, selectMethod, getMethod,
+                                            cdiVar,
+                                            Operator.class, null);
+                                    ResultHandle resource = getHandleFromCDI(mc, selectMethod, getMethod,
+                                            cdiVar,
+                                            ResourceController.class, controllerClassName);
+                                    ResultHandle config = getHandleFromCDI(mc, selectMethod, getMethod,
+                                            cdiVar,
+                                            QuarkusConfigurationService.class, null);
+                                    mc.invokeStaticMethod(
+                                            MethodDescriptor.ofMethod(
+                                                    OperatorProducer.class,
+                                                    "applyCRDIfNeededAndRegister",
+                                                    void.class,
+                                                    Operator.class, ResourceController.class,
+                                                    QuarkusConfigurationService.class),
+                                            operator, resource, config);
+                                    mc.returnValue(null);
+                                });
+                observerConfigurators.produce(new ObserverConfiguratorBuildItem(configurator));
+            }
+        });
+    }
+
 }

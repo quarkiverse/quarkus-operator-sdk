@@ -10,11 +10,13 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.quarkiverse.operatorsdk.common.CustomResourceInfo;
 
-public class AddClusterRoleDecorator extends ResourceProvidingDecorator<KubernetesListBuilder> {
+public class AddClusterRolesDecorator extends ResourceProvidingDecorator<KubernetesListBuilder> {
+
+    static final String JOSDK_CRD_VALIDATING_CLUSTER_ROLE = "josdk-crd-validating-cluster-role";
     private final Map<String, CustomResourceInfo> controllerToCustomResourceMappings;
     private final boolean validateCRDs;
 
-    public AddClusterRoleDecorator(Map<String, CustomResourceInfo> controllerToCustomResourceMappings, boolean validateCRDs) {
+    public AddClusterRolesDecorator(Map<String, CustomResourceInfo> controllerToCustomResourceMappings, boolean validateCRDs) {
         this.controllerToCustomResourceMappings = controllerToCustomResourceMappings;
         this.validateCRDs = validateCRDs;
     }
@@ -48,7 +50,7 @@ public class AddClusterRoleDecorator extends ResourceProvidingDecorator<Kubernet
 
         // if we're asking to validate the CRDs, also add CRDs permissions, once
         if (validateCRDs) {
-            final var crName = getMandatoryDeploymentMetadata(list).getName() + "-crd-validating-cluster-role";
+            final var crName = JOSDK_CRD_VALIDATING_CLUSTER_ROLE;
 
             if (!contains(list, HasMetadata.getApiVersion(ClusterRole.class), HasMetadata.getKind(ClusterRole.class), crName)) {
                 list.addToItems(new ClusterRoleBuilder().withNewMetadata().withName(crName).endMetadata()
