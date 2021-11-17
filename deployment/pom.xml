@@ -3,8 +3,9 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>io.quarkiverse.operatorsdk</groupId>
-    <artifactId>quarkus-operator-sdk-parent</artifactId>
+    <artifactId>quarkus-operator-sdk-build-parent</artifactId>
     <version>1.9.7-SNAPSHOT</version>
+    <relativePath>../build-parent/pom.xml</relativePath>
   </parent>
   <artifactId>quarkus-operator-sdk-deployment</artifactId>
   <name>Quarkus - Operator SDK - Deployment</name>
@@ -16,7 +17,6 @@
     <dependency>
       <groupId>io.quarkiverse.operatorsdk</groupId>
       <artifactId>quarkus-operator-sdk</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
