@@ -10,6 +10,7 @@ import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
@@ -31,9 +32,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.crd.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.ControllerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
@@ -195,8 +196,8 @@ class OperatorSDKProcessor {
         final var configs = new HashMap<String, QuarkusControllerConfiguration>(controllerConfigs.size());
         controllerConfigs.forEach(c -> configs.put(c.getName(), c));
 
-        // if we didn't generate CRDs, we need to generate the CustomResourceInfo at this point 
-        // because it doesn't otherwise exist 
+        // if we didn't generate CRDs, we need to generate the CustomResourceInfo at this point
+        // because it doesn't otherwise exist
         if (!buildTimeConfiguration.crd.generate || mappings.isEmpty()) {
             final var controllerToCRIMap = new HashMap<String, io.quarkiverse.operatorsdk.common.CustomResourceInfo>(
                     configs.size());
@@ -371,7 +372,7 @@ class OperatorSDKProcessor {
                     configExtractor.generationAware(),
                     crType,
                     configExtractor.delayedRegistration(),
-                    configExtractor.namespaces(name),
+                    new HashSet<>(configExtractor.namespaces(name)),
                     getFinalizer(controllerAnnotation, crdName),
                     getLabelSelector(controllerAnnotation));
 
@@ -396,7 +397,7 @@ class OperatorSDKProcessor {
         return ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
                 "finalizerName",
                 AnnotationValue::asString,
-                () -> ControllerUtils.getDefaultFinalizerName(crdName));
+                () -> ReconcilerUtils.getDefaultFinalizerName(crdName));
     }
 
     private String getLabelSelector(AnnotationInstance controllerAnnotation) {
@@ -462,7 +463,7 @@ class OperatorSDKProcessor {
                                             Operator.class, null);
                                     ResultHandle resource = getHandleFromCDI(mc, selectMethod, getMethod,
                                             cdiVar,
-                                            ResourceController.class, controllerClassName);
+                                            Controller.class, controllerClassName);
                                     ResultHandle config = getHandleFromCDI(mc, selectMethod, getMethod,
                                             cdiVar,
                                             QuarkusConfigurationService.class, null);
@@ -471,7 +472,7 @@ class OperatorSDKProcessor {
                                                     OperatorProducer.class,
                                                     "applyCRDIfNeededAndRegister",
                                                     void.class,
-                                                    Operator.class, ResourceController.class,
+                                                    Operator.class, Controller.class,
                                                     QuarkusConfigurationService.class),
                                             operator, resource, config);
                                     mc.returnValue(null);
