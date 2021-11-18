@@ -1,5 +1,8 @@
 package io.quarkiverse.operatorsdk.deployment;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import org.jboss.jandex.AnnotationInstance;
@@ -74,5 +77,16 @@ class BuildTimeHybridControllerConfiguration {
                 .getDefaultResourceControllerName(resourceControllerClassName);
         return ConfigurationUtils.annotationValueOrDefault(
                 controllerAnnotation, "name", AnnotationValue::asString, () -> defaultControllerName);
+    }
+
+    List<String> namespaces() {
+        final var namespaces = ConfigurationUtils.extract(
+                externalConfiguration,
+                controllerAnnotation,
+                c -> c.namespaces,
+                "namespaces",
+                v -> Arrays.asList(v.asStringArray()),
+                Collections::emptyList);
+        return namespaces;
     }
 }

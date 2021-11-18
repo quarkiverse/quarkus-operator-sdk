@@ -10,9 +10,9 @@ import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.enterprise.inject.Instance;
@@ -347,7 +347,7 @@ class OperatorSDKProcessor {
                     configExtractor.generationAware(),
                     crType,
                     configExtractor.delayedRegistration(),
-                    getNamespaces(controllerAnnotation),
+                    new HashSet<>(configExtractor.namespaces()),
                     getFinalizer(controllerAnnotation, crdName),
                     getLabelSelector(controllerAnnotation));
 
@@ -366,14 +366,6 @@ class OperatorSDKProcessor {
         liveReload.setContextObject(ContextStoredControllerConfigurations.class, storedConfigurations);
 
         return Optional.of(configuration);
-    }
-
-    private Set<String> getNamespaces(AnnotationInstance controllerAnnotation) {
-        return QuarkusControllerConfiguration.asSet(ConfigurationUtils.annotationValueOrDefault(
-                controllerAnnotation,
-                "namespaces",
-                AnnotationValue::asStringArray,
-                () -> new String[] {}));
     }
 
     private String getFinalizer(AnnotationInstance controllerAnnotation, String crdName) {
