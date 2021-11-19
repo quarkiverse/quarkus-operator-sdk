@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
 import javax.enterprise.inject.Instance;
@@ -177,7 +178,16 @@ class OperatorSDKProcessor {
         return new ConfigurationServiceBuildItem(Version.loadFromProperties(), controllerConfigs);
     }
 
-    @BuildStep
+    private static class IsRBACEnabled implements BooleanSupplier {
+        private BuildTimeOperatorConfiguration config;
+
+        @Override
+        public boolean getAsBoolean() {
+            return !config.disableRbacGeneration;
+        }
+    }
+
+    @BuildStep(onlyIf = IsRBACEnabled.class)
     public void addRBACForCustomResources(BuildProducer<DecoratorBuildItem> decorators,
             GeneratedCRDInfoBuildItem generatedCRDs, ConfigurationServiceBuildItem configurations) {
         final var mappings = generatedCRDs.getCRDGenerationInfo().getControllerToCustomResourceMappings();
