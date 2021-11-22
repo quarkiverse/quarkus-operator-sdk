@@ -10,7 +10,6 @@ import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
@@ -372,7 +371,7 @@ class OperatorSDKProcessor {
                     configExtractor.generationAware(),
                     crType,
                     configExtractor.delayedRegistration(),
-                    new HashSet<>(configExtractor.namespaces(name)),
+                    configExtractor.namespaces(name),
                     getFinalizer(controllerAnnotation, crdName),
                     getLabelSelector(controllerAnnotation));
 
