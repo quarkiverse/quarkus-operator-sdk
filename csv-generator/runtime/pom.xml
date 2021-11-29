@@ -15,7 +15,6 @@
         <dependency>
             <groupId>io.quarkiverse.operatorsdk</groupId>
             <artifactId>quarkus-operator-sdk</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
