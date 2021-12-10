@@ -12,7 +12,7 @@
  
     <properties>
       <quarkus.version>1.13.7.Final</quarkus.version>
-      <java-operator-sdk.version>1.9.11</java-operator-sdk.version>
+      <java-operator-sdk.version>1.10.1</java-operator-sdk.version>
       <kubernetes-client.version>5.8.0</kubernetes-client.version>
     </properties>
     <dependencyManagement>
