@@ -3,8 +3,8 @@ package io.quarkiverse.operatorsdk.runtime;
 import javax.enterprise.inject.Produces;
 import javax.inject.Singleton;
 
-import io.javaoperatorsdk.operator.Metrics;
-import io.javaoperatorsdk.operator.micrometer.MicrometerMetrics;
+import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetrics;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
 

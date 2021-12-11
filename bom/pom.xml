@@ -40,7 +40,7 @@
 
   <properties>
     <quarkus.version>2.6.2.Final</quarkus.version>
-    <java-operator-sdk.version>1.10.2</java-operator-sdk.version>
+    <java-operator-sdk.version>2.0.0-RC1</java-operator-sdk.version>
     <kubernetes-client.version>5.11.2</kubernetes-client.version>
   </properties>
   <dependencyManagement>

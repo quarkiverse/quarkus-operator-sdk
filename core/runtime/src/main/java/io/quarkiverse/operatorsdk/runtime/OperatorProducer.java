@@ -11,12 +11,12 @@ import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
-import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkus.arc.DefaultBean;
 
 @Singleton
@@ -29,13 +29,12 @@ public class OperatorProducer {
     @DefaultBean
     @Singleton
     Operator operator(KubernetesClient client, QuarkusConfigurationService configuration,
-            Instance<ResourceController<? extends CustomResource>> controllers) {
+            Instance<Reconciler<? extends HasMetadata>> reconcilers) {
         operator = new Operator(client, configuration);
-        for (ResourceController<? extends CustomResource> controller : controllers) {
-            QuarkusControllerConfiguration<? extends CustomResource> config = configuration
-                    .getConfigurationFor(controller);
+        for (Reconciler<? extends HasMetadata> reconciler : reconcilers) {
+            final var config = configuration.getConfigurationFor(reconciler);
             if (!config.isRegistrationDelayed()) {
-                applyCRDIfNeededAndRegister(operator, controller, configuration);
+                applyCRDIfNeededAndRegister(operator, reconciler, configuration);
             }
         }
         return operator;
@@ -48,27 +47,27 @@ public class OperatorProducer {
         }
     }
 
-    public static void applyCRDIfNeededAndRegister(Operator operator, ResourceController<? extends CustomResource> controller,
+    public static void applyCRDIfNeededAndRegister(Operator operator, Reconciler<? extends HasMetadata> reconciler,
             QuarkusConfigurationService configuration) {
-        QuarkusControllerConfiguration<? extends CustomResource> config = configuration.getConfigurationFor(controller);
+        final var config = configuration.getConfigurationFor(reconciler);
         final var crdInfo = configuration.getCRDGenerationInfo();
         if (crdInfo.isApplyCRDs()) {
-            final var crdName = config.getCRDName();
+            final var crdName = config.getResourceTypeName();
             // if the CRD just got generated, apply it
             if (crdInfo.shouldApplyCRD(crdName)) {
                 applyCRD(operator, crdInfo, crdName);
             }
 
-            // try to register the controller, if we get a MissingCRDException, apply the CRD and re-attempt registration
+            // try to register the reconciler, if we get a MissingCRDException, apply the CRD and re-attempt registration
             try {
-                operator.register(controller);
+                operator.register(reconciler);
             } catch (MissingCRDException e) {
                 applyCRD(operator, crdInfo, crdName);
-                operator.register(controller);
+                operator.register(reconciler);
             }
 
         } else {
-            operator.register(controller);
+            operator.register(reconciler);
         }
     }
 

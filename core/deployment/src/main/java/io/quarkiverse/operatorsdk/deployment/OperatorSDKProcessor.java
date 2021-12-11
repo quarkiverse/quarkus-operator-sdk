@@ -2,9 +2,9 @@ package io.quarkiverse.operatorsdk.deployment;
 
 import static io.quarkiverse.operatorsdk.common.ClassUtils.loadClass;
 import static io.quarkiverse.operatorsdk.common.ConfigurationUtils.getControllerName;
-import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER;
+import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATION;
 import static io.quarkiverse.operatorsdk.common.Constants.CUSTOM_RESOURCE;
-import static io.quarkiverse.operatorsdk.common.Constants.RESOURCE_CONTROLLER;
+import static io.quarkiverse.operatorsdk.common.Constants.RECONCILER;
 import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.lang.annotation.Annotation;
@@ -35,6 +35,7 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.runtime.AppEventListener;
@@ -232,14 +233,14 @@ class OperatorSDKProcessor {
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             IndexView index, CRDGeneration crdGeneration, LiveReloadBuildItem liveReload) {
         // first retrieve the custom resource class name
-        final var crType = JandexUtil.resolveTypeParameters(info.name(), RESOURCE_CONTROLLER, index)
+        final var crType = JandexUtil.resolveTypeParameters(info.name(), RECONCILER, index)
                 .get(0)
                 .name()
                 .toString();
 
         // retrieve the controller's name
         final var controllerClassName = info.name().toString();
-        final var controllerAnnotation = info.classAnnotation(CONTROLLER);
+        final var controllerAnnotation = info.classAnnotation(CONTROLLER_CONFIGURATION);
         final String name = getControllerName(controllerClassName, controllerAnnotation);
 
         // if we get CustomResource instead of a subclass, ignore the controller since we cannot do anything with it
@@ -431,7 +432,7 @@ class OperatorSDKProcessor {
         final var index = combinedIndexBuildItem.getIndex();
         ClassUtils.getKnownResourceControllers(index, log).forEach(info -> {
             final var controllerClassName = info.name().toString();
-            final var controllerAnnotation = info.classAnnotation(CONTROLLER);
+            final var controllerAnnotation = info.classAnnotation(CONTROLLER_CONFIGURATION);
             final var name = getControllerName(controllerClassName, controllerAnnotation);
 
             // extract the configuration from annotation and/or external configuration
@@ -462,7 +463,7 @@ class OperatorSDKProcessor {
                                             Operator.class, null);
                                     ResultHandle resource = getHandleFromCDI(mc, selectMethod, getMethod,
                                             cdiVar,
-                                            Controller.class, controllerClassName);
+                                            Reconciler.class, controllerClassName);
                                     ResultHandle config = getHandleFromCDI(mc, selectMethod, getMethod,
                                             cdiVar,
                                             QuarkusConfigurationService.class, null);
@@ -471,7 +472,7 @@ class OperatorSDKProcessor {
                                                     OperatorProducer.class,
                                                     "applyCRDIfNeededAndRegister",
                                                     void.class,
-                                                    Operator.class, Controller.class,
+                                                    Operator.class, Reconciler.class,
                                                     QuarkusConfigurationService.class),
                                             operator, resource, config);
                                     mc.returnValue(null);

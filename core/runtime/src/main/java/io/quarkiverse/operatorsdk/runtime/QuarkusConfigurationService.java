@@ -1,19 +1,24 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.Metrics;
-import io.javaoperatorsdk.operator.api.ResourceController;
 import io.javaoperatorsdk.operator.api.config.AbstractConfigurationService;
+import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.Version;
+import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkus.arc.runtime.ClientProxyUnwrapper;
 
 public class QuarkusConfigurationService extends AbstractConfigurationService {
@@ -23,9 +28,9 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     private final KubernetesClient client;
     private final CRDGenerationInfo crdInfo;
     private final int concurrentReconciliationThreads;
-    private final ObjectMapper mapper;
-    private int terminationTimeout;
-    private final Map<String, String> controllerClassToName;
+    private final Cloner cloner;
+    private final int terminationTimeout;
+    private final Map<String, String> reconcilerClassToName;
     private final Metrics metrics;
 
     public QuarkusConfigurationService(
@@ -36,16 +41,26 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
             int timeout, ObjectMapper mapper, Metrics metrics) {
         super(version);
         this.client = client;
-        this.mapper = mapper;
+        this.cloner = new Cloner() {
+            @Override
+            @SuppressWarnings("unchecked")
+            public <R extends HasMetadata> R clone(R r) {
+                try {
+                    return (R) mapper.readValue(mapper.writeValueAsString(r), r.getClass());
+                } catch (JsonProcessingException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+        };
         this.metrics = metrics;
         if (configurations != null && !configurations.isEmpty()) {
-            controllerClassToName = new HashMap<>(configurations.size());
+            reconcilerClassToName = new HashMap<>(configurations.size());
             configurations.forEach(c -> {
-                controllerClassToName.put(c.getAssociatedControllerClassName(), c.getName());
+                reconcilerClassToName.put(c.getAssociatedReconcilerClassName(), c.getName());
                 register(c);
             });
         } else {
-            controllerClassToName = Collections.emptyMap();
+            reconcilerClassToName = Collections.emptyMap();
         }
         this.crdInfo = crdInfo;
         this.concurrentReconciliationThreads = maxThreads;
@@ -58,9 +73,8 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     }
 
     @Override
-    public <R extends CustomResource> QuarkusControllerConfiguration<R> getConfigurationFor(
-            ResourceController<R> controller) {
-        final var unwrapped = unwrap(controller);
+    public <R extends HasMetadata> QuarkusControllerConfiguration<R> getConfigurationFor(Reconciler<R> reconciler) {
+        final var unwrapped = unwrap(reconciler);
         return (QuarkusControllerConfiguration<R>) super.getConfigurationFor(unwrapped);
     }
 
@@ -69,13 +83,13 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
         return crdInfo.isValidateCRDs();
     }
 
-    private static <R extends CustomResource> ResourceController<R> unwrap(
-            ResourceController<R> controller) {
-        return (ResourceController<R>) unwrapper.apply(controller);
+    @SuppressWarnings("unchecked")
+    private static <R extends HasMetadata> Reconciler<R> unwrap(Reconciler<R> reconciler) {
+        return (Reconciler<R>) unwrapper.apply(reconciler);
     }
 
     @Override
-    protected String keyFor(ResourceController controller) {
+    protected String keyFor(Reconciler controller) {
         // retrieve the controller name from its associated class name
         // but we first need to check if the class is wrapped
         // heuristics: we're assuming that any class name with an '_' in it is a
@@ -86,7 +100,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
         if (i > 0) {
             controllerClass = controllerClass.substring(0, i);
         }
-        String controllerName = controllerClassToName.get(controllerClass);
+        String controllerName = reconcilerClassToName.get(controllerClass);
         if (controllerName == null) {
             throw new IllegalArgumentException("Unknown controller " + controllerClass);
         }
@@ -99,8 +113,8 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     }
 
     @Override
-    public ObjectMapper getObjectMapper() {
-        return this.mapper;
+    public Cloner getResourceCloner() {
+        return cloner;
     }
 
     @Override

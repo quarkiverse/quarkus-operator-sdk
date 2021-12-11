@@ -1,6 +1,6 @@
 package io.quarkiverse.operatorsdk.common;
 
-import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER;
+import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATION;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -100,12 +100,12 @@ public class ConfigurationUtils {
 
     public static String getControllerName(ClassInfo info) {
         final var controllerClassName = info.name().toString();
-        final var controllerAnnotation = info.classAnnotation(CONTROLLER);
+        final var controllerAnnotation = info.classAnnotation(CONTROLLER_CONFIGURATION);
         return getControllerName(controllerClassName, controllerAnnotation);
     }
 
     public static String getControllerName(String resourceControllerClassName, AnnotationInstance controllerAnnotation) {
-        final var defaultControllerName = ControllerUtils.getDefaultResourceControllerName(resourceControllerClassName);
+        final var defaultControllerName = ControllerUtils.getDefaultReconcilerName(resourceControllerClassName);
         return ConfigurationUtils.annotationValueOrDefault(
                 controllerAnnotation, "name", AnnotationValue::asString, () -> defaultControllerName);
     }
