@@ -6,8 +6,8 @@ import java.util.function.Supplier;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.Metrics;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.quarkus.arc.Arc;
 import io.quarkus.runtime.annotations.Recorder;
 

@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -15,36 +15,36 @@ import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
-public class QuarkusControllerConfiguration<R extends CustomResource> implements ControllerConfiguration<R> {
+public class QuarkusControllerConfiguration<R extends HasMetadata> implements ControllerConfiguration<R> {
 
-    private final String associatedControllerClassName;
+    private final String associatedReconcilerClassName;
     private final String name;
-    private final String crdName;
+    private final String resourceTypeName;
     private final String crVersion;
     private String finalizer;
     private final boolean generationAware;
     private Set<String> namespaces;
     private RetryConfiguration retryConfiguration;
-    private final String crClass;
-    private Class<R> clazz;
+    private final String resourceClassName;
+    private Class<R> resourceClass;
     private final boolean registrationDelayed;
     private String labelSelector;
     private ConfigurationService parent;
 
     @RecordableConstructor
     public QuarkusControllerConfiguration(
-            String associatedControllerClassName,
+            String associatedReconcilerClassName,
             String name,
-            String crdName,
+            String resourceTypeName,
             String crVersion, boolean generationAware,
-            String crClass,
+            String resourceClassName,
             boolean registrationDelayed, Set<String> namespaces, String finalizer, String labelSelector) {
-        this.associatedControllerClassName = associatedControllerClassName;
+        this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
-        this.crdName = crdName;
+        this.resourceTypeName = resourceTypeName;
         this.crVersion = crVersion;
         this.generationAware = generationAware;
-        this.crClass = crClass;
+        this.resourceClassName = resourceClassName;
         this.registrationDelayed = registrationDelayed;
         this.retryConfiguration = ControllerConfiguration.super.getRetryConfiguration();
         setNamespaces(namespaces);
@@ -52,14 +52,14 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
         this.labelSelector = labelSelector;
     }
 
-    // Needed for Quarkus to find the associated constructor parameter
-    public String getCrdName() {
-        return getCRDName();
+    public static Set<String> asSet(String[] namespaces) {
+        return namespaces == null || namespaces.length == 0
+                ? Collections.emptySet()
+                : Set.of(namespaces);
     }
 
-    // Needed for Quarkus to find the associated constructor parameter
-    public String getCrClass() {
-        return crClass;
+    public String getResourceClassName() {
+        return resourceClassName;
     }
 
     public boolean isRegistrationDelayed() {
@@ -68,11 +68,11 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
 
     @Override
     @IgnoreProperty
-    public Class<R> getCustomResourceClass() {
-        if (clazz == null) {
-            clazz = (Class<R>) loadClass(crClass);
+    public Class<R> getResourceClass() {
+        if (resourceClass == null) {
+            resourceClass = (Class<R>) loadClass(resourceClassName);
         }
-        return clazz;
+        return resourceClass;
     }
 
     @Override
@@ -81,8 +81,8 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
     }
 
     @Override
-    public String getCRDName() {
-        return crdName;
+    public String getResourceTypeName() {
+        return resourceTypeName;
     }
 
     public String getCrVersion() {
@@ -96,7 +96,7 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
 
     public void setFinalizer(String finalizer) {
         this.finalizer = finalizer != null && !finalizer.isBlank() ? finalizer
-                : ControllerUtils.getDefaultFinalizerName(crdName);
+                : ControllerUtils.getDefaultFinalizerName(resourceTypeName);
     }
 
     @Override
@@ -105,8 +105,8 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
     }
 
     @Override
-    public String getAssociatedControllerClassName() {
-        return associatedControllerClassName;
+    public String getAssociatedReconcilerClassName() {
+        return associatedReconcilerClassName;
     }
 
     @Override

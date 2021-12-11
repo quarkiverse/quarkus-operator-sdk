@@ -1,7 +1,7 @@
 package io.quarkiverse.operatorsdk.common;
 
-import static io.quarkiverse.operatorsdk.common.Constants.CONFIGURED_CONTROLLER;
-import static io.quarkiverse.operatorsdk.common.Constants.RESOURCE_CONTROLLER;
+import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER;
+import static io.quarkiverse.operatorsdk.common.Constants.RECONCILER;
 
 import java.lang.reflect.Modifier;
 import java.util.stream.Stream;
@@ -20,7 +20,7 @@ public class ClassUtils {
     }
 
     public static Stream<ClassInfo> getKnownResourceControllers(IndexView index, Logger log) {
-        return index.getAllKnownImplementors(RESOURCE_CONTROLLER).stream()
+        return index.getAllKnownImplementors(RECONCILER).stream()
                 .filter(ci -> keep(ci, log));
     }
 
@@ -31,6 +31,6 @@ public class ClassUtils {
         }
 
         // Ignore ConfiguredController class
-        return !ci.name().equals(CONFIGURED_CONTROLLER);
+        return !ci.name().equals(CONTROLLER);
     }
 }

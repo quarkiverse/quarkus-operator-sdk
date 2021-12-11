@@ -22,16 +22,15 @@ import javax.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.Context;
-import io.javaoperatorsdk.operator.api.Controller;
-import io.javaoperatorsdk.operator.api.DeleteControl;
-import io.javaoperatorsdk.operator.api.ResourceController;
-import io.javaoperatorsdk.operator.api.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestSpec.ExcludedTopic;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestStatus.State;
 
-@Controller(namespaces = Controller.WATCH_CURRENT_NAMESPACE)
-public class JokeController implements ResourceController<JokeRequest> {
+@ControllerConfiguration(namespaces = ControllerConfiguration.WATCH_CURRENT_NAMESPACE)
+public class JokeReconciler implements Reconciler<JokeRequest> {
     @Inject
     @RestClient
     JokeService jokes;
@@ -40,12 +39,7 @@ public class JokeController implements ResourceController<JokeRequest> {
     KubernetesClient client;
 
     @Override
-    public DeleteControl deleteResource(JokeRequest joke, Context<JokeRequest> context) {
-        return DeleteControl.DEFAULT_DELETE;
-    }
-
-    @Override
-    public UpdateControl<JokeRequest> createOrUpdateResource(JokeRequest jr, Context<JokeRequest> context) {
+    public UpdateControl<JokeRequest> reconcile(JokeRequest jr, Context context) {
         final var spec = jr.getSpec();
 
         // if the joke has already been created, ignore
@@ -90,6 +84,6 @@ public class JokeController implements ResourceController<JokeRequest> {
         }
 
         jr.setStatus(status);
-        return UpdateControl.updateStatusSubResource(jr);
+        return UpdateControl.updateStatus(jr);
     }
 }

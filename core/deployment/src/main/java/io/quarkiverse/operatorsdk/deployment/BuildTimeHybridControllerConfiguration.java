@@ -78,8 +78,7 @@ class BuildTimeHybridControllerConfiguration {
 
     String name(String resourceControllerClassName) {
         // retrieve the controller's name
-        final var defaultControllerName = ControllerUtils
-                .getDefaultResourceControllerName(resourceControllerClassName);
+        final var defaultControllerName = ControllerUtils.getDefaultReconcilerName(resourceControllerClassName);
         return ConfigurationUtils.annotationValueOrDefault(
                 controllerAnnotation, "name", AnnotationValue::asString, () -> defaultControllerName);
     }
