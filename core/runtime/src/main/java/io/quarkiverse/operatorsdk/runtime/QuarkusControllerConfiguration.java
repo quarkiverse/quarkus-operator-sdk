@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.ControllerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
@@ -96,7 +96,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     public void setFinalizer(String finalizer) {
         this.finalizer = finalizer != null && !finalizer.isBlank() ? finalizer
-                : ControllerUtils.getDefaultFinalizerName(resourceTypeName);
+                : ReconcilerUtils.getDefaultFinalizerName(resourceTypeName);
     }
 
     @Override

@@ -11,7 +11,7 @@ import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.logging.Logger;
 
-import io.javaoperatorsdk.operator.ControllerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Utils;
 
 public class ConfigurationUtils {
@@ -105,7 +105,7 @@ public class ConfigurationUtils {
     }
 
     public static String getControllerName(String resourceControllerClassName, AnnotationInstance controllerAnnotation) {
-        final var defaultControllerName = ControllerUtils.getDefaultReconcilerName(resourceControllerClassName);
+        final var defaultControllerName = ReconcilerUtils.getDefaultReconcilerName(resourceControllerClassName);
         return ConfigurationUtils.annotationValueOrDefault(
                 controllerAnnotation, "name", AnnotationValue::asString, () -> defaultControllerName);
     }

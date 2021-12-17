@@ -31,9 +31,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.crd.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.processing.Controller;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
@@ -203,8 +202,8 @@ class OperatorSDKProcessor {
                     configs.size());
             configs.forEach((controllerName, config) -> {
                 final var augmented = CustomResourceControllerMapping.augment(
-                        CustomResourceInfo.fromClass(config.getCustomResourceClass()),
-                        config.getCRDName(), controllerName);
+                        CustomResourceInfo.fromClass(config.getResourceClass()),
+                        config.getResourceTypeName(), controllerName);
                 controllerToCRIMap.put(controllerName, augmented);
             });
             mappings = controllerToCRIMap;
