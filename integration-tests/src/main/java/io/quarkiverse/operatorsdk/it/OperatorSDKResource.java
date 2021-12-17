@@ -59,7 +59,7 @@ public class OperatorSDKResource {
     @GET
     @Path("{name}")
     public boolean getController(@PathParam("name") String name) {
-        return configurationService.getKnownControllerNames().contains(name);
+        return configurationService.getKnownReconcilerNames().contains(name);
     }
 
     @GET
@@ -89,7 +89,7 @@ public class OperatorSDKResource {
         }
 
         public Set<String> getKnownControllerNames() {
-            return conf.getKnownControllerNames();
+            return conf.getKnownReconcilerNames();
         }
 
         public Version getVersion() {

@@ -14,6 +14,8 @@
  */
 package io.quarkiverse.operatorsdk.samples.joke;
 
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
+
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
@@ -29,7 +31,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestSpec.ExcludedTopic;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestStatus.State;
 
-@ControllerConfiguration(namespaces = ControllerConfiguration.WATCH_CURRENT_NAMESPACE)
+@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
 public class JokeReconciler implements Reconciler<JokeRequest> {
     @Inject
     @RestClient

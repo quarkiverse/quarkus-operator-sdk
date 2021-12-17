@@ -127,8 +127,8 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     }
 
     @Override
-    protected void logMissingControllerWarning(String controllerName, String knowControllersMessage) {
-        log.warn("Cannot find configuration for '{}' controller. {}", controllerName, knowControllersMessage);
+    protected void logMissingReconcilerWarning(String reconcilerKey, String reconcilersNameMessage) {
+        log.warn("Cannot find configuration for '{}' reconciler. {}", reconcilerKey, reconcilersNameMessage);
     }
 
     @Override
