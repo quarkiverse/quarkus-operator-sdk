@@ -70,7 +70,7 @@ public class JokeController implements ResourceController<JokeRequest> {
                 joke.getMetadata().setLabels(flags);
 
                 // if we don't already have created this joke on the cluster, do so
-                final var jokeResource = client.customResources(Joke.class)
+                final var jokeResource = client.resources(Joke.class)
                         .withName("" + fromApi.id);
                 final var existing = jokeResource.get();
                 if (existing != null) {
