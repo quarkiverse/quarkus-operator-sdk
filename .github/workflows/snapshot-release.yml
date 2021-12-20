@@ -28,11 +28,6 @@ jobs:
           java-version: 11
           cache: 'maven'
 
-      - name: Configure Git author
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-
       - name: Maven release ${{steps.metadata.outputs.current-version}}
         run: |
           gpg --quiet --batch --yes --decrypt --passphrase="${{secrets.GPG_PASSPHRASE}}" --output maven-settings.xml .github/release/maven-settings.xml.gpg
