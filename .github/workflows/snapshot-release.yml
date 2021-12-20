@@ -1,0 +1,34 @@
+name: Snapshot Release
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+on:
+  push:
+    branches: [ main, next ]
+
+jobs:
+  release-snapshot:
+    runs-on: ubuntu-latest
+    name: snapshot-release
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v3
+        with:
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      - uses: actions/setup-java@v2
+        with:
+          distribution: temurin
+          java-version: 11
+          cache: 'maven'
+
+      - name: Maven release ${{steps.metadata.outputs.current-version}}
+        run: |
+          gpg --quiet --batch --yes --decrypt --passphrase="${{secrets.GPG_PASSPHRASE}}" --output maven-settings.xml .github/release/maven-settings.xml.gpg
+          mvn -B deploy -Prelease -s maven-settings.xml
