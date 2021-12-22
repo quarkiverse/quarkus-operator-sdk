@@ -26,10 +26,16 @@ public class CustomResourceControllerMapping {
                     + crdName + " with version " + version);
         }
 
-        final var converted = new CustomResourceInfo(
-                info.group(), version, info.kind(), info.singular(), info.plural(), info.shortNames(), info.storage(),
+        final var converted = augment(info, crdName, associatedControllerName);
+        versionsForCR.put(version, converted);
+    }
+
+    static CustomResourceInfo augment(io.fabric8.crd.generator.CustomResourceInfo info,
+            String crdName, String associatedControllerName) {
+        return new CustomResourceInfo(
+                info.group(), info.version(), info.kind(), info.singular(), info.plural(), info.shortNames(),
+                info.storage(),
                 info.served(), info.scope(), info.crClassName(),
                 info.specClassName(), info.statusClassName(), crdName, associatedControllerName);
-        versionsForCR.put(version, converted);
     }
 }

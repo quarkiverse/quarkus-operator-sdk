@@ -52,12 +52,6 @@ public class QuarkusControllerConfiguration<R extends CustomResource> implements
         this.labelSelector = labelSelector;
     }
 
-    public static Set<String> asSet(String[] namespaces) {
-        return namespaces == null || namespaces.length == 0
-                ? Collections.emptySet()
-                : Set.of(namespaces);
-    }
-
     // Needed for Quarkus to find the associated constructor parameter
     public String getCrdName() {
         return getCRDName();

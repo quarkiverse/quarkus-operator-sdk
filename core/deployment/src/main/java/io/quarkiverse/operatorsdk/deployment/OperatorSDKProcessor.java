@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
 import javax.enterprise.inject.Instance;
@@ -28,6 +28,7 @@ import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.fabric8.crd.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ControllerUtils;
@@ -177,13 +178,36 @@ class OperatorSDKProcessor {
         return new ConfigurationServiceBuildItem(Version.loadFromProperties(), controllerConfigs);
     }
 
-    @BuildStep
+    private static class IsRBACEnabled implements BooleanSupplier {
+        private BuildTimeOperatorConfiguration config;
+
+        @Override
+        public boolean getAsBoolean() {
+            return !config.disableRbacGeneration;
+        }
+    }
+
+    @BuildStep(onlyIf = IsRBACEnabled.class)
     public void addRBACForCustomResources(BuildProducer<DecoratorBuildItem> decorators,
             GeneratedCRDInfoBuildItem generatedCRDs, ConfigurationServiceBuildItem configurations) {
-        final var mappings = generatedCRDs.getCRDGenerationInfo().getControllerToCustomResourceMappings();
+        var mappings = generatedCRDs.getCRDGenerationInfo().getControllerToCustomResourceMappings();
         final var controllerConfigs = configurations.getControllerConfigs();
         final var configs = new HashMap<String, QuarkusControllerConfiguration>(controllerConfigs.size());
         controllerConfigs.forEach(c -> configs.put(c.getName(), c));
+
+        // if we didn't generate CRDs, we need to generate the CustomResourceInfo at this point 
+        // because it doesn't otherwise exist 
+        if (!buildTimeConfiguration.crd.generate || mappings.isEmpty()) {
+            final var controllerToCRIMap = new HashMap<String, io.quarkiverse.operatorsdk.common.CustomResourceInfo>(
+                    configs.size());
+            configs.forEach((controllerName, config) -> {
+                final var augmented = CustomResourceControllerMapping.augment(
+                        CustomResourceInfo.fromClass(config.getCustomResourceClass()),
+                        config.getCRDName(), controllerName);
+                controllerToCRIMap.put(controllerName, augmented);
+            });
+            mappings = controllerToCRIMap;
+        }
 
         decorators.produce(new DecoratorBuildItem(new AddClusterRolesDecorator(mappings, buildTimeConfiguration.crd.validate)));
         decorators.produce(new DecoratorBuildItem(new AddRoleBindingsDecorator(configs,
@@ -347,7 +371,7 @@ class OperatorSDKProcessor {
                     configExtractor.generationAware(),
                     crType,
                     configExtractor.delayedRegistration(),
-                    getNamespaces(controllerAnnotation),
+                    configExtractor.namespaces(name),
                     getFinalizer(controllerAnnotation, crdName),
                     getLabelSelector(controllerAnnotation));
 
@@ -366,14 +390,6 @@ class OperatorSDKProcessor {
         liveReload.setContextObject(ContextStoredControllerConfigurations.class, storedConfigurations);
 
         return Optional.of(configuration);
-    }
-
-    private Set<String> getNamespaces(AnnotationInstance controllerAnnotation) {
-        return QuarkusControllerConfiguration.asSet(ConfigurationUtils.annotationValueOrDefault(
-                controllerAnnotation,
-                "namespaces",
-                AnnotationValue::asStringArray,
-                () -> new String[] {}));
     }
 
     private String getFinalizer(AnnotationInstance controllerAnnotation, String crdName) {

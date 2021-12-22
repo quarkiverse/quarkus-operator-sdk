@@ -48,6 +48,8 @@ class CRDGeneration {
             if (!outputDir.exists()) {
                 outputDir.mkdirs();
             }
+
+            // generate CRDs with detailed information
             final var info = generator.forCRDVersions(crdConfig.versions).inOutputDir(outputDir).detailedGenerate();
             final var crdDetailsPerNameAndVersion = info.getCRDDetailsPerNameAndVersion();
 

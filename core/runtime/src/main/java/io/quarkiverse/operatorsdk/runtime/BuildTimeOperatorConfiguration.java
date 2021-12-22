@@ -47,4 +47,10 @@ public class BuildTimeOperatorConfiguration {
      */
     @ConfigItem
     public Optional<String> delayRegistrationUntilEvent;
+
+    /**
+     * Whether Role-Based Access Control (RBAC) resources should be generated in the kubernetes manifests.
+     */
+    @ConfigItem(defaultValue = "false")
+    public Boolean disableRbacGeneration;
 }

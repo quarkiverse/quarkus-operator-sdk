@@ -4,8 +4,11 @@ import static io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator.get
 
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import org.eclipse.microprofile.config.ConfigProvider;
 
 import io.dekorate.kubernetes.decorator.ResourceProvidingDecorator;
 import io.fabric8.kubernetes.api.model.KubernetesListBuilder;
@@ -42,20 +45,9 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
                         .addNewSubject(null, "ServiceAccount", serviceAccountName, null)
                         .build());
             } else if (config.watchAllNamespaces()) {
-                final var crBindingName = controllerName + "-cluster-role-binding";
-                // the decorator can be called several times but we only want to output the warning once
-                if (alreadyLogged.putIfAbsent(controllerName, new Object()) != null) {
-                    OperatorSDKProcessor.log.warnv(
-                            "''{0}'' controller is configured to watch all namespaces, this requires a ClusterRoleBinding for which we MUST specify the namespace of the operator ServiceAccount. However, at this information is not known at build time, we are leaving it blank and needs to be provided by the user by editing the ''{1}'' ClusterRoleBinding to provide the namespace in which the operator will be deployed.",
-                            controllerName, crBindingName);
-                }
-                list.addToItems(new ClusterRoleBindingBuilder()
-                        .withNewMetadata().withName(crBindingName)
-                        .endMetadata()
-                        .withNewRoleRef("rbac.authorization.k8s.io", "ClusterRole",
-                                getClusterRoleName(controllerName))
-                        .addNewSubject(null, "ServiceAccount", serviceAccountName, null)
-                        .build());
+                handleClusterRoleBinding(list, serviceAccountName, controllerName,
+                        controllerName + "-cluster-role-binding", "watch all namespaces",
+                        getClusterRoleName(controllerName));
             } else {
                 config.getEffectiveNamespaces().forEach(ns -> list.addToItems(
                         new RoleBindingBuilder()
@@ -71,14 +63,37 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
 
             // if we validate the CRDs, also create a binding for the CRD validating role
             if (validateCRDs) {
-                list.addToItems(new RoleBindingBuilder()
-                        .withNewMetadata()
-                        .withName(controllerName + "-crd-validating-role-binding")
-                        .endMetadata()
-                        .withNewRoleRef("rbac.authorization.k8s.io", "ClusterRole",
-                                AddClusterRolesDecorator.JOSDK_CRD_VALIDATING_CLUSTER_ROLE)
-                        .addNewSubject(null, "ServiceAccount", serviceAccountName, null)
-                        .build());
+                final var crBindingName = controllerName + "-crd-validating-role-binding";
+                handleClusterRoleBinding(list, serviceAccountName, controllerName, crBindingName, "validate CRDs",
+                        AddClusterRolesDecorator.JOSDK_CRD_VALIDATING_CLUSTER_ROLE);
+            }
+        }
+    }
+
+    private void handleClusterRoleBinding(KubernetesListBuilder list, String serviceAccountName,
+            String controllerName, String bindingName, String controllerConfMessage,
+            String clusterRoleName) {
+        final var namespace = ConfigProvider.getConfig()
+                .getOptionalValue("quarkus.kubernetes.namespace", String.class);
+        outputWarningIfNeeded(controllerName, bindingName, namespace, controllerConfMessage);
+        list.addToItems(new ClusterRoleBindingBuilder()
+                .withNewMetadata().withName(bindingName)
+                .endMetadata()
+                .withNewRoleRef("rbac.authorization.k8s.io", "ClusterRole", clusterRoleName)
+                .addNewSubject(null, "ServiceAccount", serviceAccountName, namespace.orElse(null))
+                .build());
+    }
+
+    private void outputWarningIfNeeded(String controllerName, String crBindingName,
+            Optional<String> namespace, String controllerConfMessage) {
+        // the decorator can be called several times but we only want to output the warning once
+        if (namespace.isEmpty()) {
+            if (alreadyLogged.putIfAbsent(controllerName + crBindingName, new Object()) == null) {
+                OperatorSDKProcessor.log.warnv(
+                        "''{0}'' controller is configured to "
+                                + controllerConfMessage
+                                + ", this requires a ClusterRoleBinding for which we MUST specify the namespace of the operator ServiceAccount. This can be specified by setting the ''quarkus.kubernetes.namespace'' property. However, as this property is not set, we are leaving the namespace blank to be provided by the user by editing the ''{1}'' ClusterRoleBinding to provide the namespace in which the operator will be deployed.",
+                        controllerName, crBindingName);
             }
         }
     }
