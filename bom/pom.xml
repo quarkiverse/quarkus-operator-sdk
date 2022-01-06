@@ -41,7 +41,7 @@
   <properties>
     <quarkus.version>2.6.1.Final</quarkus.version>
     <java-operator-sdk.version>1.10.1</java-operator-sdk.version>
-    <kubernetes-client.version>5.11.1</kubernetes-client.version>
+    <kubernetes-client.version>5.11.2</kubernetes-client.version>
   </properties>
   <dependencyManagement>
     <dependencies>
