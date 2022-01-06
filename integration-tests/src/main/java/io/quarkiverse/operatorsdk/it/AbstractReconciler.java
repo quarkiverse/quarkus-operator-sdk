@@ -1,10 +1,14 @@
 package io.quarkiverse.operatorsdk.it;
 
+import java.util.Collections;
+import java.util.List;
+
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializationContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.processing.event.source.EventSourceRegistry;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 public abstract class AbstractReconciler<T extends TestResource> implements
         RegistrableReconciler<T>, EventSourceInitializer<T> {
@@ -22,9 +26,10 @@ public abstract class AbstractReconciler<T extends TestResource> implements
     }
 
     @Override
-    public void prepareEventSources(EventSourceRegistry<T> eventSourceRegistry) {
+    public List<EventSource> prepareEventSources(EventSourceInitializationContext<T> eventSourceInitializationContext) {
         // this method gets called when the controller gets registered
         initialized = true;
+        return Collections.emptyList();
     }
 
     @Override
