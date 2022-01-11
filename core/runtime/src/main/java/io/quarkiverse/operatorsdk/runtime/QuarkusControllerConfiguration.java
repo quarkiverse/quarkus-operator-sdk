@@ -4,7 +4,6 @@ import static io.quarkiverse.operatorsdk.common.ClassUtils.loadClass;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -115,8 +114,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     }
 
     void setNamespaces(Collection<String> namespaces) {
-        // todo:       this.namespaces = namespaces != null && !namespaces.isEmpty() ? Set.copyOf(namespaces) : Collections.emptySet();
-        this.namespaces = namespaces != null && !namespaces.isEmpty() ? new HashSet<>(namespaces) : Collections.emptySet();
+        this.namespaces = namespaces != null && !namespaces.isEmpty() ? Set.copyOf(namespaces) : Collections.emptySet();
     }
 
     @Override

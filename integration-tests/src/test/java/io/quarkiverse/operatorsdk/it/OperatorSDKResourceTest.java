@@ -7,6 +7,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 
+import java.util.Locale;
+
 import org.junit.jupiter.api.Test;
 
 import io.quarkus.test.common.QuarkusTestResource;
@@ -58,9 +60,10 @@ public class OperatorSDKResourceTest {
                 .contentType("application/json")
                 .extract()
                 .as(String[].class);
-        assertThat(names.length, equalTo(4));
+        assertThat(names.length, equalTo(5));
         assertThat(names, arrayContainingInAnyOrder(ApplicationScopedController.NAME, ConfiguredReconciler.NAME,
-                DelayedReconciler.NAME, TestReconciler.NAME));
+                DelayedReconciler.NAME, TestReconciler.NAME,
+                SecretReconciler.class.getSimpleName().toLowerCase(Locale.ROOT)));
     }
 
     @Test

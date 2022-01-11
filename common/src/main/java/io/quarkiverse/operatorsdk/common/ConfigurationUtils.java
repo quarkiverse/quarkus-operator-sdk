@@ -98,15 +98,15 @@ public class ConfigurationUtils {
         return newValidateCRD;
     }
 
-    public static String getControllerName(ClassInfo info) {
+    public static String getReconcilerName(ClassInfo info) {
         final var controllerClassName = info.name().toString();
         final var controllerAnnotation = info.classAnnotation(CONTROLLER_CONFIGURATION);
-        return getControllerName(controllerClassName, controllerAnnotation);
+        return getReconcilerName(controllerClassName, controllerAnnotation);
     }
 
-    public static String getControllerName(String resourceControllerClassName, AnnotationInstance controllerAnnotation) {
-        final var defaultControllerName = ReconcilerUtils.getDefaultReconcilerName(resourceControllerClassName);
+    public static String getReconcilerName(String reconcilerClassName, AnnotationInstance configuration) {
+        final var defaultControllerName = ReconcilerUtils.getDefaultReconcilerName(reconcilerClassName);
         return ConfigurationUtils.annotationValueOrDefault(
-                controllerAnnotation, "name", AnnotationValue::asString, () -> defaultControllerName);
+                configuration, "name", AnnotationValue::asString, () -> defaultControllerName);
     }
 }

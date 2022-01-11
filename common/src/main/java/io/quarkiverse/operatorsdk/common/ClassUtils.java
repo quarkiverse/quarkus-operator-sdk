@@ -19,9 +19,8 @@ public class ClassUtils {
         }
     }
 
-    public static Stream<ClassInfo> getKnownResourceControllers(IndexView index, Logger log) {
-        return index.getAllKnownImplementors(RECONCILER).stream()
-                .filter(ci -> keep(ci, log));
+    public static Stream<ClassInfo> getKnownReconcilers(IndexView index, Logger log) {
+        return index.getAllKnownImplementors(RECONCILER).stream().filter(ci -> keep(ci, log));
     }
 
     private static boolean keep(ClassInfo ci, Logger log) {
