@@ -5,7 +5,7 @@ import java.util.List;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializationContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -26,7 +26,7 @@ public abstract class AbstractReconciler<T extends TestResource> implements
     }
 
     @Override
-    public List<EventSource> prepareEventSources(EventSourceInitializationContext<T> eventSourceInitializationContext) {
+    public List<EventSource> prepareEventSources(EventSourceContext<T> eventSourceContext) {
         // this method gets called when the controller gets registered
         initialized = true;
         return Collections.emptyList();
