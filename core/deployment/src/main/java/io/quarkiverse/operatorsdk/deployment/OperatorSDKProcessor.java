@@ -33,7 +33,6 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
@@ -77,6 +76,7 @@ import io.quarkus.kubernetes.spi.DecoratorBuildItem;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.metrics.MetricsFactory;
 
+@SuppressWarnings("rawtypes")
 class OperatorSDKProcessor {
 
     static final Logger log = Logger.getLogger(OperatorSDKProcessor.class.getName());
@@ -221,8 +221,7 @@ class OperatorSDKProcessor {
                 cdiVar,
                 optionalImplClass != null ? mc.loadClass(optionalImplClass) : mc.loadClass(handleClass),
                 mc.newArray(Annotation.class, 0));
-        ResultHandle operator = mc.checkCast(mc.invokeInterfaceMethod(getMethod, operatorInstance), handleClass);
-        return operator;
+        return mc.checkCast(mc.invokeInterfaceMethod(getMethod, operatorInstance), handleClass);
     }
 
     private Optional<QuarkusControllerConfiguration> createControllerConfiguration(
@@ -329,29 +328,28 @@ class OperatorSDKProcessor {
         QuarkusControllerConfiguration configuration = null;
         boolean regenerateConfig = true;
         var storedConfigurations = liveReload.getContextObject(ContextStoredControllerConfigurations.class);
-        if (liveReload.isLiveReload()) {
-            if (storedConfigurations != null) {
-                // check if we've already generated a configuration for this controller
-                configuration = storedConfigurations.getConfigurations().get(reconcilerClassName);
-                if (configuration != null) {
-                    /*
-                     * A configuration needs to be regenerated if:
-                     * - the ResourceController annotation has changed
-                     * - the associated CustomResource metadata has changed
-                     * - the configuration properties have changed as follows:
-                     * + extension-wide properties affecting all controllers have changed
-                     * + controller-specific properties have changed
-                     *
-                     * Here, we only perform a simplified check: either the class holding the ResourceController annotation has
-                     * changed, or the associated CustomResource class or application.properties as a whole has changed. This
-                     * could be optimized further if needed.
-                     *
-                     */
-                    final var changedClasses = changeInformation == null ? Collections.emptySet()
-                            : changeInformation.getChangedClasses();
-                    regenerateConfig = changedClasses.contains(reconcilerClassName) || changedClasses.contains(primaryTypeName)
-                            || liveReload.getChangedResources().contains("application.properties");
-                }
+        if (liveReload.isLiveReload() && storedConfigurations != null) {
+            // check if we've already generated a configuration for this controller
+            configuration = storedConfigurations.getConfigurations().get(reconcilerClassName);
+            if (configuration != null) {
+                /*
+                 * A configuration needs to be regenerated if:
+                 * - the ResourceController annotation has changed
+                 * - the associated CustomResource metadata has changed
+                 * - the configuration properties have changed as follows:
+                 * + extension-wide properties affecting all controllers have changed
+                 * + controller-specific properties have changed
+                 *
+                 * Here, we only perform a simplified check: either the class holding the ResourceController annotation has
+                 * changed, or the associated CustomResource class or application.properties as a whole has changed. This
+                 * could be optimized further if needed.
+                 *
+                 */
+                final var changedClasses = changeInformation == null ? Collections.emptySet()
+                        : changeInformation.getChangedClasses();
+                regenerateConfig = changedClasses.contains(reconcilerClassName) || changedClasses.contains(
+                        primaryTypeName)
+                        || liveReload.getChangedResources().contains("application.properties");
             }
         }
 
