@@ -401,7 +401,7 @@ class OperatorSDKProcessor {
     }
 
     private String getFullResourceName(Class<? extends HasMetadata> crClass) {
-        return ControllerConfiguration.getResourceTypeName(crClass);
+        return ReconcilerUtils.getResourceTypeName(crClass);
     }
 
     private String getFinalizer(AnnotationInstance controllerAnnotation, String crdName) {
