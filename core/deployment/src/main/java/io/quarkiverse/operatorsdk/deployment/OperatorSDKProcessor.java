@@ -1,10 +1,9 @@
 package io.quarkiverse.operatorsdk.deployment;
 
 import static io.quarkiverse.operatorsdk.common.ClassUtils.loadClass;
-import static io.quarkiverse.operatorsdk.common.ConfigurationUtils.getControllerName;
-import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER;
+import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATION;
 import static io.quarkiverse.operatorsdk.common.Constants.CUSTOM_RESOURCE;
-import static io.quarkiverse.operatorsdk.common.Constants.RESOURCE_CONTROLLER;
+import static io.quarkiverse.operatorsdk.common.Constants.RECONCILER;
 import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.lang.annotation.Annotation;
@@ -31,10 +30,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.crd.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.ControllerUtils;
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.api.ResourceController;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.runtime.AppEventListener;
@@ -55,6 +54,7 @@ import io.quarkus.arc.deployment.ObserverRegistrationPhaseBuildItem.ObserverConf
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
 import io.quarkus.arc.processor.ObserverConfigurator;
+import io.quarkus.builder.BuildException;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
@@ -76,13 +76,13 @@ import io.quarkus.kubernetes.spi.DecoratorBuildItem;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.metrics.MetricsFactory;
 
+@SuppressWarnings("rawtypes")
 class OperatorSDKProcessor {
 
     static final Logger log = Logger.getLogger(OperatorSDKProcessor.class.getName());
 
     private static final String FEATURE = "operator-sdk";
     private static final DotName DELAY_REGISTRATION = DotName.createSimple(DelayRegistrationUntil.class.getName());
-    public static final String CUSTOM_RESOURCE_DOTNAME_AS_STRING = CUSTOM_RESOURCE.toString();
 
     private BuildTimeOperatorConfiguration buildTimeConfiguration;
 
@@ -146,7 +146,7 @@ class OperatorSDKProcessor {
         // apply should imply generate: we cannot apply if we're not generating!
         final var crdGeneration = new CRDGeneration(crdConfig.generate || crdConfig.apply);
         final var index = combinedIndexBuildItem.getIndex();
-        final List<QuarkusControllerConfiguration> controllerConfigs = ClassUtils.getKnownResourceControllers(index, log)
+        final List<QuarkusControllerConfiguration> controllerConfigs = ClassUtils.getKnownReconcilers(index, log)
                 .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses, forcedReflectionClasses,
                         index, crdGeneration, liveReload))
                 .filter(Optional::isPresent)
@@ -195,15 +195,15 @@ class OperatorSDKProcessor {
         final var configs = new HashMap<String, QuarkusControllerConfiguration>(controllerConfigs.size());
         controllerConfigs.forEach(c -> configs.put(c.getName(), c));
 
-        // if we didn't generate CRDs, we need to generate the CustomResourceInfo at this point 
-        // because it doesn't otherwise exist 
+        // if we didn't generate CRDs, we need to generate the CustomResourceInfo at this point
+        // because it doesn't otherwise exist
         if (!buildTimeConfiguration.crd.generate || mappings.isEmpty()) {
             final var controllerToCRIMap = new HashMap<String, io.quarkiverse.operatorsdk.common.CustomResourceInfo>(
                     configs.size());
             configs.forEach((controllerName, config) -> {
                 final var augmented = CustomResourceControllerMapping.augment(
-                        CustomResourceInfo.fromClass(config.getCustomResourceClass()),
-                        config.getCRDName(), controllerName);
+                        CustomResourceInfo.fromClass(config.getResourceClass()),
+                        config.getResourceTypeName(), controllerName);
                 controllerToCRIMap.put(controllerName, augmented);
             });
             mappings = controllerToCRIMap;
@@ -221,8 +221,7 @@ class OperatorSDKProcessor {
                 cdiVar,
                 optionalImplClass != null ? mc.loadClass(optionalImplClass) : mc.loadClass(handleClass),
                 mc.newArray(Annotation.class, 0));
-        ResultHandle operator = mc.checkCast(mc.invokeInterfaceMethod(getMethod, operatorInstance), handleClass);
-        return operator;
+        return mc.checkCast(mc.invokeInterfaceMethod(getMethod, operatorInstance), handleClass);
     }
 
     private Optional<QuarkusControllerConfiguration> createControllerConfiguration(
@@ -231,61 +230,69 @@ class OperatorSDKProcessor {
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             IndexView index, CRDGeneration crdGeneration, LiveReloadBuildItem liveReload) {
-        // first retrieve the custom resource class name
-        final var crType = JandexUtil.resolveTypeParameters(info.name(), RESOURCE_CONTROLLER, index)
-                .get(0)
-                .name()
-                .toString();
+        // first retrieve the target resource class name
+        final var primaryType = JandexUtil.resolveTypeParameters(info.name(), RECONCILER, index).get(0);
+        final var primaryTypeDN = primaryType.name();
+        final var primaryTypeName = primaryTypeDN.toString();
 
-        // retrieve the controller's name
-        final var controllerClassName = info.name().toString();
-        final var controllerAnnotation = info.classAnnotation(CONTROLLER);
-        final String name = getControllerName(controllerClassName, controllerAnnotation);
+        // retrieve the reconciler's name
+        final var reconcilerClassName = info.name().toString();
+        final var controllerAnnotation = info.classAnnotation(CONTROLLER_CONFIGURATION);
+        final String name = ConfigurationUtils.getReconcilerName(reconcilerClassName, controllerAnnotation);
 
         // if we get CustomResource instead of a subclass, ignore the controller since we cannot do anything with it
-        if (crType == null || crType.equals(CUSTOM_RESOURCE_DOTNAME_AS_STRING)) {
+        if (primaryTypeName == null || CUSTOM_RESOURCE.equals(primaryTypeDN)) {
             log.infov("Skipped processing of ''{0}'' controller as it's not parameterized with a CustomResource sub-class",
-                    controllerClassName);
+                    reconcilerClassName);
             return Optional.empty();
         }
 
-        // create ResourceController bean
+        // create Reconciler bean
         additionalBeans.produce(
                 AdditionalBeanBuildItem.builder()
-                        .addBeanClass(controllerClassName)
+                        .addBeanClass(reconcilerClassName)
                         .setUnremovable()
                         .setDefaultScope(APPLICATION_SCOPED)
                         .build());
 
-        // register CR class for introspection
-        registerForReflection(reflectionClasses, crType);
-        forcedReflectionClasses.produce(new ForceNonWeakReflectiveClassBuildItem(crType));
+        // register target resource class for introspection
+        registerForReflection(reflectionClasses, primaryTypeName);
+        forcedReflectionClasses.produce(new ForceNonWeakReflectiveClassBuildItem(primaryTypeName));
 
-        // register spec and status for introspection
-        final var crParamTypes = JandexUtil
-                .resolveTypeParameters(DotName.createSimple(crType), CUSTOM_RESOURCE, index);
-        registerForReflection(reflectionClasses, crParamTypes.get(0).name().toString());
-        registerForReflection(reflectionClasses, crParamTypes.get(1).name().toString());
+        // register spec and status for introspection if we're targeting a CustomResource
+        final var primaryCI = index.getClassByName(primaryTypeDN);
+        boolean isCR;
+        try {
+            isCR = JandexUtil.isSubclassOf(index, primaryCI, CUSTOM_RESOURCE);
+        } catch (BuildException e) {
+            isCR = false;
+        }
+        if (isCR) {
+            final var crParamTypes = JandexUtil.resolveTypeParameters(primaryTypeDN, CUSTOM_RESOURCE, index);
+            registerForReflection(reflectionClasses, crParamTypes.get(0).name().toString());
+            registerForReflection(reflectionClasses, crParamTypes.get(1).name().toString());
+        }
 
         // now check if there's more work to do, depending on reloaded state
-        Class<CustomResource> crClass = null;
-        String crdName = null;
+        Class<? extends HasMetadata> resourceClass = null;
+        String resourceFullName = null;
 
         // check if we need to regenerate the CRD
         final var changeInformation = liveReload.getChangeInformation();
-        if (crdGeneration.wantCRDGenerated()) {
+        if (isCR && crdGeneration.wantCRDGenerated()) {
             // check whether we already have generated CRDs
             var storedCRDInfos = liveReload.getContextObject(ContextStoredCRDInfos.class);
 
             final boolean[] generateCurrent = { true }; // request CRD generation by default
 
-            crClass = (Class<CustomResource>) loadClass(crType);
-            crdName = CustomResource.getCRDName(crClass);
+            final var crClass = (Class<? extends CustomResource>) loadClass(primaryTypeName);
+            resourceClass = crClass;
+            resourceFullName = getFullResourceName(crClass);
 
             // When we have a live reload, check if we need to regenerate the associated CRD
             if (liveReload.isLiveReload() && storedCRDInfos != null) {
-                final var finalCrdName = crdName;
-                final var crdInfos = storedCRDInfos.getCRDInfosFor(crdName);
+                final var finalCrdName = resourceFullName;
+                final var crdInfos = storedCRDInfos.getCRDInfosFor(resourceFullName);
 
                 // check for all CRD spec version requested
                 buildTimeConfiguration.crd.versions.forEach(v -> {
@@ -313,7 +320,7 @@ class OperatorSDKProcessor {
             }
             // if we still need to generate the CRD, add the CR to the set to be generated
             if (generateCurrent[0]) {
-                crdGeneration.withCustomResource(crClass, crdName, name);
+                crdGeneration.withCustomResource(crClass, resourceFullName, name);
             }
         }
 
@@ -321,29 +328,28 @@ class OperatorSDKProcessor {
         QuarkusControllerConfiguration configuration = null;
         boolean regenerateConfig = true;
         var storedConfigurations = liveReload.getContextObject(ContextStoredControllerConfigurations.class);
-        if (liveReload.isLiveReload()) {
-            if (storedConfigurations != null) {
-                // check if we've already generated a configuration for this controller
-                configuration = storedConfigurations.getConfigurations().get(controllerClassName);
-                if (configuration != null) {
-                    /*
-                     * A configuration needs to be regenerated if:
-                     * - the ResourceController annotation has changed
-                     * - the associated CustomResource metadata has changed
-                     * - the configuration properties have changed as follows:
-                     * + extension-wide properties affecting all controllers have changed
-                     * + controller-specific properties have changed
-                     *
-                     * Here, we only perform a simplified check: either the class holding the ResourceController annotation has
-                     * changed, or the associated CustomResource class or application.properties as a whole has changed. This
-                     * could be optimized further if needed.
-                     *
-                     */
-                    final var changedClasses = changeInformation == null ? Collections.emptySet()
-                            : changeInformation.getChangedClasses();
-                    regenerateConfig = changedClasses.contains(controllerClassName) || changedClasses.contains(crType)
-                            || liveReload.getChangedResources().contains("application.properties");
-                }
+        if (liveReload.isLiveReload() && storedConfigurations != null) {
+            // check if we've already generated a configuration for this controller
+            configuration = storedConfigurations.getConfigurations().get(reconcilerClassName);
+            if (configuration != null) {
+                /*
+                 * A configuration needs to be regenerated if:
+                 * - the ResourceController annotation has changed
+                 * - the associated CustomResource metadata has changed
+                 * - the configuration properties have changed as follows:
+                 * + extension-wide properties affecting all controllers have changed
+                 * + controller-specific properties have changed
+                 *
+                 * Here, we only perform a simplified check: either the class holding the ResourceController annotation has
+                 * changed, or the associated CustomResource class or application.properties as a whole has changed. This
+                 * could be optimized further if needed.
+                 *
+                 */
+                final var changedClasses = changeInformation == null ? Collections.emptySet()
+                        : changeInformation.getChangedClasses();
+                regenerateConfig = changedClasses.contains(reconcilerClassName) || changedClasses.contains(
+                        primaryTypeName)
+                        || liveReload.getChangedResources().contains("application.properties");
             }
         }
 
@@ -355,48 +361,52 @@ class OperatorSDKProcessor {
                     buildTimeConfiguration.controllers.get(name),
                     controllerAnnotation, delayedRegistrationAnnotation);
 
-            if (crdName == null) {
-                crClass = (Class<CustomResource>) loadClass(crType);
-                crdName = CustomResource.getCRDName(crClass);
+            if (resourceFullName == null) {
+                resourceClass = (Class<? extends HasMetadata>) loadClass(primaryTypeName);
+                resourceFullName = getFullResourceName(resourceClass);
             }
 
-            final var crVersion = HasMetadata.getVersion(crClass);
+            final var crVersion = HasMetadata.getVersion(resourceClass);
 
             // create the configuration
             configuration = new QuarkusControllerConfiguration(
-                    controllerClassName,
+                    reconcilerClassName,
                     name,
-                    crdName,
+                    resourceFullName,
                     crVersion,
                     configExtractor.generationAware(),
-                    crType,
+                    primaryTypeName,
                     configExtractor.delayedRegistration(),
                     configExtractor.namespaces(name),
-                    getFinalizer(controllerAnnotation, crdName),
+                    getFinalizer(controllerAnnotation, resourceFullName),
                     getLabelSelector(controllerAnnotation));
 
             log.infov(
-                    "Processed ''{0}'' controller named ''{1}'' for ''{2}'' CR (version ''{3}'')",
-                    controllerClassName, name, crdName, HasMetadata.getApiVersion(crClass));
+                    "Processed ''{0}'' reconciler named ''{1}'' for ''{2}'' resource (version ''{3}'')",
+                    reconcilerClassName, name, resourceFullName, HasMetadata.getApiVersion(resourceClass));
         } else {
-            log.infov("Skipped configuration reload for ''{0}'' controller as no changes were detected", controllerClassName);
+            log.infov("Skipped configuration reload for ''{0}'' reconciler as no changes were detected", reconcilerClassName);
         }
 
         // store the configuration in the live reload context
         if (storedConfigurations == null) {
             storedConfigurations = new ContextStoredControllerConfigurations();
         }
-        storedConfigurations.getConfigurations().put(controllerClassName, configuration);
+        storedConfigurations.getConfigurations().put(reconcilerClassName, configuration);
         liveReload.setContextObject(ContextStoredControllerConfigurations.class, storedConfigurations);
 
         return Optional.of(configuration);
+    }
+
+    private String getFullResourceName(Class<? extends HasMetadata> crClass) {
+        return ReconcilerUtils.getResourceTypeName(crClass);
     }
 
     private String getFinalizer(AnnotationInstance controllerAnnotation, String crdName) {
         return ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
                 "finalizerName",
                 AnnotationValue::asString,
-                () -> ControllerUtils.getDefaultFinalizerName(crdName));
+                () -> ReconcilerUtils.getDefaultFinalizerName(crdName));
     }
 
     private String getLabelSelector(AnnotationInstance controllerAnnotation) {
@@ -429,10 +439,10 @@ class OperatorSDKProcessor {
             BuildProducer<ObserverConfiguratorBuildItem> observerConfigurators) {
 
         final var index = combinedIndexBuildItem.getIndex();
-        ClassUtils.getKnownResourceControllers(index, log).forEach(info -> {
+        ClassUtils.getKnownReconcilers(index, log).forEach(info -> {
             final var controllerClassName = info.name().toString();
-            final var controllerAnnotation = info.classAnnotation(CONTROLLER);
-            final var name = getControllerName(controllerClassName, controllerAnnotation);
+            final var controllerAnnotation = info.classAnnotation(CONTROLLER_CONFIGURATION);
+            final var name = ConfigurationUtils.getReconcilerName(controllerClassName, controllerAnnotation);
 
             // extract the configuration from annotation and/or external configuration
             final var configExtractor = new BuildTimeHybridControllerConfiguration(
@@ -462,7 +472,7 @@ class OperatorSDKProcessor {
                                             Operator.class, null);
                                     ResultHandle resource = getHandleFromCDI(mc, selectMethod, getMethod,
                                             cdiVar,
-                                            ResourceController.class, controllerClassName);
+                                            Reconciler.class, controllerClassName);
                                     ResultHandle config = getHandleFromCDI(mc, selectMethod, getMethod,
                                             cdiVar,
                                             QuarkusConfigurationService.class, null);
@@ -471,7 +481,7 @@ class OperatorSDKProcessor {
                                                     OperatorProducer.class,
                                                     "applyCRDIfNeededAndRegister",
                                                     void.class,
-                                                    Operator.class, ResourceController.class,
+                                                    Operator.class, Reconciler.class,
                                                     QuarkusConfigurationService.class),
                                             operator, resource, config);
                                     mc.returnValue(null);

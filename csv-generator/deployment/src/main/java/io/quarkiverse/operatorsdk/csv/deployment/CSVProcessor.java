@@ -48,18 +48,20 @@ public class CSVProcessor {
 
         final var augmentedCRInfos = new HashMap<String, AugmentedCustomResourceInfo>();
         final var index = combinedIndexBuildItem.getIndex();
-        ClassUtils.getKnownResourceControllers(index, log)
+        ClassUtils.getKnownReconcilers(index, log)
                 .forEach(info -> {
                     // figure out which group should be used to generate CSV
-                    final var name = ConfigurationUtils.getControllerName(info);
+                    final var name = ConfigurationUtils.getReconcilerName(info);
                     final var csvMetadata = getCSVMetadata(info, name, index);
                     csvGroupMetadata.put(csvMetadata.name, csvMetadata);
                     final var cri = generatedCRDs.getCRDGenerationInfo().getControllerToCustomResourceMappings().get(name);
                     if (cri == null) {
-                        throw new IllegalStateException(
-                                "There should be a CustomResourceInfo associated to controller: " + name);
+                        log.infov(
+                                "Skipping CSV generation for controller ''{0}'' because there is no CRD information associated with it",
+                                name);
+                    } else {
+                        augmentedCRInfos.put(cri.getCrdName(), new AugmentedCustomResourceInfo(cri, csvMetadata.name));
                     }
-                    augmentedCRInfos.put(cri.getCrdName(), new AugmentedCustomResourceInfo(cri, csvMetadata.name));
                 });
 
         return new CSVMetadataBuildItem(csvGroupMetadata, augmentedCRInfos);

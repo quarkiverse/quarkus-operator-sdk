@@ -14,7 +14,7 @@ import org.jboss.jandex.DotName;
 import org.jboss.jandex.Type;
 import org.jboss.jandex.Type.Kind;
 
-import io.javaoperatorsdk.operator.ControllerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
@@ -78,8 +78,7 @@ class BuildTimeHybridControllerConfiguration {
 
     String name(String resourceControllerClassName) {
         // retrieve the controller's name
-        final var defaultControllerName = ControllerUtils
-                .getDefaultResourceControllerName(resourceControllerClassName);
+        final var defaultControllerName = ReconcilerUtils.getDefaultReconcilerName(resourceControllerClassName);
         return ConfigurationUtils.annotationValueOrDefault(
                 controllerAnnotation, "name", AnnotationValue::asString, () -> defaultControllerName);
     }

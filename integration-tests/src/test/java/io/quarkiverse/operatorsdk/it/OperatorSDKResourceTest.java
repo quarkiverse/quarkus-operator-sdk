@@ -7,6 +7,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 
+import java.util.Locale;
+
 import org.junit.jupiter.api.Test;
 
 import io.quarkus.test.common.QuarkusTestResource;
@@ -47,7 +49,7 @@ public class OperatorSDKResourceTest {
 
         // given the name of the TestController, the app should reply true meaning that it is indeed
         // injected
-        given().when().get("/operator/" + TestController.NAME).then().statusCode(200)
+        given().when().get("/operator/" + TestReconciler.NAME).then().statusCode(200)
                 .body(is("true"));
     }
 
@@ -58,9 +60,10 @@ public class OperatorSDKResourceTest {
                 .contentType("application/json")
                 .extract()
                 .as(String[].class);
-        assertThat(names.length, equalTo(4));
-        assertThat(names, arrayContainingInAnyOrder(ApplicationScopedController.NAME, ConfiguredController.NAME,
-                DelayedController.NAME, TestController.NAME));
+        assertThat(names.length, equalTo(5));
+        assertThat(names, arrayContainingInAnyOrder(ApplicationScopedController.NAME, ConfiguredReconciler.NAME,
+                DelayedReconciler.NAME, TestReconciler.NAME,
+                SecretReconciler.class.getSimpleName().toLowerCase(Locale.ROOT)));
     }
 
     @Test
@@ -70,12 +73,12 @@ public class OperatorSDKResourceTest {
         final var resourceName = io.quarkiverse.operatorsdk.it.Test.class.getCanonicalName();
         given()
                 .when()
-                .get("/operator/" + TestController.NAME + "/config")
+                .get("/operator/" + TestReconciler.NAME + "/config")
                 .then()
                 .statusCode(200)
                 .body(
                         "customResourceClass", equalTo(resourceName),
-                        "name", equalTo(TestController.NAME),
+                        "name", equalTo(TestReconciler.NAME),
                         "useFinalizer", equalTo(false),
                         "watchCurrentNamespace", equalTo(true),
                         "generationAware", equalTo(false));
@@ -85,7 +88,7 @@ public class OperatorSDKResourceTest {
     void applicationPropertiesShouldOverrideDefaultAndAnnotation() {
         given()
                 .when()
-                .get("/operator/" + ConfiguredController.NAME + "/config")
+                .get("/operator/" + ConfiguredReconciler.NAME + "/config")
                 .then()
                 .statusCode(200)
                 .body(
@@ -106,11 +109,11 @@ public class OperatorSDKResourceTest {
     @Test
     void delayedControllerShouldWaitForEventToRegister() {
         // first check that the delayed controller is not registered, though it should be a known controller
-        given().when().get("/operator/registered/" + DelayedController.NAME).then().statusCode(200).body(is("false"));
-        given().when().get("/operator/" + DelayedController.NAME).then().statusCode(200).body(is("true"));
+        given().when().get("/operator/registered/" + DelayedReconciler.NAME).then().statusCode(200).body(is("false"));
+        given().when().get("/operator/" + DelayedReconciler.NAME).then().statusCode(200).body(is("true"));
         given()
                 .when()
-                .get("/operator/" + DelayedController.NAME + "/config")
+                .get("/operator/" + DelayedReconciler.NAME + "/config")
                 .then()
                 .statusCode(200)
                 .body("delayed", equalTo(true));
@@ -119,6 +122,6 @@ public class OperatorSDKResourceTest {
         given().when().post("/operator/register").then().statusCode(204);
 
         // and check that the controller is now registered
-        given().when().get("/operator/registered/" + DelayedController.NAME).then().statusCode(200).body(is("true"));
+        given().when().get("/operator/registered/" + DelayedReconciler.NAME).then().statusCode(200).body(is("true"));
     }
 }

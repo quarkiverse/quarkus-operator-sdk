@@ -71,7 +71,7 @@ class CRDGeneration {
         return new CRDGenerationInfo(crdConfig.apply, validateCustomResources, converted, generated);
     }
 
-    public void withCustomResource(Class<CustomResource> crClass, String crdName, String associatedControllerName) {
+    public void withCustomResource(Class<? extends CustomResource> crClass, String crdName, String associatedControllerName) {
         try {
             final var info = CustomResourceInfo.fromClass(crClass);
             crMappings.add(info, crdName, associatedControllerName);

@@ -1,6 +1,6 @@
 package io.quarkiverse.operatorsdk.common;
 
-import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER;
+import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATION;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -11,7 +11,7 @@ import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.logging.Logger;
 
-import io.javaoperatorsdk.operator.ControllerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Utils;
 
 public class ConfigurationUtils {
@@ -98,15 +98,15 @@ public class ConfigurationUtils {
         return newValidateCRD;
     }
 
-    public static String getControllerName(ClassInfo info) {
+    public static String getReconcilerName(ClassInfo info) {
         final var controllerClassName = info.name().toString();
-        final var controllerAnnotation = info.classAnnotation(CONTROLLER);
-        return getControllerName(controllerClassName, controllerAnnotation);
+        final var controllerAnnotation = info.classAnnotation(CONTROLLER_CONFIGURATION);
+        return getReconcilerName(controllerClassName, controllerAnnotation);
     }
 
-    public static String getControllerName(String resourceControllerClassName, AnnotationInstance controllerAnnotation) {
-        final var defaultControllerName = ControllerUtils.getDefaultResourceControllerName(resourceControllerClassName);
+    public static String getReconcilerName(String reconcilerClassName, AnnotationInstance configuration) {
+        final var defaultControllerName = ReconcilerUtils.getDefaultReconcilerName(reconcilerClassName);
         return ConfigurationUtils.annotationValueOrDefault(
-                controllerAnnotation, "name", AnnotationValue::asString, () -> defaultControllerName);
+                configuration, "name", AnnotationValue::asString, () -> defaultControllerName);
     }
 }

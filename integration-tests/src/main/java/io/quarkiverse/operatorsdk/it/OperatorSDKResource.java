@@ -5,15 +5,20 @@ import java.util.Set;
 import javax.enterprise.event.Event;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
-import javax.ws.rs.*;
+import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.api.ResourceController;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 
@@ -21,25 +26,25 @@ import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 public class OperatorSDKResource {
 
     @Inject
-    Instance<ResourceController<? extends CustomResource>> controllers;
+    Instance<Reconciler<? extends HasMetadata>> controllers;
     @Inject
     QuarkusConfigurationService configurationService;
     @Inject
-    Event<DelayedController.RegisterEvent> event;
+    Event<DelayedReconciler.RegisterEvent> event;
 
     @POST
     @Path("register")
     public void registerController() {
-        event.fire(new DelayedController.RegisterEvent());
+        event.fire(new DelayedReconciler.RegisterEvent());
     }
 
     @GET
     @Path("registered/{name}")
     public boolean getRegisteredController(@PathParam("name") String name) {
-        for (ResourceController<?> cont : controllers) {
+        for (Reconciler<?> cont : controllers) {
             if (configurationService.getConfigurationFor(cont).getName().equals(name)
-                    && cont instanceof RegistrableController) {
-                return ((RegistrableController<?>) cont).isInitialized();
+                    && cont instanceof RegistrableReconciler) {
+                return ((RegistrableReconciler<?>) cont).isInitialized();
             }
         }
         throw new NotFoundException("Could not find controller: " + name);
@@ -54,7 +59,7 @@ public class OperatorSDKResource {
     @GET
     @Path("{name}")
     public boolean getController(@PathParam("name") String name) {
-        return configurationService.getKnownControllerNames().contains(name);
+        return configurationService.getKnownReconcilerNames().contains(name);
     }
 
     @GET
@@ -84,7 +89,7 @@ public class OperatorSDKResource {
         }
 
         public Set<String> getKnownControllerNames() {
-            return conf.getKnownControllerNames();
+            return conf.getKnownReconcilerNames();
         }
 
         public Version getVersion() {
@@ -126,7 +131,7 @@ public class OperatorSDKResource {
 
         @JsonProperty("crdName")
         public String getCRDName() {
-            return conf.getCRDName();
+            return conf.getResourceTypeName();
         }
 
         public String getFinalizer() {
@@ -138,11 +143,11 @@ public class OperatorSDKResource {
         }
 
         public String getCustomResourceClass() {
-            return conf.getCustomResourceClass().getCanonicalName();
+            return conf.getResourceClass().getCanonicalName();
         }
 
         public String getAssociatedControllerClassName() {
-            return conf.getAssociatedControllerClassName();
+            return conf.getAssociatedReconcilerClassName();
         }
 
         public String[] getNamespaces() {
