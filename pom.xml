@@ -8,7 +8,7 @@
   </parent>
   <groupId>io.quarkiverse.operatorsdk</groupId>
   <artifactId>quarkus-operator-sdk-parent</artifactId>
-  <version>3.0.0</version>
+  <version>3.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Quarkus - Operator SDK - Parent</name>
   <modules>
@@ -34,8 +34,4 @@
       </modules>
     </profile>
   </profiles>
-
-  <scm>
-    <tag>3.0.0</tag>
-  </scm>
 </project>
