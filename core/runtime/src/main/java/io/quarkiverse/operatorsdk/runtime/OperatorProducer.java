@@ -1,6 +1,7 @@
 package io.quarkiverse.operatorsdk.runtime;
 
 import java.io.File;
+import java.io.IOException;
 
 import javax.annotation.PreDestroy;
 import javax.enterprise.inject.Instance;
@@ -43,7 +44,7 @@ public class OperatorProducer {
     @PreDestroy
     public void destroy() {
         if (operator != null) {
-            operator.close();
+            operator.stop();
         }
     }
 
@@ -80,8 +81,9 @@ public class OperatorProducer {
                     final var crd = mapper.readValue(crdFile, getCRDClassFor(crdVersion));
                     apply(operator.getKubernetesClient(), crdVersion, crd);
                     log.infov("Applied {0} CRD named ''{1}'' from {2}", crdVersion, crdName, filePath);
-                } catch (Exception ex) {
-                    throw new RuntimeException(ex);
+                } catch (IOException ex) {
+                    throw new IllegalArgumentException("Couldn't read CRD file at " + filePath
+                            + " as a " + crdVersion + " CRD for " + crdName, ex);
                 }
             });
         } catch (Exception exception) {
