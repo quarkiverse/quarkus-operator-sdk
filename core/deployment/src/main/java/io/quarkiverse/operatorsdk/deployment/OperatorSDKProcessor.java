@@ -261,12 +261,19 @@ class OperatorSDKProcessor {
 
         // register spec and status for introspection if we're targeting a CustomResource
         final var primaryCI = index.getClassByName(primaryTypeDN);
-        boolean isCR;
-        try {
-            isCR = JandexUtil.isSubclassOf(index, primaryCI, CUSTOM_RESOURCE);
-        } catch (BuildException e) {
-            isCR = false;
+        boolean isCR = false;
+        if (primaryCI == null) {
+            log.warnv(
+                    "''{0}'' has not been found in the Jandex index so it cannot be introspected. Assumed not to be a CustomResource implementation. If you believe this is wrong, please index your classes with Jandex.",
+                    primaryTypeDN);
+        } else {
+            try {
+                isCR = JandexUtil.isSubclassOf(index, primaryCI, CUSTOM_RESOURCE);
+            } catch (BuildException e) {
+                log.errorv("Couldn't ascertain if ''{0}'' is a CustomResource subclass. Assumed not to be.", e);
+            }
         }
+
         if (isCR) {
             final var crParamTypes = JandexUtil.resolveTypeParameters(primaryTypeDN, CUSTOM_RESOURCE, index);
             registerForReflection(reflectionClasses, crParamTypes.get(0).name().toString());
