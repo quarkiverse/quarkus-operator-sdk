@@ -16,7 +16,7 @@ public class OperatorSDKHotReplacementSetup implements HotReplacementSetup {
             try {
                 context.doScan(false);
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                throw new IllegalStateException(e);
             }
         }, 10, 10, TimeUnit.SECONDS);
     }

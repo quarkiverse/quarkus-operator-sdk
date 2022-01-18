@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.api.config.Utils;
 
-public class ConfigurationUtilsTest {
+class ConfigurationUtilsTest {
     @Test
     void shouldUseSystemPropertyIfPresent() {
         if (Utils.isValidateCustomResourcesEnvVarSet()) {

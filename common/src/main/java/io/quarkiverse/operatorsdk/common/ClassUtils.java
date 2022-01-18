@@ -11,6 +11,10 @@ import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
 
 public class ClassUtils {
+
+    private ClassUtils() {
+    }
+
     public static Class<?> loadClass(String className) {
         try {
             return Thread.currentThread().getContextClassLoader().loadClass(className);

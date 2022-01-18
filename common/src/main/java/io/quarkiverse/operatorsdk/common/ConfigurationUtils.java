@@ -16,6 +16,9 @@ import io.javaoperatorsdk.operator.api.config.Utils;
 
 public class ConfigurationUtils {
 
+    private ConfigurationUtils() {
+    }
+
     /**
      * Extracts the appropriate configuration value for the controller checking first any annotation
      * configuration, then potentially overriding it by a properties-provided value or returning a
@@ -86,7 +89,7 @@ public class ConfigurationUtils {
         if (log != null && oldValidateCRD.isPresent()) {
             var validateCustomResources = oldValidateCRD.get();
             String msg;
-            if (validateCustomResources != newValidateCRD) {
+            if (Boolean.TRUE.equals(validateCustomResources) != newValidateCRD) {
                 msg = String.format(
                         "Deprecated property check-crd-and-validate-local-model with value '%s' is overridden by crd.validate property value '%s'",
                         validateCustomResources, newValidateCRD);

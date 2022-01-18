@@ -1,5 +1,7 @@
 package io.quarkiverse.operatorsdk.csv.deployment;
 
+import java.util.Objects;
+
 import io.quarkiverse.operatorsdk.common.CustomResourceInfo;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
@@ -16,5 +18,29 @@ public class AugmentedCustomResourceInfo extends CustomResourceInfo {
 
     public String getCsvGroupName() {
         return csvGroupName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        AugmentedCustomResourceInfo that = (AugmentedCustomResourceInfo) o;
+
+        return Objects.equals(csvGroupName, that.csvGroupName);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (csvGroupName != null ? csvGroupName.hashCode() : 0);
+        return result;
     }
 }

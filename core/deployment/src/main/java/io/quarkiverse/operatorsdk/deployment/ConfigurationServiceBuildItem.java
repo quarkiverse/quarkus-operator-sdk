@@ -6,6 +6,7 @@ import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.Version;
 import io.quarkus.builder.item.SimpleBuildItem;
 
+@SuppressWarnings("rawtypes")
 public final class ConfigurationServiceBuildItem extends SimpleBuildItem {
 
     private final Version version;
