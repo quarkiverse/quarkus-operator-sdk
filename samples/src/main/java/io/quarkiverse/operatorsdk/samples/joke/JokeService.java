@@ -14,6 +14,7 @@
  */
 package io.quarkiverse.operatorsdk.samples.joke;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -25,6 +26,7 @@ import org.jboss.resteasy.annotations.jaxrs.QueryParam;
 
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestSpec.Category;
 
+@ApplicationScoped
 @RegisterRestClient(configKey = "joke-api")
 public interface JokeService {
 
