@@ -14,6 +14,7 @@ import io.quarkus.runtime.annotations.Recorder;
 @Recorder
 public class ConfigurationServiceRecorder {
 
+    @SuppressWarnings("rawtypes")
     public Supplier<QuarkusConfigurationService> configurationServiceSupplier(Version version,
             List<QuarkusControllerConfiguration> configurations,
             CRDGenerationInfo crdInfo, RunTimeOperatorConfiguration runTimeConfiguration) {

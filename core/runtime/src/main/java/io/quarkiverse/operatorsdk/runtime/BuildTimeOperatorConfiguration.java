@@ -19,7 +19,7 @@ public class BuildTimeOperatorConfiguration {
      * @deprecated Use {@link CRDConfiguration#validate} instead
      */
     @ConfigItem
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public Optional<Boolean> checkCRDAndValidateLocalModel;
 
     /**

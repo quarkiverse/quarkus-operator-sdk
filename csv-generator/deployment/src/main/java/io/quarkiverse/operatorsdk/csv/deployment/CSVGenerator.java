@@ -12,8 +12,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import org.jboss.logging.Logger;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -34,8 +32,11 @@ import io.quarkiverse.operatorsdk.common.CustomResourceInfo;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVMetadataHolder;
 
 public class CSVGenerator {
-    private static Logger log = Logger.getLogger(CSVGenerator.class);
+
     private static final ObjectMapper YAML_MAPPER;
+
+    private CSVGenerator() {
+    }
 
     static {
         YAML_MAPPER = new ObjectMapper((new YAMLFactory()).enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
@@ -55,30 +56,11 @@ public class CSVGenerator {
                 .collect(Collectors.toSet());
     }
 
-    private static Boolean hasMatchingClusterPermission(CustomResourceInfo cri,
-            NamedInstallStrategyFluent.SpecNested<ClusterServiceVersionSpecFluent.InstallNested<ClusterServiceVersionFluent.SpecNested<ClusterServiceVersionBuilder>>> installSpec,
-            Integer[] ruleIndex, Integer[] clusterPermissionIndex) {
-        final var hasMatchingClusterPermission = installSpec
-                .hasMatchingClusterPermission(cp -> {
-                    int i = 0;
-                    for (PolicyRule rule : cp.getRules()) {
-                        if (rule.getApiGroups().contains(cri.getGroup())) {
-                            ruleIndex[0] = i;
-                            return true;
-                        }
-                        i++;
-                    }
-                    clusterPermissionIndex[0]++;
-                    return false;
-                });
-        return hasMatchingClusterPermission;
-    }
-
     static class NamedCSVBuilder {
         private final String csvGroupName;
         private final String controllerName;
         private final ClusterServiceVersionBuilder csvBuilder;
-        final static Map<String, Set<CustomResourceInfo>> groupToCRInfo = new ConcurrentHashMap<>(7);
+        static final Map<String, Set<CustomResourceInfo>> groupToCRInfo = new ConcurrentHashMap<>(7);
 
         @Override
         public boolean equals(Object o) {
@@ -146,7 +128,7 @@ public class CSVGenerator {
                     cri,
                     installSpec, ruleIndex,
                     clusterPermissionIndex);
-            final var clusterPermission = hasMatchingClusterPermission
+            final var clusterPermission = Boolean.TRUE.equals(hasMatchingClusterPermission)
                     ? installSpec.editClusterPermission(clusterPermissionIndex[0])
                     : installSpec.addNewClusterPermission();
 
@@ -301,6 +283,23 @@ public class CSVGenerator {
 
         public String getControllerName() {
             return controllerName;
+        }
+
+        private Boolean hasMatchingClusterPermission(CustomResourceInfo cri,
+                NamedInstallStrategyFluent.SpecNested<ClusterServiceVersionSpecFluent.InstallNested<ClusterServiceVersionFluent.SpecNested<ClusterServiceVersionBuilder>>> installSpec,
+                Integer[] ruleIndex, Integer[] clusterPermissionIndex) {
+            return installSpec.hasMatchingClusterPermission(cp -> {
+                int i = 0;
+                for (PolicyRule rule : cp.getRules()) {
+                    if (rule.getApiGroups().contains(cri.getGroup())) {
+                        ruleIndex[0] = i;
+                        return true;
+                    }
+                    i++;
+                }
+                clusterPermissionIndex[0]++;
+                return false;
+            });
         }
     }
 }

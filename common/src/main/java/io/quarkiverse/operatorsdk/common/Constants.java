@@ -8,6 +8,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
 
 public class Constants {
+    private Constants() {
+    }
+
     public static final DotName RECONCILER = DotName.createSimple(Reconciler.class.getName());
     public static final DotName CONTROLLER = DotName.createSimple(Controller.class.getName());
     public static final DotName CUSTOM_RESOURCE = DotName.createSimple(CustomResource.class.getName());

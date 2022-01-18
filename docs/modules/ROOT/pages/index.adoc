@@ -5,20 +5,20 @@ This extension integrates the https://javaoperatorsdk.io[Java Operator SDK] proj
 
 == Features
 
-- Automatically generates a main class, so that the only thing that's required is to write a `ResourceController` implementation
+- Automatically generates a main class, so that the only thing that's required is to write `Reconciler` implementation(s)
 - Automatically makes a Kubernetes/OpenShift client available for CDI injection
-- Automatically setups an `Operator` instance, also available for CDI injection
-- Automatically processes the controllers' configuration at build time, exposing all the available configuration of JOSDK via application properties
-- Automatically registers controllers with the `Operator` and start them
-- Automatically generates CRDs for all `CustomResource` implementations used by controllers
-- Automatically generates Kubernetes descriptors (though support for this needs to be improved)
-- Automatically generates CSV for all controllers (using the `quarkus-operator-sdk-csv-generator` extension) [Preview]
+- Automatically sets up an `Operator` instance, also available for CDI injection
+- Automatically processes the reconcilers' configuration at build time, exposing all the available configuration of JOSDK via application properties
+- Automatically registers reconcilers with the `Operator` and start them
+- Automatically generates CRDs for all `CustomResource` implementations used by reconcilers
+- Automatically generates Kubernetes descriptors
+- Automatically generates CSV for all reconcilers (using the `quarkus-operator-sdk-csv-generator` extension) [Preview]
 - Integrates with the Dev mode:
-    * Watches your code for changes and reload automatically your operator if needed without having to hit an endpoint
-    * Only re-generate the CRDs if a change impacting its generation is detected
-    * Only re-process a controller's configuration if needed
-    * Automatically apply the CRD to the cluster when it has changed
-- Automatically generates CDI observers to allow for delayed registration of controllers (for example, to wait until some external resource is available)
+* Watches your code for changes and reload automatically your operator if needed without having to hit an endpoint
+* Only re-generates the CRDs if a change impacting its generation is detected
+* Only re-processes a reconciler's configuration if needed
+* Automatically apply the CRD to the cluster when it has changed
+- Automatically generates CDI observers to allow for delayed registration of reconcilers (for example, to wait until some external resource is available)
 - Supports micrometer registry extensions (adding a Quarkus-supported micrometer registry extension will automatically inject said registry into the operator)
 - Automatically adds a SmallRye health check
 - Can easily generate a Docker image via JIB
@@ -37,7 +37,7 @@ In your `pom.xml` file, add:
 </dependency>
 ----
 
-If you want to use the CSV generator, you will first need to use Quarkus 2.3.0.Final and add the `quarkus-operator-sdk-csv-generator` extension first:
+If you want to use the CSV generator, you will first need to use Quarkus 2.3.0.Final or above and add the `quarkus-operator-sdk-csv-generator` extension first:
 
 [source,xml]
 ----
