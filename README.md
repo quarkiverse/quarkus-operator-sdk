@@ -4,7 +4,7 @@
 [![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-See [samples](samples/README.md) to get quickly started using an example
+See [samples](samples) to get quickly started using an example
 
 ## [Documentation](https://quarkiverse.github.io/quarkiverse-docs/quarkus-operator-sdk/dev/index.html)
                                                                                                             
