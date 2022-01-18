@@ -16,7 +16,7 @@ import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest
 @QuarkusTestResource(CustomKubernetesServerTestResource.class)
-public class OperatorSDKResourceTest {
+class OperatorSDKResourceTest {
 
     @Test
     void shouldNotValidateCRs() {
@@ -60,10 +60,11 @@ public class OperatorSDKResourceTest {
                 .contentType("application/json")
                 .extract()
                 .as(String[].class);
-        assertThat(names.length, equalTo(5));
+        assertThat(names.length, equalTo(6));
         assertThat(names, arrayContainingInAnyOrder(ApplicationScopedController.NAME, ConfiguredReconciler.NAME,
                 DelayedReconciler.NAME, TestReconciler.NAME,
-                SecretReconciler.class.getSimpleName().toLowerCase(Locale.ROOT)));
+                SecretReconciler.class.getSimpleName().toLowerCase(Locale.ROOT),
+                GatewayReconciler.class.getSimpleName().toLowerCase(Locale.ROOT)));
     }
 
     @Test
