@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import io.quarkiverse.operatorsdk.common.CustomResourceInfo;
+import io.quarkiverse.operatorsdk.common.ResourceInfo;
 import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
@@ -14,7 +14,7 @@ public class CRDGenerationInfo {
     private final boolean validateCRDs;
     private final Map<String, Map<String, CRDInfo>> crds;
     private final Set<String> generated;
-    private final Map<String, CustomResourceInfo> controllerToCRI;
+    private final Map<String, ResourceInfo> controllerToCRI;
 
     @RecordableConstructor // constructor needs to be recordable for the class to be passed around by Quarkus
     public CRDGenerationInfo(boolean applyCRDs, boolean validateCRDs, Map<String, Map<String, CRDInfo>> crds,
@@ -23,7 +23,7 @@ public class CRDGenerationInfo {
         this.validateCRDs = validateCRDs;
         this.crds = Collections.unmodifiableMap(crds);
         this.generated = generated;
-        final var mappings = new HashMap<String, CustomResourceInfo>(crds.size());
+        final var mappings = new HashMap<String, ResourceInfo>(crds.size());
         crds.values().forEach(crdInfos -> crdInfos.values().forEach(info -> info.getVersions().values().forEach(cri -> {
             final var controllerName = cri.getControllerName();
             if (!mappings.containsKey(controllerName)) {
@@ -61,7 +61,7 @@ public class CRDGenerationInfo {
     }
 
     @IgnoreProperty
-    public Map<String, CustomResourceInfo> getControllerToCustomResourceMappings() {
+    public Map<String, ResourceInfo> getControllerToCustomResourceMappings() {
         return controllerToCRI;
     }
 }

@@ -5,7 +5,7 @@ import java.util.Optional;
 import io.fabric8.kubernetes.model.Scope;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
-public class CustomResourceInfo {
+public class ResourceInfo {
     private final String group;
     private final String version;
     private final String kind;
@@ -15,16 +15,16 @@ public class CustomResourceInfo {
     private final boolean storage;
     private final boolean served;
     private final Scope scope;
-    private final String crClassName;
+    private final String resourceClassName;
     private final Optional<String> specClassName;
     private final Optional<String> statusClassName;
-    private final String crdName;
+    private final String resourceFullName;
     private final String controllerName;
 
     @RecordableConstructor
-    public CustomResourceInfo(String group, String version, String kind, String singular, String plural, String[] shortNames,
-            boolean storage, boolean served, Scope scope, String crClassName, Optional<String> specClassName,
-            Optional<String> statusClassName, String crdName, String controllerName) {
+    public ResourceInfo(String group, String version, String kind, String singular, String plural, String[] shortNames,
+            boolean storage, boolean served, Scope scope, String resourceClassName, Optional<String> specClassName,
+            Optional<String> statusClassName, String resourceFullName, String controllerName) {
         this.group = group;
         this.version = version;
         this.kind = kind;
@@ -34,10 +34,10 @@ public class CustomResourceInfo {
         this.storage = storage;
         this.served = served;
         this.scope = scope;
-        this.crClassName = crClassName;
+        this.resourceClassName = resourceClassName;
         this.specClassName = specClassName;
         this.statusClassName = statusClassName;
-        this.crdName = crdName;
+        this.resourceFullName = resourceFullName;
         this.controllerName = controllerName;
     }
 
@@ -77,8 +77,8 @@ public class CustomResourceInfo {
         return scope;
     }
 
-    public String getCrClassName() {
-        return crClassName;
+    public String getResourceClassName() {
+        return resourceClassName;
     }
 
     public Optional<String> getSpecClassName() {
@@ -89,8 +89,8 @@ public class CustomResourceInfo {
         return statusClassName;
     }
 
-    public String getCrdName() {
-        return crdName;
+    public String getResourceFullName() {
+        return resourceFullName;
     }
 
     public String getControllerName() {
@@ -104,7 +104,7 @@ public class CustomResourceInfo {
         if (o == null || getClass() != o.getClass())
             return false;
 
-        CustomResourceInfo that = (CustomResourceInfo) o;
+        ResourceInfo that = (ResourceInfo) o;
 
         if (!group.equals(that.group))
             return false;

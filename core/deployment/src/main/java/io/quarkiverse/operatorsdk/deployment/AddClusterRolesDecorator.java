@@ -8,15 +8,15 @@ import io.fabric8.kubernetes.api.model.KubernetesListBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
-import io.quarkiverse.operatorsdk.common.CustomResourceInfo;
+import io.quarkiverse.operatorsdk.common.ResourceInfo;
 
 public class AddClusterRolesDecorator extends ResourceProvidingDecorator<KubernetesListBuilder> {
 
     static final String JOSDK_CRD_VALIDATING_CLUSTER_ROLE = "josdk-crd-validating-cluster-role";
-    private final Map<String, CustomResourceInfo> controllerToCustomResourceMappings;
+    private final Map<String, ResourceInfo> controllerToCustomResourceMappings;
     private final boolean validateCRDs;
 
-    public AddClusterRolesDecorator(Map<String, CustomResourceInfo> controllerToCustomResourceMappings, boolean validateCRDs) {
+    public AddClusterRolesDecorator(Map<String, ResourceInfo> controllerToCustomResourceMappings, boolean validateCRDs) {
         this.controllerToCustomResourceMappings = controllerToCustomResourceMappings;
         this.validateCRDs = validateCRDs;
     }

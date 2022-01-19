@@ -27,7 +27,6 @@ import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.fabric8.crd.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.Operator;
@@ -36,6 +35,7 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
+import io.quarkiverse.operatorsdk.common.ResourceInfo;
 import io.quarkiverse.operatorsdk.runtime.AppEventListener;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
@@ -188,7 +188,7 @@ class OperatorSDKProcessor {
     }
 
     @BuildStep(onlyIf = IsRBACEnabled.class)
-    public void addRBACForCustomResources(BuildProducer<DecoratorBuildItem> decorators,
+    public void addRBACForResources(BuildProducer<DecoratorBuildItem> decorators,
             GeneratedCRDInfoBuildItem generatedCRDs, ConfigurationServiceBuildItem configurations) {
         var mappings = generatedCRDs.getCRDGenerationInfo().getControllerToCustomResourceMappings();
         final var controllerConfigs = configurations.getControllerConfigs();
@@ -198,15 +198,14 @@ class OperatorSDKProcessor {
         // if we didn't generate CRDs, we need to generate the CustomResourceInfo at this point
         // because it doesn't otherwise exist
         if (!buildTimeConfiguration.crd.generate || mappings.isEmpty()) {
-            final var controllerToCRIMap = new HashMap<String, io.quarkiverse.operatorsdk.common.CustomResourceInfo>(
-                    configs.size());
+            final var controllerToRIMap = new HashMap<String, ResourceInfo>(configs.size());
             configs.forEach((controllerName, config) -> {
-                final var augmented = CustomResourceControllerMapping.augment(
-                        CustomResourceInfo.fromClass(config.getResourceClass()),
+                final var augmented = ResourceControllerMapping.createFrom(
+                        config.getResourceClass(),
                         config.getResourceTypeName(), controllerName);
-                controllerToCRIMap.put(controllerName, augmented);
+                controllerToRIMap.put(controllerName, augmented);
             });
-            mappings = controllerToCRIMap;
+            mappings = controllerToRIMap;
         }
 
         decorators.produce(new DecoratorBuildItem(new AddClusterRolesDecorator(mappings, buildTimeConfiguration.crd.validate)));

@@ -16,7 +16,7 @@ class CRDGeneration {
     private final CRDGenerator generator = new CRDGenerator();
     private final boolean generate;
     private boolean needGeneration;
-    private final CustomResourceControllerMapping crMappings = new CustomResourceControllerMapping();
+    private final ResourceControllerMapping crMappings = new ResourceControllerMapping();
 
     public CRDGeneration(boolean generate) {
         this.generate = generate;
@@ -57,7 +57,7 @@ class CRDGeneration {
                 OperatorSDKProcessor.log.infov("Generated {0} CRD:", crdName);
                 generated.add(crdName);
 
-                final var versions = crMappings.getCustomResourceInfos(crdName);
+                final var versions = crMappings.getResourceInfos(crdName);
                 final var versionToCRDInfo = converted.computeIfAbsent(crdName, s -> new HashMap<>());
                 initialVersionToCRDInfoMap
                         .forEach((version, crdInfo) -> {

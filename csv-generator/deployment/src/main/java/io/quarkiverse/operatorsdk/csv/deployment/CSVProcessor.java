@@ -46,7 +46,7 @@ public class CSVProcessor {
             GeneratedCRDInfoBuildItem generatedCRDs) {
         final var csvGroupMetadata = new HashMap<String, CSVMetadataHolder>();
 
-        final var augmentedCRInfos = new HashMap<String, AugmentedCustomResourceInfo>();
+        final var augmentedCRInfos = new HashMap<String, AugmentedResourceInfo>();
         final var index = combinedIndexBuildItem.getIndex();
         ClassUtils.getKnownReconcilers(index, log)
                 .forEach(info -> {
@@ -60,7 +60,7 @@ public class CSVProcessor {
                                 "Skipping CSV generation for controller ''{0}'' because there is no CRD information associated with it",
                                 name);
                     } else {
-                        augmentedCRInfos.put(cri.getCrdName(), new AugmentedCustomResourceInfo(cri, csvMetadata.name));
+                        augmentedCRInfos.put(cri.getResourceFullName(), new AugmentedResourceInfo(cri, csvMetadata.name));
                     }
                 });
 

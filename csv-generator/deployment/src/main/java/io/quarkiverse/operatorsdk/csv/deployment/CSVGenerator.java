@@ -28,7 +28,7 @@ import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionSpecFluent;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionSpecFluent.InstallNested;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.NamedInstallStrategyFluent;
-import io.quarkiverse.operatorsdk.common.CustomResourceInfo;
+import io.quarkiverse.operatorsdk.common.ResourceInfo;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVMetadataHolder;
 
 public class CSVGenerator {
@@ -47,7 +47,7 @@ public class CSVGenerator {
         YAML_MAPPER.configure(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS, false);
     }
 
-    public static Set<NamedCSVBuilder> prepareGeneration(Map<String, AugmentedCustomResourceInfo> info,
+    public static Set<NamedCSVBuilder> prepareGeneration(Map<String, AugmentedResourceInfo> info,
             Map<String, CSVMetadataHolder> csvMetadata) {
         final var csvBuilders = new HashMap<String, NamedCSVBuilder>(7);
         return info.values().parallelStream()
@@ -60,7 +60,7 @@ public class CSVGenerator {
         private final String csvGroupName;
         private final String controllerName;
         private final ClusterServiceVersionBuilder csvBuilder;
-        static final Map<String, Set<CustomResourceInfo>> groupToCRInfo = new ConcurrentHashMap<>(7);
+        static final Map<String, Set<ResourceInfo>> groupToCRInfo = new ConcurrentHashMap<>(7);
 
         @Override
         public boolean equals(Object o) {
@@ -81,7 +81,7 @@ public class CSVGenerator {
             return csvGroupName.hashCode();
         }
 
-        public NamedCSVBuilder(AugmentedCustomResourceInfo cri, Map<String, CSVMetadataHolder> csvMetadata) {
+        public NamedCSVBuilder(AugmentedResourceInfo cri, Map<String, CSVMetadataHolder> csvMetadata) {
             // record group to CRI mapping
             groupToCRInfo.computeIfAbsent(cri.getGroup(), s -> new HashSet<>()).add(cri);
 
@@ -115,7 +115,7 @@ public class CSVGenerator {
             csvSpecBuilder
                     .editOrNewCustomresourcedefinitions()
                     .addNewOwned()
-                    .withName(cri.getCrdName())
+                    .withName(cri.getResourceFullName())
                     .withVersion(cri.getVersion())
                     .withKind(cri.getKind())
                     .endOwned().endCustomresourcedefinitions();
@@ -224,7 +224,7 @@ public class CSVGenerator {
         }
 
         private void handleClusterRole(String serviceAccountName, ClusterRole clusterRole,
-                Map<String, Set<CustomResourceInfo>> groupToCRInfo,
+                Map<String, Set<ResourceInfo>> groupToCRInfo,
                 NamedInstallStrategyFluent.SpecNested<InstallNested<SpecNested<ClusterServiceVersionBuilder>>> installSpec) {
             if (clusterRole != null) {
                 // check if we have our CR group in the cluster role fragment and remove the one we added
@@ -285,7 +285,7 @@ public class CSVGenerator {
             return controllerName;
         }
 
-        private Boolean hasMatchingClusterPermission(CustomResourceInfo cri,
+        private Boolean hasMatchingClusterPermission(ResourceInfo cri,
                 NamedInstallStrategyFluent.SpecNested<ClusterServiceVersionSpecFluent.InstallNested<ClusterServiceVersionFluent.SpecNested<ClusterServiceVersionBuilder>>> installSpec,
                 Integer[] ruleIndex, Integer[] clusterPermissionIndex) {
             return installSpec.hasMatchingClusterPermission(cp -> {
