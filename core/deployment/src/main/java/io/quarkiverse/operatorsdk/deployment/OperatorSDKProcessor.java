@@ -194,9 +194,8 @@ class OperatorSDKProcessor {
         final var configs = configurations.getControllerConfigs();
         final var mappings = new HashMap<String, ResourceInfo>(configs.size());
         configs.forEach((controllerName, config) -> {
-            final var augmented = ResourceControllerMapping.createFrom(
-                    config.getResourceClass(),
-                    config.getResourceTypeName(), controllerName);
+            final var augmented = ResourceInfo.createFrom(config.getResourceClass(), config.getResourceTypeName(),
+                    controllerName, config.getSpecClassName(), config.getStatusClassName());
             mappings.put(controllerName, augmented);
         });
 
@@ -264,10 +263,14 @@ class OperatorSDKProcessor {
             }
         }
 
+        String specClassName = null;
+        String statusClassName = null;
         if (isCR) {
             final var crParamTypes = JandexUtil.resolveTypeParameters(primaryTypeDN, CUSTOM_RESOURCE, index);
-            registerForReflection(reflectionClasses, crParamTypes.get(0).name().toString());
-            registerForReflection(reflectionClasses, crParamTypes.get(1).name().toString());
+            specClassName = crParamTypes.get(0).name().toString();
+            statusClassName = crParamTypes.get(1).name().toString();
+            registerForReflection(reflectionClasses, specClassName);
+            registerForReflection(reflectionClasses, statusClassName);
         }
 
         // now check if there's more work to do, depending on reloaded state
@@ -376,7 +379,9 @@ class OperatorSDKProcessor {
                     configExtractor.delayedRegistration(),
                     configExtractor.namespaces(name),
                     getFinalizer(controllerAnnotation, resourceFullName),
-                    getLabelSelector(controllerAnnotation));
+                    getLabelSelector(controllerAnnotation),
+                    Optional.ofNullable(specClassName),
+                    Optional.ofNullable(statusClassName));
 
             log.infov(
                     "Processed ''{0}'' reconciler named ''{1}'' for ''{2}'' resource (version ''{3}'')",

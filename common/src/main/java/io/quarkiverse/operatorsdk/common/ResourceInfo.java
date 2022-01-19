@@ -2,6 +2,8 @@ package io.quarkiverse.operatorsdk.common;
 
 import java.util.Optional;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.model.Scope;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
@@ -119,5 +121,19 @@ public class ResourceInfo {
         result = 31 * result + version.hashCode();
         result = 31 * result + kind.hashCode();
         return result;
+    }
+
+    public static ResourceInfo createFrom(Class<? extends HasMetadata> resourceClass,
+            String resourceFullName, String associatedControllerName, Optional<String> specClassName,
+            Optional<String> statusClassName) {
+        Scope scope = Namespaced.class.isAssignableFrom(resourceClass) ? Scope.NAMESPACED : Scope.CLUSTER;
+
+        return new ResourceInfo(HasMetadata.getGroup(resourceClass),
+                HasMetadata.getVersion(resourceClass),
+                HasMetadata.getKind(resourceClass), HasMetadata.getSingular(resourceClass),
+                HasMetadata.getPlural(resourceClass), new String[0],
+                false, false, scope, resourceClass.getCanonicalName(),
+                specClassName, statusClassName,
+                resourceFullName, associatedControllerName);
     }
 }

@@ -2,13 +2,7 @@ package io.quarkiverse.operatorsdk.deployment;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
-import io.fabric8.crd.generator.CustomResourceInfo;
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.Namespaced;
-import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.model.Scope;
 import io.quarkiverse.operatorsdk.common.ResourceInfo;
 
 public class ResourceControllerMapping {
@@ -43,22 +37,5 @@ public class ResourceControllerMapping {
                 info.storage(),
                 info.served(), info.scope(), info.crClassName(),
                 info.specClassName(), info.statusClassName(), crdName, associatedControllerName);
-    }
-
-    public static ResourceInfo createFrom(Class<? extends HasMetadata> resourceClass, String resourceFullName,
-            String associatedControllerName) {
-        if (CustomResource.class.isAssignableFrom(resourceClass)) {
-            return augment(CustomResourceInfo.fromClass((Class<? extends CustomResource>) resourceClass), resourceFullName,
-                    associatedControllerName);
-        } else {
-            Scope scope = Namespaced.class.isAssignableFrom(resourceClass) ? Scope.NAMESPACED : Scope.CLUSTER;
-
-            return new ResourceInfo(HasMetadata.getGroup(resourceClass), HasMetadata.getVersion(resourceClass),
-                    HasMetadata.getKind(resourceClass), HasMetadata.getSingular(resourceClass),
-                    HasMetadata.getPlural(resourceClass), new String[0],
-                    false, false, scope, resourceClass.getCanonicalName(),
-                    Optional.empty(), Optional.empty(),
-                    resourceFullName, associatedControllerName);
-        }
     }
 }

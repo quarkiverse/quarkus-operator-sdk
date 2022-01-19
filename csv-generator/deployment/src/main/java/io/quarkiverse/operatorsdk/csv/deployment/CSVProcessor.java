@@ -22,12 +22,12 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
+import io.quarkiverse.operatorsdk.common.ResourceInfo;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVGenerationConfiguration;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVMetadata;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.csv.runtime.SharedCSVMetadata;
 import io.quarkiverse.operatorsdk.deployment.ConfigurationServiceBuildItem;
-import io.quarkiverse.operatorsdk.deployment.ResourceControllerMapping;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
@@ -59,8 +59,8 @@ public class CSVProcessor {
                     final var csvMetadata = getCSVMetadata(info, name, index);
                     csvGroupMetadata.put(csvMetadata.name, csvMetadata);
                     final var resourceFullName = config.getResourceTypeName();
-                    final var resourceInfo = ResourceControllerMapping.createFrom(config.getResourceClass(),
-                            resourceFullName, name);
+                    final var resourceInfo = ResourceInfo.createFrom(config.getResourceClass(),
+                            resourceFullName, name, config.getSpecClassName(), config.getStatusClassName());
                     augmentedCRInfos.put(resourceFullName, new AugmentedResourceInfo(resourceInfo, csvMetadata.name));
                 });
 
