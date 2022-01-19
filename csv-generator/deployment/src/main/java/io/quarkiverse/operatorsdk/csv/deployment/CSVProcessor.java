@@ -26,7 +26,8 @@ import io.quarkiverse.operatorsdk.csv.runtime.CSVGenerationConfiguration;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVMetadata;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.csv.runtime.SharedCSVMetadata;
-import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
+import io.quarkiverse.operatorsdk.deployment.ConfigurationServiceBuildItem;
+import io.quarkiverse.operatorsdk.deployment.ResourceControllerMapping;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
@@ -43,25 +44,24 @@ public class CSVProcessor {
 
     @BuildStep
     CSVMetadataBuildItem gatherCSVMetadata(CombinedIndexBuildItem combinedIndexBuildItem,
-            GeneratedCRDInfoBuildItem generatedCRDs) {
+            ConfigurationServiceBuildItem configurations) {
         final var csvGroupMetadata = new HashMap<String, CSVMetadataHolder>();
 
+        final var controllerConfigs = configurations.getControllerConfigs();
         final var augmentedCRInfos = new HashMap<String, AugmentedResourceInfo>();
         final var index = combinedIndexBuildItem.getIndex();
+
         ClassUtils.getKnownReconcilers(index, log)
                 .forEach(info -> {
                     // figure out which group should be used to generate CSV
                     final var name = ConfigurationUtils.getReconcilerName(info);
+                    final var config = controllerConfigs.get(name);
                     final var csvMetadata = getCSVMetadata(info, name, index);
                     csvGroupMetadata.put(csvMetadata.name, csvMetadata);
-                    final var cri = generatedCRDs.getCRDGenerationInfo().getControllerToCustomResourceMappings().get(name);
-                    if (cri == null) {
-                        log.infov(
-                                "Skipping CSV generation for controller ''{0}'' because there is no CRD information associated with it",
-                                name);
-                    } else {
-                        augmentedCRInfos.put(cri.getResourceFullName(), new AugmentedResourceInfo(cri, csvMetadata.name));
-                    }
+                    final var resourceFullName = config.getResourceTypeName();
+                    final var resourceInfo = ResourceControllerMapping.createFrom(config.getResourceClass(),
+                            resourceFullName, name);
+                    augmentedCRInfos.put(resourceFullName, new AugmentedResourceInfo(resourceInfo, csvMetadata.name));
                 });
 
         return new CSVMetadataBuildItem(csvGroupMetadata, augmentedCRInfos);

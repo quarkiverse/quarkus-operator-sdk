@@ -1,8 +1,8 @@
 package io.quarkiverse.operatorsdk.runtime;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -35,7 +35,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
 
     public QuarkusConfigurationService(
             Version version,
-            List<QuarkusControllerConfiguration> configurations,
+            Collection<QuarkusControllerConfiguration> configurations,
             KubernetesClient client,
             CRDGenerationInfo crdInfo, int maxThreads,
             int timeout, ObjectMapper mapper, Metrics metrics) {
