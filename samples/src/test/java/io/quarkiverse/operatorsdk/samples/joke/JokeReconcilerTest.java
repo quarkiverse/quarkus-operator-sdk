@@ -14,8 +14,6 @@ import static org.mockito.ArgumentMatchers.eq;
 
 import java.util.Map;
 
-import javax.inject.Inject;
-
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -31,7 +29,7 @@ import io.quarkus.test.kubernetes.client.WithKubernetesTestServer;
 
 @WithKubernetesTestServer
 @QuarkusTest
-public class JokeReconcilerTest {
+class JokeReconcilerTest {
 
     @InjectMock
     @RestClient
@@ -40,13 +38,10 @@ public class JokeReconcilerTest {
     @KubernetesTestServer
     KubernetesServer mockServer;
 
-    @Inject
-    JokeReconciler test;
-
     @Test
-    void CanReconcile() {
+    void canReconcile() {
 
-        // arange
+        // arrange
         final JokeModel joke = new JokeModel();
         joke.id = 1;
         joke.joke = "Hello";
