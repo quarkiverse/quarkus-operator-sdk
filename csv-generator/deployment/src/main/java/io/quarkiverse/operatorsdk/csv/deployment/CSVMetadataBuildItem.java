@@ -7,10 +7,10 @@ import io.quarkus.builder.item.SimpleBuildItem;
 
 public final class CSVMetadataBuildItem extends SimpleBuildItem {
     private final Map<String, CSVMetadataHolder> groupToMetadata;
-    private final Map<String, AugmentedCustomResourceInfo> crdNameToAugmentedCRInfo;
+    private final Map<String, AugmentedResourceInfo> crdNameToAugmentedCRInfo;
 
     public CSVMetadataBuildItem(Map<String, CSVMetadataHolder> groupToMetadata,
-            Map<String, AugmentedCustomResourceInfo> crdNameToAugmentedCRInfo) {
+            Map<String, AugmentedResourceInfo> crdNameToAugmentedCRInfo) {
         this.groupToMetadata = groupToMetadata;
         this.crdNameToAugmentedCRInfo = crdNameToAugmentedCRInfo;
     }
@@ -19,7 +19,7 @@ public final class CSVMetadataBuildItem extends SimpleBuildItem {
         return groupToMetadata;
     }
 
-    public Map<String, AugmentedCustomResourceInfo> getAugmentedCustomResourceInfos() {
+    public Map<String, AugmentedResourceInfo> getAugmentedCustomResourceInfos() {
         return crdNameToAugmentedCRInfo;
     }
 }
