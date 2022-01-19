@@ -4,6 +4,7 @@ import static io.quarkiverse.operatorsdk.common.ClassUtils.loadClass;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -20,13 +21,15 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final String name;
     private final String resourceTypeName;
     private final String crVersion;
-    private String finalizer;
     private final boolean generationAware;
+    private final boolean registrationDelayed;
+    private final String resourceClassName;
+    private final Optional<String> specClassName;
+    private final Optional<String> statusClassName;
+    private String finalizer;
     private Set<String> namespaces;
     private RetryConfiguration retryConfiguration;
-    private final String resourceClassName;
     private Class<R> resourceClass;
-    private final boolean registrationDelayed;
     private String labelSelector;
     private ConfigurationService parent;
 
@@ -37,7 +40,8 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             String resourceTypeName,
             String crVersion, boolean generationAware,
             String resourceClassName,
-            boolean registrationDelayed, Set<String> namespaces, String finalizer, String labelSelector) {
+            boolean registrationDelayed, Set<String> namespaces, String finalizer, String labelSelector,
+            Optional<String> specClassName, Optional<String> statusClassName) {
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
         this.resourceTypeName = resourceTypeName;
@@ -49,6 +53,8 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         setNamespaces(namespaces);
         setFinalizer(finalizer);
         this.labelSelector = labelSelector;
+        this.specClassName = specClassName;
+        this.statusClassName = statusClassName;
     }
 
     public static Set<String> asSet(String[] namespaces) {
@@ -150,5 +156,13 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     public void setLabelSelector(String labelSelector) {
         this.labelSelector = labelSelector;
+    }
+
+    public Optional<String> getSpecClassName() {
+        return specClassName;
+    }
+
+    public Optional<String> getStatusClassName() {
+        return statusClassName;
     }
 }
