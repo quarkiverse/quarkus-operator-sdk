@@ -1,6 +1,6 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,15 +16,15 @@ public class ConfigurationServiceRecorder {
 
     @SuppressWarnings("rawtypes")
     public Supplier<QuarkusConfigurationService> configurationServiceSupplier(Version version,
-            List<QuarkusControllerConfiguration> configurations,
+            Map<String, QuarkusControllerConfiguration> configurations,
             CRDGenerationInfo crdInfo, RunTimeOperatorConfiguration runTimeConfiguration) {
         final var maxThreads = runTimeConfiguration.concurrentReconciliationThreads
                 .orElse(ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
         final var timeout = runTimeConfiguration.terminationTimeoutSeconds
                 .orElse(ConfigurationService.DEFAULT_TERMINATION_TIMEOUT_SECONDS);
 
-        configurations.forEach(c -> {
-            final var extConfig = runTimeConfiguration.controllers.get(c.getName());
+        configurations.forEach((name, c) -> {
+            final var extConfig = runTimeConfiguration.controllers.get(name);
             // first use the operator-level configuration if set
             runTimeConfiguration.finalizer.ifPresent(c::setFinalizer);
             runTimeConfiguration.namespaces.ifPresent(c::setNamespaces);
@@ -40,7 +40,7 @@ public class ConfigurationServiceRecorder {
 
         return () -> new QuarkusConfigurationService(
                 version,
-                configurations,
+                configurations.values(),
                 Arc.container().instance(KubernetesClient.class).get(),
                 crdInfo,
                 maxThreads,

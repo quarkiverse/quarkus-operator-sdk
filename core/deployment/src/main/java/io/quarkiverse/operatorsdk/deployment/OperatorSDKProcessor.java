@@ -189,28 +189,19 @@ class OperatorSDKProcessor {
 
     @BuildStep(onlyIf = IsRBACEnabled.class)
     public void addRBACForResources(BuildProducer<DecoratorBuildItem> decorators,
-            GeneratedCRDInfoBuildItem generatedCRDs, ConfigurationServiceBuildItem configurations) {
-        var mappings = generatedCRDs.getCRDGenerationInfo().getControllerToCustomResourceMappings();
-        final var controllerConfigs = configurations.getControllerConfigs();
-        final var configs = new HashMap<String, QuarkusControllerConfiguration>(controllerConfigs.size());
-        controllerConfigs.forEach(c -> configs.put(c.getName(), c));
+            ConfigurationServiceBuildItem configurations) {
 
-        // if we didn't generate CRDs, we need to generate the CustomResourceInfo at this point
-        // because it doesn't otherwise exist
-        if (!buildTimeConfiguration.crd.generate || mappings.isEmpty()) {
-            final var controllerToRIMap = new HashMap<String, ResourceInfo>(configs.size());
-            configs.forEach((controllerName, config) -> {
-                final var augmented = ResourceControllerMapping.createFrom(
-                        config.getResourceClass(),
-                        config.getResourceTypeName(), controllerName);
-                controllerToRIMap.put(controllerName, augmented);
-            });
-            mappings = controllerToRIMap;
-        }
+        final var configs = configurations.getControllerConfigs();
+        final var mappings = new HashMap<String, ResourceInfo>(configs.size());
+        configs.forEach((controllerName, config) -> {
+            final var augmented = ResourceControllerMapping.createFrom(
+                    config.getResourceClass(),
+                    config.getResourceTypeName(), controllerName);
+            mappings.put(controllerName, augmented);
+        });
 
         decorators.produce(new DecoratorBuildItem(new AddClusterRolesDecorator(mappings, buildTimeConfiguration.crd.validate)));
-        decorators.produce(new DecoratorBuildItem(new AddRoleBindingsDecorator(configs,
-                buildTimeConfiguration.crd.validate)));
+        decorators.produce(new DecoratorBuildItem(new AddRoleBindingsDecorator(configs, buildTimeConfiguration.crd.validate)));
     }
 
     private ResultHandle getHandleFromCDI(MethodCreator mc, MethodDescriptor selectMethod, MethodDescriptor getMethod,

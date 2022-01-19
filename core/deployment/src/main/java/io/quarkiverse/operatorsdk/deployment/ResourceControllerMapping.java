@@ -45,7 +45,7 @@ public class ResourceControllerMapping {
                 info.specClassName(), info.statusClassName(), crdName, associatedControllerName);
     }
 
-    static ResourceInfo createFrom(Class<? extends HasMetadata> resourceClass, String resourceFullName,
+    public static ResourceInfo createFrom(Class<? extends HasMetadata> resourceClass, String resourceFullName,
             String associatedControllerName) {
         if (CustomResource.class.isAssignableFrom(resourceClass)) {
             return augment(CustomResourceInfo.fromClass((Class<? extends CustomResource>) resourceClass), resourceFullName,
