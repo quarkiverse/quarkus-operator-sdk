@@ -135,4 +135,8 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     public Metrics getMetrics() {
         return metrics;
     }
+
+    KubernetesClient getClient() {
+        return client;
+    }
 }

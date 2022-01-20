@@ -29,9 +29,8 @@ public class OperatorProducer {
     @Produces
     @DefaultBean
     @Singleton
-    Operator operator(KubernetesClient client, QuarkusConfigurationService configuration,
-            Instance<Reconciler<? extends HasMetadata>> reconcilers) {
-        operator = new Operator(client, configuration);
+    Operator operator(QuarkusConfigurationService configuration, Instance<Reconciler<? extends HasMetadata>> reconcilers) {
+        operator = new Operator(configuration.getClient(), configuration);
         for (Reconciler<? extends HasMetadata> reconciler : reconcilers) {
             final var config = configuration.getConfigurationFor(reconciler);
             if (!config.isRegistrationDelayed()) {
