@@ -1,7 +1,7 @@
 # A Quarkus extension to write operators in Java
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 See [samples](samples/README.md) to get quickly started using an example
@@ -34,6 +34,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <table>
   <tr>
     <td align="center"><a href="http://about.me/metacosm"><img src="https://avatars.githubusercontent.com/u/120057?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Chris Laprun</b></sub></a><br /><a href="https://github.com/quarkiverse/quarkus-operator-sdk/commits?author=metacosm" title="Code">💻</a> <a href="#maintenance-metacosm" title="Maintenance">🚧</a></td>
+    <td align="center"><a href="https://www.inulogic.fr"><img src="https://avatars.githubusercontent.com/u/88554524?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sébastien CROCQUESEL</b></sub></a><br /><a href="https://github.com/quarkiverse/quarkus-operator-sdk/commits?author=scrocquesel" title="Code">💻</a></td>
   </tr>
 </table>
 
