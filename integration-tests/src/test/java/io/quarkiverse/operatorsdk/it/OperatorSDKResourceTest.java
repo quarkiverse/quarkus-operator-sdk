@@ -61,7 +61,7 @@ class OperatorSDKResourceTest {
                 .extract()
                 .as(String[].class);
         assertThat(names.length, equalTo(6));
-        assertThat(names, arrayContainingInAnyOrder(ApplicationScopedController.NAME, ConfiguredReconciler.NAME,
+        assertThat(names, arrayContainingInAnyOrder(ApplicationScopedReconciler.NAME, ConfiguredReconciler.NAME,
                 DelayedReconciler.NAME, TestReconciler.NAME,
                 SecretReconciler.class.getSimpleName().toLowerCase(Locale.ROOT),
                 GatewayReconciler.class.getSimpleName().toLowerCase(Locale.ROOT)));
@@ -101,7 +101,7 @@ class OperatorSDKResourceTest {
 
         given()
                 .when()
-                .get("/operator/" + ApplicationScopedController.NAME + "/config")
+                .get("/operator/" + ApplicationScopedReconciler.NAME + "/config")
                 .then()
                 .statusCode(200)
                 .body("namespaces", hasItem("default"));
