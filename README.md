@@ -7,8 +7,9 @@
 See [samples](samples/README.md) to get quickly started using an example
 
 ## [Documentation](https://quarkiverse.github.io/quarkiverse-docs/quarkus-operator-sdk/dev/index.html)
-                                                                                                            
+
 ### Maintaining the documentation
+
 The documentation for this extension should be maintained as part of this repository and it is
 stored in the `docs/` directory.
 
@@ -23,6 +24,25 @@ the [Quarkiverse Docs Antora playbook](https://github.com/quarkiverse/quarkivers
 ## Releasing
 
 Follow the [Quarkiverse release process](https://github.com/quarkiverse/quarkiverse/wiki/Release).
+
+## Snapshots
+
+A snapshot is generated each time the `main` or `next` branches are changed. To be able to use the
+snapshots, please add the following repository definition to your POM file (in the `repositories`
+section):
+
+```xml
+    <repositories>
+        ...
+        <repository>
+            <id>s01.oss.sonatype</id>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+```
 
 ## Contributors ✨
 
