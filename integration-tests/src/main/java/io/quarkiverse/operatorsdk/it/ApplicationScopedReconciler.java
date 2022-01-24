@@ -8,8 +8,8 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 @ApplicationScoped
-@ControllerConfiguration(name = ApplicationScopedController.NAME)
-public class ApplicationScopedController implements Reconciler<ChildTestResource> {
+@ControllerConfiguration(name = ApplicationScopedReconciler.NAME)
+public class ApplicationScopedReconciler implements Reconciler<ChildTestResource> {
 
     public static final String NAME = "ApplicationScoped";
 
