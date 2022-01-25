@@ -1,7 +1,6 @@
 package io.quarkiverse.operatorsdk.common;
 
-import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER;
-import static io.quarkiverse.operatorsdk.common.Constants.DEPENDENT_RESOURCE_MANAGER;
+import static io.quarkiverse.operatorsdk.common.Constants.IGNORE_RECONCILER;
 import static io.quarkiverse.operatorsdk.common.Constants.RECONCILER;
 
 import java.lang.reflect.Modifier;
@@ -44,6 +43,6 @@ public class ClassUtils {
         }
 
         // Ignore SDK internal Reconciler implementations
-        return !consideredClassName.equals(CONTROLLER) && !consideredClassName.equals(DEPENDENT_RESOURCE_MANAGER);
+        return !ci.annotations().containsKey(IGNORE_RECONCILER);
     }
 }
