@@ -39,7 +39,7 @@
   </issueManagement>
 
   <properties>
-    <quarkus.version>2.7.0.CR1</quarkus.version>
+    <quarkus.version>2.7.0.Final</quarkus.version>
     <java-operator-sdk.version>2.1.0-SNAPSHOT</java-operator-sdk.version>
     <kubernetes-client.version>5.12.0</kubernetes-client.version>
   </properties>
