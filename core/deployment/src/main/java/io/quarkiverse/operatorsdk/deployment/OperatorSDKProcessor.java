@@ -3,14 +3,19 @@ package io.quarkiverse.operatorsdk.deployment;
 import static io.quarkiverse.operatorsdk.common.ClassUtils.loadClass;
 import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATION;
 import static io.quarkiverse.operatorsdk.common.Constants.CUSTOM_RESOURCE;
+import static io.quarkiverse.operatorsdk.common.Constants.HAS_METADATA;
 import static io.quarkiverse.operatorsdk.common.Constants.RECONCILER;
 import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
@@ -32,6 +37,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.KubernetesDependent;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
@@ -46,6 +52,8 @@ import io.quarkiverse.operatorsdk.runtime.NoOpMetricsProvider;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
+import io.quarkiverse.operatorsdk.runtime.QuarkusDependentResourceConfiguration;
+import io.quarkiverse.operatorsdk.runtime.QuarkusKubernetesDependentResourceConfiguration;
 import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.Version;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
@@ -82,7 +90,8 @@ class OperatorSDKProcessor {
     static final Logger log = Logger.getLogger(OperatorSDKProcessor.class.getName());
 
     private static final String FEATURE = "operator-sdk";
-    private static final DotName DELAY_REGISTRATION = DotName.createSimple(DelayRegistrationUntil.class.getName());
+    private static final DotName DELAY_REGISTRATION = DotName.createSimple(
+            DelayRegistrationUntil.class.getName());
 
     private BuildTimeOperatorConfiguration buildTimeConfiguration;
 
@@ -90,7 +99,8 @@ class OperatorSDKProcessor {
     void setup(BuildProducer<IndexDependencyBuildItem> indexDependency,
             BuildProducer<FeatureBuildItem> features,
             BuildProducer<UnremovableBeanBuildItem> unremovableBeans,
-            Optional<MetricsCapabilityBuildItem> metricsCapability, BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
+            Optional<MetricsCapabilityBuildItem> metricsCapability,
+            BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
         features.produce(new FeatureBuildItem(FEATURE));
         indexDependency.produce(
                 new IndexDependencyBuildItem("io.javaoperatorsdk", "operator-framework-core"));
@@ -98,10 +108,12 @@ class OperatorSDKProcessor {
         unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(ObjectMapper.class));
 
         // only add micrometer support if the capability is supported
-        if (metricsCapability.isPresent() && metricsCapability.get().metricsSupported(MetricsFactory.MICROMETER)) {
+        if (metricsCapability.isPresent() && metricsCapability.get()
+                .metricsSupported(MetricsFactory.MICROMETER)) {
             // we use the class name to not import any micrometer-related dependencies to prevent activation
             additionalBeans.produce(
-                    AdditionalBeanBuildItem.unremovableOf("io.quarkiverse.operatorsdk.runtime.MicrometerMetricsProvider"));
+                    AdditionalBeanBuildItem.unremovableOf(
+                            "io.quarkiverse.operatorsdk.runtime.MicrometerMetricsProvider"));
         } else {
             additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(NoOpMetricsProvider.class));
         }
@@ -141,34 +153,41 @@ class OperatorSDKProcessor {
 
         final CRDConfiguration crdConfig = buildTimeConfiguration.crd;
         final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(
-                buildTimeConfiguration.checkCRDAndValidateLocalModel, buildTimeConfiguration.crd.validate, log);
+                buildTimeConfiguration.checkCRDAndValidateLocalModel, buildTimeConfiguration.crd.validate,
+                log);
 
         // apply should imply generate: we cannot apply if we're not generating!
         final var crdGeneration = new CRDGeneration(crdConfig.generate || crdConfig.apply);
         final var index = combinedIndexBuildItem.getIndex();
-        final List<QuarkusControllerConfiguration> controllerConfigs = ClassUtils.getKnownReconcilers(index, log)
-                .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses, forcedReflectionClasses,
+        final List<QuarkusControllerConfiguration> controllerConfigs = ClassUtils.getKnownReconcilers(
+                index, log)
+                .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses,
+                        forcedReflectionClasses,
                         index, crdGeneration, liveReload))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
 
-        // retrieve the known CRD information to make sure we always have a full view 
+        // retrieve the known CRD information to make sure we always have a full view
         var storedCRDInfos = liveReload.getContextObject(ContextStoredCRDInfos.class);
         if (storedCRDInfos == null) {
             storedCRDInfos = new ContextStoredCRDInfos();
         }
-        CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, crdConfig, validateCustomResources,
+        CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, crdConfig,
+                validateCustomResources,
                 storedCRDInfos.getExisting());
         storedCRDInfos.putAll(crdInfo.getCrds());
-        liveReload.setContextObject(ContextStoredCRDInfos.class, storedCRDInfos); // record CRD generation info in context for future use
+        liveReload.setContextObject(ContextStoredCRDInfos.class,
+                storedCRDInfos); // record CRD generation info in context for future use
 
         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorProducer.class));
 
         // if the app doesn't provide a main class, add the AppEventListener
-        if (index.getAllKnownImplementors(DotName.createSimple(QuarkusApplication.class.getName())).isEmpty()) {
+        if (index.getAllKnownImplementors(DotName.createSimple(QuarkusApplication.class.getName()))
+                .isEmpty()) {
             additionalBeans.produce(AdditionalBeanBuildItem.builder()
-                    .addBeanClass(AppEventListener.class).setDefaultScope(DotName.createSimple(Singleton.class.getName()))
+                    .addBeanClass(AppEventListener.class)
+                    .setDefaultScope(DotName.createSimple(Singleton.class.getName()))
                     .setUnremovable()
                     .build());
         }
@@ -179,6 +198,7 @@ class OperatorSDKProcessor {
     }
 
     private static class IsRBACEnabled implements BooleanSupplier {
+
         private BuildTimeOperatorConfiguration config;
 
         @Override
@@ -195,16 +215,20 @@ class OperatorSDKProcessor {
         final var configs = configurations.getControllerConfigs();
         final var mappings = new HashMap<String, ResourceInfo>(configs.size());
         configs.forEach((controllerName, config) -> {
-            final var augmented = ResourceInfo.createFrom(config.getResourceClass(), config.getResourceTypeName(),
+            final var augmented = ResourceInfo.createFrom(config.getResourceClass(),
+                    config.getResourceTypeName(),
                     controllerName, config.getSpecClassName(), config.getStatusClassName());
             mappings.put(controllerName, augmented);
         });
 
-        decorators.produce(new DecoratorBuildItem(new AddClusterRolesDecorator(mappings, buildTimeConfiguration.crd.validate)));
-        decorators.produce(new DecoratorBuildItem(new AddRoleBindingsDecorator(configs, buildTimeConfiguration.crd.validate)));
+        decorators.produce(new DecoratorBuildItem(
+                new AddClusterRolesDecorator(mappings, buildTimeConfiguration.crd.validate)));
+        decorators.produce(new DecoratorBuildItem(
+                new AddRoleBindingsDecorator(configs, buildTimeConfiguration.crd.validate)));
     }
 
-    private ResultHandle getHandleFromCDI(MethodCreator mc, MethodDescriptor selectMethod, MethodDescriptor getMethod,
+    private ResultHandle getHandleFromCDI(MethodCreator mc, MethodDescriptor selectMethod,
+            MethodDescriptor getMethod,
             AssignableResultHandle cdiVar, Class<?> handleClass, String optionalImplClass) {
         ResultHandle operatorInstance = mc.invokeVirtualMethod(
                 selectMethod,
@@ -229,11 +253,13 @@ class OperatorSDKProcessor {
         // retrieve the reconciler's name
         final var reconcilerClassName = info.name().toString();
         final var controllerAnnotation = info.classAnnotation(CONTROLLER_CONFIGURATION);
-        final String name = ConfigurationUtils.getReconcilerName(reconcilerClassName, controllerAnnotation);
+        final String name = ConfigurationUtils.getReconcilerName(reconcilerClassName,
+                controllerAnnotation);
 
         // if we get CustomResource instead of a subclass, ignore the controller since we cannot do anything with it
         if (primaryTypeName == null || CUSTOM_RESOURCE.equals(primaryTypeDN)) {
-            log.infov("Skipped processing of ''{0}'' controller as it's not parameterized with a CustomResource sub-class",
+            log.infov(
+                    "Skipped processing of ''{0}'' controller as it's not parameterized with a CustomResource sub-class",
                     reconcilerClassName);
             return Optional.empty();
         }
@@ -261,14 +287,16 @@ class OperatorSDKProcessor {
             try {
                 isCR = JandexUtil.isSubclassOf(index, primaryCI, CUSTOM_RESOURCE);
             } catch (BuildException e) {
-                log.errorv("Couldn't ascertain if ''{0}'' is a CustomResource subclass. Assumed not to be.", e);
+                log.errorv("Couldn't ascertain if ''{0}'' is a CustomResource subclass. Assumed not to be.",
+                        e);
             }
         }
 
         String specClassName = null;
         String statusClassName = null;
         if (isCR) {
-            final var crParamTypes = JandexUtil.resolveTypeParameters(primaryTypeDN, CUSTOM_RESOURCE, index);
+            final var crParamTypes = JandexUtil.resolveTypeParameters(primaryTypeDN, CUSTOM_RESOURCE,
+                    index);
             specClassName = crParamTypes.get(0).name().toString();
             statusClassName = crParamTypes.get(1).name().toString();
             registerForReflection(reflectionClasses, specClassName);
@@ -287,7 +315,7 @@ class OperatorSDKProcessor {
 
             final boolean[] generateCurrent = { true }; // request CRD generation by default
 
-            final var crClass = (Class<? extends CustomResource>) loadClass(primaryTypeName);
+            final var crClass = loadClass(primaryTypeName, CustomResource.class);
             resourceClass = crClass;
             resourceFullName = getFullResourceName(crClass);
 
@@ -329,7 +357,8 @@ class OperatorSDKProcessor {
         // check if we need to regenerate the configuration for this controller
         QuarkusControllerConfiguration configuration = null;
         boolean regenerateConfig = true;
-        var storedConfigurations = liveReload.getContextObject(ContextStoredControllerConfigurations.class);
+        var storedConfigurations = liveReload.getContextObject(
+                ContextStoredControllerConfigurations.class);
         if (liveReload.isLiveReload() && storedConfigurations != null) {
             // check if we've already generated a configuration for this controller
             configuration = storedConfigurations.getConfigurations().get(reconcilerClassName);
@@ -364,11 +393,63 @@ class OperatorSDKProcessor {
                     controllerAnnotation, delayedRegistrationAnnotation);
 
             if (resourceFullName == null) {
-                resourceClass = (Class<? extends HasMetadata>) loadClass(primaryTypeName);
+                resourceClass = loadClass(primaryTypeName, HasMetadata.class);
                 resourceFullName = getFullResourceName(resourceClass);
             }
 
             final var crVersion = HasMetadata.getVersion(resourceClass);
+
+            // deal with dependent resources
+            var dependentResources = Collections.<QuarkusDependentResourceConfiguration> emptyList();
+            if (controllerAnnotation != null) {
+                final var dependents = controllerAnnotation.value("dependents");
+                if (dependents != null) {
+                    final var dependentAnnotations = dependents.asNestedArray();
+                    dependentResources = new ArrayList<>(dependentAnnotations.length);
+                    for (AnnotationInstance dependentConfig : dependentAnnotations) {
+                        final var dependentTypeName = dependentConfig.value("type").asClass().name();
+                        final var dependentType = index.getClassByName(dependentTypeName);
+                        if (!dependentType.hasNoArgsConstructor()) {
+                            throw new IllegalArgumentException(
+                                    "DependentResource implementations must provide a no-arg constructor for instantiation purposes");
+                        }
+
+                        // if the resource type is a Kubernetes resource, we need to retrieve the configuration
+                        final var resourceTypeName = dependentConfig.value("resourceType").asClass()
+                                .name();
+                        final var resourceType = index.getClassByName(resourceTypeName);
+                        final var resourceClassName = resourceTypeName.toString();
+                        if (resourceType.interfaceNames().contains(HAS_METADATA)) {
+                            final var kubeDepConfig = dependentType.classAnnotation(
+                                    DotName.createSimple(KubernetesDependent.class.getName()));
+                            final var labelSelector = getLabelSelector(kubeDepConfig);
+                            final Set<String> namespaces = ConfigurationUtils.annotationValueOrDefault(
+                                    kubeDepConfig,
+                                    "namespaces",
+                                    v -> new HashSet<>(Arrays.asList(v.asStringArray())),
+                                    Collections::<String> emptySet);
+                            final var owned = ConfigurationUtils.annotationValueOrDefault(
+                                    kubeDepConfig,
+                                    "owned",
+                                    AnnotationValue::asBoolean,
+                                    () -> KubernetesDependent.OWNED_DEFAULT);
+                            final var skipIfUnchanged = ConfigurationUtils.annotationValueOrDefault(
+                                    kubeDepConfig,
+                                    "skipUpdateIfUnchanged",
+                                    AnnotationValue::asBoolean,
+                                    () -> KubernetesDependent.SKIP_UPDATE_DEFAULT);
+                            final var cfg = new QuarkusKubernetesDependentResourceConfiguration(
+                                    dependentTypeName.toString(),
+                                    resourceClassName, labelSelector, skipIfUnchanged, namespaces, owned);
+                            dependentResources.add(cfg);
+                        } else {
+                            dependentResources.add(
+                                    new QuarkusDependentResourceConfiguration(dependentTypeName.toString(), resourceClassName));
+                        }
+                    }
+
+                }
+            }
 
             // create the configuration
             configuration = new QuarkusControllerConfiguration(
@@ -383,13 +464,15 @@ class OperatorSDKProcessor {
                     getFinalizer(controllerAnnotation, resourceFullName),
                     getLabelSelector(controllerAnnotation),
                     Optional.ofNullable(specClassName),
-                    Optional.ofNullable(statusClassName));
+                    Optional.ofNullable(statusClassName),
+                    dependentResources);
 
             log.infov(
                     "Processed ''{0}'' reconciler named ''{1}'' for ''{2}'' resource (version ''{3}'')",
                     reconcilerClassName, name, resourceFullName, HasMetadata.getApiVersion(resourceClass));
         } else {
-            log.infov("Skipped configuration reload for ''{0}'' reconciler as no changes were detected", reconcilerClassName);
+            log.infov("Skipped configuration reload for ''{0}'' reconciler as no changes were detected",
+                    reconcilerClassName);
         }
 
         // store the configuration in the live reload context
@@ -446,7 +529,8 @@ class OperatorSDKProcessor {
         ClassUtils.getKnownReconcilers(index, log).forEach(info -> {
             final var controllerClassName = info.name().toString();
             final var controllerAnnotation = info.classAnnotation(CONTROLLER_CONFIGURATION);
-            final var name = ConfigurationUtils.getReconcilerName(controllerClassName, controllerAnnotation);
+            final var name = ConfigurationUtils.getReconcilerName(controllerClassName,
+                    controllerAnnotation);
 
             // extract the configuration from annotation and/or external configuration
             final var configExtractor = new BuildTimeHybridControllerConfiguration(
