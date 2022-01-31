@@ -15,9 +15,13 @@ public class ClassUtils {
     private ClassUtils() {
     }
 
-    public static Class<?> loadClass(String className) {
+    public static <T> Class<T> loadClassIfNeeded(String className, Class<T> loadedOrNull) {
+        return loadedOrNull == null ? loadClass(className, loadedOrNull) : loadedOrNull;
+    }
+
+    public static <T> Class<T> loadClass(String className, Class<T> expected) {
         try {
-            return Thread.currentThread().getContextClassLoader().loadClass(className);
+            return (Class<T>) Thread.currentThread().getContextClassLoader().loadClass(className);
         } catch (Exception e) {
             throw new IllegalArgumentException("Couldn't find class " + className, e);
         }
