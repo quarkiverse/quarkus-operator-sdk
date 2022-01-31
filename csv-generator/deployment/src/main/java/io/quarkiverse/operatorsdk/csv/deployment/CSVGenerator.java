@@ -2,7 +2,6 @@ package io.quarkiverse.operatorsdk.csv.deployment;
 
 import java.io.IOException;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -49,7 +48,7 @@ public class CSVGenerator {
 
     public static Set<NamedCSVBuilder> prepareGeneration(Map<String, AugmentedResourceInfo> info,
             Map<String, CSVMetadataHolder> csvMetadata) {
-        final var csvBuilders = new HashMap<String, NamedCSVBuilder>(7);
+        final var csvBuilders = new ConcurrentHashMap<String, NamedCSVBuilder>(7);
         return info.values().parallelStream()
                 .map(cri -> csvBuilders.computeIfAbsent(cri.getCsvGroupName(),
                         s -> new NamedCSVBuilder(cri, csvMetadata)))
