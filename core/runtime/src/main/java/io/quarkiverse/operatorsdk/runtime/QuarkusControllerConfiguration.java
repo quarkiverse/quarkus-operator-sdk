@@ -1,9 +1,10 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import static io.quarkiverse.operatorsdk.common.ClassUtils.loadClass;
+import static io.quarkiverse.operatorsdk.common.ClassUtils.loadClassIfNeeded;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -11,6 +12,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.DependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
@@ -26,6 +28,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final String resourceClassName;
     private final Optional<String> specClassName;
     private final Optional<String> statusClassName;
+    private List<DependentResourceConfiguration> dependentResources;
     private String finalizer;
     private Set<String> namespaces;
     private RetryConfiguration retryConfiguration;
@@ -41,7 +44,8 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             String crVersion, boolean generationAware,
             String resourceClassName,
             boolean registrationDelayed, Set<String> namespaces, String finalizer, String labelSelector,
-            Optional<String> specClassName, Optional<String> statusClassName) {
+            Optional<String> specClassName, Optional<String> statusClassName,
+            List<DependentResourceConfiguration> dependentResources) {
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
         this.resourceTypeName = resourceTypeName;
@@ -55,6 +59,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.labelSelector = labelSelector;
         this.specClassName = specClassName;
         this.statusClassName = statusClassName;
+        this.dependentResources = dependentResources;
     }
 
     public static Set<String> asSet(String[] namespaces) {
@@ -74,10 +79,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     @Override
     @IgnoreProperty
     public Class<R> getResourceClass() {
-        if (resourceClass == null) {
-            resourceClass = (Class<R>) loadClass(resourceClassName);
-        }
-        return resourceClass;
+        return resourceClass = loadClassIfNeeded(resourceClassName, resourceClass);
     }
 
     @Override
@@ -136,6 +138,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     @Override
     public void setConfigurationService(ConfigurationService configurationService) {
         this.parent = configurationService;
+        // todo: do we also need to set the configuration service on the dependent resource configs?
     }
 
     void setRetryConfiguration(RetryConfiguration retryConfiguration) {
@@ -164,5 +167,10 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     public Optional<String> getStatusClassName() {
         return statusClassName;
+    }
+
+    @Override
+    public List<DependentResourceConfiguration> getDependentResources() {
+        return dependentResources;
     }
 }
