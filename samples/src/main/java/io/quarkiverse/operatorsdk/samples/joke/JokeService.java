@@ -21,8 +21,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
-import org.jboss.resteasy.annotations.jaxrs.PathParam;
-import org.jboss.resteasy.annotations.jaxrs.QueryParam;
+import org.jboss.resteasy.reactive.RestPath;
+import org.jboss.resteasy.reactive.RestQuery;
 
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestSpec.Category;
 
@@ -33,6 +33,6 @@ public interface JokeService {
     @GET
     @Path("/{category}/any")
     @Produces("application/json")
-    JokeModel getRandom(@PathParam Category category, @QueryParam(value = "blacklistFlags") String excluded,
-            @QueryParam(value = "safe-mode") boolean safe, @DefaultValue("single") @QueryParam(value = "type") String type);
+    JokeModel getRandom(@RestPath Category category, @RestQuery(value = "blacklistFlags") String excluded,
+            @RestQuery(value = "safe-mode") boolean safe, @DefaultValue("single") @RestQuery String type);
 }
