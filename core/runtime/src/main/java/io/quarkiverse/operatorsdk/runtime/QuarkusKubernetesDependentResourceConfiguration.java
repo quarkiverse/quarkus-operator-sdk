@@ -7,6 +7,7 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.KubernetesDependentResourceConfiguration;
 import io.javaoperatorsdk.operator.processing.event.source.AssociatedSecondaryResourceIdentifier;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryResourcesRetriever;
+import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
 public class QuarkusKubernetesDependentResourceConfiguration<R extends HasMetadata, P extends HasMetadata> extends
@@ -32,6 +33,22 @@ public class QuarkusKubernetesDependentResourceConfiguration<R extends HasMetada
         this.skipUpdateEventPropagationIfNoChange = skipUpdateEventPropagationIfNoChange;
         this.namespaces = namespaces;
         this.owned = owned;
+    }
+
+    @Override
+    public String getLabelSelector() {
+        return labelSelector;
+    }
+
+    @IgnoreProperty
+    @Override
+    public Set<String> getEffectiveNamespaces() {
+        return KubernetesDependentResourceConfiguration.super.getEffectiveNamespaces();
+    }
+
+    @Override
+    public Set<String> getNamespaces() {
+        return namespaces;
     }
 
     @Override
