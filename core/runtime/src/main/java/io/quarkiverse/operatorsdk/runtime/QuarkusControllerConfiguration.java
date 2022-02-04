@@ -12,8 +12,9 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.DependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependentResourceConfiguration;
 import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
