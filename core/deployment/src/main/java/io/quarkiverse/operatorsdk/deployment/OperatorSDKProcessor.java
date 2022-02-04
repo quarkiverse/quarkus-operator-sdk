@@ -37,7 +37,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.KubernetesDependent;
+import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependent;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
@@ -444,7 +444,8 @@ class OperatorSDKProcessor {
                                     () -> KubernetesDependent.SKIP_UPDATE_DEFAULT);
                             final var cfg = new QuarkusKubernetesDependentResourceConfiguration(
                                     dependentTypeName.toString(),
-                                    resourceClassName, labelSelector, skipIfUnchanged, namespaces, owned);
+                                    resourceClassName, labelSelector, skipIfUnchanged,
+                                    dependentNamespaces, owned);
                             dependentResources.add(cfg);
                         } else {
                             dependentResources.add(
@@ -464,7 +465,7 @@ class OperatorSDKProcessor {
                     configExtractor.generationAware(),
                     primaryTypeName,
                     configExtractor.delayedRegistration(),
-                    configExtractor.namespaces(name),
+                    namespaces,
                     getFinalizer(controllerAnnotation, resourceFullName),
                     getLabelSelector(controllerAnnotation),
                     Optional.ofNullable(specClassName),

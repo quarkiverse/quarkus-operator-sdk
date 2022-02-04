@@ -1,8 +1,8 @@
 package io.quarkiverse.operatorsdk.runtime;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.DependentResource;
-import io.javaoperatorsdk.operator.api.config.DependentResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
