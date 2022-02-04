@@ -397,6 +397,9 @@ class OperatorSDKProcessor {
 
             final var crVersion = HasMetadata.getVersion(resourceClass);
 
+            // extract the namespaces
+            final var namespaces = configExtractor.namespaces(name);
+
             // deal with dependent resources
             var dependentResources = Collections.<QuarkusDependentResourceConfiguration> emptyList();
             if (controllerAnnotation != null) {
@@ -421,11 +424,12 @@ class OperatorSDKProcessor {
                             final var kubeDepConfig = dependentType.classAnnotation(
                                     DotName.createSimple(KubernetesDependent.class.getName()));
                             final var labelSelector = getLabelSelector(kubeDepConfig);
-                            final Set<String> namespaces = ConfigurationUtils.annotationValueOrDefault(
+                            // if the dependent doesn't explicitly provide a namespace configuration, inherit the configuration from the reconciler configuration
+                            final Set<String> dependentNamespaces = ConfigurationUtils.annotationValueOrDefault(
                                     kubeDepConfig,
-                                    "namespaces",
-                                    v -> new HashSet<>(Arrays.asList(v.asStringArray())),
-                                    Collections::<String> emptySet);
+                                    "namespaces", v -> new HashSet<>(
+                                            Arrays.asList(v.asStringArray())),
+                                    () -> namespaces);
                             final var owned = ConfigurationUtils.annotationValueOrDefault(
                                     kubeDepConfig,
                                     "owned",
