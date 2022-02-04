@@ -138,7 +138,12 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     @Override
     public void setConfigurationService(ConfigurationService configurationService) {
         this.parent = configurationService;
-        // todo: do we also need to set the configuration service on the dependent resource configs?
+        dependentResources.forEach(drc -> {
+            if (drc instanceof KubernetesDependentResourceConfiguration) {
+                KubernetesDependentResourceConfiguration kdrc = (KubernetesDependentResourceConfiguration) drc;
+                kdrc.setConfigurationService(configurationService);
+            }
+        });
     }
 
     void setRetryConfiguration(RetryConfiguration retryConfiguration) {
