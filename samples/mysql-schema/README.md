@@ -38,7 +38,7 @@ cluster. You can just follow the steps below to get started quickly:
   kubectl apply -f target/kubernetes/mysqlschemas.mysql.sample.javaoperatorsdk-v1.yml
   ```           
 - If you look at the application.properties, you will notice this is where the access to the MySQL server is configured.
-  Obviously, such a server should be running. For eg. `docker run -d --name some-mysql -e MYSQL_ROOT_PASSWORD=password -p 3306:3306 mysql:5`
+  In dev mode, such a server is provided by [Quarkus DevService](https://quarkus.io/guides/dev-services).
 - Launch the app in dev mode: `mvn quarkus:dev`
 - Deploy the test schema (or your own): `kubectl apply -f src/main/resources/mydb.yml`
 - The operator will take your request and attempt to create the schema. If everything
