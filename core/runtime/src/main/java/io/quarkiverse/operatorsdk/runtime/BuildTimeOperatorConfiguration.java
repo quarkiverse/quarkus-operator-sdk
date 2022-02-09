@@ -53,4 +53,10 @@ public class BuildTimeOperatorConfiguration {
      */
     @ConfigItem(defaultValue = "false")
     public Boolean disableRbacGeneration;
+
+    /**
+     * Whether the operator should be automatically started or not. Mostly useful for testing scenarios.
+     */
+    @ConfigItem(defaultValue = "true")
+    public Boolean startOperator;
 }

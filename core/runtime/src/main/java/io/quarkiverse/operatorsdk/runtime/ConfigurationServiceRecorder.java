@@ -14,10 +14,11 @@ import io.quarkus.runtime.annotations.Recorder;
 @Recorder
 public class ConfigurationServiceRecorder {
 
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public Supplier<QuarkusConfigurationService> configurationServiceSupplier(Version version,
             Map<String, QuarkusControllerConfiguration> configurations,
-            CRDGenerationInfo crdInfo, RunTimeOperatorConfiguration runTimeConfiguration) {
+            CRDGenerationInfo crdInfo, RunTimeOperatorConfiguration runTimeConfiguration,
+            BuildTimeOperatorConfiguration buildTimeConfiguration) {
         final var maxThreads = runTimeConfiguration.concurrentReconciliationThreads
                 .orElse(ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
         final var timeout = runTimeConfiguration.terminationTimeoutSeconds
@@ -46,6 +47,7 @@ public class ConfigurationServiceRecorder {
                 maxThreads,
                 timeout,
                 Arc.container().instance(ObjectMapper.class).get(),
-                Arc.container().instance(Metrics.class).get());
+                Arc.container().instance(Metrics.class).get(),
+                buildTimeConfiguration.startOperator);
     }
 }
