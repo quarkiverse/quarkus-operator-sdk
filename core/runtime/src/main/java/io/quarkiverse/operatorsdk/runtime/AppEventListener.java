@@ -28,10 +28,14 @@ public class AppEventListener {
             log.info("Quarkus Java Operator SDK extension {} (commit: {}{}) built on {}", version.getExtensionVersion(),
                     version.getExtensionCommit(), branch, version.getExtensionBuildTime());
         }
-        if (!operator.getControllers().isEmpty()) {
-            operator.start();
+        if (configurationService.shouldStartOperator()) {
+            if (!operator.getControllers().isEmpty()) {
+                operator.start();
+            } else {
+                log.warn("No Reconciler implementation was found so the Operator was not started.");
+            }
         } else {
-            log.warn("No Reconciler implementation was found so the Operator was not started.");
+            log.warn("Operator was configured not to start automatically, call the start method to start it.");
         }
     }
 

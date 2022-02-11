@@ -32,18 +32,20 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     private final int terminationTimeout;
     private final Map<String, String> reconcilerClassToName;
     private final Metrics metrics;
+    private final boolean startOperator;
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public QuarkusConfigurationService(
             Version version,
             Collection<QuarkusControllerConfiguration> configurations,
             KubernetesClient client,
             CRDGenerationInfo crdInfo, int maxThreads,
-            int timeout, ObjectMapper mapper, Metrics metrics) {
+            int timeout, ObjectMapper mapper, Metrics metrics, boolean startOperator) {
         super(version);
+        this.startOperator = startOperator;
         this.client = client;
         this.cloner = new Cloner() {
             @Override
-            @SuppressWarnings("unchecked")
             public <R extends HasMetadata> R clone(R r) {
                 try {
                     return (R) mapper.readValue(mapper.writeValueAsString(r), r.getClass());
@@ -138,5 +140,9 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
 
     KubernetesClient getClient() {
         return client;
+    }
+
+    boolean shouldStartOperator() {
+        return startOperator;
     }
 }

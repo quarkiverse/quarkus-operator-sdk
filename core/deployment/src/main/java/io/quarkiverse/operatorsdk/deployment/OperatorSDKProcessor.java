@@ -131,7 +131,7 @@ class OperatorSDKProcessor {
                 .configurationServiceSupplier(serviceBuildItem.getVersion(),
                         serviceBuildItem.getControllerConfigs(),
                         generatedCRDs.getCRDGenerationInfo(),
-                        runTimeConfiguration);
+                        runTimeConfiguration, buildTimeConfiguration);
         syntheticBeanBuildItemBuildProducer.produce(
                 SyntheticBeanBuildItem.configure(QuarkusConfigurationService.class)
                         .scope(Singleton.class)
@@ -208,6 +208,7 @@ class OperatorSDKProcessor {
     }
 
     @BuildStep(onlyIf = IsRBACEnabled.class)
+    @SuppressWarnings("unchecked")
     public void addRBACForResources(BuildProducer<DecoratorBuildItem> decorators,
             ConfigurationServiceBuildItem configurations) {
 
@@ -237,6 +238,7 @@ class OperatorSDKProcessor {
         return mc.checkCast(mc.invokeInterfaceMethod(getMethod, operatorInstance), handleClass);
     }
 
+    @SuppressWarnings("unchecked")
     private Optional<QuarkusControllerConfiguration> createControllerConfiguration(
             ClassInfo info,
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
