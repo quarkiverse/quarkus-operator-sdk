@@ -108,8 +108,7 @@ class OperatorSDKProcessor {
         unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(ObjectMapper.class));
 
         // only add micrometer support if the capability is supported
-        if (metricsCapability.isPresent() && metricsCapability.get()
-                .metricsSupported(MetricsFactory.MICROMETER)) {
+        if (metricsCapability.map(m -> m.metricsSupported(MetricsFactory.MICROMETER)).orElse(false)) {
             // we use the class name to not import any micrometer-related dependencies to prevent activation
             additionalBeans.produce(
                     AdditionalBeanBuildItem.unremovableOf(
@@ -153,8 +152,7 @@ class OperatorSDKProcessor {
 
         final CRDConfiguration crdConfig = buildTimeConfiguration.crd;
         final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(
-                buildTimeConfiguration.checkCRDAndValidateLocalModel, buildTimeConfiguration.crd.validate,
-                log);
+                buildTimeConfiguration.crd.validate);
 
         // apply should imply generate: we cannot apply if we're not generating!
         final var crdGeneration = new CRDGeneration(crdConfig.generate || crdConfig.apply);
