@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.KubernetesListBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
-import io.quarkiverse.operatorsdk.common.ResourceInfo;
+import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 
 public class AddClusterRolesDecorator extends ResourceProvidingDecorator<KubernetesListBuilder> {
 

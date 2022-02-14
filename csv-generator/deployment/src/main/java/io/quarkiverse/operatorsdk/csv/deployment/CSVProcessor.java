@@ -22,12 +22,12 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
-import io.quarkiverse.operatorsdk.common.ResourceInfo;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVGenerationConfiguration;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVMetadata;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.csv.runtime.SharedCSVMetadata;
 import io.quarkiverse.operatorsdk.deployment.ConfigurationServiceBuildItem;
+import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
@@ -42,6 +42,7 @@ public class CSVProcessor {
 
     private CSVGenerationConfiguration configuration;
 
+    @SuppressWarnings("unchecked")
     @BuildStep
     CSVMetadataBuildItem gatherCSVMetadata(CombinedIndexBuildItem combinedIndexBuildItem,
             ConfigurationServiceBuildItem configurations) {
@@ -162,7 +163,7 @@ public class CSVProcessor {
         }
 
         final var maintainersField = csvMetadata.value("maintainers");
-        CSVMetadataHolder.Maintainer[] maintainers = null;
+        CSVMetadataHolder.Maintainer[] maintainers;
         if (maintainersField != null) {
             final var maintainersAnn = maintainersField.asNestedArray();
             maintainers = new CSVMetadataHolder.Maintainer[maintainersAnn.length];
