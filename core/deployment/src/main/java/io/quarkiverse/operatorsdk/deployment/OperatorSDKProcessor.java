@@ -84,7 +84,7 @@ import io.quarkus.kubernetes.spi.DecoratorBuildItem;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.metrics.MetricsFactory;
 
-@SuppressWarnings("rawtypes")
+@SuppressWarnings({ "rawtypes", "unused" })
 class OperatorSDKProcessor {
 
     static final Logger log = Logger.getLogger(OperatorSDKProcessor.class.getName());
