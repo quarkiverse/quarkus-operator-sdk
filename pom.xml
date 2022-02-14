@@ -11,16 +11,25 @@
   <version>3.0.4-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Quarkus - Operator SDK - Parent</name>
-  <modules>
-    <module>bom</module>
-    <module>build-parent</module>
-    <module>samples</module>
-    <module>csv-generator</module>
-    <module>core</module>
-    <module>common</module>
-    <module>integration-tests</module>
-  </modules>
+
   <profiles>
+    <profile>
+      <id>default</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+        <property>
+          <name>!default</name>
+        </property>
+      </activation>
+      <modules>
+        <module>bom</module>
+        <module>build-parent</module>
+        <module>common</module>
+        <module>core</module>
+        <module>csv-generator</module>
+        <module>integration-tests</module>
+      </modules>
+    </profile>
     <profile>
       <id>it</id>
       <activation>
@@ -48,6 +57,17 @@
       <build>
         <defaultGoal>clean install</defaultGoal>
       </build>
+    </profile>
+    <profile>
+      <id>no-samples</id>
+      <activation>
+        <property>
+          <name>!no-samples</name>
+        </property>
+      </activation>
+      <modules>
+        <module>samples</module>
+      </modules>
     </profile>
   </profiles>
 </project>
