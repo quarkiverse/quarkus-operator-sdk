@@ -25,6 +25,7 @@
         <module>bom</module>
         <module>build-parent</module>
         <module>common</module>
+        <module>common-deployment</module>
         <module>core</module>
         <module>csv-generator</module>
         <module>integration-tests</module>
