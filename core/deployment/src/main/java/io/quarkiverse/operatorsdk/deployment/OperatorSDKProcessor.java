@@ -1,6 +1,6 @@
 package io.quarkiverse.operatorsdk.deployment;
 
-import static io.quarkiverse.operatorsdk.common.ClassUtils.loadClass;
+import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.loadClass;
 import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATION;
 import static io.quarkiverse.operatorsdk.common.Constants.CUSTOM_RESOURCE;
 import static io.quarkiverse.operatorsdk.common.Constants.HAS_METADATA;
@@ -41,7 +41,6 @@ import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependent;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
-import io.quarkiverse.operatorsdk.common.ResourceInfo;
 import io.quarkiverse.operatorsdk.runtime.AppEventListener;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
@@ -54,6 +53,7 @@ import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusDependentResourceConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusKubernetesDependentResourceConfiguration;
+import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.Version;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
@@ -157,8 +157,7 @@ class OperatorSDKProcessor {
         // apply should imply generate: we cannot apply if we're not generating!
         final var crdGeneration = new CRDGeneration(crdConfig.generate || crdConfig.apply);
         final var index = combinedIndexBuildItem.getIndex();
-        final List<QuarkusControllerConfiguration> controllerConfigs = ClassUtils.getKnownReconcilers(
-                index, log)
+        final List<QuarkusControllerConfiguration> controllerConfigs = ClassUtils.getKnownReconcilers(index, log)
                 .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses,
                         forcedReflectionClasses,
                         index, crdGeneration, liveReload))
@@ -244,7 +243,8 @@ class OperatorSDKProcessor {
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             IndexView index, CRDGeneration crdGeneration, LiveReloadBuildItem liveReload) {
         // first retrieve the target resource class name
-        final var primaryType = JandexUtil.resolveTypeParameters(info.name(), RECONCILER, index).get(0);
+        final var primaryType = JandexUtil.resolveTypeParameters(info.name(), RECONCILER, index)
+                .get(0);
         final var primaryTypeDN = primaryType.name();
         final var primaryTypeName = primaryTypeDN.toString();
 
@@ -257,7 +257,7 @@ class OperatorSDKProcessor {
         // if we get CustomResource instead of a subclass, ignore the controller since we cannot do anything with it
         if (primaryTypeName == null || CUSTOM_RESOURCE.equals(primaryTypeDN)) {
             log.infov(
-                    "Skipped processing of ''{0}'' controller as it's not parameterized with a CustomResource sub-class",
+                    "Skipped processing of ''{0}'' controller as it''s not parameterized with a CustomResource sub-class",
                     reconcilerClassName);
             return Optional.empty();
         }
