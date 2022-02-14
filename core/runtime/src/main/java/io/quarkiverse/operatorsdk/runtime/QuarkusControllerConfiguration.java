@@ -1,6 +1,6 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import static io.quarkiverse.operatorsdk.common.ClassUtils.loadClassIfNeeded;
+import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.loadClassIfNeeded;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -18,6 +18,7 @@ import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependentResou
 import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
+@SuppressWarnings("rawtypes")
 public class QuarkusControllerConfiguration<R extends HasMetadata> implements ControllerConfiguration<R> {
 
     private final String associatedReconcilerClassName;
@@ -29,7 +30,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final String resourceClassName;
     private final Optional<String> specClassName;
     private final Optional<String> statusClassName;
-    private List<DependentResourceConfiguration> dependentResources;
+    private final List<DependentResourceConfiguration> dependentResources;
     private String finalizer;
     private Set<String> namespaces;
     private RetryConfiguration retryConfiguration;

@@ -15,18 +15,6 @@ public class ClassUtils {
     private ClassUtils() {
     }
 
-    public static <T> Class<T> loadClassIfNeeded(String className, Class<T> loadedOrNull) {
-        return loadedOrNull == null ? loadClass(className, loadedOrNull) : loadedOrNull;
-    }
-
-    public static <T> Class<T> loadClass(String className, Class<T> expected) {
-        try {
-            return (Class<T>) Thread.currentThread().getContextClassLoader().loadClass(className);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Couldn't find class " + className, e);
-        }
-    }
-
     /**
      * Only retrieve {@link io.javaoperatorsdk.operator.api.reconciler.Reconciler} implementations that should be considered by
      * the extension, excluding the SDK's own implementations.
@@ -42,7 +30,7 @@ public class ClassUtils {
     private static boolean keep(ClassInfo ci, Logger log) {
         final var consideredClassName = ci.name();
         if (Modifier.isAbstract(ci.flags())) {
-            log.debugv("Skipping ''{0}'' controller because it's abstract", consideredClassName);
+            log.debugv("Skipping ''{0}'' reconciler because it''s abstract", consideredClassName);
             return false;
         }
 
