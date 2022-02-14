@@ -69,7 +69,13 @@ public class ClassUtils {
     private static Optional<ReconcilerInfo> keep(ClassInfo ci, IndexView index, Logger log) {
         final var consideredClassName = ci.name();
         if (Modifier.isAbstract(ci.flags())) {
-            log.debugv("Skipping ''{0}'' reconciler because it''s abstract", consideredClassName);
+            log.warnv("Skipping ''{0}'' reconciler because it''s abstract", consideredClassName);
+            return Optional.empty();
+        }
+
+        // Ignore Reconciler implementations annotated with @Ignore
+        if (ci.annotations().containsKey(IGNORE_RECONCILER)) {
+            log.debugv("Skipping ''{0}'' reconciler because it''s annotated with @Ignore", consideredClassName);
             return Optional.empty();
         }
 
@@ -77,13 +83,12 @@ public class ClassUtils {
         final var primaryTypeDN = info.primaryTypeName;
         // if we get CustomResource instead of a subclass, ignore the controller since we cannot do anything with it
         if (primaryTypeDN.toString() == null || CUSTOM_RESOURCE.equals(primaryTypeDN) || HAS_METADATA.equals(primaryTypeDN)) {
-            log.infov(
+            log.warnv(
                     "Skipped processing of ''{0}'' reconciler as it''s not parameterized with a CustomResource or HasMetadata sub-class",
                     info.name);
             return Optional.empty();
         }
 
-        // Ignore SDK internal Reconciler implementations
-        return !ci.annotations().containsKey(IGNORE_RECONCILER) ? Optional.of(info) : Optional.empty();
+        return Optional.of(info);
     }
 }
