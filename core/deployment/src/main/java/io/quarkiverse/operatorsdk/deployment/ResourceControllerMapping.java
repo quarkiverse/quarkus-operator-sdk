@@ -3,7 +3,7 @@ package io.quarkiverse.operatorsdk.deployment;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.quarkiverse.operatorsdk.common.ResourceInfo;
+import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 
 public class ResourceControllerMapping {
     private final Map<String, Map<String, ResourceInfo>> resourceFullNameToVersionToInfos = new HashMap<>(7);

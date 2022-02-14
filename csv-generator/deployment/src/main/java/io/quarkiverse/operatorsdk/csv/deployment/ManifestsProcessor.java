@@ -28,13 +28,13 @@ import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
-import io.quarkiverse.operatorsdk.common.ResourceInfo;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVGenerationConfiguration;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVMetadata;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.csv.runtime.SharedCSVMetadata;
 import io.quarkiverse.operatorsdk.deployment.ConfigurationServiceBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
+import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
@@ -48,6 +48,7 @@ public class ManifestsProcessor {
     private static final DotName CSV_METADATA = DotName.createSimple(CSVMetadata.class.getName());
     private static final String MANIFESTS = "manifests";
 
+    @SuppressWarnings("unchecked")
     @BuildStep
     CSVMetadataBuildItem gatherCSVMetadata(CombinedIndexBuildItem combinedIndexBuildItem,
             ConfigurationServiceBuildItem configurations) {
@@ -203,7 +204,7 @@ public class ManifestsProcessor {
         }
 
         final var maintainersField = csvMetadata.value("maintainers");
-        CSVMetadataHolder.Maintainer[] maintainers = null;
+        CSVMetadataHolder.Maintainer[] maintainers;
         if (maintainersField != null) {
             final var maintainersAnn = maintainersField.asNestedArray();
             maintainers = new CSVMetadataHolder.Maintainer[maintainersAnn.length];
