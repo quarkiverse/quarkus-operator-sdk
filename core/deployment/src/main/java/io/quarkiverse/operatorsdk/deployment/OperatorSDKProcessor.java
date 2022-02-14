@@ -490,7 +490,7 @@ class OperatorSDKProcessor {
     private void registerForReflection(
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses, String className) {
         Optional.ofNullable(className)
-                .filter(s -> !Void.TYPE.getName().equals(className))
+                .filter(s -> !className.startsWith("java."))
                 .ifPresent(
                         cn -> {
                             reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, cn));
