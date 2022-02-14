@@ -4,7 +4,6 @@ import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.loadClass;
 import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATION;
 import static io.quarkiverse.operatorsdk.common.Constants.CUSTOM_RESOURCE;
 import static io.quarkiverse.operatorsdk.common.Constants.HAS_METADATA;
-import static io.quarkiverse.operatorsdk.common.Constants.RECONCILER;
 import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.lang.annotation.Annotation;
@@ -25,7 +24,6 @@ import javax.inject.Singleton;
 
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
-import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
@@ -40,6 +38,7 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependent;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
+import io.quarkiverse.operatorsdk.common.ClassUtils.ReconcilerInfo;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.runtime.AppEventListener;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
@@ -158,11 +157,9 @@ class OperatorSDKProcessor {
         final var crdGeneration = new CRDGeneration(crdConfig.generate || crdConfig.apply);
         final var index = combinedIndexBuildItem.getIndex();
         final List<QuarkusControllerConfiguration> controllerConfigs = ClassUtils.getKnownReconcilers(index, log)
-                .map(ci -> createControllerConfiguration(ci, additionalBeans, reflectionClasses,
+                .map(info -> createControllerConfiguration(info, additionalBeans, reflectionClasses,
                         forcedReflectionClasses,
                         index, crdGeneration, liveReload))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
                 .collect(Collectors.toList());
 
         // retrieve the known CRD information to make sure we always have a full view
@@ -236,31 +233,19 @@ class OperatorSDKProcessor {
     }
 
     @SuppressWarnings("unchecked")
-    private Optional<QuarkusControllerConfiguration> createControllerConfiguration(
-            ClassInfo info,
+    private QuarkusControllerConfiguration createControllerConfiguration(
+            ReconcilerInfo reconcilerInfo,
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             IndexView index, CRDGeneration crdGeneration, LiveReloadBuildItem liveReload) {
-        // first retrieve the target resource class name
-        final var primaryType = JandexUtil.resolveTypeParameters(info.name(), RECONCILER, index)
-                .get(0);
-        final var primaryTypeDN = primaryType.name();
+        final var primaryTypeDN = reconcilerInfo.primaryTypeName();
         final var primaryTypeName = primaryTypeDN.toString();
 
         // retrieve the reconciler's name
-        final var reconcilerClassName = info.name().toString();
-        final var controllerAnnotation = info.classAnnotation(CONTROLLER_CONFIGURATION);
-        final String name = ConfigurationUtils.getReconcilerName(reconcilerClassName,
-                controllerAnnotation);
-
-        // if we get CustomResource instead of a subclass, ignore the controller since we cannot do anything with it
-        if (primaryTypeName == null || CUSTOM_RESOURCE.equals(primaryTypeDN)) {
-            log.infov(
-                    "Skipped processing of ''{0}'' controller as it''s not parameterized with a CustomResource sub-class",
-                    reconcilerClassName);
-            return Optional.empty();
-        }
+        final var info = reconcilerInfo.classInfo();
+        final var reconcilerClassName = info.toString();
+        final String name = reconcilerInfo.name();
 
         // create Reconciler bean
         additionalBeans.produce(
@@ -385,6 +370,7 @@ class OperatorSDKProcessor {
         if (regenerateConfig) {
             // extract the configuration from annotation and/or external configuration
             final var delayedRegistrationAnnotation = info.classAnnotation(DELAY_REGISTRATION);
+            final var controllerAnnotation = info.classAnnotation(CONTROLLER_CONFIGURATION);
 
             final var configExtractor = new BuildTimeHybridControllerConfiguration(buildTimeConfiguration,
                     buildTimeConfiguration.controllers.get(name),
@@ -480,7 +466,7 @@ class OperatorSDKProcessor {
         storedConfigurations.getConfigurations().put(reconcilerClassName, configuration);
         liveReload.setContextObject(ContextStoredControllerConfigurations.class, storedConfigurations);
 
-        return Optional.of(configuration);
+        return configuration;
     }
 
     private String getFullResourceName(Class<? extends HasMetadata> crClass) {
@@ -524,11 +510,11 @@ class OperatorSDKProcessor {
             BuildProducer<ObserverConfiguratorBuildItem> observerConfigurators) {
 
         final var index = combinedIndexBuildItem.getIndex();
-        ClassUtils.getKnownReconcilers(index, log).forEach(info -> {
+        ClassUtils.getKnownReconcilers(index, log).forEach(reconcilerInfo -> {
+            final var info = reconcilerInfo.classInfo();
             final var controllerClassName = info.name().toString();
             final var controllerAnnotation = info.classAnnotation(CONTROLLER_CONFIGURATION);
-            final var name = ConfigurationUtils.getReconcilerName(controllerClassName,
-                    controllerAnnotation);
+            final var name = reconcilerInfo.name();
 
             // extract the configuration from annotation and/or external configuration
             final var configExtractor = new BuildTimeHybridControllerConfiguration(
