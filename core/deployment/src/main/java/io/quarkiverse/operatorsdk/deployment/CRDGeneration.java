@@ -46,7 +46,9 @@ class CRDGeneration {
             final String outputDirName = crdConfig.outputDirectory;
             final var outputDir = outputTarget.getOutputDirectory().resolve(outputDirName).toFile();
             if (!outputDir.exists()) {
-                outputDir.mkdirs();
+                if (!outputDir.mkdirs()) {
+                    throw new IllegalArgumentException("Couldn't create " + outputDir.getAbsolutePath());
+                }
             }
 
             // generate CRDs with detailed information
@@ -71,6 +73,7 @@ class CRDGeneration {
         return new CRDGenerationInfo(crdConfig.apply, validateCustomResources, converted, generated);
     }
 
+    @SuppressWarnings("rawtypes")
     public void withCustomResource(Class<? extends CustomResource> crClass, String crdName, String associatedControllerName) {
         try {
             final var info = CustomResourceInfo.fromClass(crClass);
