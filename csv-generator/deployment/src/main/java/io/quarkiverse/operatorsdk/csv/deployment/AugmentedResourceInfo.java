@@ -2,7 +2,7 @@ package io.quarkiverse.operatorsdk.csv.deployment;
 
 import java.util.Objects;
 
-import io.quarkiverse.operatorsdk.common.ResourceInfo;
+import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
 public class AugmentedResourceInfo extends ResourceInfo {
