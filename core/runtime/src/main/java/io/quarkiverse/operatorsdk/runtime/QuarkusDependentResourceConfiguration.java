@@ -3,7 +3,7 @@ package io.quarkiverse.operatorsdk.runtime;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.quarkiverse.operatorsdk.common.ClassUtils;
+import io.quarkiverse.operatorsdk.common.ClassLoadingUtils;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
 public class QuarkusDependentResourceConfiguration<R, P extends HasMetadata> implements
@@ -23,13 +23,13 @@ public class QuarkusDependentResourceConfiguration<R, P extends HasMetadata> imp
 
     @Override
     public Class<? extends DependentResource<R, P, ? extends DependentResourceConfiguration<R, P>>> getDependentResourceClass() {
-        return dependentResourceClass = ClassUtils.loadClassIfNeeded(dependentResourceClassName,
+        return dependentResourceClass = ClassLoadingUtils.loadClassIfNeeded(dependentResourceClassName,
                 dependentResourceClass);
     }
 
     @Override
     public Class<R> getResourceClass() {
-        return resourceClass = ClassUtils.loadClass(resourceClassName, resourceClass);
+        return resourceClass = ClassLoadingUtils.loadClass(resourceClassName, resourceClass);
     }
 
     public String getDependentResourceClassName() {
