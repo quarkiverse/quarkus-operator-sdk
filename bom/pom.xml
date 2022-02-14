@@ -94,6 +94,11 @@
           <artifactId>quarkus-operator-sdk-common</artifactId>
           <version>${project.version}</version>
         </dependency>
+      <dependency>
+          <groupId>io.quarkiverse.operatorsdk</groupId>
+          <artifactId>quarkus-operator-sdk-common-deployment</artifactId>
+          <version>${project.version}</version>
+        </dependency>
       </dependencies>
     </dependencyManagement>
 </project>
