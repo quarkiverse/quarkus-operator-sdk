@@ -435,14 +435,9 @@ class OperatorSDKProcessor {
                                     "owned",
                                     AnnotationValue::asBoolean,
                                     () -> KubernetesDependent.OWNED_DEFAULT);
-                            final var skipIfUnchanged = ConfigurationUtils.annotationValueOrDefault(
-                                    kubeDepConfig,
-                                    "skipUpdateIfUnchanged",
-                                    AnnotationValue::asBoolean,
-                                    () -> KubernetesDependent.SKIP_UPDATE_DEFAULT);
                             final var cfg = new QuarkusKubernetesDependentResourceConfiguration(
                                     dependentTypeName.toString(),
-                                    resourceClassName, labelSelector, skipIfUnchanged,
+                                    resourceClassName, labelSelector,
                                     dependentNamespaces, owned);
                             dependentResources.add(cfg);
                         } else {
