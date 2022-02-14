@@ -53,11 +53,11 @@ public class CSVProcessor {
         final var index = combinedIndexBuildItem.getIndex();
 
         ClassUtils.getKnownReconcilers(index, log)
-                .forEach(info -> {
+                .forEach(reconcilerInfo -> {
                     // figure out which group should be used to generate CSV
-                    final var name = ConfigurationUtils.getReconcilerName(info);
+                    final var name = reconcilerInfo.name();
                     final var config = controllerConfigs.get(name);
-                    final var csvMetadata = getCSVMetadata(info, name, index);
+                    final var csvMetadata = getCSVMetadata(reconcilerInfo.classInfo(), name, index);
                     csvGroupMetadata.put(csvMetadata.name, csvMetadata);
                     final var resourceFullName = config.getResourceTypeName();
                     final var resourceInfo = ResourceInfo.createFrom(config.getResourceClass(),
