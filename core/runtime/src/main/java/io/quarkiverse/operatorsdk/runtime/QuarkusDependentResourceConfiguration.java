@@ -10,7 +10,7 @@ public class QuarkusDependentResourceConfiguration<R, P extends HasMetadata> imp
         DependentResourceConfiguration<R, P> {
 
     private final String dependentResourceClassName;
-    private Class<? extends DependentResource<R, P>> dependentResourceClass;
+    private Class<? extends DependentResource<R, P, ? extends DependentResourceConfiguration<R, P>>> dependentResourceClass;
     private final String resourceClassName;
     private Class<R> resourceClass;
 
@@ -22,7 +22,7 @@ public class QuarkusDependentResourceConfiguration<R, P extends HasMetadata> imp
     }
 
     @Override
-    public Class<? extends DependentResource<R, P>> getDependentResourceClass() {
+    public Class<? extends DependentResource<R, P, ? extends DependentResourceConfiguration<R, P>>> getDependentResourceClass() {
         return dependentResourceClass = ClassUtils.loadClassIfNeeded(dependentResourceClassName,
                 dependentResourceClass);
     }
