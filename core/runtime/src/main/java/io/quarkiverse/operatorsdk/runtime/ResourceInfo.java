@@ -1,4 +1,4 @@
-package io.quarkiverse.operatorsdk.common;
+package io.quarkiverse.operatorsdk.runtime;
 
 import java.util.Optional;
 

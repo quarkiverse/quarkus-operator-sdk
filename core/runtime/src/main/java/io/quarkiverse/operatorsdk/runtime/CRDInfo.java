@@ -3,7 +3,6 @@ package io.quarkiverse.operatorsdk.runtime;
 import java.util.Map;
 import java.util.Set;
 
-import io.quarkiverse.operatorsdk.common.ResourceInfo;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
 public class CRDInfo {
