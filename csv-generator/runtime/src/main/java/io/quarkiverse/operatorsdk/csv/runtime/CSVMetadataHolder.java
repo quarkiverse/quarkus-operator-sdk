@@ -11,6 +11,7 @@ public class CSVMetadataHolder {
     public final String version;
     public final String maturity;
     public final Maintainer[] maintainers;
+    public final InstallMode[] installModes;
 
     public static class Maintainer {
         public final String name;
@@ -22,17 +23,28 @@ public class CSVMetadataHolder {
         }
     }
 
+    public static class InstallMode {
+        public final String type;
+        public final boolean supported;
+
+        public InstallMode(String type, boolean supported) {
+            this.type = type;
+            this.supported = supported;
+        }
+    }
+
     public CSVMetadataHolder(CSVMetadataHolder other) {
         this(other.name, other.description, other.displayName, other.keywords, other.providerName, other.providerURL,
-                other.replaces, other.version, other.maturity, other.maintainers);
+                other.replaces, other.version, other.maturity, other.maintainers, other.installModes);
     }
 
     public CSVMetadataHolder(String name) {
-        this(name, null, null, null, null, null, null, null, null, null);
+        this(name, null, null, null, null, null, null, null, null, null, null);
     }
 
     public CSVMetadataHolder(String name, String description, String displayName, String[] keywords, String providerName,
-            String providerURL, String replaces, String version, String maturity, Maintainer[] maintainers) {
+            String providerURL, String replaces, String version, String maturity, Maintainer[] maintainers,
+            InstallMode[] installModes) {
         this.name = name;
         this.description = description;
         this.displayName = displayName;
@@ -43,5 +55,6 @@ public class CSVMetadataHolder {
         this.version = version;
         this.maturity = maturity;
         this.maintainers = maintainers;
+        this.installModes = installModes;
     }
 }

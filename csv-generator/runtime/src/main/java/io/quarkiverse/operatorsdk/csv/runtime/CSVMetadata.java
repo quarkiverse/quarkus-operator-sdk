@@ -26,6 +26,8 @@ public @interface CSVMetadata {
 
     Provider provider();
 
+    InstallMode[] installModes() default {};
+
     @interface Maintainer {
         String email() default "";
 
@@ -36,5 +38,11 @@ public @interface CSVMetadata {
         String name() default "";
 
         String url() default "";
+    }
+
+    @interface InstallMode {
+        String type();
+
+        boolean supported() default true;
     }
 }

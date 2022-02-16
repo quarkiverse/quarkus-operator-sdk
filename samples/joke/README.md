@@ -15,9 +15,14 @@ cluster. You can just follow the steps below to get started quickly:
 - Connect to your cluster of choice using `kubectl/oc`, select the appropriate namespace/project.
   The operator will automatically connect to that cluster/namespace combination when started.
 - Run `mvn install` on the parent directory to build the project locally.
-- Run `mvn package` to build the operator. This will automatically generate several resources for
-  you, in particular the CRDs associated with the custom resources we will be dealing with. These
-  CRDs are generated in `target/classes/META-INF/fabric8` and come in two flavors: `v1`
+- To build the operator and push the image to the container registry, run:
+  ```sh
+  mvn package -Dquarkus.container-image.build=true -Dquarkus.container-image.push=true \
+     -Dquarkus.container-image.registry=<CONTAINER REGISTRY. Default: docker.io> \
+     -Dquarkus.container-image.name=<NAMESPACE. Default: ${user.name}>
+  ```
+  This will automatically generate several resources for you, in particular the CRDs associated with the custom 
+  resources we will be dealing with. These CRDs are generated in `target/classes/META-INF/fabric8` and come in two flavors: `v1`
   and `v1beta1` versions which correspond to the versions of the CRD spec. We recommend you use
   the `v1` version but might need to fall back to `v1beta1` if you're connecting to an older
   cluster.
@@ -49,7 +54,7 @@ cluster. You can just follow the steps below to get started quickly:
 
 ### Cluster deployment
 
-The extension is configured with the Quarkus Kubernetes and Jib container image extensions so it
+The extension is configured with the Quarkus Kubernetes and Jib container image extensions, so it
 automatically generates deployment descriptors and image to deploy your operator on your cluster.
 These files are found in their regular spots (`target/kubernetes` for the descriptors).
 

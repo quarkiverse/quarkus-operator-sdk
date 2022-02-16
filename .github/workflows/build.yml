@@ -53,5 +53,96 @@ jobs:
           key: maven-repo-${{ runner.os }}-${{ steps.get-date.outputs.date }}
 
       - name: Build with Maven
-        run: mvn -B formatter:validate verify -Dnative --file pom.xml
+        run: mvn -B formatter:validate install -Dnative --file pom.xml
 
+      - name: Kubernetes KinD Cluster
+        uses: container-tools/kind-action@v1
+        with:
+          version: v0.11.1
+          registry: true
+      - name: Install OPM and Operator SDK tool
+        uses: redhat-actions/openshift-tools-installer@v1
+        with:
+          source: "github"
+
+      - name: Install Operator Lifecycle Manager and Operator SDK into Kind
+        run: operator-sdk olm install
+
+      - name: Deploy Joke sample into Kubernetes
+        run: |
+K8S_NAMESPACE=operators
+REGISTRY_NAMESPACE=joke
+VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
+OPERATOR_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/quarkus-operator-sdk-samples-joke:$VERSION
+BUNDLE_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/joke-manifest-bundle:latest
+INDEX_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/joke-manifest-index:latest
+
+# Build manifests and images
+cd samples/joke
+mvn clean package -Dquarkus.container-image.build=true -Dquarkus.container-image.registry=$KIND_REGISTRY -Dquarkus.container-image.group=$REGISTRY_NAMESPACE -Dquarkus.kubernetes.namespace=$K8S_NAMESPACE
+docker push $OPERATOR_IMAGE
+
+# Build Operator Bundle
+cd target
+opm alpha bundle generate --directory manifests --package joke --channels alpha --default alpha
+docker build -t $BUNDLE_IMAGE -f bundle.Dockerfile .
+docker push $BUNDLE_IMAGE
+
+# Install Operator via Bundle
+opm index add --bundles $BUNDLE_IMAGE --tag $INDEX_IMAGE --build-tool docker --skip-tls
+docker push $INDEX_IMAGE
+
+# Apply RBAC
+kubectl apply -f manifests/jokereconciler.csv.rbac.yml -n $K8S_NAMESPACE
+
+cat <<EOF | kubectl apply -f -
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: joke-operator
+  namespace: $K8S_NAMESPACE
+spec:
+  sourceType: grpc
+  image: $INDEX_IMAGE
+EOF
+
+kubectl wait --for=condition=ready pod -n $K8S_NAMESPACE --selector=olm.catalogSource=joke-operator
+
+cat <<EOF | kubectl create -f -
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: joke-subscription
+  namespace: $K8S_NAMESPACE
+spec:
+  channel: alpha
+  name: joke
+  source: joke-operator
+  sourceNamespace: $K8S_NAMESPACE
+EOF
+
+until [[ $retries == 0 ]]; do
+  new_csv_phase=$(kubectl get csv -n "$K8S_NAMESPACE" jokereconciler -o jsonpath='{.status.phase}' 2>/dev/null || echo "Waiting for CSV to appear")
+  if [[ "$new_csv_phase" == "Succeeded" ]]; then
+    break
+  elif [[ $retries == 30 ]]; then
+    echo "CSV \"jokereconciler\" failed to reach phase succeeded"
+    exit 1
+  else
+    echo "CSV \"jokereconciler\" phase: $new_csv_phase"
+  fi
+  sleep 10s
+  retries=$((retries - 1))
+done
+
+cat <<EOF | kubectl create -f -
+apiVersion: "samples.javaoperatorsdk.io/v1alpha1"
+kind: JokeRequest
+metadata:
+  name: jr-any
+  namespace: $K8S_NAMESPACE
+spec:
+  category: Any
+EOF
+
+# TODO: Check response from operator

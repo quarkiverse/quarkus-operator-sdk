@@ -1,13 +1,14 @@
 package io.quarkiverse.operatorsdk.csv.deployment;
 
-import static io.quarkus.kubernetes.deployment.Constants.KUBERNETES;
-
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
@@ -19,7 +20,9 @@ import io.dekorate.utils.Serialization;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.ResourceInfo;
@@ -28,6 +31,7 @@ import io.quarkiverse.operatorsdk.csv.runtime.CSVMetadata;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.csv.runtime.SharedCSVMetadata;
 import io.quarkiverse.operatorsdk.deployment.ConfigurationServiceBuildItem;
+import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
@@ -35,12 +39,11 @@ import io.quarkus.deployment.builditem.GeneratedFileSystemResourceBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 
-public class CSVProcessor {
-    private static final Logger log = Logger.getLogger(CSVProcessor.class);
+public class ManifestsProcessor {
+    private static final Logger log = Logger.getLogger(ManifestsProcessor.class);
     private static final DotName SHARED_CSV_METADATA = DotName.createSimple(SharedCSVMetadata.class.getName());
     private static final DotName CSV_METADATA = DotName.createSimple(CSVMetadata.class.getName());
-
-    private CSVGenerationConfiguration configuration;
+    private static final String MANIFESTS = "manifests";
 
     @BuildStep
     CSVMetadataBuildItem gatherCSVMetadata(CombinedIndexBuildItem combinedIndexBuildItem,
@@ -68,18 +71,22 @@ public class CSVProcessor {
     }
 
     @BuildStep
-    void generateCSV(OutputTargetBuildItem outputTarget,
+    void generateCSV(CSVGenerationConfiguration configuration,
+            OutputTargetBuildItem outputTarget,
             CSVMetadataBuildItem csvMetadata,
             BuildProducer<GeneratedCSVBuildItem> doneGeneratingCSV,
+            GeneratedCRDInfoBuildItem generatedCustomResourcesDefinitions,
             List<GeneratedKubernetesResourceBuildItem> generatedKubernetesManifests,
             BuildProducer<GeneratedFileSystemResourceBuildItem> generatedCSVs) {
         if (configuration.generateCSV.orElse(false)) {
             try {
-                final var outputDir = outputTarget.getOutputDirectory().resolve(KUBERNETES);
-                final var serviceAccountName = new String[1];
-                final var clusterRole = new ClusterRole[1];
-                final var role = new Role[1];
-                final var deployment = new Deployment[1];
+                final var outputDir = outputTarget.getOutputDirectory().resolve(MANIFESTS);
+                final var serviceAccounts = new LinkedList<ServiceAccount>();
+                final var clusterRoleBindings = new LinkedList<ClusterRoleBinding>();
+                final var clusterRoles = new LinkedList<ClusterRole>();
+                final var roleBindings = new LinkedList<RoleBinding>();
+                final var roles = new LinkedList<Role>();
+                final var deployments = new LinkedList<Deployment>();
 
                 generatedKubernetesManifests.stream()
                         .filter(bi -> bi.getName().equals("kubernetes.yml"))
@@ -90,42 +97,62 @@ public class CSVProcessor {
                                             .unmarshalAsList(new ByteArrayInputStream(bi.getContent()));
                                     resources.getItems().forEach(r -> {
                                         if (r instanceof ServiceAccount) {
-                                            serviceAccountName[0] = r.getMetadata().getName();
+                                            serviceAccounts.add((ServiceAccount) r);
+                                            return;
+                                        }
+
+                                        if (r instanceof ClusterRoleBinding) {
+                                            clusterRoleBindings.add((ClusterRoleBinding) r);
                                             return;
                                         }
 
                                         if (r instanceof ClusterRole) {
-                                            clusterRole[0] = (ClusterRole) r;
+                                            clusterRoles.add((ClusterRole) r);
+                                            return;
+                                        }
+
+                                        if (r instanceof RoleBinding) {
+                                            roleBindings.add((RoleBinding) r);
                                             return;
                                         }
 
                                         if (r instanceof Role) {
-                                            role[0] = (Role) r;
+                                            roles.add((Role) r);
                                             return;
                                         }
 
                                         if (r instanceof Deployment) {
-                                            deployment[0] = (Deployment) r;
+                                            deployments.add((Deployment) r);
                                             return;
                                         }
                                     });
                                 });
-                final var generated = CSVGenerator.prepareGeneration(
+                final var generated = ManifestsGenerator.prepareGeneration(
                         csvMetadata.getAugmentedCustomResourceInfos(), csvMetadata.getCSVMetadata());
-                generated.forEach(namedCSVBuilder -> {
-                    final var fileName = namedCSVBuilder.getFileName();
+                generated.forEach(manifestBuilder -> {
+                    final var fileName = manifestBuilder.getFileName();
                     try {
                         generatedCSVs.produce(
                                 new GeneratedFileSystemResourceBuildItem(
-                                        Path.of(KUBERNETES, fileName).toString(),
-                                        namedCSVBuilder.getYAMLData(serviceAccountName[0],
-                                                clusterRole[0], role[0], deployment[0])));
-                        log.infov("Generating CSV for {0} controller -> {1}", namedCSVBuilder.getControllerName(),
+                                        Path.of(MANIFESTS, fileName).toString(),
+                                        manifestBuilder.getYAMLData(serviceAccounts, clusterRoleBindings, clusterRoles,
+                                                roleBindings, roles, deployments)));
+                        log.infov("Generating CSV for {0} controller -> {1}", manifestBuilder.getControllerName(),
                                 outputDir.resolve(fileName));
                     } catch (IOException e) {
-                        log.errorv("Cannot generate CSV for {0}: {1}", namedCSVBuilder.getControllerName(), e.getMessage());
+                        log.errorv("Cannot generate CSV for {0}: {1}", manifestBuilder.getControllerName(), e.getMessage());
                     }
                 });
+                // copy custom resources to the manifests folder
+                generatedCustomResourcesDefinitions.getCRDGenerationInfo().getCrds().values().stream()
+                        .flatMap(crds -> crds.values().stream())
+                        .forEach(crd -> {
+                            try {
+                                FileUtils.copyFileToDirectory(new File(crd.getFilePath()), outputDir.toFile());
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
                 doneGeneratingCSV.produce(new GeneratedCSVBuildItem());
             } catch (Exception e) {
                 log.infov(e, "Couldn't generate CSV:");
@@ -177,6 +204,22 @@ public class CSVProcessor {
             maintainers = mh.maintainers;
         }
 
+        final var installModesField = csvMetadata.value("installModes");
+        CSVMetadataHolder.InstallMode[] installModes = null;
+        if (installModesField != null) {
+            final var installModesAnn = installModesField.asNestedArray();
+            installModes = new CSVMetadataHolder.InstallMode[installModesAnn.length];
+            for (int i = 0; i < installModesAnn.length; i++) {
+                installModes[i] = new CSVMetadataHolder.InstallMode(
+                        ConfigurationUtils.annotationValueOrDefault(installModesAnn[i], "type",
+                                AnnotationValue::asString, () -> null),
+                        ConfigurationUtils.annotationValueOrDefault(installModesAnn[i], "supported",
+                                AnnotationValue::asBoolean, () -> true));
+            }
+        } else {
+            installModes = mh.installModes;
+        }
+
         return new CSVMetadataHolder(
                 ConfigurationUtils.annotationValueOrDefault(csvMetadata, "name",
                         AnnotationValue::asString, () -> mh.name),
@@ -193,6 +236,7 @@ public class CSVProcessor {
                         AnnotationValue::asString, () -> mh.version),
                 ConfigurationUtils.annotationValueOrDefault(csvMetadata, "maturity",
                         AnnotationValue::asString, () -> mh.maturity),
-                maintainers);
+                maintainers,
+                installModes);
     }
 }
