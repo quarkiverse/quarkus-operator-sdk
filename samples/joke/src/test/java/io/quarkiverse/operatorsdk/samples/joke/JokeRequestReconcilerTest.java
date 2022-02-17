@@ -29,7 +29,7 @@ import io.quarkus.test.kubernetes.client.WithKubernetesTestServer;
 
 @WithKubernetesTestServer
 @QuarkusTest
-class JokeReconcilerTest {
+class JokeRequestReconcilerTest {
 
     @InjectMock
     @RestClient

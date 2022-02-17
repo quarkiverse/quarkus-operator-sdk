@@ -126,14 +126,14 @@ jobs:
           # Wait until the operator is up and running
           retries=30
           until [[ $retries == 0 ]]; do
-            new_csv_phase=$(kubectl get csv -n "$K8S_NAMESPACE" jokereconciler -o jsonpath='{.status.phase}' 2>/dev/null || echo "Waiting for CSV to appear")
+            new_csv_phase=$(kubectl get csv -n "$K8S_NAMESPACE" jokerequestreconciler -o jsonpath='{.status.phase}' 2>/dev/null || echo "Waiting for CSV to appear")
             if [[ "$new_csv_phase" == "Succeeded" ]]; then
               break
             elif [[ $retries == 1 ]]; then
-              echo "CSV \"jokereconciler\" failed to reach phase succeeded"
+              echo "CSV \"jokerequestreconciler\" failed to reach phase succeeded"
               exit 1
             else
-              echo "CSV \"jokereconciler\" phase: $new_csv_phase"
+              echo "CSV \"jokerequestreconciler\" phase: $new_csv_phase"
             fi
             sleep 10s
             retries=$((retries - 1))

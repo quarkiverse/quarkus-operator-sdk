@@ -34,7 +34,7 @@ import io.quarkiverse.operatorsdk.samples.joke.JokeRequestStatus.State;
 
 @CSVMetadata(permissionRules = @CSVMetadata.PermissionRule(apiGroups = "samples.javaoperatorsdk.io", resources = "jokes"))
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
-public class JokeReconciler implements Reconciler<JokeRequest> {
+public class JokeRequestReconciler implements Reconciler<JokeRequest> {
     @Inject
     @RestClient
     JokeService jokes;
