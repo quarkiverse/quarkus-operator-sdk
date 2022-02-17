@@ -151,7 +151,6 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             String defaultServiceAccountName,
             NamedInstallStrategyFluent.SpecNested<ClusterServiceVersionSpecFluent.InstallNested<ClusterServiceVersionFluent.SpecNested<ClusterServiceVersionBuilder>>> installSpec) {
         Map<String, List<PolicyRule>> customPermissionRules = new HashMap<>();
-        System.out.println("Custom permission rules: " + metadata.permissionRules);
         if (metadata.permissionRules != null) {
             for (CSVMetadataHolder.PermissionRule permissionRule : metadata.permissionRules) {
                 String serviceAccountName = StringUtils.defaultIfEmpty(permissionRule.serviceAccountName,
@@ -176,8 +175,6 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                         .build());
             }
         }
-
-        System.out.println("Custom permission rules: " + customPermissionRules.size());
 
         for (RoleBinding binding : roleBindings) {
             String serviceAccountName = findServiceAccountFromSubjects(binding.getSubjects(), defaultServiceAccountName);
