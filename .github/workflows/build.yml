@@ -109,7 +109,7 @@ jobs:
           EOF
 
           # Wait until the catalog source of our operator is up and running
-          kubectl wait --for=condition=ready pod -n $K8S_NAMESPACE --selector=olm.catalogSource=joke-operator
+          kubectl wait --for=condition=ready pod -n $K8S_NAMESPACE --selector=olm.catalogSource=joke-operator --timeout=120s
 
           # Create a Subscription which triggers the deployment of joke operator
           cat <<EOF | kubectl create -f -
