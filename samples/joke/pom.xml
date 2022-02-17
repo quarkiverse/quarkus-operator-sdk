@@ -42,6 +42,12 @@
       <artifactId>quarkus-operator-sdk-csv-generator-deployment</artifactId>
       <scope>provided</scope>
     </dependency>
+    <!--  This dependency is needed to generate the `Joke` custom resource -->
+    <dependency>
+      <groupId>io.fabric8</groupId>
+      <artifactId>crd-generator-apt</artifactId>
+      <scope>provided</scope>
+    </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-junit5</artifactId>

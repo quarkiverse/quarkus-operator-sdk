@@ -70,93 +70,99 @@ jobs:
 
       - name: Deploy Joke sample into Kubernetes
         run: |
-K8S_NAMESPACE=operators
-REGISTRY_NAMESPACE=joke
-VERSION=$(mvn -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec)
-OPERATOR_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/quarkus-operator-sdk-samples-joke:$VERSION
-BUNDLE_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/joke-manifest-bundle:latest
-INDEX_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/joke-manifest-index:latest
+          K8S_NAMESPACE=operators
+          REGISTRY_NAMESPACE=joke
+          BUNDLE_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/joke-manifest-bundle:latest
+          INDEX_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/joke-manifest-index:latest
 
-# Build manifests and images
-cd samples/joke
-mvn clean package -Dquarkus.container-image.build=true -Dquarkus.container-image.registry=$KIND_REGISTRY -Dquarkus.container-image.group=$REGISTRY_NAMESPACE -Dquarkus.kubernetes.namespace=$K8S_NAMESPACE
-docker push $OPERATOR_IMAGE
+          # Build manifests and images
+          cd samples/joke
+          mvn clean package -Dquarkus.container-image.build=true \
+            -Dquarkus.container-image.push=true \
+            -Dquarkus.container-image.insecure=true \
+            -Dquarkus.container-image.registry=$KIND_REGISTRY \
+            -Dquarkus.container-image.group=$REGISTRY_NAMESPACE \
+            -Dquarkus.kubernetes.namespace=$K8S_NAMESPACE
 
-# Build Operator Bundle
-cd target
-opm alpha bundle generate --directory manifests --package joke --channels alpha --default alpha
-docker build -t $BUNDLE_IMAGE -f bundle.Dockerfile .
-docker push $BUNDLE_IMAGE
+          # Build Operator Bundle
+          cd target
+          opm alpha bundle generate --directory manifests --package joke --channels alpha --default alpha
+          docker build -t $BUNDLE_IMAGE -f bundle.Dockerfile .
+          docker push $BUNDLE_IMAGE
 
-# Install Operator via Bundle
-opm index add --bundles $BUNDLE_IMAGE --tag $INDEX_IMAGE --build-tool docker --skip-tls
-docker push $INDEX_IMAGE
+          # Install Operator via Bundle
+          opm index add --bundles $BUNDLE_IMAGE --tag $INDEX_IMAGE --build-tool docker --skip-tls
+          docker push $INDEX_IMAGE
 
-# Apply RBAC
-kubectl apply -f manifests/jokereconciler.csv.rbac.yml -n $K8S_NAMESPACE
-kubectl apply -f manifests/jokerequestreconciler.csv.rbac.yml -n $K8S_NAMESPACE
+          # Install Joke CRD: https://github.com/quarkiverse/quarkus-operator-sdk/issues/90
+          kubectl apply -f classes/META-INF/fabric8/jokes.samples.javaoperatorsdk.io-v1.yml -n $K8S_NAMESPACE
 
-cat <<EOF | kubectl apply -f -
-apiVersion: operators.coreos.com/v1alpha1
-kind: CatalogSource
-metadata:
-  name: joke-operator
-  namespace: $K8S_NAMESPACE
-spec:
-  sourceType: grpc
-  image: $INDEX_IMAGE
-EOF
+          # Create OLM catalog resource
+          cat <<EOF | kubectl apply -f -
+          apiVersion: operators.coreos.com/v1alpha1
+          kind: CatalogSource
+          metadata:
+            name: joke-operator
+            namespace: $K8S_NAMESPACE
+          spec:
+            sourceType: grpc
+            image: $INDEX_IMAGE
+          EOF
 
-kubectl wait --for=condition=ready pod -n $K8S_NAMESPACE --selector=olm.catalogSource=joke-operator
+          # Wait until the catalog source of our operator is up and running
+          kubectl wait --for=condition=ready pod -n $K8S_NAMESPACE --selector=olm.catalogSource=joke-operator
 
-cat <<EOF | kubectl create -f -
-apiVersion: operators.coreos.com/v1alpha1
-kind: Subscription
-metadata:
-  name: joke-subscription
-  namespace: $K8S_NAMESPACE
-spec:
-  channel: alpha
-  name: joke
-  source: joke-operator
-  sourceNamespace: $K8S_NAMESPACE
-EOF
+          # Create a Subscription which triggers the deployment of joke operator
+          cat <<EOF | kubectl create -f -
+          apiVersion: operators.coreos.com/v1alpha1
+          kind: Subscription
+          metadata:
+            name: joke-subscription
+            namespace: $K8S_NAMESPACE
+          spec:
+            channel: alpha
+            name: joke
+            source: joke-operator
+            sourceNamespace: $K8S_NAMESPACE
+          EOF
 
-retries=30
-until [[ $retries == 0 ]]; do
-  new_csv_phase=$(kubectl get csv -n "$K8S_NAMESPACE" jokerequestreconciler -o jsonpath='{.status.phase}' 2>/dev/null || echo "Waiting for CSV to appear")
-  if [[ "$new_csv_phase" == "Succeeded" ]]; then
-    break
-  elif [[ $retries == 1 ]]; then
-    echo "CSV \"jokerequestreconciler\" failed to reach phase succeeded"
-    exit 1
-  else
-    echo "CSV \"jokerequestreconciler\" phase: $new_csv_phase"
-  fi
-  sleep 10s
-  retries=$((retries - 1))
-done
+          # Wait until the operator is up and running
+          retries=30
+          until [[ $retries == 0 ]]; do
+            new_csv_phase=$(kubectl get csv -n "$K8S_NAMESPACE" jokereconciler -o jsonpath='{.status.phase}' 2>/dev/null || echo "Waiting for CSV to appear")
+            if [[ "$new_csv_phase" == "Succeeded" ]]; then
+              break
+            elif [[ $retries == 1 ]]; then
+              echo "CSV \"jokereconciler\" failed to reach phase succeeded"
+              exit 1
+            else
+              echo "CSV \"jokereconciler\" phase: $new_csv_phase"
+            fi
+            sleep 10s
+            retries=$((retries - 1))
+          done
 
-cat <<EOF | kubectl create -f -
-apiVersion: "samples.javaoperatorsdk.io/v1alpha1"
-kind: JokeRequest
-metadata:
-  name: jr-request
-  namespace: $K8S_NAMESPACE
-spec:
-  category: Any
-EOF
+          # For testing that our operator is responsive, we add a Joke Request resource
+          cat <<EOF | kubectl create -f -
+          apiVersion: "samples.javaoperatorsdk.io/v1"
+          kind: JokeRequest
+          metadata:
+            name: jr-request
+            namespace: $K8S_NAMESPACE
+          spec:
+            category: Any
+          EOF
 
-# Check response from operator
-retries=30
-until [[ $retries == 0 ]]; do
-  new_joke=$(kubectl get joke -n "$K8S_NAMESPACE" 2>/dev/null || echo "Waiting for Joke to appear")
-  if [[ "$new_joke" =~ .*"NAME".* ]]; then
-    break
-  elif [[ $retries == 1 ]]; then
-    echo "Failed to get jokes"
-    exit 1
-  fi
-  sleep 10s
-  retries=$((retries - 1))
-done
+          # And wait for the operator to create another Joke resource
+          retries=30
+          until [[ $retries == 0 ]]; do
+            new_joke=$(kubectl get joke -n "$K8S_NAMESPACE" 2>/dev/null || echo "Waiting for Joke to appear")
+            if [[ "$new_joke" =~ .*"NAME".* ]]; then
+              break
+            elif [[ $retries == 1 ]]; then
+              echo "Failed to get jokes"
+              exit 1
+            fi
+            sleep 10s
+            retries=$((retries - 1))
+          done
