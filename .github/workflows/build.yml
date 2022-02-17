@@ -135,8 +135,10 @@ jobs:
               echo "CSV \"jokerequestreconciler\" failed to reach phase succeeded"
               exit 1
             else
+              kubectl get events -n $K8S_NAMESPACE
               kubectl get pod -n $K8S_NAMESPACE --selector=olm.catalogSource=joke-operator
               kubectl logs -n $K8S_NAMESPACE --selector=olm.catalogSource=joke-operator
+              kubectl get events -n $K8S_NAMESPACE
               echo "CSV \"jokerequestreconciler\" phase: $new_csv_phase"
             fi
             sleep 10s
