@@ -1,5 +1,7 @@
 package io.quarkiverse.operatorsdk.deployment;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import io.dekorate.kubernetes.decorator.ResourceProvidingDecorator;
@@ -11,6 +13,8 @@ import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.quarkiverse.operatorsdk.common.ResourceInfo;
 
 public class AddClusterRolesDecorator extends ResourceProvidingDecorator<KubernetesListBuilder> {
+
+    public static final List<String> ALL_VERBS = Arrays.asList("get", "list", "watch", "create", "delete", "patch", "update");
 
     static final String JOSDK_CRD_VALIDATING_CLUSTER_ROLE = "josdk-crd-validating-cluster-role";
     private final Map<String, ResourceInfo> controllerToCustomResourceMappings;
@@ -36,7 +40,7 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
             });
 
             rule.addNewApiGroup(cri.getGroup())
-                    .addToVerbs("get", "list", "watch", "create", "delete", "patch", "update")
+                    .addAllToVerbs(ALL_VERBS)
                     .build();
 
             final var clusterRoleBuilder = new ClusterRoleBuilder()

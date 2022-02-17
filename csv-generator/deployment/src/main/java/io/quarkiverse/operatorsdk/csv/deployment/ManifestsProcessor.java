@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.commons.io.FileUtils;
 import org.jboss.jandex.AnnotationInstance;
@@ -161,6 +162,20 @@ public class ManifestsProcessor {
     }
 
     private CSVMetadataHolder getCSVMetadata(ClassInfo info, String controllerName, IndexView index) {
+        CSVMetadataHolder csvMetadata = new CSVMetadataHolder(controllerName);
+        csvMetadata = aggregateMetadataFromSharedCsvMetadata(csvMetadata, info, index);
+        csvMetadata = aggregateMetadataFromAnnotation(csvMetadata, info);
+        return csvMetadata;
+    }
+
+    private CSVMetadataHolder aggregateMetadataFromAnnotation(CSVMetadataHolder holder, ClassInfo info) {
+        return Optional.ofNullable(info.classAnnotation(CSV_METADATA))
+                .map(annotationInstance -> createMetadataHolder(annotationInstance, holder))
+                .orElse(holder);
+    }
+
+    private CSVMetadataHolder aggregateMetadataFromSharedCsvMetadata(CSVMetadataHolder holder, ClassInfo info,
+            IndexView index) {
         return info.interfaceTypes().stream()
                 .filter(t -> t.name().equals(SHARED_CSV_METADATA))
                 .findFirst()
@@ -169,11 +184,8 @@ public class ManifestsProcessor {
                     // need to get the associated ClassInfo to properly resolve the annotations
                     final var metadataHolder = index.getClassByName(metadataHolderType.name());
                     final var csvMetadata = metadataHolder.classAnnotation(CSV_METADATA);
-                    return createMetadataHolder(csvMetadata, new CSVMetadataHolder(controllerName));
-
-                })
-                .map(mh -> createMetadataHolder(info.classAnnotation(CSV_METADATA), new CSVMetadataHolder(mh)))
-                .orElse(new CSVMetadataHolder(controllerName));
+                    return createMetadataHolder(csvMetadata, holder);
+                }).orElse(holder);
     }
 
     private CSVMetadataHolder createMetadataHolder(AnnotationInstance csvMetadata, CSVMetadataHolder mh) {
@@ -220,6 +232,26 @@ public class ManifestsProcessor {
             installModes = mh.installModes;
         }
 
+        final var permissionsField = csvMetadata.value("permissionRules");
+        CSVMetadataHolder.PermissionRule[] permissionRules = null;
+        if (permissionsField != null) {
+            final var permissionsAnn = permissionsField.asNestedArray();
+            permissionRules = new CSVMetadataHolder.PermissionRule[permissionsAnn.length];
+            for (int i = 0; i < permissionsAnn.length; i++) {
+                permissionRules[i] = new CSVMetadataHolder.PermissionRule(
+                        ConfigurationUtils.annotationValueOrDefault(permissionsAnn[i], "apiGroups",
+                                AnnotationValue::asStringArray, () -> null),
+                        ConfigurationUtils.annotationValueOrDefault(permissionsAnn[i], "resources",
+                                AnnotationValue::asStringArray, () -> null),
+                        ConfigurationUtils.annotationValueOrDefault(permissionsAnn[i], "verbs",
+                                AnnotationValue::asStringArray, () -> null),
+                        ConfigurationUtils.annotationValueOrDefault(permissionsAnn[i], "serviceAccountName",
+                                AnnotationValue::asString, () -> null));
+            }
+        } else {
+            permissionRules = mh.permissionRules;
+        }
+
         return new CSVMetadataHolder(
                 ConfigurationUtils.annotationValueOrDefault(csvMetadata, "name",
                         AnnotationValue::asString, () -> mh.name),
@@ -237,6 +269,7 @@ public class ManifestsProcessor {
                 ConfigurationUtils.annotationValueOrDefault(csvMetadata, "maturity",
                         AnnotationValue::asString, () -> mh.maturity),
                 maintainers,
-                installModes);
+                installModes,
+                permissionRules);
     }
 }

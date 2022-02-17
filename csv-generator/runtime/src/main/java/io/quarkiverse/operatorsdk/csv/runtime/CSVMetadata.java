@@ -24,9 +24,11 @@ public @interface CSVMetadata {
 
     Maintainer[] maintainers() default {};
 
-    Provider provider();
+    Provider provider() default @Provider;
 
     InstallMode[] installModes() default {};
+
+    PermissionRule[] permissionRules() default {};
 
     @interface Maintainer {
         String email() default "";
@@ -44,5 +46,17 @@ public @interface CSVMetadata {
         String type();
 
         boolean supported() default true;
+    }
+
+    @interface PermissionRule {
+        String[] apiGroups();
+
+        String[] resources();
+
+        // By default, all verbs
+        String[] verbs() default {};
+
+        // If not provided, it will use the default service account name
+        String serviceAccountName() default "";
     }
 }

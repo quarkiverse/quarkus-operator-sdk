@@ -94,9 +94,6 @@ jobs:
           opm index add --bundles $BUNDLE_IMAGE --tag $INDEX_IMAGE --build-tool docker --skip-tls
           docker push $INDEX_IMAGE
 
-          # Install Joke CRD: https://github.com/quarkiverse/quarkus-operator-sdk/issues/90
-          kubectl apply -f classes/META-INF/fabric8/jokes.samples.javaoperatorsdk.io-v1.yml -n $K8S_NAMESPACE
-
           # Create OLM catalog resource
           cat <<EOF | kubectl apply -f -
           apiVersion: operators.coreos.com/v1alpha1
@@ -142,9 +139,12 @@ jobs:
             retries=$((retries - 1))
           done
 
+          # Install Joke CRD: https://github.com/quarkiverse/quarkus-operator-sdk/issues/90
+          kubectl apply -f classes/META-INF/fabric8/jokes.samples.javaoperatorsdk.io-v1.yml -n $K8S_NAMESPACE
+
           # For testing that our operator is responsive, we add a Joke Request resource
           cat <<EOF | kubectl create -f -
-          apiVersion: "samples.javaoperatorsdk.io/v1"
+          apiVersion: samples.javaoperatorsdk.io/v1alpha1
           kind: JokeRequest
           metadata:
             name: jr-request

@@ -56,7 +56,7 @@ public abstract class ManifestsBuilder {
             return false;
         }
 
-        RbacManifestsBuilder that = (RbacManifestsBuilder) o;
+        ManifestsBuilder that = (ManifestsBuilder) o;
 
         return getFileName().equals(that.getFileName());
     }

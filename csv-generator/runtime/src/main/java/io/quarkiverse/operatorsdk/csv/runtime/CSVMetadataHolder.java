@@ -12,6 +12,7 @@ public class CSVMetadataHolder {
     public final String maturity;
     public final Maintainer[] maintainers;
     public final InstallMode[] installModes;
+    public final PermissionRule[] permissionRules;
 
     public static class Maintainer {
         public final String name;
@@ -33,18 +34,32 @@ public class CSVMetadataHolder {
         }
     }
 
+    public static class PermissionRule {
+        public final String[] apiGroups;
+        public final String[] resources;
+        public final String[] verbs;
+        public final String serviceAccountName;
+
+        public PermissionRule(String[] apiGroups, String[] resources, String[] verbs, String serviceAccountName) {
+            this.apiGroups = apiGroups;
+            this.resources = resources;
+            this.verbs = verbs;
+            this.serviceAccountName = serviceAccountName;
+        }
+    }
+
     public CSVMetadataHolder(CSVMetadataHolder other) {
         this(other.name, other.description, other.displayName, other.keywords, other.providerName, other.providerURL,
-                other.replaces, other.version, other.maturity, other.maintainers, other.installModes);
+                other.replaces, other.version, other.maturity, other.maintainers, other.installModes, other.permissionRules);
     }
 
     public CSVMetadataHolder(String name) {
-        this(name, null, null, null, null, null, null, null, null, null, null);
+        this(name, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     public CSVMetadataHolder(String name, String description, String displayName, String[] keywords, String providerName,
             String providerURL, String replaces, String version, String maturity, Maintainer[] maintainers,
-            InstallMode[] installModes) {
+            InstallMode[] installModes, PermissionRule[] permissionRules) {
         this.name = name;
         this.description = description;
         this.displayName = displayName;
@@ -56,5 +71,6 @@ public class CSVMetadataHolder {
         this.maturity = maturity;
         this.maintainers = maintainers;
         this.installModes = installModes;
+        this.permissionRules = permissionRules;
     }
 }

@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 
 import io.quarkiverse.operatorsdk.csv.deployment.builders.CsvManifestsBuilder;
 import io.quarkiverse.operatorsdk.csv.deployment.builders.ManifestsBuilder;
-import io.quarkiverse.operatorsdk.csv.deployment.builders.RbacManifestsBuilder;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVMetadataHolder;
 import io.quarkus.arc.impl.Sets;
 
@@ -21,7 +20,7 @@ public class ManifestsGenerator {
         final var builders = new ConcurrentHashMap<String, Set<ManifestsBuilder>>(7);
         return info.values().parallelStream()
                 .flatMap(cri -> builders.computeIfAbsent(cri.getCsvGroupName(),
-                        s -> Sets.of(new CsvManifestsBuilder(cri, csvMetadata), new RbacManifestsBuilder(cri)))
+                        s -> Sets.of(new CsvManifestsBuilder(cri, csvMetadata)))
                         .stream())
                 .collect(Collectors.toSet());
     }
