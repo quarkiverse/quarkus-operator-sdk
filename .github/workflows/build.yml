@@ -118,8 +118,6 @@ jobs:
               echo "Pod failed to reach phase Running"
               exit 1
             else
-              kubectl get events -n $K8S_NAMESPACE
-              kubectl logs -n $K8S_NAMESPACE --selector=olm.catalogSource=joke-operator
               echo "Pod phase: $new_phase"
             fi
             sleep 10s
