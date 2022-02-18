@@ -76,7 +76,7 @@ jobs:
           K8S_NAMESPACE=operators
           REGISTRY_NAMESPACE=joke
           BUNDLE_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/joke-manifest-bundle:latest
-          INDEX_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/joke-manifest-index:latest
+          CATALOG_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/joke-manifest-catalog:latest
 
           # Build manifests and images
           cd samples/joke
@@ -93,9 +93,9 @@ jobs:
           docker build -t $BUNDLE_IMAGE -f bundle.Dockerfile .
           docker push $BUNDLE_IMAGE
 
-          # Install Operator via Bundle
-          opm index add --bundles $BUNDLE_IMAGE --tag $INDEX_IMAGE --build-tool docker --skip-tls
-          docker push $INDEX_IMAGE
+          # Build Catalog image
+          opm index add --bundles $BUNDLE_IMAGE --tag $CATALOG_IMAGE --build-tool docker --skip-tls
+          docker push $CATALOG_IMAGE
 
           # Create OLM catalog resource
           cat <<EOF | kubectl apply -f -
@@ -106,7 +106,7 @@ jobs:
             namespace: $K8S_NAMESPACE
           spec:
             sourceType: grpc
-            image: $INDEX_IMAGE
+            image: $CATALOG_IMAGE
           EOF
 
           # Wait until the catalog source of our operator is up and running
