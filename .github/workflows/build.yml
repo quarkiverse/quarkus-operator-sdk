@@ -72,6 +72,7 @@ jobs:
 
       - name: Deploy Joke sample into Kubernetes
         run: |
+          SCRIPTS=$(pwd)/.github/scripts
           K8S_NAMESPACE=operators
           REGISTRY_NAMESPACE=joke
           BUNDLE_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/joke-manifest-bundle:latest
@@ -109,20 +110,7 @@ jobs:
           EOF
 
           # Wait until the catalog source of our operator is up and running
-          retries=30
-          until [[ $retries == 0 ]]; do
-            new_phase=$(kubectl get pods -n $K8S_NAMESPACE --selector=olm.catalogSource=joke-operator -o jsonpath='{..status.phase}' 2>/dev/null || echo "Waiting for pod to appear")
-            if [[ "$new_phase" == "Running" ]]; then
-              break
-            elif [[ $retries == 1 ]]; then
-              echo "Pod failed to reach phase Running"
-              exit 1
-            else
-              echo "Pod phase: $new_phase"
-            fi
-            sleep 10s
-            retries=$((retries - 1))
-          done
+          $SCRIPTS/waitFor.sh pods $K8S_NAMESPACE Running "--selector=olm.catalogSource=joke-operator -o jsonpath='{..status.phase}'"
 
           # Create a Subscription which triggers the deployment of joke operator
           cat <<EOF | kubectl create -f -
@@ -139,20 +127,7 @@ jobs:
           EOF
 
           # Wait until the operator is up and running
-          retries=30
-          until [[ $retries == 0 ]]; do
-            new_csv_phase=$(kubectl get csv -n "$K8S_NAMESPACE" jokerequestreconciler -o jsonpath='{.status.phase}' 2>/dev/null || echo "Waiting for CSV to appear")
-            if [[ "$new_csv_phase" == "Succeeded" ]]; then
-              break
-            elif [[ $retries == 1 ]]; then
-              echo "CSV \"jokerequestreconciler\" failed to reach phase succeeded"
-              exit 1
-            else
-              echo "CSV \"jokerequestreconciler\" phase: $new_csv_phase"
-            fi
-            sleep 10s
-            retries=$((retries - 1))
-          done
+          $SCRIPTS/waitFor.sh csv $K8S_NAMESPACE Succeeded "jokerequestreconciler -o jsonpath='{.status.phase}'"
 
           # Install Joke CRD: https://github.com/quarkiverse/quarkus-operator-sdk/issues/90
           kubectl apply -f classes/META-INF/fabric8/jokes.samples.javaoperatorsdk.io-v1.yml -n $K8S_NAMESPACE
@@ -169,15 +144,4 @@ jobs:
           EOF
 
           # And wait for the operator to create another Joke resource
-          retries=30
-          until [[ $retries == 0 ]]; do
-            new_joke=$(kubectl get joke -n "$K8S_NAMESPACE" 2>/dev/null || echo "Waiting for Joke to appear")
-            if [[ "$new_joke" =~ .*"NAME".* ]]; then
-              break
-            elif [[ $retries == 1 ]]; then
-              echo "Failed to get jokes"
-              exit 1
-            fi
-            sleep 10s
-            retries=$((retries - 1))
-          done
+          $SCRIPTS/waitFor.sh joke $K8S_NAMESPACE NAME
