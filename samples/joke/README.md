@@ -152,7 +152,7 @@ spec:
 EOF
 ```
 
-Once the subscription is installed, you should see your operator pod up and running:
+Once the subscription is created, you should see your operator pod up and running:
 
 ```shell
 kubectl get csv -n operators jokerequestreconciler
