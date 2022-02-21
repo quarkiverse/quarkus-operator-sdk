@@ -130,7 +130,7 @@ jobs:
           $SCRIPTS/waitFor.sh csv $K8S_NAMESPACE Succeeded "jokerequestreconciler -o jsonpath='{.status.phase}'"
 
           # Install Joke CRD: https://github.com/quarkiverse/quarkus-operator-sdk/issues/90
-          kubectl apply -f classes/META-INF/fabric8/jokes.samples.javaoperatorsdk.io-v1.yml -n $K8S_NAMESPACE
+          kubectl apply -f src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml -n $K8S_NAMESPACE
 
           # For testing that our operator is responsive, we add a Joke Request resource
           cat <<EOF | kubectl create -f -

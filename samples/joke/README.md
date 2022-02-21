@@ -25,11 +25,11 @@ cluster. You can just follow the steps below to get started quickly:
   issue for most "testing" clusters such as `minikube` or `kind`, you might need to log in to your
   OpenShift clusters with an admin account):
   ```sh
-  kubectl apply -f target/classes/META-INF/fabric8/jokerequests.samples.javaoperatorsdk.io-v1.yml
-  kubectl apply -f target/classes/META-INF/fabric8/jokes.samples.javaoperatorsdk.io-v1.yml
+  kubectl apply -f target/kubernetes/jokerequests.samples.javaoperatorsdk.io-v1.yml
+  kubectl apply -f src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml
   ```           
 - Launch the app in dev mode: `mvn quarkus:dev`
-- Deploy the test request (or your own): `kubectl apply -f src/main/resources/jokerequest.yml`
+- Deploy the test request (or your own): `kubectl apply -f src/main/k8s/jokerequest.yml`
 - The operator will take your request and attempt to retrieve a joke from the api. If everything
   went well, a `Joke` resource named after the `id` of the joke retrieved from the API will be
   created on your cluster.
@@ -161,12 +161,12 @@ kubectl get csv -n operators jokerequestreconciler
 Also, this example needs the `Joke` CRD to be installed on the cluster:
 
 ```shell
-kubectl apply -f classes/META-INF/fabric8/jokes.samples.javaoperatorsdk.io-v1.yml -n <your namespace>
+kubectl apply -f src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml -n <your namespace>
 ```
 
 5. Test your operator
 
-Deploy the test request (or your own): `kubectl apply -n <your namespace> -f src/main/resources/jokerequest.yml` and,
+Deploy the test request (or your own): `kubectl apply -n <your namespace> -f src/main/k8s/jokerequest.yml` and,
 if everything went well, a `Joke` resource named after the `id` of the joke retrieved from the API will be
   created on your cluster: `kubectl get jokes -n <your namespace>`.
 
