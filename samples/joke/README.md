@@ -135,7 +135,7 @@ kubectl get pods -n operators --selector=olm.catalogSource=joke-operator
 
 4. Install your operator via OLM
 
-OLM deploys operators via [subscriptions](https://olm.operatorframework.io/docs/tasks/install-operator-with-olm/#install-your-operator). You can simply create the `Subscription` resource that contains the operator name and channel to install by running the following command:
+OLM deploys operators via [subscriptions](https://olm.operatorframework.io/docs/tasks/install-operator-with-olm/#install-your-operator). Creating a  `Subscription` will trigger the operator deployment. You can simply create the `Subscription` resource that contains the operator name and channel to install by running the following command:
 
 ```shell
 cat <<EOF | kubectl create -f -
