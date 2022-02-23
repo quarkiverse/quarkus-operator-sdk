@@ -23,6 +23,7 @@ cluster. You can just follow the steps below to get started quickly:
   issue for most "testing" clusters such as `minikube` or `kind`, you might need to log in to your
   OpenShift clusters with an admin account):
   ```sh
+  kubectl apply -f target/manifests/jokerequests.samples.javaoperatorsdk.io-v1.yml
   kubectl apply -f src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml
   ```           
 - Launch the app in dev mode: `mvn quarkus:dev`
