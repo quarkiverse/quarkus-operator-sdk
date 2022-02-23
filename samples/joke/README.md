@@ -14,7 +14,7 @@ cluster. You can just follow the steps below to get started quickly:
 
 - Connect to your cluster of choice using `kubectl/oc`, select the appropriate namespace/project.
   The operator will automatically connect to that cluster/namespace combination when started.
-- Run `mvn install -Dquarkus.operator-sdk.crd.apply=true` on the parent directory to build the project locally. This will automatically generate several resources for
+- Run `mvn install` on the parent directory to build the project locally. This will automatically generate several resources for
   you, in particular the CRDs associated with the custom resources we will be dealing with. These
   CRDs are generated in `target/manifests/` and come in `v1` version which correspond to the versions of the CRD spec. We recommend you use
   the `v1` version but might need to fall back to `v1beta1` if you're connecting to an older
