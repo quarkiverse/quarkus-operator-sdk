@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jboss.logging.Logger;
 
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -43,6 +44,9 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     private static final String SERVICE_ACCOUNT_KIND = "ServiceAccount";
     private static final String CLUSTER_ROLE_KIND = "ClusterRole";
     private static final String ROLE_KIND = "Role";
+    private static final String NO_SERVICE_ACCOUNT = "";
+    private static final Logger LOGGER = Logger.getLogger(CsvManifestsBuilder.class.getName());
+
     private static final Map<String, Set<ResourceInfo>> groupToCRInfo = new ConcurrentHashMap<>(7);
 
     private final String csvGroupName;
@@ -123,7 +127,11 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             // ignore
         }
 
-        String defaultServiceAccountName = serviceAccounts.get(0).getMetadata().getName();
+        String defaultServiceAccountName = NO_SERVICE_ACCOUNT;
+        if (!serviceAccounts.isEmpty()) {
+            defaultServiceAccountName = serviceAccounts.get(0).getMetadata().getName();
+        }
+
         final var installSpec = csvSpecBuilder.editOrNewInstall()
                 .withStrategy(DEPLOYMENT).editOrNewSpec();
         handleClusterPermissions(clusterRoleBindings, clusterRoles, roles, defaultServiceAccountName, installSpec);
@@ -178,6 +186,11 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
 
         for (RoleBinding binding : roleBindings) {
             String serviceAccountName = findServiceAccountFromSubjects(binding.getSubjects(), defaultServiceAccountName);
+            if (NO_SERVICE_ACCOUNT.equals(serviceAccountName)) {
+                LOGGER.warnf("Role '%s' was not added because the service account is missing", binding.getRoleRef().getName());
+                continue;
+            }
+
             List<PolicyRule> rules = new LinkedList<>();
             rules.addAll(findRules(binding.getRoleRef(), clusterRoles, roles));
             Optional.ofNullable(customPermissionRules.remove(serviceAccountName)).ifPresent(rules::addAll);
@@ -191,9 +204,14 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             String defaultServiceAccountName,
             NamedInstallStrategyFluent.SpecNested<ClusterServiceVersionSpecFluent.InstallNested<ClusterServiceVersionFluent.SpecNested<ClusterServiceVersionBuilder>>> installSpec) {
         for (ClusterRoleBinding binding : clusterRoleBindings) {
-            handleClusterPermission(findRules(binding.getRoleRef(), clusterRoles, roles),
-                    findServiceAccountFromSubjects(binding.getSubjects(), defaultServiceAccountName),
-                    installSpec);
+            String serviceAccountName = findServiceAccountFromSubjects(binding.getSubjects(), defaultServiceAccountName);
+            if (NO_SERVICE_ACCOUNT.equals(serviceAccountName)) {
+                LOGGER.warnf("Cluster Role '%s' was not added because the service account is missing",
+                        binding.getRoleRef().getName());
+                continue;
+            }
+
+            handleClusterPermission(findRules(binding.getRoleRef(), clusterRoles, roles), serviceAccountName, installSpec);
         }
     }
 
