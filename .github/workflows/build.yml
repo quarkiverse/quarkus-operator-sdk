@@ -84,11 +84,10 @@ jobs:
           mvn install
 
           # Install CRDs
-          kubectl apply -f target/manifests/jokerequests.samples.javaoperatorsdk.io-v1.yml
           kubectl apply -f src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml
 
           # Run operator in DEV mode
-          nohup mvn quarkus:dev > app.log 2>&1 &
+          nohup mvn quarkus:dev -Dquarkus.operator-sdk.crd.apply=true > app.log 2>&1 &
           PID=$(echo $!)
 
           # Test operator by creating a Joke Request resource

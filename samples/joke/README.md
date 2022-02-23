@@ -14,7 +14,7 @@ cluster. You can just follow the steps below to get started quickly:
 
 - Connect to your cluster of choice using `kubectl/oc`, select the appropriate namespace/project.
   The operator will automatically connect to that cluster/namespace combination when started.
-- Run `mvn install -Dquarkus.operator-sdk.crd.apply=true` on the parent directory to build the project locally. This will automatically generate several resources for
+- Run `mvn install` on the parent directory to build the project locally. This will automatically generate several resources for
   you, in particular the CRDs associated with the custom resources we will be dealing with. These
   CRDs are generated in `target/manifests/` and come in `v1` version which correspond to the versions of the CRD spec. We recommend you use
   the `v1` version but might need to fall back to `v1beta1` if you're connecting to an older
@@ -23,10 +23,9 @@ cluster. You can just follow the steps below to get started quickly:
   issue for most "testing" clusters such as `minikube` or `kind`, you might need to log in to your
   OpenShift clusters with an admin account):
   ```sh
-  kubectl apply -f target/manifests/jokerequests.samples.javaoperatorsdk.io-v1.yml
   kubectl apply -f src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml
   ```           
-- Launch the app in dev mode: `mvn quarkus:dev`
+- Launch the app in dev mode: `mvn quarkus:dev -Dquarkus.operator-sdk.crd.apply=true`
 - Deploy the test request (or your own): `kubectl apply -f src/main/k8s/jokerequest.yml`. The operator will take your request and attempt to retrieve a joke from the api. If everything went well, a `Joke` resource named after the `id` of the joke retrieved from the API will be created on your cluster.
 - You can check the status of the request by doing something similar to, `jr` being the short name associated with `JokeRequest`:
     ```sh
