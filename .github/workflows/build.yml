@@ -70,13 +70,48 @@ jobs:
       - name: Install Operator Lifecycle Manager and Operator SDK into Kind
         run: operator-sdk olm install
 
-      - name: Deploy Joke sample into Kubernetes
+      - name: Run Joke sample using Quarkus DEV mode
+        run: |
+          K8S_NAMESPACE=dev
+
+          # Create and set namespace
+          kubectl create namespace $K8S_NAMESPACE
+          kubectl config set-context --current --namespace=$K8S_NAMESPACE
+
+          # Build manifests
+          cd samples/joke
+          mvn install
+
+          # Install CRDs
+          kubectl apply -f target/manifests/jokerequests.samples.javaoperatorsdk.io-v1.yml
+          kubectl apply -f src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml
+
+          # Run operator in DEV mode
+          nohup mvn quarkus:dev > app.log 2>&1 &
+          PID=$(echo $!)
+
+          # Test operator by creating a Joke Request resource
+          kubectl apply -f src/main/k8s/jokerequest.yml
+
+          # And wait for the operator to create another Joke resource
+          $SCRIPTS/waitFor.sh joke $K8S_NAMESPACE NAME
+
+          # Kill running process
+          kill -9 $PID
+
+          # Delete namespace
+          kubectl delete namespace $K8S_NAMESPACE
+
+      - name: Run Joke sample into Kubernetes using OLM
         run: |
           SCRIPTS=$(pwd)/.github/scripts
           K8S_NAMESPACE=operators
           REGISTRY_NAMESPACE=joke
           BUNDLE_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/joke-manifest-bundle:latest
           CATALOG_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/joke-manifest-catalog:latest
+
+          # Create and set namespace
+          kubectl config set-context --current --namespace=$K8S_NAMESPACE
 
           # Build manifests and images
           cd samples/joke
@@ -132,7 +167,7 @@ jobs:
           # Install Joke CRD: https://github.com/quarkiverse/quarkus-operator-sdk/issues/90
           kubectl apply -f ../src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml -n $K8S_NAMESPACE
 
-          # For testing that our operator is responsive, we add a Joke Request resource
+          # Test operator by creating a Joke Request resource
           cat <<EOF | kubectl create -f -
           apiVersion: samples.javaoperatorsdk.io/v1alpha1
           kind: JokeRequest
