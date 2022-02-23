@@ -72,6 +72,7 @@ jobs:
 
       - name: Run Joke sample using Quarkus DEV mode
         run: |
+          SCRIPTS=$(pwd)/.github/scripts
           K8S_NAMESPACE=dev
 
           # Create and set namespace
