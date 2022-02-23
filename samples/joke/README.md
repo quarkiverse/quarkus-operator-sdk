@@ -27,8 +27,7 @@ cluster. You can just follow the steps below to get started quickly:
   kubectl apply -f src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml
   ```           
 - Launch the app in dev mode: `mvn quarkus:dev`
-- Deploy the test request (or your own): `kubectl apply -f src/main/k8s/jokerequest.yml`. The operator will take your request and attempt to retrieve a joke from the api. If everything
-  went well, a `Joke` resource named after the `id` of the joke retrieved from the API will be created on your cluster.
+- Deploy the test request (or your own): `kubectl apply -f src/main/k8s/jokerequest.yml`. The operator will take your request and attempt to retrieve a joke from the api. If everything went well, a `Joke` resource named after the `id` of the joke retrieved from the API will be created on your cluster.
 - You can check the status of the request by doing something similar to, `jr` being the short name associated with `JokeRequest`:
     ```sh
     kubectl describe jr
@@ -37,10 +36,10 @@ cluster. You can just follow the steps below to get started quickly:
     ```sh
     kubectl get jokes
     ```
-- Check your joke:
-  ```sh
-  kubectl get jokes <your joke id> -o jsonpath="{.joke}{'\n'}" 
-  ```
+  - Check your joke:
+    ```sh
+    kubectl get jokes <your joke id> -o jsonpath="{.joke}{'\n'}" 
+    ```
 
 ### Deployment
 
