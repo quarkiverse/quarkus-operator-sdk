@@ -106,13 +106,16 @@ jobs:
       - name: Run Joke sample into Kubernetes using OLM
         run: |
           SCRIPTS=$(pwd)/.github/scripts
-          K8S_NAMESPACE=operators
+          K8S_OPERATORS_NAMESPACE=operators
+          K8S_TEST_NAMESPACE=test
           REGISTRY_NAMESPACE=joke
+          OPERATOR_PACKAGE_NAME=joke
+          OPERATOR_CHANNEL=alpha
           BUNDLE_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/joke-manifest-bundle:latest
-          CATALOG_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/joke-manifest-catalog:latest
+          CATALOG_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/joke-catalog:latest
 
           # Create and set namespace
-          kubectl config set-context --current --namespace=$K8S_NAMESPACE
+          kubectl create namespace $K8S_TEST_NAMESPACE
 
           # Build manifests and images
           cd samples/joke
@@ -121,11 +124,11 @@ jobs:
             -Dquarkus.container-image.insecure=true \
             -Dquarkus.container-image.registry=$KIND_REGISTRY \
             -Dquarkus.container-image.group=$REGISTRY_NAMESPACE \
-            -Dquarkus.kubernetes.namespace=$K8S_NAMESPACE
+            -Dquarkus.kubernetes.namespace=$K8S_OPERATORS_NAMESPACE
 
           # Build Operator Bundle
           cd target
-          opm alpha bundle generate --directory manifests --package joke --channels alpha --default alpha
+          opm alpha bundle generate --directory manifests --package $OPERATOR_PACKAGE_NAME --channels $OPERATOR_CHANNEL --default $OPERATOR_CHANNEL
           docker build -t $BUNDLE_IMAGE -f bundle.Dockerfile .
           docker push $BUNDLE_IMAGE
 
@@ -138,15 +141,15 @@ jobs:
           apiVersion: operators.coreos.com/v1alpha1
           kind: CatalogSource
           metadata:
-            name: joke-operator
-            namespace: $K8S_NAMESPACE
+            name: joke-catalog
+            namespace: $K8S_OPERATORS_NAMESPACE
           spec:
             sourceType: grpc
             image: $CATALOG_IMAGE
           EOF
 
           # Wait until the catalog source of our operator is up and running
-          $SCRIPTS/waitFor.sh pods $K8S_NAMESPACE Running "--selector=olm.catalogSource=joke-operator -o jsonpath='{..status.phase}'"
+          $SCRIPTS/waitFor.sh pods $K8S_OPERATORS_NAMESPACE Running "--selector=olm.catalogSource=joke-catalog -o jsonpath='{..status.phase}'"
 
           # Create a Subscription which triggers the deployment of joke operator
           cat <<EOF | kubectl create -f -
@@ -154,19 +157,19 @@ jobs:
           kind: Subscription
           metadata:
             name: joke-subscription
-            namespace: $K8S_NAMESPACE
+            namespace: $K8S_TEST_NAMESPACE
           spec:
-            channel: alpha
-            name: joke
-            source: joke-operator
-            sourceNamespace: $K8S_NAMESPACE
+            channel: $OPERATOR_CHANNEL
+            name: $OPERATOR_PACKAGE_NAME
+            source: joke-catalog
+            sourceNamespace: $K8S_OPERATORS_NAMESPACE
           EOF
 
           # Wait until the operator is up and running
-          $SCRIPTS/waitFor.sh csv $K8S_NAMESPACE Succeeded "jokerequestreconciler -o jsonpath='{.status.phase}'"
+          $SCRIPTS/waitFor.sh csv $K8S_TEST_NAMESPACE Succeeded "jokerequestreconciler -o jsonpath='{.status.phase}'"
 
-          # Install Joke CRD: https://github.com/quarkiverse/quarkus-operator-sdk/issues/90
-          kubectl apply -f ../src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml -n $K8S_NAMESPACE
+          # Install Joke CRD
+          kubectl apply -f ../src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml
 
           # Test operator by creating a Joke Request resource
           cat <<EOF | kubectl create -f -
@@ -174,10 +177,13 @@ jobs:
           kind: JokeRequest
           metadata:
             name: jr-request
-            namespace: $K8S_NAMESPACE
+            namespace: $K8S_TEST_NAMESPACE
           spec:
             category: Any
           EOF
 
           # And wait for the operator to create another Joke resource
-          $SCRIPTS/waitFor.sh joke $K8S_NAMESPACE NAME
+          $SCRIPTS/waitFor.sh joke $K8S_TEST_NAMESPACE NAME
+
+          # Delete namespace
+          kubectl delete namespace $K8S_TEST_NAMESPACE
