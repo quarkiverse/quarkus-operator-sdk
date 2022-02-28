@@ -3,7 +3,8 @@ package io.quarkiverse.operatorsdk.deployment;
 import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.loadClass;
 import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATION;
 import static io.quarkiverse.operatorsdk.common.Constants.CUSTOM_RESOURCE;
-import static io.quarkiverse.operatorsdk.common.Constants.HAS_METADATA;
+import static io.quarkiverse.operatorsdk.common.Constants.KUBERNETES_DEPENDENT;
+import static io.quarkiverse.operatorsdk.common.Constants.KUBERNETES_DEPENDENT_RESOURCE;
 import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.lang.annotation.Annotation;
@@ -35,8 +36,11 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependent;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ClassUtils.ReconcilerInfo;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
@@ -50,8 +54,6 @@ import io.quarkiverse.operatorsdk.runtime.NoOpMetricsProvider;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
-import io.quarkiverse.operatorsdk.runtime.QuarkusDependentResourceConfiguration;
-import io.quarkiverse.operatorsdk.runtime.QuarkusKubernetesDependentResourceConfiguration;
 import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.Version;
@@ -387,7 +389,7 @@ class OperatorSDKProcessor {
             final var namespaces = configExtractor.namespaces(name);
 
             // deal with dependent resources
-            var dependentResources = Collections.<QuarkusDependentResourceConfiguration> emptyList();
+            var dependentResources = Collections.<DependentResourceSpec> emptyList();
             if (controllerAnnotation != null) {
                 final var dependents = controllerAnnotation.value("dependents");
                 if (dependents != null) {
@@ -401,14 +403,19 @@ class OperatorSDKProcessor {
                                     "DependentResource implementations must provide a no-arg constructor for instantiation purposes");
                         }
 
-                        // if the resource type is a Kubernetes resource, we need to retrieve the configuration
-                        final var resourceTypeName = dependentConfig.value("resourceType").asClass()
-                                .name();
-                        final var resourceType = index.getClassByName(resourceTypeName);
-                        final var resourceClassName = resourceTypeName.toString();
-                        if (resourceType.interfaceNames().contains(HAS_METADATA)) {
-                            final var kubeDepConfig = dependentType.classAnnotation(
-                                    DotName.createSimple(KubernetesDependent.class.getName()));
+                        final var dependentClass = loadClass(dependentTypeName.toString(), DependentResource.class);
+
+                        DependentResourceSpec dependentSpec;
+                        // further process Kubernetes dependents
+                        final boolean isKubernetesDependent;
+                        try {
+                            isKubernetesDependent = JandexUtil.isSubclassOf(index, dependentType,
+                                    KUBERNETES_DEPENDENT_RESOURCE);
+                        } catch (BuildException e) {
+                            throw new IllegalStateException("DependentResource " + dependentType + " is not indexed", e);
+                        }
+                        if (isKubernetesDependent) {
+                            final var kubeDepConfig = dependentType.classAnnotation(KUBERNETES_DEPENDENT);
                             final var labelSelector = getLabelSelector(kubeDepConfig);
                             // if the dependent doesn't explicitly provide a namespace configuration, inherit the configuration from the reconciler configuration
                             final Set<String> dependentNamespaces = ConfigurationUtils.annotationValueOrDefault(
@@ -420,18 +427,15 @@ class OperatorSDKProcessor {
                                     kubeDepConfig,
                                     "owned",
                                     AnnotationValue::asBoolean,
-                                    () -> KubernetesDependent.OWNED_DEFAULT);
-                            final var cfg = new QuarkusKubernetesDependentResourceConfiguration(
-                                    dependentTypeName.toString(),
-                                    resourceClassName, labelSelector,
-                                    dependentNamespaces, owned);
-                            dependentResources.add(cfg);
+                                    () -> KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
+                            final var cfg = new KubernetesDependentResourceConfig(
+                                    owned, dependentNamespaces, labelSelector, null);
+                            dependentSpec = new DependentResourceSpec(dependentClass, cfg);
                         } else {
-                            dependentResources.add(
-                                    new QuarkusDependentResourceConfiguration(dependentTypeName.toString(), resourceClassName));
+                            dependentSpec = new DependentResourceSpec(dependentClass);
                         }
+                        dependentResources.add(dependentSpec);
                     }
-
                 }
             }
 

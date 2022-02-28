@@ -13,8 +13,7 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfiguration;
-import io.javaoperatorsdk.operator.api.config.dependent.KubernetesDependentResourceConfiguration;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
@@ -30,7 +29,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final String resourceClassName;
     private final Optional<String> specClassName;
     private final Optional<String> statusClassName;
-    private final List<DependentResourceConfiguration> dependentResources;
+    private final List<DependentResourceSpec> dependentResources;
     private String finalizer;
     private Set<String> namespaces;
     private RetryConfiguration retryConfiguration;
@@ -47,7 +46,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             String resourceClassName,
             boolean registrationDelayed, Set<String> namespaces, String finalizer, String labelSelector,
             Optional<String> specClassName, Optional<String> statusClassName,
-            List<DependentResourceConfiguration> dependentResources) {
+            List<DependentResourceSpec> dependentResources) {
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
         this.resourceTypeName = resourceTypeName;
@@ -140,12 +139,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     @Override
     public void setConfigurationService(ConfigurationService configurationService) {
         this.parent = configurationService;
-        dependentResources.forEach(drc -> {
-            if (drc instanceof KubernetesDependentResourceConfiguration) {
-                KubernetesDependentResourceConfiguration kdrc = (KubernetesDependentResourceConfiguration) drc;
-                kdrc.setConfigurationService(configurationService);
-            }
-        });
     }
 
     void setRetryConfiguration(RetryConfiguration retryConfiguration) {
@@ -177,7 +170,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     }
 
     @Override
-    public List<DependentResourceConfiguration> getDependentResources() {
+    public List<DependentResourceSpec> getDependentResources() {
         return dependentResources;
     }
 }
