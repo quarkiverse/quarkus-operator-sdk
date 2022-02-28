@@ -63,6 +63,9 @@ public class ManifestsProcessor {
                     // figure out which group should be used to generate CSV
                     final var name = reconcilerInfo.name();
                     final var config = controllerConfigs.get(name);
+                    if (config == null) {
+                        throw new IllegalStateException("Missing configuration for reconciler " + name);
+                    }
                     final var csvMetadata = getCSVMetadata(reconcilerInfo.classInfo(), name, index);
                     csvGroupMetadata.put(csvMetadata.name, csvMetadata);
                     final var resourceFullName = config.getResourceTypeName();
