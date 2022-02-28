@@ -106,16 +106,12 @@ jobs:
       - name: Run Joke sample into Kubernetes using OLM
         run: |
           SCRIPTS=$(pwd)/.github/scripts
-          K8S_OPERATORS_NAMESPACE=operators
-          K8S_TEST_NAMESPACE=test
+          K8S_NAMESPACE=operators
           REGISTRY_NAMESPACE=joke
           OPERATOR_PACKAGE_NAME=joke
           OPERATOR_CHANNEL=alpha
           BUNDLE_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/joke-manifest-bundle:latest
           CATALOG_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/joke-catalog:latest
-
-          # Create and set namespace
-          kubectl create namespace $K8S_TEST_NAMESPACE
 
           # Build manifests and images
           cd samples/joke
@@ -124,7 +120,7 @@ jobs:
             -Dquarkus.container-image.insecure=true \
             -Dquarkus.container-image.registry=$KIND_REGISTRY \
             -Dquarkus.container-image.group=$REGISTRY_NAMESPACE \
-            -Dquarkus.kubernetes.namespace=$K8S_OPERATORS_NAMESPACE
+            -Dquarkus.kubernetes.namespace=$K8S_NAMESPACE
 
           # Build Operator Bundle
           cd target
@@ -142,14 +138,14 @@ jobs:
           kind: CatalogSource
           metadata:
             name: joke-catalog
-            namespace: $K8S_OPERATORS_NAMESPACE
+            namespace: $K8S_NAMESPACE
           spec:
             sourceType: grpc
             image: $CATALOG_IMAGE
           EOF
 
           # Wait until the catalog source of our operator is up and running
-          $SCRIPTS/waitFor.sh pods $K8S_OPERATORS_NAMESPACE Running "--selector=olm.catalogSource=joke-catalog -o jsonpath='{..status.phase}'"
+          $SCRIPTS/waitFor.sh pods $K8S_NAMESPACE Running "--selector=olm.catalogSource=joke-catalog -o jsonpath='{..status.phase}'"
 
           # Create a Subscription which triggers the deployment of joke operator
           cat <<EOF | kubectl create -f -
@@ -157,16 +153,16 @@ jobs:
           kind: Subscription
           metadata:
             name: joke-subscription
-            namespace: $K8S_TEST_NAMESPACE
+            namespace: $K8S_NAMESPACE
           spec:
             channel: $OPERATOR_CHANNEL
             name: $OPERATOR_PACKAGE_NAME
             source: joke-catalog
-            sourceNamespace: $K8S_OPERATORS_NAMESPACE
+            sourceNamespace: $K8S_NAMESPACE
           EOF
 
           # Wait until the operator is up and running
-          $SCRIPTS/waitFor.sh csv $K8S_TEST_NAMESPACE Succeeded "jokerequestreconciler -o jsonpath='{.status.phase}'"
+          $SCRIPTS/waitFor.sh csv $K8S_NAMESPACE Succeeded "jokerequestreconciler -o jsonpath='{.status.phase}'"
 
           # Install Joke CRD
           kubectl apply -f ../src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml
@@ -177,13 +173,13 @@ jobs:
           kind: JokeRequest
           metadata:
             name: jr-request
-            namespace: $K8S_TEST_NAMESPACE
+            namespace: $K8S_NAMESPACE
           spec:
             category: Any
           EOF
 
           # And wait for the operator to create another Joke resource
-          $SCRIPTS/waitFor.sh joke $K8S_TEST_NAMESPACE NAME
+          $SCRIPTS/waitFor.sh joke $K8S_NAMESPACE NAME
 
           # Delete namespace
-          kubectl delete namespace $K8S_TEST_NAMESPACE
+          kubectl delete namespace $K8S_NAMESPACE
