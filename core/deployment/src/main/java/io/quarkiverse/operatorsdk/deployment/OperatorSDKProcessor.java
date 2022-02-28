@@ -429,7 +429,7 @@ class OperatorSDKProcessor {
                                     AnnotationValue::asBoolean,
                                     () -> KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
                             final var cfg = new KubernetesDependentResourceConfig(
-                                    owned, dependentNamespaces, labelSelector, null);
+                                    owned, dependentNamespaces.toArray(new String[0]), labelSelector, null);
                             dependentSpec = new DependentResourceSpec(dependentClass, cfg);
                         } else {
                             dependentSpec = new DependentResourceSpec(dependentClass);
