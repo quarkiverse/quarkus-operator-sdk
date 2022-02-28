@@ -56,6 +56,7 @@ public class CSVProcessor {
                 .forEach(reconcilerInfo -> {
                     // figure out which group should be used to generate CSV
                     final var name = reconcilerInfo.name();
+                    log.infov("Processing reconciler: {}", name);
                     final var config = controllerConfigs.get(name);
                     if (config == null) {
                         throw new IllegalStateException("Missing configuration for reconciler " + name);
