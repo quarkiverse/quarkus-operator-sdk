@@ -39,18 +39,12 @@ jobs:
           distribution: ${{ matrix.distribution }}
           java-version: ${{ matrix.java }}
           cache: 'maven'
+          
       - name: Get Date
         id: get-date
         run: |
           echo "::set-output name=date::$(/bin/date -u "+%Y-%m")"
         shell: bash
-      - name: Cache Maven Repository
-        id: cache-maven
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2/repository
-          # refresh cache every month to avoid unlimited growth
-          key: maven-repo-${{ runner.os }}-${{ steps.get-date.outputs.date }}
 
       - name: Build with Maven
         run: mvn -B formatter:validate verify -Dnative --file pom.xml
