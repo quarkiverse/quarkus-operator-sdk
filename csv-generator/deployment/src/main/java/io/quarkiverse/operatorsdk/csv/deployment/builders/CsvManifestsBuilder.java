@@ -1,7 +1,5 @@
 package io.quarkiverse.operatorsdk.csv.deployment.builders;
 
-import static io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator.ALL_VERBS;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Base64;
@@ -173,7 +171,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                 if (permissionRule.verbs != null && permissionRule.verbs.length > 0) {
                     verbs = Arrays.asList(permissionRule.verbs);
                 } else {
-                    verbs = ALL_VERBS;
+                    verbs = Collections.emptyList();
                 }
 
                 customRulesByServiceAccount.add(new PolicyRuleBuilder()

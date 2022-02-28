@@ -53,10 +53,12 @@ public @interface CSVMetadata {
 
         String[] resources();
 
-        // By default, all verbs
-        String[] verbs() default {};
+        String[] verbs() default { "get", "list", "watch", "create", "delete", "patch", "update" };
 
-        // If not provided, it will use the default service account name
+        /**
+         * @return the service account name for the permission rule. If not provided, it will use the default service account
+         *         name.
+         */
         String serviceAccountName() default "";
     }
 }

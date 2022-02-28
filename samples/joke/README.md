@@ -63,7 +63,10 @@ mvn clean package -Dquarkus.container-image.build=true \
     -Dquarkus.kubernetes.namespace=<the kubernetes namespace where you will deploy the operator>
 ```
 
-| If you're using an insecure container registry, you'd also need to append the next property to the Maven command `-Dquarkus.container-image.insecure=true`.
+---
+**NOTE**
+If you're using an insecure container registry, you'd also need to append the next property to the Maven command `-Dquarkus.container-image.insecure=true`.
+---
 
 2. Build the Operator Bundle image
 
@@ -77,54 +80,70 @@ opm alpha bundle generate \
     --channels <The list of channels that bundle image belongs to> \
     --default <The default channel for the bundle image>
 ```
-
+ 
 For example, if we want to name the package `joke` and use the `alpha` channels, the command would look like as `opm alpha bundle generate --directory target/manifests --package joke --channels alpha --default alpha`.
+
+---
+**NOTE**
+Find more information about channels and packages in [this link](https://olm.operatorframework.io/docs/best-practices/channel-naming/#channels).
+---
 
 The above command will generate a `bundle.Dockerfile` Dockerfile file that you will use to build and push the final Operator Bundle image to your container registry:
 
 ```shell
-docker build -t <your container registry>/<your container registry namespace>/joke-manifest-bundle:<tag> -f bundle.Dockerfile .
-docker push <your container registry>/<your container registry namespace>/joke-manifest-bundle:<tag>
+JOKE_BUNDLE_IMAGE=<your container registry>/<your container registry namespace>/joke-manifest-bundle:<tag>
+docker build -t $JOKE_BUNDLE_IMAGE -f bundle.Dockerfile .
+docker push $JOKE_BUNDLE_IMAGE
 ```
+
+For example, if our container registry is `quay.io`, our Quay user is `myuser` and the tag we're releasing is `1.0`, the final `JOKE_BUNDLE_IMAGE` property would be `quay.io/myuser/joke-manifest-bundle:1.0`. 
 
 3. Make your operator available within a Catalog
 
-OLM uses catalogs to discover and install Operators and their dependencies. So, a catalog is similar to a repository of operators and its versions that can be installed on a cluster.
-So far, we have built the Operator bundle that is ready to be installed on a cluster, but it's not registered in any catalog yet. For doing this, the `olm` tool provides a utility to add new Operator bundle images to an existing catalog by doing:
+OLM uses catalogs to discover and install Operators and their dependencies. So, a catalog is similar to a repository of operators and their associated versions that can be installed on a cluster. Moreover, the catalog is also a container image that contains a collection of bundles and channels. Therefore, we'd need to create a new catalog (or update an existing one if you're already have one), build/push the catalog image and then install it on our cluster.
+
+So far, we have already built the Operator bundle image at `$JOKE_BUNDLE_IMAGE` (see above) and next, we need to add this Operator bundle image into our catalog. For doing this, we'll use the `olm` tool as follows:
 
 ```shell
-opm index add --bundles $BUNDLE_IMAGE --tag $INDEX_IMAGE --build-tool docker --skip-tls
-          
-          
+CATALOG_IMAGE=<catalog container registry>/<catalog container registry namespace>/<catalog name>:<tag>
 opm index add \
-    --bundles <your container registry>/<your container registry namespace>/joke-manifest-bundle:<tag> \
-    --tag <catalog container registry>/<catalog container registry namespace>/<catalog name>:<tag> \
-    --build-tool docker --skip-tls
-docker push <catalog container registry>/<catalog container registry namespace>/<catalog name>:<tag>
+    --bundles $JOKE_BUNDLE_IMAGE \
+    --tag $CATALOG_IMAGE \
+    --build-tool docker
+docker push $CATALOG_IMAGE
 ```
 
-| If you're using an insecure registry, you'd need to append the argument `--skip-tls` to the `opm index` command.
+For example, if our catalog name is `joke-catalog`, our container registry for the catalog is `quay.io`, our Quay user is `myuser` and the container tag we're releasing is `59.0`, the final `CATALOG_IMAGE` property would be `quay.io/myuser/joke-catalog:59.0`.
 
-The `<catalog container registry>/<catalog container registry namespace>/<catalog name>:<tag>` image is the catalog image that must be registered on the cluster. 
-If you want to register a custom catalog, you can create it and configure it with the catalog image by doing the next command:
+---
+**NOTE**
+If you're using an insecure registry, you'd need to append the argument `--skip-tls` to the `opm index` command.
+---
+
+Once we have our catalog image built and pushed at `$CATALOG_IMAGE` image, we need to install it on our cluster using the `CatalogSource` resource by doing the next command:
 
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: joke-operator
+  name: joke-catalog-source
   namespace: operators
 spec:
   sourceType: grpc
-  image: <catalog container registry>/<catalog container registry namespace>/<catalog name>:<tag>
+  image: $CATALOG_IMAGE
 EOF
 ```
+
+---
+**NOTE**
+We need to install the catalog source at the Kubernetes namespace where we installed OLM, which by default it's `operators`.
+---
 
 Once the catalog is installed, you should see the catalog pod up and running:
 
 ```shell
-kubectl get pods -n operators --selector=olm.catalogSource=joke-operator
+kubectl get pods -n <K8S NAMESPACE> --selector=olm.catalogSource=joke-catalog-source
 ```
 
 4. Install your operator via OLM
@@ -137,14 +156,19 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
   name: joke-subscription
-  namespace: <your namespace>
+  namespace: <Kubernetes namespace where the Joke operator will be installed>
 spec:
   channel: alpha
   name: joke
-  source: joke-operator
+  source: joke-catalog-source
   sourceNamespace: operators
 EOF
 ```
+
+---
+**NOTE**
+We'll install the operator in the target namespace defined at the metadata object. The `sourceNamespace` value is the Kubernetes namespace where the catalog was installed on (`operators` by default, see the previous step).
+---
 
 Once the subscription is created, you should see your operator pod up and running:
 
@@ -155,7 +179,7 @@ kubectl get csv -n operators jokerequestreconciler
 Also, this example needs the `Joke` CRD to be installed on the cluster:
 
 ```shell
-kubectl apply -f src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml -n <your namespace>
+kubectl apply -f src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml
 ```
 
 5. Test your operator
