@@ -78,7 +78,7 @@ jobs:
           mvn install
 
           # Install CRDs
-          kubectl apply -f target/manifests/jokerequests.samples.javaoperatorsdk.io-v1.yml
+          kubectl apply -f target/kubernetes/jokerequests.samples.javaoperatorsdk.io-v1.yml
           kubectl apply -f src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml
 
           # Run operator in DEV mode
