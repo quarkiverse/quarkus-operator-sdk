@@ -167,17 +167,10 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                     customPermissionRules.put(serviceAccountName, customRulesByServiceAccount);
                 }
 
-                List<String> verbs;
-                if (permissionRule.verbs != null && permissionRule.verbs.length > 0) {
-                    verbs = Arrays.asList(permissionRule.verbs);
-                } else {
-                    verbs = Collections.emptyList();
-                }
-
                 customRulesByServiceAccount.add(new PolicyRuleBuilder()
                         .addAllToApiGroups(Arrays.asList(permissionRule.apiGroups))
                         .addAllToResources(Arrays.asList(permissionRule.resources))
-                        .addAllToVerbs(verbs)
+                        .addAllToVerbs(Arrays.asList(permissionRule.verbs))
                         .build());
             }
         }

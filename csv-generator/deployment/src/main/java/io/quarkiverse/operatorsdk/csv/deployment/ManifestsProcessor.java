@@ -1,5 +1,7 @@
 package io.quarkiverse.operatorsdk.csv.deployment;
 
+import static io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator.ALL_VERBS;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -244,7 +246,7 @@ public class ManifestsProcessor {
                         ConfigurationUtils.annotationValueOrDefault(permissionsAnn[i], "resources",
                                 AnnotationValue::asStringArray, () -> null),
                         ConfigurationUtils.annotationValueOrDefault(permissionsAnn[i], "verbs",
-                                AnnotationValue::asStringArray, () -> null),
+                                AnnotationValue::asStringArray, () -> ALL_VERBS),
                         ConfigurationUtils.annotationValueOrDefault(permissionsAnn[i], "serviceAccountName",
                                 AnnotationValue::asString, () -> null));
             }

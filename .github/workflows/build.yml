@@ -125,7 +125,7 @@ jobs:
 
           # Build Operator Bundle
           cd target
-          opm alpha bundle generate --directory manifests --package joke --channels alpha --default alpha
+          opm alpha bundle generate --directory manifests --package joke-operator --channels alpha --default alpha
           docker build -t $BUNDLE_IMAGE -f bundle.Dockerfile .
           docker push $BUNDLE_IMAGE
 
@@ -138,7 +138,7 @@ jobs:
           apiVersion: operators.coreos.com/v1alpha1
           kind: CatalogSource
           metadata:
-            name: joke-operator
+            name: joke-catalog
             namespace: $K8S_NAMESPACE
           spec:
             sourceType: grpc
@@ -146,7 +146,7 @@ jobs:
           EOF
 
           # Wait until the catalog source of our operator is up and running
-          $SCRIPTS/waitFor.sh pods $K8S_NAMESPACE Running "--selector=olm.catalogSource=joke-operator -o jsonpath='{..status.phase}'"
+          $SCRIPTS/waitFor.sh pods $K8S_NAMESPACE Running "--selector=olm.catalogSource=joke-catalog -o jsonpath='{..status.phase}'"
 
           # Create a Subscription which triggers the deployment of joke operator
           cat <<EOF | kubectl create -f -
@@ -157,16 +157,16 @@ jobs:
             namespace: $K8S_NAMESPACE
           spec:
             channel: alpha
-            name: joke
-            source: joke-operator
+            name: joke-operator
+            source: joke-catalog
             sourceNamespace: $K8S_NAMESPACE
           EOF
 
           # Wait until the operator is up and running
           $SCRIPTS/waitFor.sh csv $K8S_NAMESPACE Succeeded "jokerequestreconciler -o jsonpath='{.status.phase}'"
 
-          # Install Joke CRD: https://github.com/quarkiverse/quarkus-operator-sdk/issues/90
-          kubectl apply -f ../src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml -n $K8S_NAMESPACE
+          # Install Joke CRD
+          kubectl apply -f ../src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml
 
           # Test operator by creating a Joke Request resource
           cat <<EOF | kubectl create -f -
