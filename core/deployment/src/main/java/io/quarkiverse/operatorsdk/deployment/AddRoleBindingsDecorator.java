@@ -84,7 +84,9 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
                 .withNewMetadata().withName(bindingName)
                 .endMetadata()
                 .withNewRoleRef(RBAC_AUTHORIZATION_GROUP, CLUSTER_ROLE, clusterRoleName)
-                .addNewSubject(null, SERVICE_ACCOUNT, serviceAccountName, namespace.orElse(null))
+                .addNewSubject()
+                .withKind(SERVICE_ACCOUNT).withName(serviceAccountName).withNamespace(namespace.orElse(null))
+                .endSubject()
                 .build());
     }
 
