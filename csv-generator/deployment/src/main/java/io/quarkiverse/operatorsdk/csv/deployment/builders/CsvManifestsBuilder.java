@@ -31,9 +31,9 @@ import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionFluent;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionSpecFluent;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.NamedInstallStrategyFluent;
-import io.quarkiverse.operatorsdk.common.ResourceInfo;
 import io.quarkiverse.operatorsdk.csv.deployment.AugmentedResourceInfo;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVMetadataHolder;
+import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 
 public class CsvManifestsBuilder extends ManifestsBuilder {
 
