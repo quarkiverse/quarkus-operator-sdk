@@ -82,7 +82,7 @@ In the previous step, we generated the bundle manifests at `target/bundle` which
 
 ```shell
 JOKE_BUNDLE_IMAGE=<your container registry>/<your container registry namespace>/<bundle image name>:<tag>
-docker build -t $JOKE_BUNDLE_IMAGE -f target/bundle/bundle.Dockerfile .
+docker build -t $JOKE_BUNDLE_IMAGE -f target/bundle/bundle.Dockerfile target/bundle
 docker push $JOKE_BUNDLE_IMAGE
 ```
 
