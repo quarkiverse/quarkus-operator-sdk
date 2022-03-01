@@ -47,5 +47,5 @@ jobs:
         shell: bash
 
       - name: Build with Maven
-        run: mvn -B formatter:validate verify -Dnative --file pom.xml
+        run: mvn -B formatter:validate install -Dnative --file pom.xml
 
