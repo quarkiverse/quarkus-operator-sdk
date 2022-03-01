@@ -12,6 +12,8 @@ import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 
 public class AddClusterRolesDecorator extends ResourceProvidingDecorator<KubernetesListBuilder> {
 
+    public static final String[] ALL_VERBS = new String[] { "get", "list", "watch", "create", "delete", "patch", "update" };
+
     static final String JOSDK_CRD_VALIDATING_CLUSTER_ROLE = "josdk-crd-validating-cluster-role";
     private final Map<String, ResourceInfo> controllerToCustomResourceMappings;
     private final boolean validateCRDs;
@@ -36,7 +38,7 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
             });
 
             rule.addNewApiGroup(cri.getGroup())
-                    .addToVerbs("get", "list", "watch", "create", "delete", "patch", "update")
+                    .addToVerbs(ALL_VERBS)
                     .build();
 
             final var clusterRoleBuilder = new ClusterRoleBuilder()
