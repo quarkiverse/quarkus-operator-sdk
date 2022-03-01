@@ -118,9 +118,7 @@ jobs:
             -Dquarkus.kubernetes.namespace=$K8S_NAMESPACE
 
           # Build Operator Bundle
-          cd target
-          opm alpha bundle generate --directory manifests --package joke-operator --channels alpha --default alpha
-          docker build -t $BUNDLE_IMAGE -f bundle.Dockerfile .
+          docker build -t $BUNDLE_IMAGE -f target/bundle/bundle.Dockerfile .
           docker push $BUNDLE_IMAGE
 
           # Build Catalog image
@@ -160,7 +158,7 @@ jobs:
           $SCRIPTS/waitFor.sh csv $K8S_NAMESPACE Succeeded "jokerequestreconciler -o jsonpath='{.status.phase}'"
 
           # Install Joke CRD
-          kubectl apply -f ../src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml
+          kubectl apply -f src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml
 
           # Test operator by creating a Joke Request resource
           cat <<EOF | kubectl create -f -

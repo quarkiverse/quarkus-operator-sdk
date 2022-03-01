@@ -12,7 +12,7 @@ This extension integrates the https://javaoperatorsdk.io[Java Operator SDK] proj
 - Automatically registers reconcilers with the `Operator` and start them
 - Automatically generates CRDs for all `CustomResource` implementations used by reconcilers
 - Automatically generates Kubernetes descriptors
-- Automatically generates CSV for all reconcilers (using the `quarkus-operator-sdk-csv-generator` extension) [Preview]
+- Automatically generates the bundle manifests for all reconcilers (using the `quarkus-operator-sdk-bundle-generator` extension) [Preview]
 - Integrates with the Dev mode:
 * Watches your code for changes and reload automatically your operator if needed without having to hit an endpoint
 * Only re-generates the CRDs if a change impacting its generation is detected
@@ -37,13 +37,13 @@ In your `pom.xml` file, add:
 </dependency>
 ----
 
-If you want to use the CSV generator, you will first need to use Quarkus 2.3.0.Final or above and add the `quarkus-operator-sdk-csv-generator` extension first:
+If you want to use the Bundle generator, you will first need to use Quarkus 2.3.0.Final or above and add the `quarkus-operator-sdk-bundle-generator` extension first:
 
 [source,xml]
 ----
 <dependency>
     <groupId>io.quarkiverse.operatorsdk</groupId>
-    <artifactId>quarkus-operator-sdk-csv-generator</artifactId>
+    <artifactId>quarkus-operator-sdk-bundle-generator</artifactId>
 </dependency>
 ----
 
