@@ -29,18 +29,13 @@ jobs:
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
-      - uses: actions/setup-java@v1.4.3
+      - name: Set up Java
+        uses: actions/setup-java@v2
         with:
+          distribution: temurin
           java-version: 11
-
-      - name: Cache local Maven repository
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
+          cache: 'maven'
+                
       - name: Configure Git author
         run: |
           git config --local user.email "action@github.com"
