@@ -19,6 +19,7 @@ import io.quarkus.arc.impl.Sets;
 public class BundleGenerator {
 
     public static final String MANIFESTS = "manifests";
+
     private static final String DOT = ".";
     private static final String COMMA = ",";
     private static final String DEFAULT = "default";
@@ -29,7 +30,7 @@ public class BundleGenerator {
     private static final String MEDIA_TYPE = "mediatype";
     private static final String CHANNEL = "channel";
     private static final String CHANNELS = "channels";
-    private static final String PREFIX_ANNOTATION = "operators.operatorframework.io.bundle.";
+    private static final String PREFIX_ANNOTATION = "operators.operatorframework.io.bundle";
 
     private BundleGenerator() {
     }

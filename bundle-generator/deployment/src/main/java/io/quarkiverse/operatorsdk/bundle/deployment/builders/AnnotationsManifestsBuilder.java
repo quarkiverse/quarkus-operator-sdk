@@ -29,7 +29,7 @@ public class AnnotationsManifestsBuilder extends ManifestsBuilder {
 
     @Override
     public Path getFileName() {
-        return Path.of(METADATA, ANNOTATIONS + ".yml");
+        return Path.of(METADATA, ANNOTATIONS + ".yaml");
     }
 
     @Override
