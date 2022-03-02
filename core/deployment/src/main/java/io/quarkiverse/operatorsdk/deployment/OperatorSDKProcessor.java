@@ -37,7 +37,6 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -55,6 +54,7 @@ import io.quarkiverse.operatorsdk.runtime.NoOpMetricsProvider;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
+import io.quarkiverse.operatorsdk.runtime.QuarkusDependentResourceSpec;
 import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.Version;
@@ -398,7 +398,7 @@ class OperatorSDKProcessor {
             final var namespaces = configExtractor.namespaces(name);
 
             // deal with dependent resources
-            var dependentResources = Collections.<DependentResourceSpec> emptyList();
+            var dependentResources = Collections.<QuarkusDependentResourceSpec> emptyList();
             if (controllerAnnotation != null) {
                 final var dependents = controllerAnnotation.value("dependents");
                 if (dependents != null) {
@@ -414,7 +414,6 @@ class OperatorSDKProcessor {
 
                         final var dependentClass = loadClass(dependentTypeName.toString(), DependentResource.class);
 
-                        DependentResourceSpec dependentSpec;
                         // further process Kubernetes dependents
                         final boolean isKubernetesDependent;
                         try {
@@ -423,6 +422,7 @@ class OperatorSDKProcessor {
                         } catch (BuildException e) {
                             throw new IllegalStateException("DependentResource " + dependentType + " is not indexed", e);
                         }
+                        Object cfg = null;
                         if (isKubernetesDependent) {
                             final var kubeDepConfig = dependentType.classAnnotation(KUBERNETES_DEPENDENT);
                             final var labelSelector = getLabelSelector(kubeDepConfig);
@@ -437,13 +437,11 @@ class OperatorSDKProcessor {
                                     "owned",
                                     AnnotationValue::asBoolean,
                                     () -> KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
-                            final var cfg = new KubernetesDependentResourceConfig(
+                            cfg = new KubernetesDependentResourceConfig(
                                     owned, dependentNamespaces.toArray(new String[0]), labelSelector, null);
-                            dependentSpec = new DependentResourceSpec(dependentClass, cfg);
-                        } else {
-                            dependentSpec = new DependentResourceSpec(dependentClass);
                         }
-                        dependentResources.add(dependentSpec);
+
+                        dependentResources.add(new QuarkusDependentResourceSpec(dependentClass, cfg));
                     }
                 }
             }

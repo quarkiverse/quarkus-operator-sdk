@@ -29,7 +29,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final String resourceClassName;
     private final Optional<String> specClassName;
     private final Optional<String> statusClassName;
-    private final List<DependentResourceSpec> dependentResources;
+    private final List<? extends DependentResourceSpec> dependentResources;
     private String finalizer;
     private Set<String> namespaces;
     private RetryConfiguration retryConfiguration;
@@ -46,7 +46,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             String resourceClassName,
             boolean registrationDelayed, Set<String> namespaces, String finalizer, String labelSelector,
             Optional<String> specClassName, Optional<String> statusClassName,
-            List<DependentResourceSpec> dependentResources) {
+            List<QuarkusDependentResourceSpec> dependentResources) {
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
         this.resourceTypeName = resourceTypeName;
@@ -169,8 +169,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return statusClassName;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public List<DependentResourceSpec> getDependentResources() {
-        return dependentResources;
+        return (List<DependentResourceSpec>) dependentResources;
     }
 }
