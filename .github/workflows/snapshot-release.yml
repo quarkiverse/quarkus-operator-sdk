@@ -31,4 +31,4 @@ jobs:
       - name: Maven release ${{steps.metadata.outputs.current-version}}
         run: |
           gpg --quiet --batch --yes --decrypt --passphrase="${{secrets.GPG_PASSPHRASE}}" --output maven-settings.xml .github/release/maven-settings.xml.gpg
-          mvn -B deploy -Prelease -s maven-settings.xml
+          mvn -B deploy -DperformRelease -Dno-samples -Prelease -s maven-settings.xml
