@@ -27,7 +27,6 @@
         <module>common</module>
         <module>core</module>
         <module>csv-generator</module>
-        <module>integration-tests</module>
       </modules>
     </profile>
     <profile>
