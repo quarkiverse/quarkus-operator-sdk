@@ -39,7 +39,7 @@ public class BundleDockerfileManifestsBuilder extends ManifestsBuilder {
 
         for (Map.Entry<String, String> label : bundleLabels.entrySet()) {
             sb.append("LABEL ").append(label.getKey()).append("=").append(label.getValue())
-                .append(lineSeparator);
+                    .append(lineSeparator);
         }
 
         sb.append("COPY manifests /manifests/").append(lineSeparator);

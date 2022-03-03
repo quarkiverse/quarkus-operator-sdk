@@ -85,7 +85,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             }
         }
 
-        if (metadata.installModes == null || metadata.maintainers.length == 0) {
+        if (metadata.installModes == null || metadata.installModes.length == 0) {
             csvSpecBuilder.addNewInstallMode(true, DEFAULT_INSTALL_MODE);
         } else {
             for (CSVMetadataHolder.InstallMode installMode : metadata.installModes) {
