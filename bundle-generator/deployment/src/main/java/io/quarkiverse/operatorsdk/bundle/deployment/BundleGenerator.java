@@ -14,7 +14,6 @@ import io.quarkiverse.operatorsdk.bundle.deployment.builders.ManifestsBuilder;
 import io.quarkiverse.operatorsdk.bundle.runtime.BundleGenerationConfiguration;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
-import io.quarkus.arc.impl.Sets;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
 
 public class BundleGenerator {
@@ -45,7 +44,7 @@ public class BundleGenerator {
         final var builders = new ConcurrentHashMap<String, Set<ManifestsBuilder>>(7);
         return info.values().parallelStream()
                 .flatMap(cri -> builders.computeIfAbsent(cri.getCsvGroupName(),
-                        s -> Sets.of(new CsvManifestsBuilder(cri, csvMetadata),
+                        s -> Set.of(new CsvManifestsBuilder(cri, csvMetadata),
                                 new AnnotationsManifestsBuilder(cri, labels),
                                 new BundleDockerfileManifestsBuilder(cri, labels)))
                         .stream())
