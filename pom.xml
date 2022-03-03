@@ -28,7 +28,6 @@
         <module>common-deployment</module>
         <module>core</module>
         <module>bundle-generator</module>
-        <module>integration-tests</module>
       </modules>
     </profile>
     <profile>
