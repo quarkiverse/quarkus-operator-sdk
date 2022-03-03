@@ -40,7 +40,7 @@ public abstract class ManifestsBuilder {
 
     public abstract Path getFileName();
 
-    public abstract byte[] getYAMLData(List<ServiceAccount> serviceAccounts, List<ClusterRoleBinding> clusterRoleBindings,
+    public abstract byte[] getManifestData(List<ServiceAccount> serviceAccounts, List<ClusterRoleBinding> clusterRoleBindings,
             List<ClusterRole> clusterRoles, List<RoleBinding> roleBindings, List<Role> roles,
             List<Deployment> deployments) throws IOException;
 

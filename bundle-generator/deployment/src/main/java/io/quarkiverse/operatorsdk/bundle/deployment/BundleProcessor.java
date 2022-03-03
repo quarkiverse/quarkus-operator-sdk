@@ -148,7 +148,7 @@ public class BundleProcessor {
                         generatedCSVs.produce(
                                 new GeneratedFileSystemResourceBuildItem(
                                         Path.of(BUNDLE).resolve(fileName).toString(),
-                                        manifestBuilder.getYAMLData(serviceAccounts, clusterRoleBindings, clusterRoles,
+                                        manifestBuilder.getManifestData(serviceAccounts, clusterRoleBindings, clusterRoles,
                                                 roleBindings, roles, deployments)));
                         log.infov("Generating CSV for {0} controller -> {1}", manifestBuilder.getControllerName(),
                                 outputDir.resolve(fileName));
