@@ -31,10 +31,6 @@
       <artifactId>quarkus-container-image-jib</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-    </dependency>
-    <dependency>
       <groupId>io.quarkiverse.operatorsdk</groupId>
       <artifactId>quarkus-operator-sdk-bundle-generator-deployment</artifactId>
       <scope>provided</scope>

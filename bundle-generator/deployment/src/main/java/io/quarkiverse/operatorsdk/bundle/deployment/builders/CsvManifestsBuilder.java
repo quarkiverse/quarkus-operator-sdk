@@ -17,7 +17,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
 
 import io.fabric8.kubernetes.api.model.ServiceAccount;
@@ -66,7 +65,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         final var csvSpecBuilder = csvBuilder
                 .editOrNewSpec()
                 .withDescription(metadata.description)
-                .withDisplayName(StringUtils.defaultIfEmpty(metadata.displayName, getControllerName()))
+                .withDisplayName(defaultIfEmpty(metadata.displayName, getControllerName()))
                 .withKeywords(metadata.keywords)
                 .withReplaces(metadata.replaces)
                 .withVersion(metadata.version)
@@ -162,7 +161,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         Map<String, List<PolicyRule>> customPermissionRules = new HashMap<>();
         if (metadata.permissionRules != null) {
             for (CSVMetadataHolder.PermissionRule permissionRule : metadata.permissionRules) {
-                String serviceAccountName = StringUtils.defaultIfEmpty(permissionRule.serviceAccountName,
+                String serviceAccountName = defaultIfEmpty(permissionRule.serviceAccountName,
                         defaultServiceAccountName);
                 List<PolicyRule> customRulesByServiceAccount = customPermissionRules.computeIfAbsent(serviceAccountName,
                         k -> new LinkedList<>());
@@ -261,7 +260,8 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                             p.getRules().remove(i.intValue());
                             // if the permission doesn't have any rules anymore, mark it for removal
                             // or the service account name is empty
-                            if (p.getRules().isEmpty() || StringUtils.isEmpty(p.getServiceAccountName())) {
+                            final var san = p.getServiceAccountName();
+                            if (p.getRules().isEmpty() || (san == null || san.isBlank())) {
                                 nowEmptyPermissions.add(permissionPosition[0]);
                             }
                         }
@@ -314,5 +314,9 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         }
 
         return Collections.emptyList();
+    }
+
+    private static String defaultIfEmpty(String possiblyNullOrEmpty, String defaultValue) {
+        return Optional.ofNullable(possiblyNullOrEmpty).filter(String::isBlank).orElse(defaultValue);
     }
 }
