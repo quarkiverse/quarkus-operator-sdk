@@ -31,11 +31,9 @@ public abstract class ManifestsBuilder {
     }
 
     private final String controllerName;
-    private final String csvGroupName;
 
     public ManifestsBuilder(AugmentedResourceInfo cri) {
         controllerName = cri.getControllerName();
-        csvGroupName = cri.getCsvGroupName();
     }
 
     public abstract Path getFileName();
