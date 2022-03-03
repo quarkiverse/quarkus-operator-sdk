@@ -164,11 +164,8 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             for (CSVMetadataHolder.PermissionRule permissionRule : metadata.permissionRules) {
                 String serviceAccountName = StringUtils.defaultIfEmpty(permissionRule.serviceAccountName,
                         defaultServiceAccountName);
-                List<PolicyRule> customRulesByServiceAccount = customPermissionRules.get(serviceAccountName);
-                if (customRulesByServiceAccount == null) {
-                    customRulesByServiceAccount = new LinkedList<>();
-                    customPermissionRules.put(serviceAccountName, customRulesByServiceAccount);
-                }
+                List<PolicyRule> customRulesByServiceAccount = customPermissionRules.computeIfAbsent(serviceAccountName,
+                        k -> new LinkedList<>());
 
                 customRulesByServiceAccount.add(new PolicyRuleBuilder()
                         .addAllToApiGroups(Arrays.asList(permissionRule.apiGroups))
@@ -185,8 +182,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                 continue;
             }
 
-            List<PolicyRule> rules = new LinkedList<>();
-            rules.addAll(findRules(binding.getRoleRef(), clusterRoles, roles));
+            List<PolicyRule> rules = new LinkedList<>(findRules(binding.getRoleRef(), clusterRoles, roles));
             Optional.ofNullable(customPermissionRules.remove(serviceAccountName)).ifPresent(rules::addAll);
 
             handlerPermission(rules, serviceAccountName, installSpec);
@@ -290,7 +286,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     private String findServiceAccountFromSubjects(List<Subject> subjects, String defaultServiceAccountName) {
         return subjects.stream()
                 .filter(o -> SERVICE_ACCOUNT_KIND.equalsIgnoreCase(o.getKind()))
-                .map(o -> o.getName())
+                .map(Subject::getName)
                 .findFirst()
                 .orElse(defaultServiceAccountName);
     }

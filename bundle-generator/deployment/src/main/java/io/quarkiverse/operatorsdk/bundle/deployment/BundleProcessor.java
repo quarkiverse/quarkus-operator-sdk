@@ -230,7 +230,7 @@ public class BundleProcessor {
         }
 
         final var installModesField = csvMetadata.value("installModes");
-        CSVMetadataHolder.InstallMode[] installModes = null;
+        CSVMetadataHolder.InstallMode[] installModes;
         if (installModesField != null) {
             final var installModesAnn = installModesField.asNestedArray();
             installModes = new CSVMetadataHolder.InstallMode[installModesAnn.length];
@@ -246,7 +246,7 @@ public class BundleProcessor {
         }
 
         final var permissionsField = csvMetadata.value("permissionRules");
-        CSVMetadataHolder.PermissionRule[] permissionRules = null;
+        CSVMetadataHolder.PermissionRule[] permissionRules;
         if (permissionsField != null) {
             final var permissionsAnn = permissionsField.asNestedArray();
             permissionRules = new CSVMetadataHolder.PermissionRule[permissionsAnn.length];
