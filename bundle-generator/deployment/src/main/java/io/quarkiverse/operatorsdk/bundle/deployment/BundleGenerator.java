@@ -51,7 +51,7 @@ public class BundleGenerator {
                 .collect(Collectors.toSet());
     }
 
-    private static final Map<String, String> generateBundleLabels(
+    private static Map<String, String> generateBundleLabels(
             ApplicationInfoBuildItem applicationConfiguration,
             BundleGenerationConfiguration bundleConfiguration,
             BuildTimeOperatorConfiguration operatorConfiguration) {
@@ -59,8 +59,7 @@ public class BundleGenerator {
         for (String version : operatorConfiguration.crd.versions) {
             values.put(join(PREFIX_ANNOTATION, CHANNEL, DEFAULT, version),
                     bundleConfiguration.defaultChannel.orElse(bundleConfiguration.channels.get(0)));
-            values.put(join(PREFIX_ANNOTATION, CHANNELS, version),
-                    bundleConfiguration.channels.stream().collect(Collectors.joining(COMMA)));
+            values.put(join(PREFIX_ANNOTATION, CHANNELS, version), String.join(COMMA, bundleConfiguration.channels));
             values.put(join(PREFIX_ANNOTATION, MANIFESTS, version), MANIFESTS + SLASH);
             values.put(join(PREFIX_ANNOTATION, MEDIA_TYPE, version), REGISTRY_PLUS + version);
             values.put(join(PREFIX_ANNOTATION, METADATA, version), METADATA + SLASH);
@@ -71,7 +70,7 @@ public class BundleGenerator {
         return values;
     }
 
-    private static final String join(String... elements) {
-        return Stream.of(elements).collect(Collectors.joining(DOT));
+    private static String join(String... elements) {
+        return String.join(DOT, elements);
     }
 }
