@@ -16,9 +16,9 @@ public class BundleGenerationConfiguration {
     public Boolean enabled;
 
     /**
-     * The list of channels that bundle belongs to.
+     * The list of channels that bundle belongs to. By default, it's "alpha".
      */
-    @ConfigItem
+    @ConfigItem(defaultValue = "alpha")
     public List<String> channels;
 
     /**
@@ -31,6 +31,6 @@ public class BundleGenerationConfiguration {
      * The name of the package that bundle belongs to.
      */
     @ConfigItem
-    public String packageName;
+    public Optional<String> packageName;
 
 }

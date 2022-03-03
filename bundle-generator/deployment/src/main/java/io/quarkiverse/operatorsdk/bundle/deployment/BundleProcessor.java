@@ -39,6 +39,7 @@ import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
+import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.GeneratedFileSystemResourceBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
@@ -81,7 +82,8 @@ public class BundleProcessor {
     }
 
     @BuildStep
-    void generateBundle(BundleGenerationConfiguration configuration,
+    void generateBundle(ApplicationInfoBuildItem configuration,
+            BundleGenerationConfiguration bundleConfiguration,
             BuildTimeOperatorConfiguration operatorConfiguration,
             OutputTargetBuildItem outputTarget,
             CSVMetadataBuildItem csvMetadata,
@@ -89,7 +91,7 @@ public class BundleProcessor {
             GeneratedCRDInfoBuildItem generatedCustomResourcesDefinitions,
             List<GeneratedKubernetesResourceBuildItem> generatedKubernetesManifests,
             BuildProducer<GeneratedFileSystemResourceBuildItem> generatedCSVs) {
-        if (configuration.enabled) {
+        if (bundleConfiguration.enabled) {
             try {
                 final var outputDir = outputTarget.getOutputDirectory().resolve(BUNDLE);
                 final var serviceAccounts = new LinkedList<ServiceAccount>();
@@ -138,8 +140,8 @@ public class BundleProcessor {
                                         }
                                     });
                                 });
-                final var generated = BundleGenerator.prepareGeneration(configuration, operatorConfiguration,
-                        csvMetadata.getAugmentedCustomResourceInfos(), csvMetadata.getCSVMetadata());
+                final var generated = BundleGenerator.prepareGeneration(configuration, bundleConfiguration,
+                        operatorConfiguration, csvMetadata.getAugmentedCustomResourceInfos(), csvMetadata.getCSVMetadata());
                 generated.forEach(manifestBuilder -> {
                     final var fileName = manifestBuilder.getFileName();
                     try {

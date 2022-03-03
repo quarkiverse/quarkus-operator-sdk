@@ -15,6 +15,7 @@ import io.quarkiverse.operatorsdk.bundle.runtime.BundleGenerationConfiguration;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkus.arc.impl.Sets;
+import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
 
 public class BundleGenerator {
 
@@ -35,12 +36,12 @@ public class BundleGenerator {
     private BundleGenerator() {
     }
 
-    public static Set<ManifestsBuilder> prepareGeneration(
+    public static Set<ManifestsBuilder> prepareGeneration(ApplicationInfoBuildItem configuration,
             BundleGenerationConfiguration bundleConfiguration,
             BuildTimeOperatorConfiguration operatorConfiguration,
             Map<String, AugmentedResourceInfo> info,
             Map<String, CSVMetadataHolder> csvMetadata) {
-        final var labels = generateBundleLabels(bundleConfiguration, operatorConfiguration);
+        final var labels = generateBundleLabels(configuration, bundleConfiguration, operatorConfiguration);
         final var builders = new ConcurrentHashMap<String, Set<ManifestsBuilder>>(7);
         return info.values().parallelStream()
                 .flatMap(cri -> builders.computeIfAbsent(cri.getCsvGroupName(),
@@ -51,7 +52,9 @@ public class BundleGenerator {
                 .collect(Collectors.toSet());
     }
 
-    private static final Map<String, String> generateBundleLabels(BundleGenerationConfiguration bundleConfiguration,
+    private static final Map<String, String> generateBundleLabels(
+            ApplicationInfoBuildItem applicationConfiguration,
+            BundleGenerationConfiguration bundleConfiguration,
             BuildTimeOperatorConfiguration operatorConfiguration) {
         Map<String, String> values = new HashMap<>();
         for (String version : operatorConfiguration.crd.versions) {
@@ -62,7 +65,8 @@ public class BundleGenerator {
             values.put(join(PREFIX_ANNOTATION, MANIFESTS, version), MANIFESTS + SLASH);
             values.put(join(PREFIX_ANNOTATION, MEDIA_TYPE, version), REGISTRY_PLUS + version);
             values.put(join(PREFIX_ANNOTATION, METADATA, version), METADATA + SLASH);
-            values.put(join(PREFIX_ANNOTATION, PACKAGE, version), bundleConfiguration.packageName);
+            values.put(join(PREFIX_ANNOTATION, PACKAGE, version), bundleConfiguration.packageName
+                    .orElse(applicationConfiguration.getName()));
         }
 
         return values;
