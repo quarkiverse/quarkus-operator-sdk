@@ -136,7 +136,6 @@ public class BundleProcessor {
 
                                         if (r instanceof Deployment) {
                                             deployments.add((Deployment) r);
-                                            return;
                                         }
                                     });
                                 });
@@ -169,7 +168,7 @@ public class BundleProcessor {
                         });
                 doneGeneratingCSV.produce(new GeneratedBundleBuildItem());
             } catch (Exception e) {
-                log.infov(e, "Couldn't generate CSV:");
+                log.infov(e, "Couldn't generate bundle:");
             }
         }
     }
