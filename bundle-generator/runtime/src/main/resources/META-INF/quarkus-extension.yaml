@@ -1,0 +1,14 @@
+name: Quarkus - Operator SDK - Bundle Generator
+description: Bundle Generation for Java Operator SDK operators
+metadata:
+keywords:
+  - operator
+  - kubernetes
+  - openshift
+  - olm
+  - csv
+  - bundle
+#  guide: ...
+categories:
+  - cloud
+#  status: "preview"
