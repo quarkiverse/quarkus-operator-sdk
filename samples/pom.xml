@@ -11,6 +11,10 @@
   <artifactId>quarkus-operator-sdk-samples</artifactId>
   <name>Quarkus - Operator SDK - Samples</name>
   <packaging>pom</packaging>
+  <properties>
+    <maven.deploy.skip>true</maven.deploy.skip>
+    <gpg.skip>true</gpg.skip>
+  </properties>
 
   <modules>
     <module>joke</module>
