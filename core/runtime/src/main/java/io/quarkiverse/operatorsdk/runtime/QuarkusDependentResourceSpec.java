@@ -12,6 +12,6 @@ public class QuarkusDependentResourceSpec<T extends DependentResource<?, ?>, C> 
     }
 
     public C getDependentResourceConfig() {
-        return dependentResourceConfig;
+        return super.getDependentResourceConfiguration().orElse(null);
     }
 }
