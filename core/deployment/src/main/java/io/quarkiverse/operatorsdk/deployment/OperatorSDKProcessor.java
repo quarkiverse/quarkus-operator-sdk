@@ -453,7 +453,7 @@ class OperatorSDKProcessor {
                     resourceFullName,
                     crVersion,
                     configExtractor.generationAware(),
-                    primaryTypeName,
+                    resourceClass,
                     configExtractor.delayedRegistration(),
                     namespaces,
                     getFinalizer(controllerAnnotation, resourceFullName),

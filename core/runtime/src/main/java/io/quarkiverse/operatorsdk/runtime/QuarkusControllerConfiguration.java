@@ -1,7 +1,5 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.loadClassIfNeeded;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -26,14 +24,13 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final String crVersion;
     private final boolean generationAware;
     private final boolean registrationDelayed;
-    private final String resourceClassName;
     private final Optional<String> specClassName;
     private final Optional<String> statusClassName;
     private final List<? extends DependentResourceSpec> dependentResources;
+    private final Class<R> resourceClass;
     private String finalizer;
     private Set<String> namespaces;
     private RetryConfiguration retryConfiguration;
-    private Class<R> resourceClass;
     private String labelSelector;
     private ConfigurationService parent;
 
@@ -43,7 +40,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             String name,
             String resourceTypeName,
             String crVersion, boolean generationAware,
-            String resourceClassName,
+            Class<R> resourceClass,
             boolean registrationDelayed, Set<String> namespaces, String finalizer, String labelSelector,
             Optional<String> specClassName, Optional<String> statusClassName,
             List<QuarkusDependentResourceSpec> dependentResources) {
@@ -52,7 +49,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.resourceTypeName = resourceTypeName;
         this.crVersion = crVersion;
         this.generationAware = generationAware;
-        this.resourceClassName = resourceClassName;
+        this.resourceClass = resourceClass;
         this.registrationDelayed = registrationDelayed;
         this.retryConfiguration = ControllerConfiguration.super.getRetryConfiguration();
         setNamespaces(namespaces);
@@ -69,18 +66,13 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
                 : Set.of(namespaces);
     }
 
-    public String getResourceClassName() {
-        return resourceClassName;
-    }
-
     public boolean isRegistrationDelayed() {
         return registrationDelayed;
     }
 
     @Override
-    @IgnoreProperty
     public Class<R> getResourceClass() {
-        return resourceClass = loadClassIfNeeded(resourceClassName, resourceClass);
+        return resourceClass;
     }
 
     @Override
