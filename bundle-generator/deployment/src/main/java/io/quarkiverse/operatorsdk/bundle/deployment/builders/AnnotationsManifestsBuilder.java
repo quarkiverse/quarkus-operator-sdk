@@ -33,7 +33,7 @@ public class AnnotationsManifestsBuilder extends ManifestsBuilder {
     }
 
     @Override
-    public byte[] getYAMLData(List<ServiceAccount> serviceAccounts, List<ClusterRoleBinding> clusterRoleBindings,
+    public byte[] getManifestData(List<ServiceAccount> serviceAccounts, List<ClusterRoleBinding> clusterRoleBindings,
             List<ClusterRole> clusterRoles, List<RoleBinding> roleBindings, List<Role> roles, List<Deployment> deployments)
             throws IOException {
 

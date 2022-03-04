@@ -31,16 +31,14 @@ public abstract class ManifestsBuilder {
     }
 
     private final String controllerName;
-    private final String csvGroupName;
 
     public ManifestsBuilder(AugmentedResourceInfo cri) {
         controllerName = cri.getControllerName();
-        csvGroupName = cri.getCsvGroupName();
     }
 
     public abstract Path getFileName();
 
-    public abstract byte[] getYAMLData(List<ServiceAccount> serviceAccounts, List<ClusterRoleBinding> clusterRoleBindings,
+    public abstract byte[] getManifestData(List<ServiceAccount> serviceAccounts, List<ClusterRoleBinding> clusterRoleBindings,
             List<ClusterRole> clusterRoles, List<RoleBinding> roleBindings, List<Role> roles,
             List<Deployment> deployments) throws IOException;
 

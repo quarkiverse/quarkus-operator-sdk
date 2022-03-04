@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import io.quarkiverse.operatorsdk.bundle.deployment.builders.AnnotationsManifestsBuilder;
 import io.quarkiverse.operatorsdk.bundle.deployment.builders.BundleDockerfileManifestsBuilder;
@@ -14,7 +13,6 @@ import io.quarkiverse.operatorsdk.bundle.deployment.builders.ManifestsBuilder;
 import io.quarkiverse.operatorsdk.bundle.runtime.BundleGenerationConfiguration;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
-import io.quarkus.arc.impl.Sets;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
 
 public class BundleGenerator {
@@ -45,14 +43,14 @@ public class BundleGenerator {
         final var builders = new ConcurrentHashMap<String, Set<ManifestsBuilder>>(7);
         return info.values().parallelStream()
                 .flatMap(cri -> builders.computeIfAbsent(cri.getCsvGroupName(),
-                        s -> Sets.of(new CsvManifestsBuilder(cri, csvMetadata),
+                        s -> Set.of(new CsvManifestsBuilder(cri, csvMetadata),
                                 new AnnotationsManifestsBuilder(cri, labels),
                                 new BundleDockerfileManifestsBuilder(cri, labels)))
                         .stream())
                 .collect(Collectors.toSet());
     }
 
-    private static final Map<String, String> generateBundleLabels(
+    private static Map<String, String> generateBundleLabels(
             ApplicationInfoBuildItem applicationConfiguration,
             BundleGenerationConfiguration bundleConfiguration,
             BuildTimeOperatorConfiguration operatorConfiguration) {
@@ -60,8 +58,7 @@ public class BundleGenerator {
         for (String version : operatorConfiguration.crd.versions) {
             values.put(join(PREFIX_ANNOTATION, CHANNEL, DEFAULT, version),
                     bundleConfiguration.defaultChannel.orElse(bundleConfiguration.channels.get(0)));
-            values.put(join(PREFIX_ANNOTATION, CHANNELS, version),
-                    bundleConfiguration.channels.stream().collect(Collectors.joining(COMMA)));
+            values.put(join(PREFIX_ANNOTATION, CHANNELS, version), String.join(COMMA, bundleConfiguration.channels));
             values.put(join(PREFIX_ANNOTATION, MANIFESTS, version), MANIFESTS + SLASH);
             values.put(join(PREFIX_ANNOTATION, MEDIA_TYPE, version), REGISTRY_PLUS + version);
             values.put(join(PREFIX_ANNOTATION, METADATA, version), METADATA + SLASH);
@@ -72,7 +69,7 @@ public class BundleGenerator {
         return values;
     }
 
-    private static final String join(String... elements) {
-        return Stream.of(elements).collect(Collectors.joining(DOT));
+    private static String join(String... elements) {
+        return String.join(DOT, elements);
     }
 }

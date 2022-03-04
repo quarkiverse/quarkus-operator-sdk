@@ -136,7 +136,6 @@ public class BundleProcessor {
 
                                         if (r instanceof Deployment) {
                                             deployments.add((Deployment) r);
-                                            return;
                                         }
                                     });
                                 });
@@ -148,7 +147,7 @@ public class BundleProcessor {
                         generatedCSVs.produce(
                                 new GeneratedFileSystemResourceBuildItem(
                                         Path.of(BUNDLE).resolve(fileName).toString(),
-                                        manifestBuilder.getYAMLData(serviceAccounts, clusterRoleBindings, clusterRoles,
+                                        manifestBuilder.getManifestData(serviceAccounts, clusterRoleBindings, clusterRoles,
                                                 roleBindings, roles, deployments)));
                         log.infov("Generating CSV for {0} controller -> {1}", manifestBuilder.getControllerName(),
                                 outputDir.resolve(fileName));
@@ -169,7 +168,7 @@ public class BundleProcessor {
                         });
                 doneGeneratingCSV.produce(new GeneratedBundleBuildItem());
             } catch (Exception e) {
-                log.infov(e, "Couldn't generate CSV:");
+                log.infov(e, "Couldn't generate bundle:");
             }
         }
     }
@@ -230,7 +229,7 @@ public class BundleProcessor {
         }
 
         final var installModesField = csvMetadata.value("installModes");
-        CSVMetadataHolder.InstallMode[] installModes = null;
+        CSVMetadataHolder.InstallMode[] installModes;
         if (installModesField != null) {
             final var installModesAnn = installModesField.asNestedArray();
             installModes = new CSVMetadataHolder.InstallMode[installModesAnn.length];
@@ -246,7 +245,7 @@ public class BundleProcessor {
         }
 
         final var permissionsField = csvMetadata.value("permissionRules");
-        CSVMetadataHolder.PermissionRule[] permissionRules = null;
+        CSVMetadataHolder.PermissionRule[] permissionRules;
         if (permissionsField != null) {
             final var permissionsAnn = permissionsField.asNestedArray();
             permissionRules = new CSVMetadataHolder.PermissionRule[permissionsAnn.length];
