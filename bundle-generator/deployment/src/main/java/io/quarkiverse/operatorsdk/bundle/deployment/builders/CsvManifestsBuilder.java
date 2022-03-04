@@ -17,7 +17,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
 
 import io.fabric8.kubernetes.api.model.ServiceAccount;
@@ -66,7 +65,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         final var csvSpecBuilder = csvBuilder
                 .editOrNewSpec()
                 .withDescription(metadata.description)
-                .withDisplayName(StringUtils.defaultIfEmpty(metadata.displayName, getControllerName()))
+                .withDisplayName(defaultIfEmpty(metadata.displayName, getControllerName()))
                 .withKeywords(metadata.keywords)
                 .withReplaces(metadata.replaces)
                 .withVersion(metadata.version)
@@ -85,7 +84,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             }
         }
 
-        if (metadata.installModes == null || metadata.maintainers.length == 0) {
+        if (metadata.installModes == null || metadata.installModes.length == 0) {
             csvSpecBuilder.addNewInstallMode(true, DEFAULT_INSTALL_MODE);
         } else {
             for (CSVMetadataHolder.InstallMode installMode : metadata.installModes) {
@@ -107,7 +106,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         return Path.of(MANIFESTS, csvGroupName + ".csv.yml");
     }
 
-    public byte[] getYAMLData(List<ServiceAccount> serviceAccounts, List<ClusterRoleBinding> clusterRoleBindings,
+    public byte[] getManifestData(List<ServiceAccount> serviceAccounts, List<ClusterRoleBinding> clusterRoleBindings,
             List<ClusterRole> clusterRoles, List<RoleBinding> roleBindings, List<Role> roles,
             List<Deployment> deployments) throws IOException {
         final var csvSpecBuilder = csvBuilder
@@ -162,13 +161,9 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         Map<String, List<PolicyRule>> customPermissionRules = new HashMap<>();
         if (metadata.permissionRules != null) {
             for (CSVMetadataHolder.PermissionRule permissionRule : metadata.permissionRules) {
-                String serviceAccountName = StringUtils.defaultIfEmpty(permissionRule.serviceAccountName,
-                        defaultServiceAccountName);
-                List<PolicyRule> customRulesByServiceAccount = customPermissionRules.get(serviceAccountName);
-                if (customRulesByServiceAccount == null) {
-                    customRulesByServiceAccount = new LinkedList<>();
-                    customPermissionRules.put(serviceAccountName, customRulesByServiceAccount);
-                }
+                String serviceAccountName = defaultIfEmpty(permissionRule.serviceAccountName, defaultServiceAccountName);
+                List<PolicyRule> customRulesByServiceAccount = customPermissionRules.computeIfAbsent(serviceAccountName,
+                        k -> new LinkedList<>());
 
                 customRulesByServiceAccount.add(new PolicyRuleBuilder()
                         .addAllToApiGroups(Arrays.asList(permissionRule.apiGroups))
@@ -185,8 +180,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                 continue;
             }
 
-            List<PolicyRule> rules = new LinkedList<>();
-            rules.addAll(findRules(binding.getRoleRef(), clusterRoles, roles));
+            List<PolicyRule> rules = new LinkedList<>(findRules(binding.getRoleRef(), clusterRoles, roles));
             Optional.ofNullable(customPermissionRules.remove(serviceAccountName)).ifPresent(rules::addAll);
 
             handlerPermission(rules, serviceAccountName, installSpec);
@@ -265,7 +259,8 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                             p.getRules().remove(i.intValue());
                             // if the permission doesn't have any rules anymore, mark it for removal
                             // or the service account name is empty
-                            if (p.getRules().isEmpty() || StringUtils.isEmpty(p.getServiceAccountName())) {
+                            final var san = p.getServiceAccountName();
+                            if (p.getRules().isEmpty() || (san == null || san.isBlank())) {
                                 nowEmptyPermissions.add(permissionPosition[0]);
                             }
                         }
@@ -290,7 +285,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     private String findServiceAccountFromSubjects(List<Subject> subjects, String defaultServiceAccountName) {
         return subjects.stream()
                 .filter(o -> SERVICE_ACCOUNT_KIND.equalsIgnoreCase(o.getKind()))
-                .map(o -> o.getName())
+                .map(Subject::getName)
                 .findFirst()
                 .orElse(defaultServiceAccountName);
     }
@@ -318,5 +313,9 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         }
 
         return Collections.emptyList();
+    }
+
+    private static String defaultIfEmpty(String possiblyNullOrEmpty, String defaultValue) {
+        return Optional.ofNullable(possiblyNullOrEmpty).filter(String::isBlank).orElse(defaultValue);
     }
 }

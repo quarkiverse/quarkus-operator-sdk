@@ -31,17 +31,19 @@ public class BundleDockerfileManifestsBuilder extends ManifestsBuilder {
     }
 
     @Override
-    public byte[] getYAMLData(List<ServiceAccount> serviceAccounts, List<ClusterRoleBinding> clusterRoleBindings,
+    public byte[] getManifestData(List<ServiceAccount> serviceAccounts, List<ClusterRoleBinding> clusterRoleBindings,
             List<ClusterRole> clusterRoles, List<RoleBinding> roleBindings, List<Role> roles, List<Deployment> deployments) {
         StringBuilder sb = new StringBuilder();
-        sb.append("FROM scratch" + System.lineSeparator());
+        final var lineSeparator = System.lineSeparator();
+        sb.append("FROM scratch").append(lineSeparator);
 
         for (Map.Entry<String, String> label : bundleLabels.entrySet()) {
-            sb.append("LABEL " + label.getKey() + "=" + label.getValue() + System.lineSeparator());
+            sb.append("LABEL ").append(label.getKey()).append("=").append(label.getValue())
+                    .append(lineSeparator);
         }
 
-        sb.append("COPY manifests /manifests/" + System.lineSeparator());
-        sb.append("COPY metadata /metadata/" + System.lineSeparator());
+        sb.append("COPY manifests /manifests/").append(lineSeparator);
+        sb.append("COPY metadata /metadata/").append(lineSeparator);
 
         return sb.toString().getBytes(StandardCharsets.UTF_8);
     }
