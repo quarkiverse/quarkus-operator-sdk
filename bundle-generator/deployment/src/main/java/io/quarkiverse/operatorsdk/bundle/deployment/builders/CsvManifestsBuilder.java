@@ -161,8 +161,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         Map<String, List<PolicyRule>> customPermissionRules = new HashMap<>();
         if (metadata.permissionRules != null) {
             for (CSVMetadataHolder.PermissionRule permissionRule : metadata.permissionRules) {
-                String serviceAccountName = defaultIfEmpty(permissionRule.serviceAccountName,
-                        defaultServiceAccountName);
+                String serviceAccountName = defaultIfEmpty(permissionRule.serviceAccountName, defaultServiceAccountName);
                 List<PolicyRule> customRulesByServiceAccount = customPermissionRules.computeIfAbsent(serviceAccountName,
                         k -> new LinkedList<>());
 
