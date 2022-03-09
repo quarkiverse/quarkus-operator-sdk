@@ -26,13 +26,12 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
-import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.ResourceInfo;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVGenerationConfiguration;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVMetadata;
 import io.quarkiverse.operatorsdk.csv.runtime.CSVMetadataHolder;
-import io.quarkiverse.operatorsdk.csv.runtime.SharedCSVMetadata;
+import io.quarkiverse.operatorsdk.csv.runtime.ShareableCSVMetadata;
 import io.quarkiverse.operatorsdk.deployment.ConfigurationServiceBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -44,7 +43,7 @@ import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 
 public class ManifestsProcessor {
     private static final Logger log = Logger.getLogger(ManifestsProcessor.class);
-    private static final DotName SHARED_CSV_METADATA = DotName.createSimple(SharedCSVMetadata.class.getName());
+    private static final DotName SHARED_CSV_METADATA = DotName.createSimple(ShareableCSVMetadata.class.getName());
     private static final DotName CSV_METADATA = DotName.createSimple(CSVMetadata.class.getName());
     private static final String MANIFESTS = "manifests";
 
@@ -57,7 +56,7 @@ public class ManifestsProcessor {
         final var augmentedCRInfos = new HashMap<String, AugmentedResourceInfo>();
         final var index = combinedIndexBuildItem.getIndex();
 
-        ClassUtils.getKnownReconcilers(index, log)
+        index.getAllKnownImplementors(SHARED_CSV_METADATA)
                 .forEach(info -> {
                     // figure out which group should be used to generate CSV
                     final var name = ConfigurationUtils.getReconcilerName(info);
@@ -165,7 +164,7 @@ public class ManifestsProcessor {
 
     private CSVMetadataHolder getCSVMetadata(ClassInfo info, String controllerName, IndexView index) {
         CSVMetadataHolder csvMetadata = new CSVMetadataHolder(controllerName);
-        csvMetadata = aggregateMetadataFromSharedCsvMetadata(csvMetadata, info, index);
+        //        csvMetadata = aggregateMetadataFromSharedCsvMetadata(csvMetadata, info, index);
         csvMetadata = aggregateMetadataFromAnnotation(csvMetadata, info);
         return csvMetadata;
     }
