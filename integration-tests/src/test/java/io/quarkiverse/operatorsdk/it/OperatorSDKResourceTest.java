@@ -5,6 +5,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
 import java.util.Locale;
@@ -60,11 +62,11 @@ class OperatorSDKResourceTest {
                 .contentType("application/json")
                 .extract()
                 .as(String[].class);
-        assertThat(names.length, equalTo(6));
         assertThat(names, arrayContainingInAnyOrder(ApplicationScopedReconciler.NAME, ConfiguredReconciler.NAME,
                 DelayedReconciler.NAME, TestReconciler.NAME,
                 SecretReconciler.class.getSimpleName().toLowerCase(Locale.ROOT),
-                GatewayReconciler.class.getSimpleName().toLowerCase(Locale.ROOT)));
+                GatewayReconciler.class.getSimpleName().toLowerCase(Locale.ROOT),
+                DependentDefiningReconciler.NAME));
     }
 
     @Test
@@ -124,5 +126,18 @@ class OperatorSDKResourceTest {
 
         // and check that the controller is now registered
         given().when().get("/operator/registered/" + DelayedReconciler.NAME).then().statusCode(200).body(is("true"));
+    }
+
+    @Test
+    void dependentAnnotationsShouldAppearInConfiguration() {
+        final var config = given()
+                .when()
+                .get("/operator/" + DependentDefiningReconciler.NAME + "/config")
+                .then()
+                .statusCode(200).body(
+                        "dependents", hasSize(2),
+                        "dependents.dependentClass", hasItems(ReadOnlyDependentResource.class.getCanonicalName(),
+                                CRUDDependentResource.class.getCanonicalName()),
+                        "dependents.dependentConfig.labelSelector", hasItem(CRUDDependentResource.LABEL_SELECTOR));
     }
 }

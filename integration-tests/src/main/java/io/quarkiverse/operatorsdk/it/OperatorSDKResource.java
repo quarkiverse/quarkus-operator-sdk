@@ -1,6 +1,8 @@
 package io.quarkiverse.operatorsdk.it;
 
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.enterprise.event.Event;
 import javax.enterprise.inject.Instance;
@@ -18,7 +20,9 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 
@@ -119,9 +123,9 @@ public class OperatorSDKResource {
 
     static class JSONControllerConfiguration {
 
-        private final ControllerConfiguration conf;
+        private final ControllerConfiguration<?> conf;
 
-        public JSONControllerConfiguration(ControllerConfiguration conf) {
+        public JSONControllerConfiguration(ControllerConfiguration<?> conf) {
             this.conf = conf;
         }
 
@@ -151,7 +155,7 @@ public class OperatorSDKResource {
         }
 
         public String[] getNamespaces() {
-            return (String[]) conf.getNamespaces().toArray(new String[0]);
+            return conf.getNamespaces().toArray(new String[0]);
         }
 
         @JsonProperty("watchAllNamespaces")
@@ -170,7 +174,7 @@ public class OperatorSDKResource {
 
         public boolean isDelayed() {
             return conf instanceof QuarkusControllerConfiguration
-                    && ((QuarkusControllerConfiguration) conf).isRegistrationDelayed();
+                    && ((QuarkusControllerConfiguration<?>) conf).isRegistrationDelayed();
         }
 
         @JsonProperty("useFinalizer")
@@ -181,5 +185,31 @@ public class OperatorSDKResource {
         public String getLabelSelector() {
             return conf.getLabelSelector();
         }
+
+        public List<JSONDependentResourceSpec> getDependents() {
+            return conf.getDependentResources().stream()
+                    .map(JSONDependentResourceSpec::new)
+                    .collect(Collectors.toList());
+        }
+    }
+
+    static class JSONDependentResourceSpec {
+        private final DependentResourceSpec<?, ?> spec;
+
+        JSONDependentResourceSpec(DependentResourceSpec<?, ?> spec) {
+            this.spec = spec;
+        }
+
+        public String getDependentClass() {
+            return spec.getDependentResourceClass().getCanonicalName();
+        }
+
+        public Object getDependentConfig() {
+            return spec.getDependentResourceConfiguration().orElse(null);
+        }
+    }
+
+    static class JSONKubernetesDependentConfig extends KubernetesDependentResourceConfig {
+
     }
 }
