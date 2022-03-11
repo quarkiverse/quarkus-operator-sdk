@@ -8,14 +8,12 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
-@SuppressWarnings("rawtypes")
 public class QuarkusControllerConfiguration<R extends HasMetadata> implements ControllerConfiguration<R> {
 
     private final String associatedReconcilerClassName;
@@ -26,13 +24,12 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final boolean registrationDelayed;
     private final Optional<String> specClassName;
     private final Optional<String> statusClassName;
-    private final List<? extends DependentResourceSpec> dependentResources;
+    private final List<? extends DependentResourceSpec<?, ?>> dependentResources;
     private final Class<R> resourceClass;
     private String finalizer;
     private Set<String> namespaces;
     private RetryConfiguration retryConfiguration;
     private String labelSelector;
-    private ConfigurationService parent;
 
     @RecordableConstructor
     public QuarkusControllerConfiguration(
@@ -43,7 +40,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             Class<R> resourceClass,
             boolean registrationDelayed, Set<String> namespaces, String finalizer, String labelSelector,
             Optional<String> specClassName, Optional<String> statusClassName,
-            List<QuarkusDependentResourceSpec> dependentResources) {
+            List<QuarkusDependentResourceSpec<?, ?>> dependentResources) {
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
         this.resourceTypeName = resourceTypeName;
@@ -123,16 +120,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return retryConfiguration;
     }
 
-    @Override
-    public ConfigurationService getConfigurationService() {
-        return parent;
-    }
-
-    @Override
-    public void setConfigurationService(ConfigurationService configurationService) {
-        this.parent = configurationService;
-    }
-
     void setRetryConfiguration(RetryConfiguration retryConfiguration) {
         this.retryConfiguration = retryConfiguration != null ? retryConfiguration
                 : ControllerConfiguration.super.getRetryConfiguration();
@@ -163,7 +150,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<DependentResourceSpec> getDependentResources() {
-        return (List<DependentResourceSpec>) dependentResources;
+    public List<DependentResourceSpec<?, ?>> getDependentResources() {
+        return (List<DependentResourceSpec<?, ?>>) dependentResources;
     }
 }

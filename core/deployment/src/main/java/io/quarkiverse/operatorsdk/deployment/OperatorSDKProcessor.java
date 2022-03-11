@@ -40,7 +40,6 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ClassUtils.ReconcilerInfo;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
@@ -55,6 +54,7 @@ import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusDependentResourceSpec;
+import io.quarkiverse.operatorsdk.runtime.QuarkusKubernetesDependentResourceConfig;
 import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.Version;
@@ -421,8 +421,8 @@ class OperatorSDKProcessor {
                                     "owned",
                                     AnnotationValue::asBoolean,
                                     () -> KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
-                            cfg = new KubernetesDependentResourceConfig(
-                                    owned, dependentNamespaces.toArray(new String[0]), labelSelector, null);
+                            cfg = new QuarkusKubernetesDependentResourceConfig(
+                                    owned, dependentNamespaces.toArray(new String[0]), labelSelector);
                         }
 
                         dependentResources.add(new QuarkusDependentResourceSpec(dependentClass, cfg));
