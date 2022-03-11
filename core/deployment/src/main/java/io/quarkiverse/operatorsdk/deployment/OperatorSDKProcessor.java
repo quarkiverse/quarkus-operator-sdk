@@ -5,6 +5,7 @@ import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATI
 import static io.quarkiverse.operatorsdk.common.Constants.CUSTOM_RESOURCE;
 import static io.quarkiverse.operatorsdk.common.Constants.KUBERNETES_DEPENDENT;
 import static io.quarkiverse.operatorsdk.common.Constants.KUBERNETES_DEPENDENT_RESOURCE;
+import static io.quarkiverse.operatorsdk.runtime.CRDUtils.applyCRD;
 import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.lang.annotation.Annotation;
@@ -81,6 +82,7 @@ import io.quarkus.gizmo.AssignableResultHandle;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
+import io.quarkus.kubernetes.client.spi.KubernetesClientBuildItem;
 import io.quarkus.kubernetes.spi.DecoratorBuildItem;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.metrics.MetricsFactory;
@@ -91,8 +93,7 @@ class OperatorSDKProcessor {
     static final Logger log = Logger.getLogger(OperatorSDKProcessor.class.getName());
 
     private static final String FEATURE = "operator-sdk";
-    private static final DotName DELAY_REGISTRATION = DotName.createSimple(
-            DelayRegistrationUntil.class.getName());
+    private static final DotName DELAY_REGISTRATION = DotName.createSimple(DelayRegistrationUntil.class.getName());
 
     private BuildTimeOperatorConfiguration buildTimeConfiguration;
 
@@ -145,6 +146,7 @@ class OperatorSDKProcessor {
     ConfigurationServiceBuildItem createConfigurationServiceAndOperator(
             OutputTargetBuildItem outputTarget,
             CombinedIndexBuildItem combinedIndexBuildItem,
+            KubernetesClientBuildItem kubernetesClientBuildItem,
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
@@ -186,6 +188,13 @@ class OperatorSDKProcessor {
                     .setDefaultScope(DotName.createSimple(Singleton.class.getName()))
                     .setUnremovable()
                     .build());
+        }
+
+        // apply CRD if enabled
+        if (crdConfig.apply) {
+            for (String generatedCrdName : crdInfo.getGenerated()) {
+                applyCRD(kubernetesClientBuildItem.getClient(), crdInfo, generatedCrdName);
+            }
         }
 
         generatedCRDInfo.produce(new GeneratedCRDInfoBuildItem(crdInfo));
@@ -555,7 +564,7 @@ class OperatorSDKProcessor {
                                     mc.invokeStaticMethod(
                                             MethodDescriptor.ofMethod(
                                                     OperatorProducer.class,
-                                                    "applyCRDIfNeededAndRegister",
+                                                    "applyCRDAndRegister",
                                                     void.class,
                                                     Operator.class, Reconciler.class,
                                                     QuarkusConfigurationService.class),

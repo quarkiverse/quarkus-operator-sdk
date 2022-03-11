@@ -31,6 +31,7 @@ public class CRDConfiguration {
 
     /**
      * Whether the extension should automatically apply updated CRDs when they change.
+     * When running on DEV mode, the CRD changes will always be applied automatically.
      */
     @ConfigItem(defaultValue = DEFAULT_APPLY)
     public Boolean apply;
