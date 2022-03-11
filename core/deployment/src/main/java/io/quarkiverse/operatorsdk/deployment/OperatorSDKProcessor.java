@@ -397,6 +397,7 @@ class OperatorSDKProcessor {
                         }
 
                         final var dependentClass = loadClass(dependentTypeName.toString(), DependentResource.class);
+                        registerForReflection(reflectionClasses, dependentTypeName.toString());
 
                         // further process Kubernetes dependents
                         final boolean isKubernetesDependent;
