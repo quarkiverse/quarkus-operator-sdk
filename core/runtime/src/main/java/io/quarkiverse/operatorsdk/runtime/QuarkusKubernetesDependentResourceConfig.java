@@ -10,4 +10,16 @@ public class QuarkusKubernetesDependentResourceConfig extends KubernetesDependen
             String[] namespaces, String labelSelector) {
         super(addOwnerReference, namespaces, labelSelector);
     }
+
+    public boolean isAddOwnerReference() {
+        return addOwnerReference();
+    }
+
+    public String[] getNamespaces() {
+        return namespaces();
+    }
+
+    public String getLabelSelector() {
+        return labelSelector();
+    }
 }
