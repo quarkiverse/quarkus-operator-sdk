@@ -16,12 +16,12 @@ public abstract class AbstractReconciler<T extends TestResource> implements
     private boolean initialized;
 
     @Override
-    public UpdateControl<T> reconcile(T t, Context context) {
+    public UpdateControl<T> reconcile(T t, Context<T> context) {
         return null;
     }
 
     @Override
-    public DeleteControl cleanup(T resource, Context context) {
+    public DeleteControl cleanup(T resource, Context<T> context) {
         return RegistrableReconciler.super.cleanup(resource, context);
     }
 

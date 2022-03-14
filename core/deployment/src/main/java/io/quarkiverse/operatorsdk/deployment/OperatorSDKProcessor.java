@@ -37,11 +37,9 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ClassUtils.ReconcilerInfo;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
@@ -55,6 +53,8 @@ import io.quarkiverse.operatorsdk.runtime.NoOpMetricsProvider;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
+import io.quarkiverse.operatorsdk.runtime.QuarkusDependentResourceSpec;
+import io.quarkiverse.operatorsdk.runtime.QuarkusKubernetesDependentResourceConfig;
 import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.Version;
@@ -350,35 +350,19 @@ class OperatorSDKProcessor {
 
         // check if we need to regenerate the configuration for this controller
         QuarkusControllerConfiguration configuration = null;
-        boolean regenerateConfig = true;
         var storedConfigurations = liveReload.getContextObject(
                 ContextStoredControllerConfigurations.class);
         if (liveReload.isLiveReload() && storedConfigurations != null) {
-            // check if we've already generated a configuration for this controller
-            configuration = storedConfigurations.getConfigurations().get(reconcilerClassName);
-            if (configuration != null) {
-                /*
-                 * A configuration needs to be regenerated if:
-                 * - the ResourceController annotation has changed
-                 * - the associated CustomResource metadata has changed
-                 * - the configuration properties have changed as follows:
-                 * + extension-wide properties affecting all controllers have changed
-                 * + controller-specific properties have changed
-                 *
-                 * Here, we only perform a simplified check: either the class holding the ResourceController annotation has
-                 * changed, or the associated CustomResource class or application.properties as a whole has changed. This
-                 * could be optimized further if needed.
-                 *
-                 */
-                final var changedClasses = changeInformation == null ? Collections.emptySet()
-                        : changeInformation.getChangedClasses();
-                regenerateConfig = changedClasses.contains(reconcilerClassName) || changedClasses.contains(
-                        primaryTypeName)
-                        || liveReload.getChangedResources().contains("application.properties");
-            }
+            // check if we need to regenerate the configuration for this controller
+            final var changedClasses = changeInformation == null ? Collections.<String> emptySet()
+                    : changeInformation.getChangedClasses();
+            final var changedResources = liveReload.getChangedResources();
+            configuration = storedConfigurations.configurationOrNullIfNeedGeneration(reconcilerClassName, changedClasses,
+                    changedResources);
+
         }
 
-        if (regenerateConfig) {
+        if (configuration == null) {
             // extract the configuration from annotation and/or external configuration
             final var delayedRegistrationAnnotation = info.classAnnotation(DELAY_REGISTRATION);
             final var controllerAnnotation = info.classAnnotation(CONTROLLER_CONFIGURATION);
@@ -398,7 +382,7 @@ class OperatorSDKProcessor {
             final var namespaces = configExtractor.namespaces(name);
 
             // deal with dependent resources
-            var dependentResources = Collections.<DependentResourceSpec> emptyList();
+            var dependentResources = Collections.<QuarkusDependentResourceSpec> emptyList();
             if (controllerAnnotation != null) {
                 final var dependents = controllerAnnotation.value("dependents");
                 if (dependents != null) {
@@ -413,8 +397,8 @@ class OperatorSDKProcessor {
                         }
 
                         final var dependentClass = loadClass(dependentTypeName.toString(), DependentResource.class);
+                        registerForReflection(reflectionClasses, dependentTypeName.toString());
 
-                        DependentResourceSpec dependentSpec;
                         // further process Kubernetes dependents
                         final boolean isKubernetesDependent;
                         try {
@@ -423,6 +407,7 @@ class OperatorSDKProcessor {
                         } catch (BuildException e) {
                             throw new IllegalStateException("DependentResource " + dependentType + " is not indexed", e);
                         }
+                        Object cfg = null;
                         if (isKubernetesDependent) {
                             final var kubeDepConfig = dependentType.classAnnotation(KUBERNETES_DEPENDENT);
                             final var labelSelector = getLabelSelector(kubeDepConfig);
@@ -437,13 +422,11 @@ class OperatorSDKProcessor {
                                     "owned",
                                     AnnotationValue::asBoolean,
                                     () -> KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
-                            final var cfg = new KubernetesDependentResourceConfig(
-                                    owned, dependentNamespaces.toArray(new String[0]), labelSelector, null);
-                            dependentSpec = new DependentResourceSpec(dependentClass, cfg);
-                        } else {
-                            dependentSpec = new DependentResourceSpec(dependentClass);
+                            cfg = new QuarkusKubernetesDependentResourceConfig(
+                                    owned, dependentNamespaces.toArray(new String[0]), labelSelector);
                         }
-                        dependentResources.add(dependentSpec);
+
+                        dependentResources.add(new QuarkusDependentResourceSpec(dependentClass, cfg));
                     }
                 }
             }
@@ -455,7 +438,7 @@ class OperatorSDKProcessor {
                     resourceFullName,
                     crVersion,
                     configExtractor.generationAware(),
-                    primaryTypeName,
+                    resourceClass,
                     configExtractor.delayedRegistration(),
                     namespaces,
                     getFinalizer(controllerAnnotation, resourceFullName),
@@ -476,7 +459,7 @@ class OperatorSDKProcessor {
         if (storedConfigurations == null) {
             storedConfigurations = new ContextStoredControllerConfigurations();
         }
-        storedConfigurations.getConfigurations().put(reconcilerClassName, configuration);
+        storedConfigurations.recordConfiguration(configuration);
         liveReload.setContextObject(ContextStoredControllerConfigurations.class, storedConfigurations);
 
         return configuration;
