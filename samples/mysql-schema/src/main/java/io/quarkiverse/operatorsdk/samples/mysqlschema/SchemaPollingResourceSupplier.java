@@ -11,13 +11,13 @@ import io.quarkiverse.operatorsdk.samples.mysqlschema.schema.SchemaService;
 
 @ApplicationScoped
 public class SchemaPollingResourceSupplier
-        implements PerResourcePollingEventSource.ResourceSupplier<Schema, MySQLSchema> {
+        implements PerResourcePollingEventSource.ResourceFetcher<Schema, MySQLSchema> {
 
     @Inject
     SchemaService schemaService;
 
     @Override
-    public Optional<Schema> getResource(MySQLSchema resource) {
-        return schemaService.getSchema(resource.getMetadata().getName());
+    public Optional<Schema> fetchResource(MySQLSchema primaryResource) {
+        return schemaService.getSchema(primaryResource.getMetadata().getName());
     }
 }
