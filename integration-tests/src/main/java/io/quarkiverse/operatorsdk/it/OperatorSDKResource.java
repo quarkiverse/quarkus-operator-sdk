@@ -1,5 +1,8 @@
 package io.quarkiverse.operatorsdk.it;
 
+import io.quarkiverse.operatorsdk.runtime.QuarkusDependentResourceSpec;
+import io.quarkiverse.operatorsdk.runtime.QuarkusKubernetesDependentResourceConfig;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -193,6 +196,8 @@ public class OperatorSDKResource {
         }
     }
 
+    // needed for native tests, see https://quarkus.io/guides/writing-native-applications-tips#registering-for-reflection
+    @RegisterForReflection(targets = QuarkusKubernetesDependentResourceConfig.class)
     static class JSONDependentResourceSpec {
         private final DependentResourceSpec<?, ?> spec;
 
@@ -207,9 +212,5 @@ public class OperatorSDKResource {
         public Object getDependentConfig() {
             return spec.getDependentResourceConfiguration().orElse(null);
         }
-    }
-
-    static class JSONKubernetesDependentConfig extends KubernetesDependentResourceConfig {
-
     }
 }
