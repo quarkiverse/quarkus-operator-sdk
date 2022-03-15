@@ -73,8 +73,9 @@ jobs:
           kubectl create namespace $K8S_NAMESPACE
           kubectl config set-context --current --namespace=$K8S_NAMESPACE
 
-          # Build manifests
+          # Apply "3rd-party" CRD: joke is not an owned resource by our operator, so it's not generated
           cd samples/joke
+          kubectl apply -f src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml
 
           # Run operator in DEV mode
           nohup mvn quarkus:dev > app.log 2>&1 &
