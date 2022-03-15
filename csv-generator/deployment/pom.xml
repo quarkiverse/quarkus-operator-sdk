@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.quarkiverse.operatorsdk</groupId>
         <artifactId>quarkus-operator-sdk-csv-generator-parent</artifactId>
-        <version>3.0.5-SNAPSHOT</version>
+        <version>3.0.5</version>
     </parent>
 
     <name>Quarkus - Operator SDK - CSV Generator - Deployment</name>
