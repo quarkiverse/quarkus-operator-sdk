@@ -6,7 +6,7 @@ import java.util.Map;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
 
 public class ContextStoredCRDInfos {
-    private Map<String, Map<String, CRDInfo>> infos = new HashMap<>();
+    private final Map<String, Map<String, CRDInfo>> infos = new HashMap<>();
 
     Map<String, CRDInfo> getCRDInfosFor(String crdName) {
         return infos.computeIfAbsent(crdName, k -> new HashMap<>());

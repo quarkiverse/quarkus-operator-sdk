@@ -5,10 +5,6 @@ public class ClassLoadingUtils {
     private ClassLoadingUtils() {
     }
 
-    public static <T> Class<T> loadClassIfNeeded(String className, Class<T> loadedOrNull) {
-        return loadedOrNull == null ? loadClass(className, loadedOrNull) : loadedOrNull;
-    }
-
     @SuppressWarnings("unchecked")
     public static <T> Class<T> loadClass(String className, Class<T> expected) {
         try {
