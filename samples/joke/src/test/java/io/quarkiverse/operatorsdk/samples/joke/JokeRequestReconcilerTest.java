@@ -61,7 +61,7 @@ class JokeRequestReconcilerTest {
         mockServer.getClient().resources(JokeRequest.class).create(testRequest);
 
         // assert
-        await().atMost(5, MINUTES).untilAsserted(() -> {
+        await().ignoreException(NullPointerException.class).atMost(5, MINUTES).untilAsserted(() -> {
             JokeRequest updatedRequest = mockServer.getClient().resources(JokeRequest.class)
                     .inNamespace(testRequest.getMetadata().getNamespace())
                     .withName(testRequest.getMetadata().getName()).get();
