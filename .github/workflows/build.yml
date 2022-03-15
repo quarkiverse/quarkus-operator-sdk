@@ -75,10 +75,6 @@ jobs:
 
           # Build manifests
           cd samples/joke
-          mvn install -Dquarkus.operator-sdk.crd.apply=true
-
-          # Install CRDs
-          kubectl apply -f src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml
 
           # Run operator in DEV mode
           nohup mvn quarkus:dev > app.log 2>&1 &
