@@ -4,8 +4,6 @@ import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-import io.fabric8.kubernetes.api.model.networking.v1.HTTPIngressPath;
-import io.fabric8.kubernetes.api.model.networking.v1.IngressServiceBackend;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
@@ -54,10 +52,10 @@ class ExposedAppReconcilerTest {
                     .withName(metadata.getName()).get();
             final var port = service.getSpec().getPorts().get(0).getPort();
             assertThat(port, is(8080));
-            
+
             // check that the ingress is created
             final var ingress = client.network().v1().ingresses().inNamespace(
-                metadata.getNamespace()).withName(metadata.getName()).get();
+                    metadata.getNamespace()).withName(metadata.getName()).get();
             final var annotations = ingress.getMetadata().getAnnotations();
             assertThat(annotations.size(), is(2));
             assertThat(annotations.get("kubernetes.io/ingress.class"), is("nginx"));

@@ -1,8 +1,5 @@
 package io.quarkiverse.operatorsdk.it;
 
-import io.quarkiverse.operatorsdk.runtime.QuarkusDependentResourceSpec;
-import io.quarkiverse.operatorsdk.runtime.QuarkusKubernetesDependentResourceConfig;
-import io.quarkus.runtime.annotations.RegisterForReflection;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,9 +22,10 @@ import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
+import io.quarkiverse.operatorsdk.runtime.QuarkusKubernetesDependentResourceConfig;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
 @Path("/operator")
 public class OperatorSDKResource {
