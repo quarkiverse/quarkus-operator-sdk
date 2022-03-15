@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Base64;
 import java.util.List;
-import java.util.Optional;
 
 import javax.inject.Inject;
 
@@ -18,10 +17,10 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.polling.PerResourcePollingEventSource;
@@ -52,7 +51,7 @@ public class MySQLSchemaReconciler
     }
 
     @Override
-    public UpdateControl<MySQLSchema> reconcile(MySQLSchema schema, Context context) {
+    public UpdateControl<MySQLSchema> reconcile(MySQLSchema schema, Context<MySQLSchema> context) {
         Log.infof("Reconciling MySQLSchema with name: %s", schema.getMetadata().getName());
         var dbSchema = context.getSecondaryResource(Schema.class);
         Log.debugf("Schema: %s found for: %s ", dbSchema, schema.getMetadata().getName());
@@ -103,8 +102,8 @@ public class MySQLSchemaReconciler
     }
 
     @Override
-    public Optional<MySQLSchema> updateErrorStatus(MySQLSchema schema, RetryInfo retryInfo,
-            RuntimeException e) {
+    public ErrorStatusUpdateControl<MySQLSchema> updateErrorStatus(MySQLSchema schema,
+            Context<MySQLSchema> context, Exception e) {
         SchemaStatus status = new SchemaStatus();
         status.setUrl(null);
         status.setUserName(null);
@@ -112,7 +111,7 @@ public class MySQLSchemaReconciler
         status.setStatus("ERROR: " + e.getMessage());
         schema.setStatus(status);
 
-        return Optional.of(schema);
+        return ErrorStatusUpdateControl.updateStatus(schema);
     }
 
     private void updateStatusPojo(MySQLSchema schema, String secretName, String userName) {
@@ -149,5 +148,4 @@ public class MySQLSchemaReconciler
                 .inNamespace(schema.getMetadata().getNamespace())
                 .create(credentialsSecret);
     }
-
 }
