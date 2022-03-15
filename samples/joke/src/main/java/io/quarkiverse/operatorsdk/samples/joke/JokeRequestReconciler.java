@@ -43,7 +43,7 @@ public class JokeRequestReconciler implements Reconciler<JokeRequest> {
     KubernetesClient client;
 
     @Override
-    public UpdateControl<JokeRequest> reconcile(JokeRequest jr, Context context) {
+    public UpdateControl<JokeRequest> reconcile(JokeRequest jr, Context<JokeRequest> context) {
         final var spec = jr.getSpec();
 
         // if the joke has already been created, ignore
