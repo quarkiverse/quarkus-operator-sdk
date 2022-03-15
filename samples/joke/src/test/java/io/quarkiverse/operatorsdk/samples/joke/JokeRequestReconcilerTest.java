@@ -5,9 +5,9 @@ import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -61,7 +61,7 @@ class JokeRequestReconcilerTest {
         mockServer.getClient().resources(JokeRequest.class).create(testRequest);
 
         // assert
-        await().atMost(5, MINUTES).untilAsserted(() -> {
+        await().ignoreException(NullPointerException.class).atMost(5, MINUTES).untilAsserted(() -> {
             JokeRequest updatedRequest = mockServer.getClient().resources(JokeRequest.class)
                     .inNamespace(testRequest.getMetadata().getNamespace())
                     .withName(testRequest.getMetadata().getName()).get();
