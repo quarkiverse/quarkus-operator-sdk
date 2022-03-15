@@ -19,5 +19,6 @@
   <modules>
     <module>joke</module>
     <module>mysql-schema</module>
+    <module>exposedapp</module>
   </modules>
 </project>
