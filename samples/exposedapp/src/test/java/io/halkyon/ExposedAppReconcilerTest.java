@@ -34,7 +34,7 @@ class ExposedAppReconcilerTest {
 
         client.resources(ExposedApp.class).create(app);
 
-        await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+        await().ignoreException(NullPointerException.class).atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
             // check that we create the deployment
             final var deployment = client.apps().deployments()
                     .inNamespace(metadata.getNamespace())
@@ -54,8 +54,8 @@ class ExposedAppReconcilerTest {
             assertThat(port, is(8080));
 
             // check that the ingress is created
-            final var ingress = client.network().v1().ingresses().inNamespace(
-                    metadata.getNamespace()).withName(metadata.getName()).get();
+            final var ingress = client.network().v1().ingresses()
+                    .inNamespace(metadata.getNamespace()).withName(metadata.getName()).get();
             final var annotations = ingress.getMetadata().getAnnotations();
             assertThat(annotations.size(), is(2));
             assertThat(annotations.get("kubernetes.io/ingress.class"), is("nginx"));
