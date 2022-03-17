@@ -14,6 +14,10 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 public class IngressDependent extends KubernetesDependentResource<Ingress, ExposedApp> implements
         Creator<Ingress, ExposedApp> {
 
+    public IngressDependent() {
+        super(Ingress.class);
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public Ingress desired(ExposedApp exposedApp, Context context) {

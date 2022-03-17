@@ -19,6 +19,10 @@ public class DeploymentDependent extends
         KubernetesDependentResource<Deployment, ExposedApp> implements
         Creator<Deployment, ExposedApp>, Matcher<Deployment, ExposedApp> {
 
+    public DeploymentDependent() {
+        super(Deployment.class);
+    }
+
     @SuppressWarnings("unchecked")
     public Deployment desired(ExposedApp exposedApp, Context context) {
         final var labels = (Map<String, String>) context.managedDependentResourceContext()

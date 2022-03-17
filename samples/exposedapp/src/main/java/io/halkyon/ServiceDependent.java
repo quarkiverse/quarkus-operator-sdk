@@ -14,6 +14,10 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 public class ServiceDependent extends KubernetesDependentResource<Service, ExposedApp> implements
         Creator<Service, ExposedApp> {
 
+    public ServiceDependent() {
+        super(Service.class);
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public Service desired(ExposedApp exposedApp, Context context) {

@@ -8,4 +8,8 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 public class CRUDDependentResource extends CrudKubernetesDependentResource<ConfigMap, ConfigMap> {
 
     public static final String LABEL_SELECTOR = "environment=production,foo=bar";
+
+    public CRUDDependentResource() {
+        super(ConfigMap.class);
+    }
 }

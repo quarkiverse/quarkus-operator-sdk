@@ -381,55 +381,8 @@ class OperatorSDKProcessor {
             // extract the namespaces
             final var namespaces = configExtractor.namespaces(name);
 
-            // deal with dependent resources
-            var dependentResources = Collections.<QuarkusDependentResourceSpec> emptyList();
-            if (controllerAnnotation != null) {
-                final var dependents = controllerAnnotation.value("dependents");
-                if (dependents != null) {
-                    final var dependentAnnotations = dependents.asNestedArray();
-                    dependentResources = new ArrayList<>(dependentAnnotations.length);
-                    for (AnnotationInstance dependentConfig : dependentAnnotations) {
-                        final var dependentTypeName = dependentConfig.value("type").asClass().name();
-                        final var dependentType = index.getClassByName(dependentTypeName);
-                        if (!dependentType.hasNoArgsConstructor()) {
-                            throw new IllegalArgumentException(
-                                    "DependentResource implementations must provide a no-arg constructor for instantiation purposes");
-                        }
-
-                        final var dependentClass = loadClass(dependentTypeName.toString(), DependentResource.class);
-                        registerForReflection(reflectionClasses, dependentTypeName.toString());
-
-                        // further process Kubernetes dependents
-                        final boolean isKubernetesDependent;
-                        try {
-                            isKubernetesDependent = JandexUtil.isSubclassOf(index, dependentType,
-                                    KUBERNETES_DEPENDENT_RESOURCE);
-                        } catch (BuildException e) {
-                            throw new IllegalStateException("DependentResource " + dependentType + " is not indexed", e);
-                        }
-                        Object cfg = null;
-                        if (isKubernetesDependent) {
-                            final var kubeDepConfig = dependentType.classAnnotation(KUBERNETES_DEPENDENT);
-                            final var labelSelector = getLabelSelector(kubeDepConfig);
-                            // if the dependent doesn't explicitly provide a namespace configuration, inherit the configuration from the reconciler configuration
-                            final Set<String> dependentNamespaces = ConfigurationUtils.annotationValueOrDefault(
-                                    kubeDepConfig,
-                                    "namespaces", v -> new HashSet<>(
-                                            Arrays.asList(v.asStringArray())),
-                                    () -> namespaces);
-                            final var owned = ConfigurationUtils.annotationValueOrDefault(
-                                    kubeDepConfig,
-                                    "owned",
-                                    AnnotationValue::asBoolean,
-                                    () -> KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
-                            cfg = new QuarkusKubernetesDependentResourceConfig(
-                                    owned, dependentNamespaces.toArray(new String[0]), labelSelector);
-                        }
-
-                        dependentResources.add(new QuarkusDependentResourceSpec(dependentClass, cfg));
-                    }
-                }
-            }
+            List<QuarkusDependentResourceSpec> dependentResources = createDependentResources(
+                    reflectionClasses, index, controllerAnnotation, namespaces, additionalBeans);
 
             // create the configuration
             configuration = new QuarkusControllerConfiguration(
@@ -463,6 +416,71 @@ class OperatorSDKProcessor {
         liveReload.setContextObject(ContextStoredControllerConfigurations.class, storedConfigurations);
 
         return configuration;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<QuarkusDependentResourceSpec> createDependentResources(
+            BuildProducer<ReflectiveClassBuildItem> reflectionClasses, IndexView index,
+            AnnotationInstance controllerAnnotation, Set<String> namespaces,
+            BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
+        // deal with dependent resources
+        var dependentResources = Collections.<QuarkusDependentResourceSpec> emptyList();
+        if (controllerAnnotation != null) {
+            final var dependents = controllerAnnotation.value("dependents");
+            if (dependents != null) {
+                final var dependentAnnotations = dependents.asNestedArray();
+                dependentResources = new ArrayList<>(dependentAnnotations.length);
+                for (AnnotationInstance dependentConfig : dependentAnnotations) {
+                    final var dependentTypeDN = dependentConfig.value("type").asClass().name();
+                    final var dependentType = index.getClassByName(dependentTypeDN);
+                    if (!dependentType.hasNoArgsConstructor()) {
+                        throw new IllegalArgumentException(
+                                "DependentResource implementations must provide a no-arg constructor for instantiation purposes");
+                    }
+
+                    final var dependentTypeName = dependentTypeDN.toString();
+                    final var dependentClass = loadClass(dependentTypeName, DependentResource.class);
+                    registerForReflection(reflectionClasses, dependentTypeName);
+
+                    // further process Kubernetes dependents
+                    final boolean isKubernetesDependent;
+                    try {
+                        isKubernetesDependent = JandexUtil.isSubclassOf(index, dependentType,
+                                KUBERNETES_DEPENDENT_RESOURCE);
+                    } catch (BuildException e) {
+                        throw new IllegalStateException("DependentResource " + dependentType + " is not indexed", e);
+                    }
+                    Object cfg = null;
+                    if (isKubernetesDependent) {
+                        final var kubeDepConfig = dependentType.classAnnotation(KUBERNETES_DEPENDENT);
+                        final var labelSelector = getLabelSelector(kubeDepConfig);
+                        // if the dependent doesn't explicitly provide a namespace configuration, inherit the configuration from the reconciler configuration
+                        final Set<String> dependentNamespaces = ConfigurationUtils.annotationValueOrDefault(
+                                kubeDepConfig,
+                                "namespaces", v -> new HashSet<>(
+                                        Arrays.asList(v.asStringArray())),
+                                () -> namespaces);
+                        final var owned = ConfigurationUtils.annotationValueOrDefault(
+                                kubeDepConfig,
+                                "owned",
+                                AnnotationValue::asBoolean,
+                                () -> KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
+                        cfg = new QuarkusKubernetesDependentResourceConfig(
+                                owned, dependentNamespaces.toArray(new String[0]), labelSelector);
+                    }
+
+                    dependentResources.add(new QuarkusDependentResourceSpec(dependentClass, cfg));
+
+                    additionalBeans.produce(
+                            AdditionalBeanBuildItem.builder()
+                                    .addBeanClass(dependentTypeName)
+                                    .setUnremovable()
+                                    .setDefaultScope(APPLICATION_SCOPED)
+                                    .build());
+                }
+            }
+        }
+        return dependentResources;
     }
 
     private String getFullResourceName(Class<? extends HasMetadata> crClass) {
