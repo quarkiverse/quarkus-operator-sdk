@@ -27,15 +27,15 @@ cluster. You can just follow the steps below to get started quickly:
 
 - Connect to your cluster of choice using `kubectl/oc`, select the appropriate namespace/project.
   The operator will automatically connect to that cluster/namespace combination when started.
-- Run `mvn install` on the parent directory to build the project locally.
+- Run `mvn -Dquickly` on the root directory to build the project locally and move to this sample directory.
 - Run `mvn package` to build the operator. This will automatically generate several resources for
   you, in particular the CRDs associated with the custom resources we will be dealing with. These
-  CRDs are generated in `target/kubernetes`.
+  CRDs are generated in `target/manifests`.
 - Deploy the CRDs to your cluster (requires cluster admin privileges, while this shouldn't be an
   issue for most "testing" clusters such as `minikube` or `kind`, you might need to log in to your
   OpenShift clusters with an admin account):
   ```sh
-  kubectl apply -f target/kubernetes/mysqlschemas.mysql.sample.javaoperatorsdk-v1.yml
+  kubectl apply -f target/manifests/mysqlschemas.mysql.sample.javaoperatorsdk-v1.yml
   ```           
 - If you look at the application.properties, you will notice this is where the access to the MySQL server is configured.
   In dev mode, such a server is provided by [Quarkus DevService](https://quarkus.io/guides/dev-services).
