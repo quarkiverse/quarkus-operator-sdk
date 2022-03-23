@@ -4,13 +4,12 @@ import java.util.Base64;
 import java.util.HashMap;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
-@ControllerConfiguration(finalizerName = Constants.NO_FINALIZER)
+@ControllerConfiguration
 public class SecretReconciler implements Reconciler<Secret> {
 
     @Override
@@ -27,7 +26,6 @@ public class SecretReconciler implements Reconciler<Secret> {
                 }
                 final String foo = data.putIfAbsent("quarkus-operator-sdk.added-value",
                         Base64.getEncoder().encodeToString("quarkus-operator-sdk rocks!".getBytes()));
-                ;
                 if (foo == null) {
                     return UpdateControl.updateResource(secret);
                 }

@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -30,7 +31,8 @@ import io.quarkus.logging.Log;
 
 @ControllerConfiguration
 public class MySQLSchemaReconciler
-        implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema>, EventSourceInitializer<MySQLSchema> {
+        implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema>, EventSourceInitializer<MySQLSchema>,
+        Cleaner<MySQLSchema> {
     public static final String SECRET_FORMAT = "%s-secret";
     public static final String USERNAME_FORMAT = "%s-user";
     public static final int POLL_PERIOD = 500;

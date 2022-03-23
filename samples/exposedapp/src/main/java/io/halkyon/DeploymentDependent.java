@@ -11,8 +11,8 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Creator;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Matcher;
+import io.javaoperatorsdk.operator.processing.dependent.Creator;
+import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
 public class DeploymentDependent extends

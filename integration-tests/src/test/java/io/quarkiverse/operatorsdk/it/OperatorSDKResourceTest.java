@@ -82,7 +82,6 @@ class OperatorSDKResourceTest {
                 .body(
                         "customResourceClass", equalTo(resourceName),
                         "name", equalTo(TestReconciler.NAME),
-                        "useFinalizer", equalTo(false),
                         "watchCurrentNamespace", equalTo(true),
                         "generationAware", equalTo(false));
     }

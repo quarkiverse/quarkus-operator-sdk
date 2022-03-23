@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.List;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
@@ -18,11 +17,6 @@ public abstract class AbstractReconciler<T extends TestResource> implements
     @Override
     public UpdateControl<T> reconcile(T t, Context<T> context) {
         return null;
-    }
-
-    @Override
-    public DeleteControl cleanup(T resource, Context<T> context) {
-        return RegistrableReconciler.super.cleanup(resource, context);
     }
 
     @Override

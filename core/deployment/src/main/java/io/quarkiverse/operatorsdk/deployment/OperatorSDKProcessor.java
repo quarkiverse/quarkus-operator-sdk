@@ -9,15 +9,16 @@ import static io.quarkiverse.operatorsdk.runtime.CRDUtils.applyCRD;
 import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.lang.annotation.Annotation;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.enterprise.inject.Instance;
@@ -381,7 +382,7 @@ class OperatorSDKProcessor {
             // extract the namespaces
             final var namespaces = configExtractor.namespaces(name);
 
-            List<QuarkusDependentResourceSpec> dependentResources = createDependentResources(
+            final var dependentResources = createDependentResources(
                     reflectionClasses, index, controllerAnnotation, namespaces, additionalBeans);
 
             // create the configuration
@@ -419,17 +420,17 @@ class OperatorSDKProcessor {
     }
 
     @SuppressWarnings("unchecked")
-    private List<QuarkusDependentResourceSpec> createDependentResources(
+    private Map<String, QuarkusDependentResourceSpec> createDependentResources(
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses, IndexView index,
             AnnotationInstance controllerAnnotation, Set<String> namespaces,
             BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
         // deal with dependent resources
-        var dependentResources = Collections.<QuarkusDependentResourceSpec> emptyList();
+        var dependentResources = Collections.<String, QuarkusDependentResourceSpec> emptyMap();
         if (controllerAnnotation != null) {
             final var dependents = controllerAnnotation.value("dependents");
             if (dependents != null) {
                 final var dependentAnnotations = dependents.asNestedArray();
-                dependentResources = new ArrayList<>(dependentAnnotations.length);
+                dependentResources = new HashMap<>(dependentAnnotations.length);
                 for (AnnotationInstance dependentConfig : dependentAnnotations) {
                     final var dependentTypeDN = dependentConfig.value("type").asClass().name();
                     final var dependentType = index.getClassByName(dependentTypeDN);
@@ -469,7 +470,12 @@ class OperatorSDKProcessor {
                                 owned, dependentNamespaces.toArray(new String[0]), labelSelector);
                     }
 
-                    dependentResources.add(new QuarkusDependentResourceSpec(dependentClass, cfg));
+                    var nameField = dependentConfig.value("name");
+                    final var name = Optional.ofNullable(nameField)
+                            .map(AnnotationValue::asString)
+                            .filter(Predicate.not(String::isBlank))
+                            .orElse(DependentResource.defaultNameFor(dependentClass));
+                    dependentResources.put(name, new QuarkusDependentResourceSpec(dependentClass, cfg, name));
 
                     additionalBeans.produce(
                             AdditionalBeanBuildItem.builder()
