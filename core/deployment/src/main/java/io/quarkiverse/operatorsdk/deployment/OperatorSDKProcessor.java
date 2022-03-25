@@ -40,7 +40,6 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ClassUtils.ReconcilerInfo;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
@@ -461,13 +460,8 @@ class OperatorSDKProcessor {
                                 "namespaces", v -> new HashSet<>(
                                         Arrays.asList(v.asStringArray())),
                                 () -> namespaces);
-                        final var owned = ConfigurationUtils.annotationValueOrDefault(
-                                kubeDepConfig,
-                                "owned",
-                                AnnotationValue::asBoolean,
-                                () -> KubernetesDependent.ADD_OWNER_REFERENCE_DEFAULT);
-                        cfg = new QuarkusKubernetesDependentResourceConfig(
-                                owned, dependentNamespaces.toArray(new String[0]), labelSelector);
+                        cfg = new QuarkusKubernetesDependentResourceConfig(dependentNamespaces.toArray(new String[0]),
+                                labelSelector);
                     }
 
                     var nameField = dependentConfig.value("name");

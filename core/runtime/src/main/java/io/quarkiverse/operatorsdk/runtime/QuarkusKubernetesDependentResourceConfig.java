@@ -6,13 +6,8 @@ import io.quarkus.runtime.annotations.RecordableConstructor;
 public class QuarkusKubernetesDependentResourceConfig extends KubernetesDependentResourceConfig {
 
     @RecordableConstructor
-    public QuarkusKubernetesDependentResourceConfig(boolean addOwnerReference,
-            String[] namespaces, String labelSelector) {
-        super(addOwnerReference, namespaces, labelSelector);
-    }
-
-    public boolean isAddOwnerReference() {
-        return addOwnerReference();
+    public QuarkusKubernetesDependentResourceConfig(String[] namespaces, String labelSelector) {
+        super(namespaces, labelSelector);
     }
 
     public String[] getNamespaces() {
