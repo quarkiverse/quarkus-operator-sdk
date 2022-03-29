@@ -80,6 +80,9 @@ jobs:
           # Run operator in DEV mode
           nohup mvn quarkus:dev > app.log 2>&1 &
           PID=$(echo $!)
+          
+          # wait for operator to start and apply the CRD
+          sleep 10s
 
           # Wait until the app installed the jokerequest custom resource definition
           $SCRIPTS/waitFor.sh crd $K8S_NAMESPACE jokerequests.samples.javaoperatorsdk.io
