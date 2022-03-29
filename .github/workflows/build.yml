@@ -89,6 +89,9 @@ jobs:
 
           # Test operator by creating a Joke Request resource
           kubectl apply -f src/main/k8s/jokerequest.yml
+          if [ "$?" -gt "0" ]; then
+            cat app.log  
+          fi
 
           # And wait for the operator to create another Joke resource
           $SCRIPTS/waitFor.sh joke $K8S_NAMESPACE NAME
