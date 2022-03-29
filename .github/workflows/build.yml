@@ -89,6 +89,9 @@ jobs:
 
           # And wait for the operator to create another Joke resource
           $SCRIPTS/waitFor.sh joke $K8S_NAMESPACE NAME
+          if [ "$?" -gt "0" ]; then
+            cat app.log  
+          fi
 
           # Kill running process
           kill -9 $PID
