@@ -49,15 +49,4 @@ public class RunTimeOperatorConfiguration {
      */
     @ConfigItem
     public Optional<List<String>> namespaces;
-
-    /**
-     * The optional name of the finalizer to use for controllers. If none is provided, one will be
-     * automatically generated. It should be noted that having several controllers use the same finalizer might
-     * create issues and this configuration item is mostly useful when we don't want to use finalizers at all by
-     * default (using the {@link io.javaoperatorsdk.operator.api.reconciler.Constants#NO_FINALIZER} value). Sets the default
-     * value for all
-     * controllers.
-     */
-    @ConfigItem
-    public Optional<String> finalizer;
 }

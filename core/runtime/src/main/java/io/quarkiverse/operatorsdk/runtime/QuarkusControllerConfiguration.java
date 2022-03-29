@@ -2,7 +2,7 @@ package io.quarkiverse.operatorsdk.runtime;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -24,7 +24,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final boolean registrationDelayed;
     private final Optional<String> specClassName;
     private final Optional<String> statusClassName;
-    private final List<? extends DependentResourceSpec<?, ?>> dependentResources;
+    private final Map<String, ? extends DependentResourceSpec<?, ?>> dependentResources;
     private final Class<R> resourceClass;
     private String finalizer;
     private Set<String> namespaces;
@@ -38,9 +38,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             String resourceTypeName,
             String crVersion, boolean generationAware,
             Class<R> resourceClass,
-            boolean registrationDelayed, Set<String> namespaces, String finalizer, String labelSelector,
+            boolean registrationDelayed, Set<String> namespaces, String finalizerName, String labelSelector,
             Optional<String> specClassName, Optional<String> statusClassName,
-            List<QuarkusDependentResourceSpec<?, ?>> dependentResources) {
+            Map<String, QuarkusDependentResourceSpec<?, ?>> dependentResources) {
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
         this.resourceTypeName = resourceTypeName;
@@ -50,7 +50,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.registrationDelayed = registrationDelayed;
         this.retryConfiguration = ControllerConfiguration.super.getRetryConfiguration();
         setNamespaces(namespaces);
-        setFinalizer(finalizer);
+        setFinalizer(finalizerName);
         this.labelSelector = labelSelector;
         this.specClassName = specClassName;
         this.statusClassName = statusClassName;
@@ -87,7 +87,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     }
 
     @Override
-    public String getFinalizer() {
+    public String getFinalizerName() {
         return finalizer;
     }
 
@@ -150,7 +150,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<DependentResourceSpec<?, ?>> getDependentResources() {
-        return (List<DependentResourceSpec<?, ?>>) dependentResources;
+    public Map<String, DependentResourceSpec<?, ?>> getDependentResources() {
+        return (Map<String, DependentResourceSpec<?, ?>>) dependentResources;
     }
 }

@@ -1,5 +1,6 @@
 package io.quarkiverse.operatorsdk.it;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -140,7 +141,7 @@ public class OperatorSDKResource {
         }
 
         public String getFinalizer() {
-            return conf.getFinalizer();
+            return conf.getFinalizerName();
         }
 
         public boolean isGenerationAware() {
@@ -178,17 +179,14 @@ public class OperatorSDKResource {
                     && ((QuarkusControllerConfiguration<?>) conf).isRegistrationDelayed();
         }
 
-        @JsonProperty("useFinalizer")
-        public boolean useFinalizer() {
-            return conf.useFinalizer();
-        }
-
         public String getLabelSelector() {
             return conf.getLabelSelector();
         }
 
         public List<JSONDependentResourceSpec> getDependents() {
-            return conf.getDependentResources().stream()
+            final var dependents = conf.getDependentResources();
+            final var result = new ArrayList<JSONDependentResourceSpec>(dependents.size());
+            return dependents.values().stream()
                     .map(JSONDependentResourceSpec::new)
                     .collect(Collectors.toList());
         }
@@ -209,6 +207,10 @@ public class OperatorSDKResource {
 
         public Object getDependentConfig() {
             return spec.getDependentResourceConfiguration().orElse(null);
+        }
+
+        public String getName() {
+            return spec.getName();
         }
     }
 }

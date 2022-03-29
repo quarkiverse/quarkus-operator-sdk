@@ -17,8 +17,12 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.AbstractConfigurationService;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.Version;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
+import io.quarkus.arc.Arc;
 import io.quarkus.arc.runtime.ClientProxyUnwrapper;
 
 public class QuarkusConfigurationService extends AbstractConfigurationService {
@@ -144,5 +148,15 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
 
     boolean shouldStartOperator() {
         return startOperator;
+    }
+
+    @Override
+    public DependentResourceFactory dependentResourceFactory() {
+        return new DependentResourceFactory() {
+            @Override
+            public <T extends DependentResource<?, ?>> T createFrom(DependentResourceSpec<T, ?> spec) {
+                return Arc.container().instance(spec.getDependentResourceClass()).get();
+            }
+        };
     }
 }

@@ -1,10 +1,9 @@
 package io.quarkiverse.operatorsdk.it;
 
 import java.util.Collections;
-import java.util.List;
+import java.util.Map;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
@@ -21,15 +20,10 @@ public abstract class AbstractReconciler<T extends TestResource> implements
     }
 
     @Override
-    public DeleteControl cleanup(T resource, Context<T> context) {
-        return RegistrableReconciler.super.cleanup(resource, context);
-    }
-
-    @Override
-    public List<EventSource> prepareEventSources(EventSourceContext<T> eventSourceContext) {
+    public Map<String, EventSource> prepareEventSources(EventSourceContext<T> eventSourceContext) {
         // this method gets called when the controller gets registered
         initialized = true;
-        return Collections.emptyList();
+        return Collections.emptyMap();
     }
 
     @Override
