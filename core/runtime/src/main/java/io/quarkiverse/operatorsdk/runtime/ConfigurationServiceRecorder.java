@@ -27,7 +27,6 @@ public class ConfigurationServiceRecorder {
         configurations.forEach((name, c) -> {
             final var extConfig = runTimeConfiguration.controllers.get(name);
             // first use the operator-level configuration if set
-            runTimeConfiguration.finalizer.ifPresent(c::setFinalizer);
             runTimeConfiguration.namespaces.ifPresent(c::setNamespaces);
 
             // then override with controller-specific configuration if present
