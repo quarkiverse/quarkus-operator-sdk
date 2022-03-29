@@ -3,7 +3,7 @@ package io.quarkiverse.operatorsdk.samples.mysqlschema;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Base64;
-import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
@@ -30,7 +31,8 @@ import io.quarkus.logging.Log;
 
 @ControllerConfiguration
 public class MySQLSchemaReconciler
-        implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema>, EventSourceInitializer<MySQLSchema> {
+        implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema>, EventSourceInitializer<MySQLSchema>,
+        Cleaner<MySQLSchema> {
     public static final String SECRET_FORMAT = "%s-secret";
     public static final String USERNAME_FORMAT = "%s-user";
     public static final int POLL_PERIOD = 500;
@@ -45,8 +47,8 @@ public class MySQLSchemaReconciler
     SchemaService schemaService;
 
     @Override
-    public List<EventSource> prepareEventSources(EventSourceContext<MySQLSchema> context) {
-        return List.of(new PerResourcePollingEventSource<>(schemaPollingResourceSupplier, context.getPrimaryCache(),
+    public Map<String, EventSource> prepareEventSources(EventSourceContext<MySQLSchema> context) {
+        return Map.of("schema", new PerResourcePollingEventSource<>(schemaPollingResourceSupplier, context.getPrimaryCache(),
                 POLL_PERIOD, Schema.class));
     }
 
