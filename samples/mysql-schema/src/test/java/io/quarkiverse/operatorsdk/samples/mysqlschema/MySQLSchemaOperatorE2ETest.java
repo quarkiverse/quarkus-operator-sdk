@@ -6,6 +6,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -66,5 +67,32 @@ class MySQLSchemaOperatorE2ETest {
 
         verify(schemaService, times(1)).createSchemaAndRelatedUser(any(), eq("mydb1"), eq("utf8"), anyString(),
                 anyString());
+
+        fakeDeletion(client, testSchema);
+
+        await()
+                .atMost(10, SECONDS)
+                .ignoreExceptions()
+                .untilAsserted(
+                        () -> {
+                            MySQLSchema updatedSchema = client
+                                    .resources(MySQLSchema.class)
+                                    .inNamespace(testSchema.getMetadata().getNamespace())
+                                    .withName(testSchema.getMetadata().getName())
+                                    .get();
+                            assertThat(updatedSchema.getMetadata().getFinalizers(), is(empty()));
+                        });
+
+        verify(schemaService, times(1)).deleteSchemaAndRelatedUser(any(), eq("mydb1"), anyString());
+    }
+
+    private void fakeDeletion(KubernetesClient client, MySQLSchema testSchema) {
+        var aSchema = client
+                .resources(MySQLSchema.class)
+                .inNamespace(testSchema.getMetadata().getNamespace())
+                .withName(testSchema.getMetadata().getName())
+                .get();
+        aSchema.getMetadata().setDeletionTimestamp("2022-02-06T14:21:44.719489Z");
+        client.resource(aSchema).createOrReplace();
     }
 }
