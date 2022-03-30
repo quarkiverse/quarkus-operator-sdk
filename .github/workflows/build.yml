@@ -85,7 +85,7 @@ jobs:
           PID=$(echo $!)
 
           # Wait until the app is up and running
-          tail -f app.log | sed '/Installed features/ q'
+          tail -f app.log | sed "/Installed features/ q"
 
           # Test operator by creating a Joke Request resource
           kubectl apply -f src/main/k8s/jokerequest.yml
