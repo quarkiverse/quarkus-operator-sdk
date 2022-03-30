@@ -84,6 +84,9 @@ jobs:
           nohup mvn quarkus:dev > app.log 2>&1 &
           PID=$(echo $!)
 
+          # Wait until the app is up and running
+          tail -f app.log | sed '/Installed features/ q'
+
           # Test operator by creating a Joke Request resource
           kubectl apply -f src/main/k8s/jokerequest.yml
 
@@ -95,6 +98,12 @@ jobs:
 
           # Delete namespace
           kubectl delete namespace $K8S_NAMESPACE
+
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: dev-mode-app.log
+          path: samples/joke/app.log
 
       - name: Run Joke sample into Kubernetes using OLM
         run: |
