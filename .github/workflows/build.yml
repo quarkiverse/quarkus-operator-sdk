@@ -81,24 +81,15 @@ jobs:
           nohup mvn quarkus:dev > app.log 2>&1 &
           PID=$(echo $!)
           
-          # wait for operator to start and apply the CRD
-          sleep 10s
-
           # Wait until the app installed the jokerequest custom resource definition
           $SCRIPTS/waitFor.sh crd $K8S_NAMESPACE jokerequests.samples.javaoperatorsdk.io
 
           # Test operator by creating a Joke Request resource
           kubectl apply -f src/main/k8s/jokerequest.yml
-          if [ "$?" -gt "0" ]; then
-            cat app.log  
-          fi
-
+          
           # And wait for the operator to create another Joke resource
           $SCRIPTS/waitFor.sh joke $K8S_NAMESPACE NAME
-          if [ "$?" -gt "0" ]; then
-            cat app.log  
-          fi
-
+          
           # Kill running process
           kill -9 $PID
 
