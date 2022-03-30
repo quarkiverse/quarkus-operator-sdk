@@ -73,26 +73,23 @@ jobs:
           kubectl create namespace $K8S_NAMESPACE
           kubectl config set-context --current --namespace=$K8S_NAMESPACE
 
-          # Build manifests
+          # Apply "3rd-party" CRD: joke is not an owned resource by our operator, so it's not generated
           cd samples/joke
-          mvn install -Dquarkus.operator-sdk.crd.apply=true
-
-          # Install CRDs
           kubectl apply -f src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml
 
           # Run operator in DEV mode
           nohup mvn quarkus:dev > app.log 2>&1 &
           PID=$(echo $!)
-
+          
           # Wait until the app installed the jokerequest custom resource definition
           $SCRIPTS/waitFor.sh crd $K8S_NAMESPACE jokerequests.samples.javaoperatorsdk.io
 
           # Test operator by creating a Joke Request resource
           kubectl apply -f src/main/k8s/jokerequest.yml
-
+          
           # And wait for the operator to create another Joke resource
           $SCRIPTS/waitFor.sh joke $K8S_NAMESPACE NAME
-
+          
           # Kill running process
           kill -9 $PID
 

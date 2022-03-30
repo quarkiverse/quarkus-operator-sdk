@@ -37,7 +37,7 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
         final var serviceAccountName = getMandatoryDeploymentMetadata(list).getName();
         for (Entry<String, QuarkusControllerConfiguration> entry : configs.entrySet()) {
             String controllerName = entry.getKey();
-            QuarkusControllerConfiguration config = entry.getValue();
+            QuarkusControllerConfiguration<?> config = entry.getValue();
             if (config.watchCurrentNamespace()) {
                 // create a RoleBinding that will be applied in the current namespace if watching only the current NS
                 list.addToItems(new RoleBindingBuilder()
@@ -57,7 +57,7 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
                         new RoleBindingBuilder()
                                 .withNewMetadata()
                                 .withName(controllerName + "-role-binding")
-                                .withNamespace((String) ns)
+                                .withNamespace(ns)
                                 .endMetadata()
                                 .withNewRoleRef(RBAC_AUTHORIZATION_GROUP, CLUSTER_ROLE,
                                         getClusterRoleName(controllerName))
