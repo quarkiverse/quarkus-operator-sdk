@@ -7,6 +7,9 @@ import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
 import javax.inject.Singleton;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.Operator;
@@ -15,6 +18,7 @@ import io.quarkus.arc.DefaultBean;
 
 @Singleton
 public class OperatorProducer {
+    private static final Logger log = LoggerFactory.getLogger(OperatorProducer.class);
 
     private Operator operator;
 
@@ -22,7 +26,16 @@ public class OperatorProducer {
     @DefaultBean
     @Singleton
     Operator operator(QuarkusConfigurationService configuration, Instance<Reconciler<? extends HasMetadata>> reconcilers) {
-        operator = new Operator(configuration.getClient(), configuration);
+        if (configuration.getVersion() instanceof Version) {
+            final var version = ((Version) configuration.getVersion());
+            final var branch = !version.getExtensionBranch().equals(Version.UNKNOWN)
+                    ? " on branch: " + version.getExtensionBranch()
+                    : "";
+            log.info("Quarkus Java Operator SDK extension {} (commit: {}{}) built on {}",
+                    version.getExtensionVersion(),
+                    version.getExtensionCommit(), branch, version.getExtensionBuildTime());
+        }
+        Operator operator = new Operator(configuration.getClient(), configuration);
         for (Reconciler<? extends HasMetadata> reconciler : reconcilers) {
             final var config = configuration.getConfigurationFor(reconciler);
             if (!config.isRegistrationDelayed()) {
