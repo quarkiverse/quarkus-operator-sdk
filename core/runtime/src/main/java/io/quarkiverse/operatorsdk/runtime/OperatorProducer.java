@@ -2,7 +2,6 @@ package io.quarkiverse.operatorsdk.runtime;
 
 import static io.quarkiverse.operatorsdk.runtime.CRDUtils.applyCRD;
 
-import javax.annotation.PreDestroy;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Produces;
 import javax.inject.Singleton;
@@ -20,8 +19,11 @@ import io.quarkus.arc.DefaultBean;
 public class OperatorProducer {
     private static final Logger log = LoggerFactory.getLogger(OperatorProducer.class);
 
-    private Operator operator;
-
+    /*
+     * Note that using ApplicationScoped instead of Singleton will create a proxy, which instantiates the Operator using the
+     * default constructor resulting in the configuration service provider being initialized, thus leading to failure when it is
+     * set again.
+     */
     @Produces
     @DefaultBean
     @Singleton
@@ -44,13 +46,6 @@ public class OperatorProducer {
         }
 
         return operator;
-    }
-
-    @PreDestroy
-    public void destroy() {
-        if (operator != null) {
-            operator.stop();
-        }
     }
 
     public static void applyCRDAndRegister(Operator operator, Reconciler<? extends HasMetadata> reconciler,
