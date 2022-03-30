@@ -30,7 +30,7 @@ public class SchemaService {
         }
     }
 
-    public void createSchemaAndRelatedUser(Connection connection, String schemaName,
+    public Schema createSchemaAndRelatedUser(Connection connection, String schemaName,
             String encoding,
             String userName,
             String password) {
@@ -50,6 +50,8 @@ public class SchemaService {
                 statement.execute(
                         format("GRANT ALL ON `%1$s`.* TO '%2$s'", schemaName, userName));
             }
+
+            return new Schema(schemaName, encoding);
         } catch (SQLException e) {
             throw new IllegalStateException(e);
         }
