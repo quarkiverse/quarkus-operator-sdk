@@ -84,8 +84,8 @@ jobs:
           nohup mvn quarkus:dev > app.log 2>&1 &
           PID=$(echo $!)
 
-          # Wait until the app is up and running
-          tail -f app.log | sed "/Installed features/ q"
+          # Wait until the app installed the jokerequest custom resource definition
+          $SCRIPTS/waitFor.sh crd $K8S_NAMESPACE NAME jokerequests.samples.javaoperatorsdk.io
 
           # Test operator by creating a Joke Request resource
           kubectl apply -f src/main/k8s/jokerequest.yml
