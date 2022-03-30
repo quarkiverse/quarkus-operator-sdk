@@ -85,7 +85,7 @@ jobs:
           PID=$(echo $!)
 
           # Wait until the app installed the jokerequest custom resource definition
-          $SCRIPTS/waitFor.sh crd $K8S_NAMESPACE NAME jokerequests.samples.javaoperatorsdk.io
+          $SCRIPTS/waitFor.sh crd $K8S_NAMESPACE jokerequests.samples.javaoperatorsdk.io
 
           # Test operator by creating a Joke Request resource
           kubectl apply -f src/main/k8s/jokerequest.yml
