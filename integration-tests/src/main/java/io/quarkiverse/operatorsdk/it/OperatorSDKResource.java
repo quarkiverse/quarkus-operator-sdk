@@ -78,13 +78,12 @@ public class OperatorSDKResource {
     @GET
     @Path("{name}/config")
     public JSONControllerConfiguration getConfig(@PathParam("name") String name) {
-        final var configuration = controllers.stream()
+        return controllers.stream()
                 .map(c -> configurationService.getConfigurationFor(c))
                 .filter(c -> c.getName().equals(name))
                 .findFirst()
                 .map(JSONControllerConfiguration::new)
                 .orElse(null);
-        return configuration;
     }
 
     static class JSONConfiguration {
