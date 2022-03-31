@@ -42,6 +42,8 @@ public abstract class ManifestsBuilder {
             List<ClusterRole> clusterRoles, List<RoleBinding> roleBindings, List<Role> roles,
             List<Deployment> deployments) throws IOException;
 
+    public abstract String getManifestType();
+
     public String getControllerName() {
         return controllerName;
     }

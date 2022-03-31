@@ -149,10 +149,13 @@ public class BundleProcessor {
                                         Path.of(BUNDLE).resolve(fileName).toString(),
                                         manifestBuilder.getManifestData(serviceAccounts, clusterRoleBindings, clusterRoles,
                                                 roleBindings, roles, deployments)));
-                        log.infov("Generating CSV for {0} controller -> {1}", manifestBuilder.getControllerName(),
+                        log.infov("Generating {0} for {1} controller -> {2}",
+                                manifestBuilder.getManifestType(),
+                                manifestBuilder.getControllerName(),
                                 outputDir.resolve(fileName));
                     } catch (IOException e) {
-                        log.errorv("Cannot generate CSV for {0}: {1}", manifestBuilder.getControllerName(), e.getMessage());
+                        log.errorv("Cannot generate {0} for {1}: {2}",
+                                manifestBuilder.getManifestType(), manifestBuilder.getControllerName(), e.getMessage());
                     }
                 });
                 // copy custom resources to the manifests folder

@@ -47,4 +47,9 @@ public class BundleDockerfileManifestsBuilder extends ManifestsBuilder {
 
         return sb.toString().getBytes(StandardCharsets.UTF_8);
     }
+
+    @Override
+    public String getManifestType() {
+        return "bundle";
+    }
 }

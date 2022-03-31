@@ -102,6 +102,11 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                 .endSpec();
     }
 
+    @Override
+    public String getManifestType() {
+        return "CSV";
+    }
+
     public Path getFileName() {
         return Path.of(MANIFESTS, csvGroupName + ".csv.yml");
     }
