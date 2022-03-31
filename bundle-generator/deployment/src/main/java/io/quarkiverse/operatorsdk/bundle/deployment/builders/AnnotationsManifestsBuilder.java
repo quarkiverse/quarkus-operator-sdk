@@ -39,4 +39,9 @@ public class AnnotationsManifestsBuilder extends ManifestsBuilder {
 
         return YAML_MAPPER.writeValueAsBytes(Collections.singletonMap(ANNOTATIONS, bundleLabels));
     }
+
+    @Override
+    public String getManifestType() {
+        return ANNOTATIONS;
+    }
 }
