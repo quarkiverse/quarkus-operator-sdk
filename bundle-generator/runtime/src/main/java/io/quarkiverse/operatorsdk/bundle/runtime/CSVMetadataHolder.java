@@ -1,5 +1,7 @@
 package io.quarkiverse.operatorsdk.bundle.runtime;
 
+import java.util.Objects;
+
 public class CSVMetadataHolder {
     public final String name;
     public final String description;
@@ -72,5 +74,20 @@ public class CSVMetadataHolder {
         this.maintainers = maintainers;
         this.installModes = installModes;
         this.permissionRules = permissionRules;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        CSVMetadataHolder that = (CSVMetadataHolder) o;
+        return Objects.equals(name, that.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
     }
 }

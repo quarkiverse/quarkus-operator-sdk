@@ -1,9 +1,9 @@
 package io.quarkiverse.operatorsdk.bundle.deployment;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import io.quarkiverse.operatorsdk.bundle.deployment.builders.AnnotationsManifestsBuilder;
@@ -37,16 +37,12 @@ public class BundleGenerator {
     public static Set<ManifestsBuilder> prepareGeneration(ApplicationInfoBuildItem configuration,
             BundleGenerationConfiguration bundleConfiguration,
             BuildTimeOperatorConfiguration operatorConfiguration,
-            Map<String, AugmentedResourceInfo> info,
-            Map<String, CSVMetadataHolder> csvMetadata) {
+            Map<CSVMetadataHolder, List<AugmentedResourceInfo>> csvGroups) {
         final var labels = generateBundleLabels(configuration, bundleConfiguration, operatorConfiguration);
-        final var builders = new ConcurrentHashMap<String, Set<ManifestsBuilder>>(7);
-        return info.values().parallelStream()
-                .flatMap(cri -> builders.computeIfAbsent(cri.getCsvGroupName(),
-                        s -> Set.of(new CsvManifestsBuilder(cri, csvMetadata),
-                                new AnnotationsManifestsBuilder(cri, labels),
-                                new BundleDockerfileManifestsBuilder(cri, labels)))
-                        .stream())
+        return csvGroups.entrySet().stream()
+                .flatMap(entry -> Set.of(new CsvManifestsBuilder(entry.getKey(), entry.getValue()),
+                        new AnnotationsManifestsBuilder(entry.getKey(), labels),
+                        new BundleDockerfileManifestsBuilder(entry.getKey(), labels)).stream())
                 .collect(Collectors.toSet());
     }
 

@@ -73,10 +73,6 @@ jobs:
           kubectl create namespace $K8S_NAMESPACE
           kubectl config set-context --current --namespace=$K8S_NAMESPACE
 
-          # Apply "3rd-party" CRD: joke is not an owned resource by our operator, so it's not generated
-          cd samples/joke
-          kubectl apply -f src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml
-
           # Run operator in DEV mode
           nohup mvn quarkus:dev > app.log 2>&1 &
           PID=$(echo $!)
@@ -84,11 +80,8 @@ jobs:
           # Wait until the app installed the jokerequest custom resource definition
           $SCRIPTS/waitFor.sh crd $K8S_NAMESPACE jokerequests.samples.javaoperatorsdk.io
 
-          # Test operator by creating a Joke Request resource
-          kubectl apply -f src/main/k8s/jokerequest.yml
-          
-          # And wait for the operator to create another Joke resource
-          $SCRIPTS/waitFor.sh joke $K8S_NAMESPACE NAME
+          # test joke sample
+          $SCRIPTS/testJokeSample.sh
           
           # Kill running process
           kill -9 $PID
@@ -106,76 +99,19 @@ jobs:
       - name: Run Joke sample into Kubernetes using OLM
         run: |
           SCRIPTS=$(pwd)/.github/scripts
-          K8S_NAMESPACE=operators
-          REGISTRY_NAMESPACE=joke
-          BUNDLE_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/joke-manifest-bundle:latest
-          CATALOG_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/joke-manifest-catalog:latest
 
-          # Create and set namespace
-          kubectl config set-context --current --namespace=$K8S_NAMESPACE
+          # Install Joke operator
+          $SCRIPTS/installOperatorUsingOlm.sh joke $(pwd)/samples/joke $KIND_REGISTRY
 
-          # Build manifests and images
-          cd samples/joke
-          mvn clean package -Dquarkus.container-image.build=true \
-            -Dquarkus.container-image.push=true \
-            -Dquarkus.container-image.insecure=true \
-            -Dquarkus.container-image.registry=$KIND_REGISTRY \
-            -Dquarkus.container-image.group=$REGISTRY_NAMESPACE \
-            -Dquarkus.kubernetes.namespace=$K8S_NAMESPACE
+          # test joke sample
+          $SCRIPTS/testJokeSample.sh
 
-          # Build Operator Bundle
-          docker build -t $BUNDLE_IMAGE -f target/bundle/bundle.Dockerfile target/bundle
-          docker push $BUNDLE_IMAGE
+      - name: Run Ping Pong sample into Kubernetes using OLM
+        run: |
+          SCRIPTS=$(pwd)/.github/scripts
 
-          # Build Catalog image
-          opm index add --bundles $BUNDLE_IMAGE --tag $CATALOG_IMAGE --build-tool docker --skip-tls
-          docker push $CATALOG_IMAGE
+          # Install Joke operator
+          $SCRIPTS/installOperatorUsingOlm.sh pingpong $(pwd)/samples/pingpong $KIND_REGISTRY
 
-          # Create OLM catalog resource
-          cat <<EOF | kubectl apply -f -
-          apiVersion: operators.coreos.com/v1alpha1
-          kind: CatalogSource
-          metadata:
-            name: joke-catalog
-            namespace: $K8S_NAMESPACE
-          spec:
-            sourceType: grpc
-            image: $CATALOG_IMAGE
-          EOF
-
-          # Wait until the catalog source of our operator is up and running
-          $SCRIPTS/waitFor.sh pods $K8S_NAMESPACE Running "--selector=olm.catalogSource=joke-catalog -o jsonpath='{..status.phase}'"
-
-          # Create a Subscription which triggers the deployment of joke operator
-          cat <<EOF | kubectl create -f -
-          apiVersion: operators.coreos.com/v1alpha1
-          kind: Subscription
-          metadata:
-            name: joke-subscription
-            namespace: $K8S_NAMESPACE
-          spec:
-            channel: alpha
-            name: joke-operator
-            source: joke-catalog
-            sourceNamespace: $K8S_NAMESPACE
-          EOF
-
-          # Wait until the operator is up and running
-          $SCRIPTS/waitFor.sh csv $K8S_NAMESPACE Succeeded "jokerequestreconciler -o jsonpath='{.status.phase}'"
-
-          # Install Joke CRD
-          kubectl apply -f src/main/k8s/jokes.samples.javaoperatorsdk.io-v1.yml
-
-          # Test operator by creating a Joke Request resource
-          cat <<EOF | kubectl create -f -
-          apiVersion: samples.javaoperatorsdk.io/v1alpha1
-          kind: JokeRequest
-          metadata:
-            name: jr-request
-            namespace: $K8S_NAMESPACE
-          spec:
-            category: Any
-          EOF
-
-          # And wait for the operator to create another Joke resource
-          $SCRIPTS/waitFor.sh joke $K8S_NAMESPACE NAME
+          # test joke sample
+          $SCRIPTS/testPingPongSample.sh

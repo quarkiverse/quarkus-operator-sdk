@@ -1,25 +1,19 @@
 package io.quarkiverse.operatorsdk.bundle.deployment;
 
+import java.util.List;
 import java.util.Map;
 
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkus.builder.item.SimpleBuildItem;
 
 public final class CSVMetadataBuildItem extends SimpleBuildItem {
-    private final Map<String, CSVMetadataHolder> groupToMetadata;
-    private final Map<String, AugmentedResourceInfo> crdNameToAugmentedCRInfo;
+    private final Map<CSVMetadataHolder, List<AugmentedResourceInfo>> csvGroups;
 
-    public CSVMetadataBuildItem(Map<String, CSVMetadataHolder> groupToMetadata,
-            Map<String, AugmentedResourceInfo> crdNameToAugmentedCRInfo) {
-        this.groupToMetadata = groupToMetadata;
-        this.crdNameToAugmentedCRInfo = crdNameToAugmentedCRInfo;
+    public CSVMetadataBuildItem(Map<CSVMetadataHolder, List<AugmentedResourceInfo>> csvGroups) {
+        this.csvGroups = csvGroups;
     }
 
-    public Map<String, CSVMetadataHolder> getCSVMetadata() {
-        return groupToMetadata;
-    }
-
-    public Map<String, AugmentedResourceInfo> getAugmentedCustomResourceInfos() {
-        return crdNameToAugmentedCRInfo;
+    public Map<CSVMetadataHolder, List<AugmentedResourceInfo>> getCsvGroups() {
+        return csvGroups;
     }
 }

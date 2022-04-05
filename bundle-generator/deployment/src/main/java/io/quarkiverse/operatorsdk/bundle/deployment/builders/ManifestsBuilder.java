@@ -15,7 +15,7 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
-import io.quarkiverse.operatorsdk.bundle.deployment.AugmentedResourceInfo;
+import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 
 public abstract class ManifestsBuilder {
 
@@ -30,10 +30,10 @@ public abstract class ManifestsBuilder {
         YAML_MAPPER.configure(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS, false);
     }
 
-    private final String controllerName;
+    protected final CSVMetadataHolder metadata;
 
-    public ManifestsBuilder(AugmentedResourceInfo cri) {
-        controllerName = cri.getControllerName();
+    public ManifestsBuilder(CSVMetadataHolder metadata) {
+        this.metadata = metadata;
     }
 
     public abstract Path getFileName();
@@ -44,8 +44,8 @@ public abstract class ManifestsBuilder {
 
     public abstract String getManifestType();
 
-    public String getControllerName() {
-        return controllerName;
+    public String getName() {
+        return metadata.name;
     }
 
     @Override

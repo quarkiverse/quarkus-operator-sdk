@@ -7,9 +7,11 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.io.FileUtils;
@@ -53,13 +55,15 @@ public class BundleProcessor {
 
     @SuppressWarnings("unchecked")
     @BuildStep
-    CSVMetadataBuildItem gatherCSVMetadata(CombinedIndexBuildItem combinedIndexBuildItem,
+    CSVMetadataBuildItem gatherCSVMetadata(ApplicationInfoBuildItem configuration,
+            BundleGenerationConfiguration bundleConfiguration,
+            CombinedIndexBuildItem combinedIndexBuildItem,
             ConfigurationServiceBuildItem configurations) {
-        final var csvGroupMetadata = new HashMap<String, CSVMetadataHolder>();
-
         final var controllerConfigs = configurations.getControllerConfigs();
-        final var augmentedCRInfos = new HashMap<String, AugmentedResourceInfo>();
         final var index = combinedIndexBuildItem.getIndex();
+        final var operatorCsvMetadata = getCSVMetadataForOperator(
+                bundleConfiguration.packageName.orElse(configuration.getName()), index);
+        final var csvGroups = new HashMap<CSVMetadataHolder, List<AugmentedResourceInfo>>();
 
         ClassUtils.getKnownReconcilers(index, log)
                 .forEach(reconcilerInfo -> {
@@ -70,15 +74,18 @@ public class BundleProcessor {
                     if (config == null) {
                         throw new IllegalStateException("Missing configuration for reconciler " + name);
                     }
-                    final var csvMetadata = getCSVMetadata(reconcilerInfo.classInfo(), name, index);
-                    csvGroupMetadata.put(csvMetadata.name, csvMetadata);
+
+                    // Check whether the reconciler must be shipped using a custom bundle
+                    CSVMetadataHolder csvMetadata = getCsvMetadataFromAnnotation(operatorCsvMetadata,
+                            reconcilerInfo.classInfo()).orElse(operatorCsvMetadata);
                     final var resourceFullName = config.getResourceTypeName();
                     final var resourceInfo = ResourceInfo.createFrom(config.getResourceClass(),
                             resourceFullName, name, config.getSpecClassName(), config.getStatusClassName());
-                    augmentedCRInfos.put(resourceFullName, new AugmentedResourceInfo(resourceInfo, csvMetadata.name));
+                    csvGroups.computeIfAbsent(csvMetadata, m -> new ArrayList<>())
+                            .add(new AugmentedResourceInfo(resourceInfo, csvMetadata.name));
                 });
 
-        return new CSVMetadataBuildItem(csvGroupMetadata, augmentedCRInfos);
+        return new CSVMetadataBuildItem(csvGroups);
     }
 
     @BuildStep
@@ -140,7 +147,7 @@ public class BundleProcessor {
                                     });
                                 });
                 final var generated = BundleGenerator.prepareGeneration(configuration, bundleConfiguration,
-                        operatorConfiguration, csvMetadata.getAugmentedCustomResourceInfos(), csvMetadata.getCSVMetadata());
+                        operatorConfiguration, csvMetadata.getCsvGroups());
                 generated.forEach(manifestBuilder -> {
                     final var fileName = manifestBuilder.getFileName();
                     try {
@@ -151,11 +158,11 @@ public class BundleProcessor {
                                                 roleBindings, roles, deployments)));
                         log.infov("Generating {0} for {1} controller -> {2}",
                                 manifestBuilder.getManifestType(),
-                                manifestBuilder.getControllerName(),
+                                manifestBuilder.getName(),
                                 outputDir.resolve(fileName));
                     } catch (IOException e) {
                         log.errorv("Cannot generate {0} for {1}: {2}",
-                                manifestBuilder.getManifestType(), manifestBuilder.getControllerName(), e.getMessage());
+                                manifestBuilder.getManifestType(), manifestBuilder.getName(), e.getMessage());
                     }
                 });
                 // copy custom resources to the manifests folder
@@ -176,31 +183,24 @@ public class BundleProcessor {
         }
     }
 
-    private CSVMetadataHolder getCSVMetadata(ClassInfo info, String controllerName, IndexView index) {
-        CSVMetadataHolder csvMetadata = new CSVMetadataHolder(controllerName);
-        csvMetadata = aggregateMetadataFromSharedCsvMetadata(csvMetadata, info, index);
-        csvMetadata = aggregateMetadataFromAnnotation(csvMetadata, info);
+    private CSVMetadataHolder getCSVMetadataForOperator(String name, IndexView index) {
+        CSVMetadataHolder csvMetadata = new CSVMetadataHolder(name);
+        csvMetadata = aggregateMetadataFromSharedCsvMetadata(csvMetadata, index);
         return csvMetadata;
     }
 
-    private CSVMetadataHolder aggregateMetadataFromAnnotation(CSVMetadataHolder holder, ClassInfo info) {
+    private Optional<CSVMetadataHolder> getCsvMetadataFromAnnotation(CSVMetadataHolder holder, ClassInfo info) {
         return Optional.ofNullable(info.classAnnotation(CSV_METADATA))
-                .map(annotationInstance -> createMetadataHolder(annotationInstance, holder))
-                .orElse(holder);
+                .map(annotationInstance -> createMetadataHolder(annotationInstance, holder));
     }
 
-    private CSVMetadataHolder aggregateMetadataFromSharedCsvMetadata(CSVMetadataHolder holder, ClassInfo info,
-            IndexView index) {
-        return info.interfaceTypes().stream()
-                .filter(t -> t.name().equals(SHARED_CSV_METADATA))
+    private CSVMetadataHolder aggregateMetadataFromSharedCsvMetadata(CSVMetadataHolder holder, IndexView index) {
+        return index.getAllKnownImplementors(SHARED_CSV_METADATA).stream()
+                .map(t -> t.classAnnotation(CSV_METADATA))
+                .filter(Objects::nonNull)
+                .map(annotation -> createMetadataHolder(annotation, holder))
                 .findFirst()
-                .map(t -> {
-                    final var metadataHolderType = t.asParameterizedType().arguments().get(0);
-                    // need to get the associated ClassInfo to properly resolve the annotations
-                    final var metadataHolder = index.getClassByName(metadataHolderType.name());
-                    final var csvMetadata = metadataHolder.classAnnotation(CSV_METADATA);
-                    return createMetadataHolder(csvMetadata, holder);
-                }).orElse(holder);
+                .orElse(holder);
     }
 
     private CSVMetadataHolder createMetadataHolder(AnnotationInstance csvMetadata, CSVMetadataHolder mh) {
