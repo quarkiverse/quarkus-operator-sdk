@@ -12,10 +12,12 @@ public class QuarkusKubernetesDependentResourceConfig extends KubernetesDependen
         super(namespaces, labelSelector);
     }
 
+    // Needed for the recordable constructor
     public Set<String> getNamespaces() {
         return namespaces();
     }
 
+    // Needed for the recordable constructor
     public String getLabelSelector() {
         return labelSelector();
     }
