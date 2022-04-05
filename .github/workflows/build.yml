@@ -68,20 +68,23 @@ jobs:
         run: |
           SCRIPTS=$(pwd)/.github/scripts
           K8S_NAMESPACE=dev
+          CURRENT_PWD=$(pwd)
 
           # Create and set namespace
           kubectl create namespace $K8S_NAMESPACE
           kubectl config set-context --current --namespace=$K8S_NAMESPACE
 
           # Run operator in DEV mode
+          cd samples/joke
           nohup mvn quarkus:dev > app.log 2>&1 &
           PID=$(echo $!)
+          cd $CURRENT_PWD
           
           # Wait until the app installed the jokerequest custom resource definition
           $SCRIPTS/waitFor.sh crd $K8S_NAMESPACE jokerequests.samples.javaoperatorsdk.io
 
           # test joke sample
-          $SCRIPTS/testJokeSample.sh
+          $SCRIPTS/testJokeSample.sh $K8S_NAMESPACE
           
           # Kill running process
           kill -9 $PID
@@ -104,7 +107,7 @@ jobs:
           $SCRIPTS/installOperatorUsingOlm.sh joke $(pwd)/samples/joke $KIND_REGISTRY
 
           # test joke sample
-          $SCRIPTS/testJokeSample.sh
+          $SCRIPTS/testJokeSample.sh operators
 
       - name: Run Ping Pong sample into Kubernetes using OLM
         run: |
