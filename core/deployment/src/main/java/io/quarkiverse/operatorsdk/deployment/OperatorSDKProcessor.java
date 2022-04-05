@@ -1,43 +1,22 @@
 package io.quarkiverse.operatorsdk.deployment;
 
-import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.loadClass;
-import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATION;
-import static io.quarkiverse.operatorsdk.common.Constants.CUSTOM_RESOURCE;
-import static io.quarkiverse.operatorsdk.common.Constants.KUBERNETES_DEPENDENT;
-import static io.quarkiverse.operatorsdk.common.Constants.KUBERNETES_DEPENDENT_RESOURCE;
 import static io.quarkiverse.operatorsdk.runtime.CRDUtils.applyCRD;
-import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.lang.annotation.Annotation;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BooleanSupplier;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.inject.Singleton;
 
-import org.jboss.jandex.AnnotationInstance;
-import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.DotName;
-import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.CustomResource;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
-import io.quarkiverse.operatorsdk.common.ClassUtils.ReconcilerInfo;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.runtime.AppEventListener;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
@@ -47,16 +26,12 @@ import io.quarkiverse.operatorsdk.runtime.ConfigurationServiceRecorder;
 import io.quarkiverse.operatorsdk.runtime.NoOpMetricsProvider;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
-import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
-import io.quarkiverse.operatorsdk.runtime.QuarkusDependentResourceSpec;
-import io.quarkiverse.operatorsdk.runtime.QuarkusKubernetesDependentResourceConfig;
 import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.Version;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
-import io.quarkus.builder.BuildException;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
@@ -69,7 +44,6 @@ import io.quarkus.deployment.builditem.nativeimage.ForceNonWeakReflectiveClassBu
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.deployment.metrics.MetricsCapabilityBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
-import io.quarkus.deployment.util.JandexUtil;
 import io.quarkus.gizmo.AssignableResultHandle;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
@@ -79,7 +53,7 @@ import io.quarkus.kubernetes.spi.DecoratorBuildItem;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.metrics.MetricsFactory;
 
-@SuppressWarnings({ "rawtypes", "unused" })
+@SuppressWarnings({ "unused" })
 class OperatorSDKProcessor {
 
     static final Logger log = Logger.getLogger(OperatorSDKProcessor.class.getName());
@@ -151,10 +125,11 @@ class OperatorSDKProcessor {
         // apply should imply generate: we cannot apply if we're not generating!
         final var crdGeneration = new CRDGeneration(crdConfig.generate || crdConfig.apply);
         final var index = combinedIndexBuildItem.getIndex();
-        final List<QuarkusControllerConfiguration> controllerConfigs = ClassUtils.getKnownReconcilers(index, log)
-                .map(info -> createControllerConfiguration(info, additionalBeans, reflectionClasses,
-                        forcedReflectionClasses,
-                        index, crdGeneration, liveReload))
+
+        final var builder = new QuarkusControllerConfigurationBuilder(additionalBeans,
+                reflectionClasses, forcedReflectionClasses, index, crdGeneration, liveReload, buildTimeConfiguration);
+        final var controllerConfigs = ClassUtils.getKnownReconcilers(index, log)
+                .map(builder::build)
                 .collect(Collectors.toList());
 
         // retrieve the known CRD information to make sure we always have a full view
@@ -232,276 +207,5 @@ class OperatorSDKProcessor {
                 optionalImplClass != null ? mc.loadClass(optionalImplClass) : mc.loadClass(handleClass),
                 mc.newArray(Annotation.class, 0));
         return mc.checkCast(mc.invokeInterfaceMethod(getMethod, operatorInstance), handleClass);
-    }
-
-    @SuppressWarnings("unchecked")
-    private QuarkusControllerConfiguration createControllerConfiguration(
-            ReconcilerInfo reconcilerInfo,
-            BuildProducer<AdditionalBeanBuildItem> additionalBeans,
-            BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
-            BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
-            IndexView index, CRDGeneration crdGeneration, LiveReloadBuildItem liveReload) {
-        final var primaryTypeDN = reconcilerInfo.primaryTypeName();
-        final var primaryTypeName = primaryTypeDN.toString();
-
-        // retrieve the reconciler's name
-        final var info = reconcilerInfo.classInfo();
-        final var reconcilerClassName = info.toString();
-        final String name = reconcilerInfo.name();
-
-        // create Reconciler bean
-        additionalBeans.produce(
-                AdditionalBeanBuildItem.builder()
-                        .addBeanClass(reconcilerClassName)
-                        .setUnremovable()
-                        .setDefaultScope(APPLICATION_SCOPED)
-                        .build());
-
-        // register target resource class for introspection
-        registerForReflection(reflectionClasses, primaryTypeName);
-        forcedReflectionClasses.produce(new ForceNonWeakReflectiveClassBuildItem(primaryTypeName));
-
-        // register spec and status for introspection if we're targeting a CustomResource
-        final var primaryCI = index.getClassByName(primaryTypeDN);
-        boolean isCR = false;
-        if (primaryCI == null) {
-            log.warnv(
-                    "''{0}'' has not been found in the Jandex index so it cannot be introspected. Assumed not to be a CustomResource implementation. If you believe this is wrong, please index your classes with Jandex.",
-                    primaryTypeDN);
-        } else {
-            try {
-                isCR = JandexUtil.isSubclassOf(index, primaryCI, CUSTOM_RESOURCE);
-            } catch (BuildException e) {
-                log.errorv("Couldn't ascertain if ''{0}'' is a CustomResource subclass. Assumed not to be.",
-                        e);
-            }
-        }
-
-        String specClassName = null;
-        String statusClassName = null;
-        if (isCR) {
-            final var crParamTypes = JandexUtil.resolveTypeParameters(primaryTypeDN, CUSTOM_RESOURCE,
-                    index);
-            specClassName = crParamTypes.get(0).name().toString();
-            statusClassName = crParamTypes.get(1).name().toString();
-            registerForReflection(reflectionClasses, specClassName);
-            registerForReflection(reflectionClasses, statusClassName);
-        }
-
-        // now check if there's more work to do, depending on reloaded state
-        Class<? extends HasMetadata> resourceClass = null;
-        String resourceFullName = null;
-
-        // check if we need to regenerate the CRD
-        final var changeInformation = liveReload.getChangeInformation();
-        if (isCR && crdGeneration.wantCRDGenerated()) {
-            // check whether we already have generated CRDs
-            var storedCRDInfos = liveReload.getContextObject(ContextStoredCRDInfos.class);
-
-            final boolean[] generateCurrent = { true }; // request CRD generation by default
-
-            final var crClass = loadClass(primaryTypeName, CustomResource.class);
-            resourceClass = crClass;
-            resourceFullName = getFullResourceName(crClass);
-
-            // When we have a live reload, check if we need to regenerate the associated CRD
-            if (liveReload.isLiveReload() && storedCRDInfos != null) {
-                final var finalCrdName = resourceFullName;
-                final var crdInfos = storedCRDInfos.getCRDInfosFor(resourceFullName);
-
-                // check for all CRD spec version requested
-                buildTimeConfiguration.crd.versions.forEach(v -> {
-                    final var crd = crdInfos.get(v);
-                    // if we don't have any information about this CRD version, we need to generate the CRD
-                    if (crd == null) {
-                        return;
-                    }
-
-                    // if dependent classes have been changed
-                    if (changeInformation != null) {
-                        for (String changedClass : changeInformation.getChangedClasses()) {
-                            if (crd.getDependentClassNames().contains(changedClass)) {
-                                return; // a dependent class has been changed, so we'll need to generate the CRD
-                            }
-                        }
-                    }
-
-                    // we've looked at all the changed classes and none have been changed for this CR/version: do not regenerate CRD
-                    generateCurrent[0] = false;
-                    log.infov(
-                            "''{0}'' CRD generation was skipped for ''{1}'' because no changes impacting the CRD were detected",
-                            v, finalCrdName);
-                });
-            }
-            // if we still need to generate the CRD, add the CR to the set to be generated
-            if (generateCurrent[0]) {
-                crdGeneration.withCustomResource(crClass, resourceFullName, name);
-            }
-        }
-
-        // check if we need to regenerate the configuration for this controller
-        QuarkusControllerConfiguration configuration = null;
-        var storedConfigurations = liveReload.getContextObject(
-                ContextStoredControllerConfigurations.class);
-        if (liveReload.isLiveReload() && storedConfigurations != null) {
-            // check if we need to regenerate the configuration for this controller
-            final var changedClasses = changeInformation == null ? Collections.<String> emptySet()
-                    : changeInformation.getChangedClasses();
-            final var changedResources = liveReload.getChangedResources();
-            configuration = storedConfigurations.configurationOrNullIfNeedGeneration(reconcilerClassName, changedClasses,
-                    changedResources);
-
-        }
-
-        if (configuration == null) {
-            // extract the configuration from annotation and/or external configuration
-            final var controllerAnnotation = info.classAnnotation(CONTROLLER_CONFIGURATION);
-
-            final var configExtractor = new BuildTimeHybridControllerConfiguration(buildTimeConfiguration,
-                    buildTimeConfiguration.controllers.get(name),
-                    controllerAnnotation);
-
-            if (resourceFullName == null) {
-                resourceClass = loadClass(primaryTypeName, HasMetadata.class);
-                resourceFullName = getFullResourceName(resourceClass);
-            }
-
-            final var crVersion = HasMetadata.getVersion(resourceClass);
-
-            // extract the namespaces
-            final var namespaces = configExtractor.namespaces(name);
-
-            final var dependentResources = createDependentResources(
-                    reflectionClasses, index, controllerAnnotation, namespaces, additionalBeans);
-
-            // create the configuration
-            configuration = new QuarkusControllerConfiguration(
-                    reconcilerClassName,
-                    name,
-                    resourceFullName,
-                    crVersion,
-                    configExtractor.generationAware(),
-                    resourceClass,
-                    namespaces,
-                    getFinalizer(controllerAnnotation, resourceFullName),
-                    getLabelSelector(controllerAnnotation),
-                    Optional.ofNullable(specClassName),
-                    Optional.ofNullable(statusClassName),
-                    dependentResources.values().stream().collect(Collectors.toUnmodifiableList()));
-
-            log.infov(
-                    "Processed ''{0}'' reconciler named ''{1}'' for ''{2}'' resource (version ''{3}'')",
-                    reconcilerClassName, name, resourceFullName, HasMetadata.getApiVersion(resourceClass));
-        } else {
-            log.infov("Skipped configuration reload for ''{0}'' reconciler as no changes were detected",
-                    reconcilerClassName);
-        }
-
-        // store the configuration in the live reload context
-        if (storedConfigurations == null) {
-            storedConfigurations = new ContextStoredControllerConfigurations();
-        }
-        storedConfigurations.recordConfiguration(configuration);
-        liveReload.setContextObject(ContextStoredControllerConfigurations.class, storedConfigurations);
-
-        return configuration;
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, QuarkusDependentResourceSpec> createDependentResources(
-            BuildProducer<ReflectiveClassBuildItem> reflectionClasses, IndexView index,
-            AnnotationInstance controllerAnnotation, Set<String> namespaces,
-            BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
-        // deal with dependent resources
-        var dependentResources = Collections.<String, QuarkusDependentResourceSpec> emptyMap();
-        if (controllerAnnotation != null) {
-            final var dependents = controllerAnnotation.value("dependents");
-            if (dependents != null) {
-                final var dependentAnnotations = dependents.asNestedArray();
-                dependentResources = new HashMap<>(dependentAnnotations.length);
-                for (AnnotationInstance dependentConfig : dependentAnnotations) {
-                    final var dependentTypeDN = dependentConfig.value("type").asClass().name();
-                    final var dependentType = index.getClassByName(dependentTypeDN);
-                    if (!dependentType.hasNoArgsConstructor()) {
-                        throw new IllegalArgumentException(
-                                "DependentResource implementations must provide a no-arg constructor for instantiation purposes");
-                    }
-
-                    final var dependentTypeName = dependentTypeDN.toString();
-                    final var dependentClass = loadClass(dependentTypeName, DependentResource.class);
-                    registerForReflection(reflectionClasses, dependentTypeName);
-
-                    // further process Kubernetes dependents
-                    final boolean isKubernetesDependent;
-                    try {
-                        isKubernetesDependent = JandexUtil.isSubclassOf(index, dependentType,
-                                KUBERNETES_DEPENDENT_RESOURCE);
-                    } catch (BuildException e) {
-                        throw new IllegalStateException("DependentResource " + dependentType + " is not indexed", e);
-                    }
-                    Object cfg = null;
-                    if (isKubernetesDependent) {
-                        final var kubeDepConfig = dependentType.classAnnotation(KUBERNETES_DEPENDENT);
-                        final var labelSelector = getLabelSelector(kubeDepConfig);
-                        // if the dependent doesn't explicitly provide a namespace configuration, inherit the configuration from the reconciler configuration
-                        final Set<String> dependentNamespaces = ConfigurationUtils.annotationValueOrDefault(
-                                kubeDepConfig,
-                                "namespaces", v -> new HashSet<>(
-                                        Arrays.asList(v.asStringArray())),
-                                () -> namespaces);
-                        cfg = new QuarkusKubernetesDependentResourceConfig(dependentNamespaces, labelSelector);
-                    }
-
-                    var nameField = dependentConfig.value("name");
-                    final var name = Optional.ofNullable(nameField)
-                            .map(AnnotationValue::asString)
-                            .filter(Predicate.not(String::isBlank))
-                            .orElse(DependentResource.defaultNameFor(dependentClass));
-                    final var spec = dependentResources.get(name);
-                    if (spec != null) {
-                        throw new IllegalArgumentException(
-                                "A DependentResource named: " + name + " already exists: " + spec);
-                    }
-                    dependentResources.put(name, new QuarkusDependentResourceSpec(dependentClass, cfg, name));
-
-                    additionalBeans.produce(
-                            AdditionalBeanBuildItem.builder()
-                                    .addBeanClass(dependentTypeName)
-                                    .setUnremovable()
-                                    .setDefaultScope(APPLICATION_SCOPED)
-                                    .build());
-                }
-            }
-        }
-        return dependentResources;
-    }
-
-    private String getFullResourceName(Class<? extends HasMetadata> crClass) {
-        return ReconcilerUtils.getResourceTypeName(crClass);
-    }
-
-    private String getFinalizer(AnnotationInstance controllerAnnotation, String crdName) {
-        return ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
-                "finalizerName",
-                AnnotationValue::asString,
-                () -> ReconcilerUtils.getDefaultFinalizerName(crdName));
-    }
-
-    private String getLabelSelector(AnnotationInstance controllerAnnotation) {
-        return ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
-                "labelSelector",
-                AnnotationValue::asString,
-                () -> null);
-    }
-
-    private void registerForReflection(
-            BuildProducer<ReflectiveClassBuildItem> reflectionClasses, String className) {
-        Optional.ofNullable(className)
-                .filter(s -> !className.startsWith("java."))
-                .ifPresent(
-                        cn -> {
-                            reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, cn));
-                            log.infov("Registered ''{0}'' for reflection", cn);
-                        });
     }
 }
