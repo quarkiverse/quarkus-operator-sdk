@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.MissingCRDException;
 import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkus.arc.DefaultBean;
 
@@ -37,6 +38,10 @@ public class OperatorProducer {
                     version.getExtensionVersion(),
                     version.getExtensionCommit(), branch, version.getExtensionBuildTime());
         }
+
+        // make sure we reset the ConfigurationService in case we restarted in dev mode
+        ConfigurationServiceProvider.reset();
+
         Operator operator = new Operator(configuration.getClient(), configuration);
         for (Reconciler<? extends HasMetadata> reconciler : reconcilers) {
             final var config = configuration.getConfigurationFor(reconciler);
