@@ -2,7 +2,7 @@ package io.quarkiverse.operatorsdk.runtime;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -14,6 +14,7 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
+@SuppressWarnings("rawtypes")
 public class QuarkusControllerConfiguration<R extends HasMetadata> implements ControllerConfiguration<R> {
 
     private final String associatedReconcilerClassName;
@@ -24,7 +25,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final boolean registrationDelayed;
     private final Optional<String> specClassName;
     private final Optional<String> statusClassName;
-    private final Map<String, ? extends DependentResourceSpec<?, ?>> dependentResources;
+    private final List<DependentResourceSpec> dependentResources;
     private final Class<R> resourceClass;
     private String finalizer;
     private Set<String> namespaces;
@@ -40,7 +41,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             Class<R> resourceClass,
             boolean registrationDelayed, Set<String> namespaces, String finalizerName, String labelSelector,
             Optional<String> specClassName, Optional<String> statusClassName,
-            Map<String, QuarkusDependentResourceSpec<?, ?>> dependentResources) {
+            List<DependentResourceSpec> dependentResources) {
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
         this.resourceTypeName = resourceTypeName;
@@ -148,9 +149,8 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return statusClassName;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public Map<String, DependentResourceSpec<?, ?>> getDependentResources() {
-        return (Map<String, DependentResourceSpec<?, ?>>) dependentResources;
+    public List<DependentResourceSpec> getDependentResources() {
+        return dependentResources;
     }
 }
