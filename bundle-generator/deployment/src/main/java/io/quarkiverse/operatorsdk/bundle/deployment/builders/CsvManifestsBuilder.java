@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -49,23 +48,18 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
 
     private static final Map<String, Set<ResourceInfo>> groupToCRInfo = new ConcurrentHashMap<>(7);
 
-    private final String csvGroupName;
     private final ClusterServiceVersionBuilder csvBuilder;
-    private final CSVMetadataHolder metadata;
 
-    public CsvManifestsBuilder(AugmentedResourceInfo cri, Map<String, CSVMetadataHolder> csvMetadata) {
-        super(cri);
+    public CsvManifestsBuilder(CSVMetadataHolder metadata, List<AugmentedResourceInfo> controllers) {
+        super(metadata);
         // record group to CRI mapping
-        groupToCRInfo.computeIfAbsent(cri.getGroup(), s -> new HashSet<>()).add(cri);
-
-        csvGroupName = cri.getCsvGroupName();
-        metadata = csvMetadata.get(csvGroupName);
+        // groupToCRInfo.computeIfAbsent(metadata.getGroup(), s -> new HashSet<>()).add(cri);
         csvBuilder = new ClusterServiceVersionBuilder()
-                .withNewMetadata().withName(csvGroupName).endMetadata();
+                .withNewMetadata().withName(getName()).endMetadata();
         final var csvSpecBuilder = csvBuilder
                 .editOrNewSpec()
                 .withDescription(metadata.description)
-                .withDisplayName(defaultIfEmpty(metadata.displayName, getControllerName()))
+                .withDisplayName(defaultIfEmpty(metadata.displayName, getName()))
                 .withKeywords(metadata.keywords)
                 .withReplaces(metadata.replaces)
                 .withVersion(metadata.version)
@@ -92,14 +86,16 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             }
         }
 
-        csvSpecBuilder
-                .editOrNewCustomresourcedefinitions()
-                .addNewOwned()
-                .withName(cri.getResourceFullName())
-                .withVersion(cri.getVersion())
-                .withKind(cri.getKind())
-                .endOwned().endCustomresourcedefinitions()
-                .endSpec();
+        for (AugmentedResourceInfo controller : controllers) {
+            csvSpecBuilder
+                    .editOrNewCustomresourcedefinitions()
+                    .addNewOwned()
+                    .withName(controller.getResourceFullName())
+                    .withVersion(controller.getVersion())
+                    .withKind(controller.getKind())
+                    .endOwned().endCustomresourcedefinitions()
+                    .endSpec();
+        }
     }
 
     @Override
@@ -108,7 +104,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     }
 
     public Path getFileName() {
-        return Path.of(MANIFESTS, csvGroupName + ".csv.yml");
+        return Path.of(MANIFESTS, getName() + ".csv.yml");
     }
 
     public byte[] getManifestData(List<ServiceAccount> serviceAccounts, List<ClusterRoleBinding> clusterRoleBindings,
@@ -152,7 +148,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     }
 
     private String getIconName() {
-        return csvGroupName + ".icon.png";
+        return getName() + ".icon.png";
     }
 
     private void handleDeployments(List<Deployment> deployments,

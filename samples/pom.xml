@@ -20,5 +20,6 @@
     <module>exposedapp</module>
     <module>joke</module>
     <module>mysql-schema</module>
+    <module>pingpong</module>
   </modules>
 </project>

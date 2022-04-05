@@ -1,0 +1,4 @@
+apiVersion: "samples.javaoperatorsdk.io/v1alpha1"
+kind: Ping
+metadata:
+  name: my-ping-request

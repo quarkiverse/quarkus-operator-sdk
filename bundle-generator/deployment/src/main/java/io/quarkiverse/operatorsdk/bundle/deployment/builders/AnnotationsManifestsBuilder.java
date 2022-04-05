@@ -12,7 +12,7 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
-import io.quarkiverse.operatorsdk.bundle.deployment.AugmentedResourceInfo;
+import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 
 public class AnnotationsManifestsBuilder extends ManifestsBuilder {
 
@@ -21,8 +21,8 @@ public class AnnotationsManifestsBuilder extends ManifestsBuilder {
 
     private final Map<String, String> bundleLabels;
 
-    public AnnotationsManifestsBuilder(AugmentedResourceInfo cri, Map<String, String> bundleLabels) {
-        super(cri);
+    public AnnotationsManifestsBuilder(CSVMetadataHolder metadata, Map<String, String> bundleLabels) {
+        super(metadata);
 
         this.bundleLabels = bundleLabels;
     }
