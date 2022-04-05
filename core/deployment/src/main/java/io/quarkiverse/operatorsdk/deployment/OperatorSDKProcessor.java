@@ -398,7 +398,7 @@ class OperatorSDKProcessor {
                     getLabelSelector(controllerAnnotation),
                     Optional.ofNullable(specClassName),
                     Optional.ofNullable(statusClassName),
-                    dependentResources);
+                    dependentResources.values().stream().collect(Collectors.toUnmodifiableList()));
 
             log.infov(
                     "Processed ''{0}'' reconciler named ''{1}'' for ''{2}'' resource (version ''{3}'')",
@@ -460,8 +460,7 @@ class OperatorSDKProcessor {
                                 "namespaces", v -> new HashSet<>(
                                         Arrays.asList(v.asStringArray())),
                                 () -> namespaces);
-                        cfg = new QuarkusKubernetesDependentResourceConfig(dependentNamespaces.toArray(new String[0]),
-                                labelSelector);
+                        cfg = new QuarkusKubernetesDependentResourceConfig(dependentNamespaces, labelSelector);
                     }
 
                     var nameField = dependentConfig.value("name");
@@ -469,6 +468,11 @@ class OperatorSDKProcessor {
                             .map(AnnotationValue::asString)
                             .filter(Predicate.not(String::isBlank))
                             .orElse(DependentResource.defaultNameFor(dependentClass));
+                    final var spec = dependentResources.get(name);
+                    if (spec != null) {
+                        throw new IllegalArgumentException(
+                                "A DependentResource named: " + name + " already exists: " + spec);
+                    }
                     dependentResources.put(name, new QuarkusDependentResourceSpec(dependentClass, cfg, name));
 
                     additionalBeans.produce(

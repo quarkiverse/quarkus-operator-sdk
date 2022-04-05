@@ -185,7 +185,7 @@ public class OperatorSDKResource {
         public List<JSONDependentResourceSpec> getDependents() {
             final var dependents = conf.getDependentResources();
             final var result = new ArrayList<JSONDependentResourceSpec>(dependents.size());
-            return dependents.values().stream()
+            return dependents.stream()
                     .map(JSONDependentResourceSpec::new)
                     .collect(Collectors.toList());
         }
