@@ -49,7 +49,7 @@ This section explains how to deploy your operator using the [Operator Lifecycle 
 
 Make sure you have installed the [opm](https://github.com/operator-framework/operator-registry) command tool and have connected to a Kubernetes cluster with the OLM installed.
 
-2. Generate the Operator image and bundle manifests
+1. Generate the Operator image and bundle manifests
 
 This example uses the [Quarkus Jib container image](https://quarkus.io/guides/container-image#jib) extension to build the Operator image. 
 Also, the Quarkus Operator SDK provides the `quarkus-operator-sdk-bundle-generator` extension that generates the Operator bundle manifests at `target/bundle`.
