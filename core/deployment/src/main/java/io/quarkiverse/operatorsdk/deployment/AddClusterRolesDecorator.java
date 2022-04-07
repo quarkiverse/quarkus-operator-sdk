@@ -37,6 +37,11 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                 }
             });
 
+            // if the resource uses a finalizer, add it to the resource
+            if (cri.isUsesFinalizer()) {
+                rule.addNewResource(plural + "/finalizers");
+            }
+
             rule.addNewApiGroup(cri.getGroup())
                     .addToVerbs(ALL_VERBS)
                     .build();
