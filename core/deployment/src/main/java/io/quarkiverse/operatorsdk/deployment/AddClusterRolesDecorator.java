@@ -37,6 +37,10 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                 }
             });
 
+            // add finalizers sub-resource because it's used in several contexts, even in the absence of finalizers
+            // see: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
+            rule.addNewResource(plural + "/finalizers");
+
             rule.addNewApiGroup(cri.getGroup())
                     .addToVerbs(ALL_VERBS)
                     .build();
