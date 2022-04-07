@@ -9,6 +9,7 @@ import static org.hamcrest.Matchers.is;
 
 import java.util.Locale;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import io.quarkus.test.common.QuarkusTestResource;
@@ -107,6 +108,7 @@ class OperatorSDKResourceTest {
                 .body("namespaces", hasItem("default"));
     }
 
+    @Disabled
     @Test
     void delayedControllerShouldWaitForEventToRegister() {
         // first check that the delayed controller is not registered, though it should be a known controller
