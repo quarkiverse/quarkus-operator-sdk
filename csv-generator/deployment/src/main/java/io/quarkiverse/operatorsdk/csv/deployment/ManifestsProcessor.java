@@ -67,8 +67,7 @@ public class ManifestsProcessor {
                     csvGroupMetadata.put(csvMetadata.name, csvMetadata);
                     final var resourceFullName = config.getResourceTypeName();
                     final var resourceInfo = ResourceInfo.createFrom(config.getResourceClass(),
-                            resourceFullName, name, config.getSpecClassName(), config.getStatusClassName(),
-                            config.useFinalizer());
+                            resourceFullName, name, config.getSpecClassName(), config.getStatusClassName());
                     augmentedCRInfos.put(resourceFullName, new AugmentedResourceInfo(resourceInfo, csvMetadata.name));
                 });
 
@@ -237,7 +236,7 @@ public class ManifestsProcessor {
         }
 
         final var permissionsField = csvMetadata.value("permissionRules");
-        CSVMetadataHolder.PermissionRule[] permissionRules = null;
+        CSVMetadataHolder.PermissionRule[] permissionRules;
         if (permissionsField != null) {
             final var permissionsAnn = permissionsField.asNestedArray();
             permissionRules = new CSVMetadataHolder.PermissionRule[permissionsAnn.length];
