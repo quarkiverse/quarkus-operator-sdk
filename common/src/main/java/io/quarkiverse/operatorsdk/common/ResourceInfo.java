@@ -23,13 +23,10 @@ public class ResourceInfo {
     private final String resourceFullName;
     private final String controllerName;
 
-    private final boolean usesFinalizer;
-
     @RecordableConstructor
     public ResourceInfo(String group, String version, String kind, String singular, String plural, String[] shortNames,
             boolean storage, boolean served, Scope scope, String resourceClassName, Optional<String> specClassName,
-            Optional<String> statusClassName, String resourceFullName, String controllerName,
-            boolean usesFinalizer) {
+            Optional<String> statusClassName, String resourceFullName, String controllerName) {
         this.group = group;
         this.version = version;
         this.kind = kind;
@@ -44,7 +41,6 @@ public class ResourceInfo {
         this.statusClassName = statusClassName;
         this.resourceFullName = resourceFullName;
         this.controllerName = controllerName;
-        this.usesFinalizer = usesFinalizer;
     }
 
     public String getGroup() {
@@ -103,10 +99,6 @@ public class ResourceInfo {
         return controllerName;
     }
 
-    public boolean isUsesFinalizer() {
-        return usesFinalizer;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -133,7 +125,7 @@ public class ResourceInfo {
 
     public static ResourceInfo createFrom(Class<? extends HasMetadata> resourceClass,
             String resourceFullName, String associatedControllerName, Optional<String> specClassName,
-            Optional<String> statusClassName, boolean usesFinalizer) {
+            Optional<String> statusClassName) {
         Scope scope = Namespaced.class.isAssignableFrom(resourceClass) ? Scope.NAMESPACED : Scope.CLUSTER;
 
         return new ResourceInfo(HasMetadata.getGroup(resourceClass),
@@ -142,6 +134,6 @@ public class ResourceInfo {
                 HasMetadata.getPlural(resourceClass), new String[0],
                 false, false, scope, resourceClass.getCanonicalName(),
                 specClassName, statusClassName,
-                resourceFullName, associatedControllerName, usesFinalizer);
+                resourceFullName, associatedControllerName);
     }
 }

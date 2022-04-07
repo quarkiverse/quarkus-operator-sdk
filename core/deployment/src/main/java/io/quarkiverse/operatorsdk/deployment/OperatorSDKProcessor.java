@@ -196,7 +196,7 @@ class OperatorSDKProcessor {
         final var mappings = new HashMap<String, ResourceInfo>(configs.size());
         configs.forEach((controllerName, config) -> {
             final var augmented = ResourceInfo.createFrom(config.getResourceClass(), config.getResourceTypeName(),
-                    controllerName, config.getSpecClassName(), config.getStatusClassName(), config.useFinalizer());
+                    controllerName, config.getSpecClassName(), config.getStatusClassName());
             mappings.put(controllerName, augmented);
         });
 
