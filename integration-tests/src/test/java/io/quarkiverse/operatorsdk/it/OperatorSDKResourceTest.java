@@ -62,8 +62,9 @@ class OperatorSDKResourceTest {
                 .contentType("application/json")
                 .extract()
                 .as(String[].class);
-        assertThat(names, arrayContainingInAnyOrder(ApplicationScopedReconciler.NAME, ConfiguredReconciler.NAME,
-                DelayedReconciler.NAME, TestReconciler.NAME,
+        assertThat(names, arrayContainingInAnyOrder(ApplicationScopedReconciler.NAME,
+                ConfiguredReconciler.NAME,
+                TestReconciler.NAME,
                 SecretReconciler.class.getSimpleName().toLowerCase(Locale.ROOT),
                 GatewayReconciler.class.getSimpleName().toLowerCase(Locale.ROOT),
                 DependentDefiningReconciler.NAME));
@@ -106,25 +107,6 @@ class OperatorSDKResourceTest {
                 .then()
                 .statusCode(200)
                 .body("namespaces", hasItem("default"));
-    }
-
-    @Test
-    void delayedControllerShouldWaitForEventToRegister() {
-        // first check that the delayed controller is not registered, though it should be a known controller
-        given().when().get("/operator/registered/" + DelayedReconciler.NAME).then().statusCode(200).body(is("false"));
-        given().when().get("/operator/" + DelayedReconciler.NAME).then().statusCode(200).body(is("true"));
-        given()
-                .when()
-                .get("/operator/" + DelayedReconciler.NAME + "/config")
-                .then()
-                .statusCode(200)
-                .body("delayed", equalTo(true));
-
-        // call the register endpoint to trigger the event that the DelayedController is waiting for
-        given().when().post("/operator/register").then().statusCode(204);
-
-        // and check that the controller is now registered
-        given().when().get("/operator/registered/" + DelayedReconciler.NAME).then().statusCode(200).body(is("true"));
     }
 
     @Test

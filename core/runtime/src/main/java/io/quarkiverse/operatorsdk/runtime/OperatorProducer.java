@@ -40,9 +40,7 @@ public class OperatorProducer {
         Operator operator = new Operator(configuration.getClient(), configuration);
         for (Reconciler<? extends HasMetadata> reconciler : reconcilers) {
             final var config = configuration.getConfigurationFor(reconciler);
-            if (!config.isRegistrationDelayed()) {
-                applyCRDAndRegister(operator, reconciler, configuration);
-            }
+            applyCRDAndRegister(operator, reconciler, configuration);
         }
 
         return operator;

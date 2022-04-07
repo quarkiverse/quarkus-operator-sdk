@@ -4,15 +4,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
-import org.jboss.jandex.DotName;
-import org.jboss.jandex.Type;
-import org.jboss.jandex.Type.Kind;
 
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
@@ -26,16 +22,13 @@ class BuildTimeHybridControllerConfiguration {
     private final BuildTimeOperatorConfiguration operatorConfiguration;
     private final BuildTimeControllerConfiguration externalConfiguration;
     private final AnnotationInstance controllerAnnotation;
-    private final AnnotationInstance delayRegistrationAnnotation;
 
     public BuildTimeHybridControllerConfiguration(
             BuildTimeOperatorConfiguration operatorConfiguration, BuildTimeControllerConfiguration externalConfiguration,
-            AnnotationInstance controllerAnnotation,
-            AnnotationInstance delayRegistrationAnnotation) {
+            AnnotationInstance controllerAnnotation) {
         this.operatorConfiguration = operatorConfiguration;
         this.externalConfiguration = externalConfiguration;
         this.controllerAnnotation = controllerAnnotation;
-        this.delayRegistrationAnnotation = delayRegistrationAnnotation;
     }
 
     boolean generationAware() {
@@ -45,35 +38,6 @@ class BuildTimeHybridControllerConfiguration {
                 "generationAwareEventProcessing",
                 AnnotationValue::asBoolean,
                 () -> operatorConfiguration.generationAware.orElse(true));
-    }
-
-    Type eventType() {
-        return ConfigurationUtils.extract(
-                externalConfiguration,
-                delayRegistrationAnnotation, c -> fromName(c.delayRegistrationUntilEvent),
-                "event",
-                AnnotationValue::asClass,
-                () -> fromName(operatorConfiguration.delayRegistrationUntilEvent).orElse(null));
-    }
-
-    private Optional<Type> fromName(Optional<String> className) {
-        return className.filter(s -> void.class.getName().equals(s))
-                .map(DotName::createSimple)
-                .map(dn -> Type.create(dn, Kind.CLASS));
-    }
-
-    boolean delayedRegistration() {
-        return ConfigurationUtils.extract(
-                externalConfiguration,
-                delayRegistrationAnnotation,
-                c -> hasNonVoidRegistrationEvent(c.delayRegistrationUntilEvent),
-                "event",
-                v -> v.asClass().kind() != Kind.VOID,
-                () -> hasNonVoidRegistrationEvent(operatorConfiguration.delayRegistrationUntilEvent).orElse(false));
-    }
-
-    private Optional<Boolean> hasNonVoidRegistrationEvent(Optional<String> className) {
-        return className.map(s -> void.class.getName().equals(s));
     }
 
     String name(String resourceControllerClassName) {
