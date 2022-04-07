@@ -22,7 +22,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final String resourceTypeName;
     private final String crVersion;
     private final boolean generationAware;
-    private final boolean registrationDelayed;
     private final Optional<String> specClassName;
     private final Optional<String> statusClassName;
     private final List<DependentResourceSpec> dependentResources;
@@ -38,8 +37,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             String name,
             String resourceTypeName,
             String crVersion, boolean generationAware,
-            Class<R> resourceClass,
-            boolean registrationDelayed, Set<String> namespaces, String finalizerName, String labelSelector,
+            Class<R> resourceClass, Set<String> namespaces, String finalizerName, String labelSelector,
             Optional<String> specClassName, Optional<String> statusClassName,
             List<DependentResourceSpec> dependentResources) {
         this.associatedReconcilerClassName = associatedReconcilerClassName;
@@ -48,7 +46,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.crVersion = crVersion;
         this.generationAware = generationAware;
         this.resourceClass = resourceClass;
-        this.registrationDelayed = registrationDelayed;
         this.retryConfiguration = ControllerConfiguration.super.getRetryConfiguration();
         setNamespaces(namespaces);
         setFinalizer(finalizerName);
@@ -62,10 +59,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return namespaces == null || namespaces.length == 0
                 ? Collections.emptySet()
                 : Set.of(namespaces);
-    }
-
-    public boolean isRegistrationDelayed() {
-        return registrationDelayed;
     }
 
     @Override

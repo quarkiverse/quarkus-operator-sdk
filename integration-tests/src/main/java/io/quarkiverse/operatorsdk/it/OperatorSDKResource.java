@@ -5,12 +5,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.enterprise.event.Event;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -24,7 +21,6 @@ import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
-import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusKubernetesDependentResourceConfig;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
@@ -35,26 +31,6 @@ public class OperatorSDKResource {
     Instance<Reconciler<? extends HasMetadata>> controllers;
     @Inject
     QuarkusConfigurationService configurationService;
-    @Inject
-    Event<DelayedReconciler.RegisterEvent> event;
-
-    @POST
-    @Path("register")
-    public void registerController() {
-        event.fire(new DelayedReconciler.RegisterEvent());
-    }
-
-    @GET
-    @Path("registered/{name}")
-    public boolean getRegisteredController(@PathParam("name") String name) {
-        for (Reconciler<?> cont : controllers) {
-            if (configurationService.getConfigurationFor(cont).getName().equals(name)
-                    && cont instanceof RegistrableReconciler) {
-                return ((RegistrableReconciler<?>) cont).isInitialized();
-            }
-        }
-        throw new NotFoundException("Could not find controller: " + name);
-    }
 
     @GET
     @Path("config")
@@ -171,11 +147,6 @@ public class OperatorSDKResource {
 
         public RetryConfiguration getRetryConfiguration() {
             return conf.getRetryConfiguration();
-        }
-
-        public boolean isDelayed() {
-            return conf instanceof QuarkusControllerConfiguration
-                    && ((QuarkusControllerConfiguration<?>) conf).isRegistrationDelayed();
         }
 
         public String getLabelSelector() {
