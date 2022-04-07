@@ -48,6 +48,7 @@ public class ManifestsProcessor {
     private static final DotName CSV_METADATA = DotName.createSimple(CSVMetadata.class.getName());
     private static final String MANIFESTS = "manifests";
 
+    @SuppressWarnings("unchecked")
     @BuildStep
     CSVMetadataBuildItem gatherCSVMetadata(CombinedIndexBuildItem combinedIndexBuildItem,
             ConfigurationServiceBuildItem configurations) {
@@ -66,7 +67,8 @@ public class ManifestsProcessor {
                     csvGroupMetadata.put(csvMetadata.name, csvMetadata);
                     final var resourceFullName = config.getResourceTypeName();
                     final var resourceInfo = ResourceInfo.createFrom(config.getResourceClass(),
-                            resourceFullName, name, config.getSpecClassName(), config.getStatusClassName());
+                            resourceFullName, name, config.getSpecClassName(), config.getStatusClassName(),
+                            config.useFinalizer());
                     augmentedCRInfos.put(resourceFullName, new AugmentedResourceInfo(resourceInfo, csvMetadata.name));
                 });
 
@@ -203,7 +205,7 @@ public class ManifestsProcessor {
         }
 
         final var maintainersField = csvMetadata.value("maintainers");
-        CSVMetadataHolder.Maintainer[] maintainers = null;
+        CSVMetadataHolder.Maintainer[] maintainers;
         if (maintainersField != null) {
             final var maintainersAnn = maintainersField.asNestedArray();
             maintainers = new CSVMetadataHolder.Maintainer[maintainersAnn.length];
@@ -219,7 +221,7 @@ public class ManifestsProcessor {
         }
 
         final var installModesField = csvMetadata.value("installModes");
-        CSVMetadataHolder.InstallMode[] installModes = null;
+        CSVMetadataHolder.InstallMode[] installModes;
         if (installModesField != null) {
             final var installModesAnn = installModesField.asNestedArray();
             installModes = new CSVMetadataHolder.InstallMode[installModesAnn.length];

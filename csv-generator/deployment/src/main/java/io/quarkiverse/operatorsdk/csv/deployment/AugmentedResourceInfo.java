@@ -12,7 +12,8 @@ public class AugmentedResourceInfo extends ResourceInfo {
     public AugmentedResourceInfo(ResourceInfo cri, String csvGroupName) {
         super(cri.getGroup(), cri.getVersion(), cri.getKind(), cri.getSingular(), cri.getPlural(), cri.getShortNames(),
                 cri.isStorage(), cri.isServed(), cri.getScope(), cri.getResourceClassName(), cri.getSpecClassName(),
-                cri.getStatusClassName(), cri.getResourceFullName(), cri.getControllerName());
+                cri.getStatusClassName(), cri.getResourceFullName(), cri.getControllerName(),
+                cri.isUsesFinalizer());
         this.csvGroupName = csvGroupName;
     }
 

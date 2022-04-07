@@ -36,6 +36,7 @@ public class ResourceControllerMapping {
                 info.group(), info.version(), info.kind(), info.singular(), info.plural(), info.shortNames(),
                 info.storage(),
                 info.served(), info.scope(), info.crClassName(),
-                info.specClassName(), info.statusClassName(), crdName, associatedControllerName);
+                info.specClassName(), info.statusClassName(), crdName, associatedControllerName,
+                false); // TODO: this should actually be calculated but we probably need to clean this up anyway
     }
 }
