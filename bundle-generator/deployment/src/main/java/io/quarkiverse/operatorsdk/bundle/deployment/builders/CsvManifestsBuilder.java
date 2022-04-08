@@ -52,8 +52,6 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
 
     public CsvManifestsBuilder(CSVMetadataHolder metadata, List<AugmentedResourceInfo> controllers) {
         super(metadata);
-        // record group to CRI mapping
-        // groupToCRInfo.computeIfAbsent(metadata.getGroup(), s -> new HashSet<>()).add(cri);
         csvBuilder = new ClusterServiceVersionBuilder()
                 .withNewMetadata().withName(getName()).endMetadata();
         final var csvSpecBuilder = csvBuilder

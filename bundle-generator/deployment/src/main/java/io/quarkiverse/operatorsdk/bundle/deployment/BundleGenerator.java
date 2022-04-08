@@ -1,19 +1,20 @@
 package io.quarkiverse.operatorsdk.bundle.deployment;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 import io.quarkiverse.operatorsdk.bundle.deployment.builders.AnnotationsManifestsBuilder;
 import io.quarkiverse.operatorsdk.bundle.deployment.builders.BundleDockerfileManifestsBuilder;
 import io.quarkiverse.operatorsdk.bundle.deployment.builders.CsvManifestsBuilder;
+import io.quarkiverse.operatorsdk.bundle.deployment.builders.CustomResourceManifestsBuilder;
 import io.quarkiverse.operatorsdk.bundle.deployment.builders.ManifestsBuilder;
 import io.quarkiverse.operatorsdk.bundle.runtime.BundleGenerationConfiguration;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
-import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
+import io.quarkiverse.operatorsdk.runtime.CRDInfo;
 
 public class BundleGenerator {
 
@@ -34,20 +35,37 @@ public class BundleGenerator {
     private BundleGenerator() {
     }
 
-    public static Set<ManifestsBuilder> prepareGeneration(ApplicationInfoBuildItem configuration,
-            BundleGenerationConfiguration bundleConfiguration,
+    public static List<ManifestsBuilder> prepareGeneration(BundleGenerationConfiguration bundleConfiguration,
             BuildTimeOperatorConfiguration operatorConfiguration,
-            Map<CSVMetadataHolder, List<AugmentedResourceInfo>> csvGroups) {
-        final var labels = generateBundleLabels(configuration, bundleConfiguration, operatorConfiguration);
-        return csvGroups.entrySet().stream()
-                .flatMap(entry -> Set.of(new CsvManifestsBuilder(entry.getKey(), entry.getValue()),
-                        new AnnotationsManifestsBuilder(entry.getKey(), labels),
-                        new BundleDockerfileManifestsBuilder(entry.getKey(), labels)).stream())
-                .collect(Collectors.toSet());
+            Map<CSVMetadataHolder, List<AugmentedResourceInfo>> csvGroups, List<CRDInfo> crds) {
+        List<ManifestsBuilder> builders = new ArrayList<>();
+        for (Map.Entry<CSVMetadataHolder, List<AugmentedResourceInfo>> entry : csvGroups.entrySet()) {
+            final var labels = generateBundleLabels(entry.getKey(), bundleConfiguration, operatorConfiguration);
+
+            builders.add(new CsvManifestsBuilder(entry.getKey(), entry.getValue()));
+            builders.add(new AnnotationsManifestsBuilder(entry.getKey(), labels));
+            builders.add(new BundleDockerfileManifestsBuilder(entry.getKey(), labels));
+            entry.getValue().stream()
+                    .map(controller -> findOwnedCustomResource(controller, crds))
+                    .filter(Objects::nonNull)
+                    .map(crd -> new CustomResourceManifestsBuilder(entry.getKey(), crd))
+                    .forEach(builders::add);
+        }
+
+        return builders;
     }
 
-    private static Map<String, String> generateBundleLabels(
-            ApplicationInfoBuildItem applicationConfiguration,
+    private static CRDInfo findOwnedCustomResource(AugmentedResourceInfo controller, List<CRDInfo> crds) {
+        for (CRDInfo crd : crds) {
+            if (crd.getCrdName().startsWith(controller.getResourceFullName())) {
+                return crd;
+            }
+        }
+
+        return null;
+    }
+
+    private static Map<String, String> generateBundleLabels(CSVMetadataHolder csvMetadata,
             BundleGenerationConfiguration bundleConfiguration,
             BuildTimeOperatorConfiguration operatorConfiguration) {
         Map<String, String> values = new HashMap<>();
@@ -58,8 +76,7 @@ public class BundleGenerator {
             values.put(join(PREFIX_ANNOTATION, MANIFESTS, version), MANIFESTS + SLASH);
             values.put(join(PREFIX_ANNOTATION, MEDIA_TYPE, version), REGISTRY_PLUS + version);
             values.put(join(PREFIX_ANNOTATION, METADATA, version), METADATA + SLASH);
-            values.put(join(PREFIX_ANNOTATION, PACKAGE, version), bundleConfiguration.packageName
-                    .orElse(applicationConfiguration.getName()));
+            values.put(join(PREFIX_ANNOTATION, PACKAGE, version), csvMetadata.name);
         }
 
         return values;

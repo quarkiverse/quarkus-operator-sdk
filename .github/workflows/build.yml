@@ -113,8 +113,8 @@ jobs:
         run: |
           SCRIPTS=$(pwd)/.github/scripts
 
-          # Install Joke operator
+          # Install Ping Pong operator
           $SCRIPTS/installOperatorUsingOlm.sh pingpong $(pwd)/samples/pingpong $KIND_REGISTRY
 
           # test joke sample
-          $SCRIPTS/testPingPongSample.sh
+          $SCRIPTS/testPingPongSample.sh operators

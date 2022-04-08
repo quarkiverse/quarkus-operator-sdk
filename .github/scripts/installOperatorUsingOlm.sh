@@ -20,7 +20,7 @@ mvn clean package -Dquarkus.container-image.build=true \
   -Dquarkus.kubernetes.namespace=$K8S_NAMESPACE
 
 # Build Operator Bundle
-docker build -t $BUNDLE_IMAGE -f target/bundle/bundle.Dockerfile target/bundle
+docker build -t $BUNDLE_IMAGE -f target/bundle/$NAME-operator/bundle.Dockerfile target/bundle/$NAME-operator
 docker push $BUNDLE_IMAGE
 
 # Build Catalog image
