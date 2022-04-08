@@ -1,6 +1,7 @@
 package io.quarkiverse.operatorsdk.runtime;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,6 +10,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.quarkus.arc.Arc;
+import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.annotations.Recorder;
 
 @Recorder
@@ -18,7 +20,7 @@ public class ConfigurationServiceRecorder {
     public Supplier<QuarkusConfigurationService> configurationServiceSupplier(Version version,
             Map<String, QuarkusControllerConfiguration> configurations,
             CRDGenerationInfo crdInfo, RunTimeOperatorConfiguration runTimeConfiguration,
-            BuildTimeOperatorConfiguration buildTimeConfiguration) {
+            BuildTimeOperatorConfiguration buildTimeConfiguration, LaunchMode launchMode) {
         final var maxThreads = runTimeConfiguration.concurrentReconciliationThreads
                 .orElse(ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
         final var timeout = runTimeConfiguration.terminationTimeoutSeconds
@@ -47,6 +49,14 @@ public class ConfigurationServiceRecorder {
                 timeout,
                 Arc.container().instance(ObjectMapper.class).get(),
                 Arc.container().instance(Metrics.class).get(),
-                buildTimeConfiguration.startOperator);
+                shouldStartOperator(buildTimeConfiguration.startOperator, launchMode));
+    }
+
+    static boolean shouldStartOperator(Optional<Boolean> fromConfiguration, LaunchMode launchMode) {
+        if (fromConfiguration == null || fromConfiguration.isEmpty()) {
+            return LaunchMode.TEST != launchMode;
+        } else {
+            return fromConfiguration.orElse(true);
+        }
     }
 }
