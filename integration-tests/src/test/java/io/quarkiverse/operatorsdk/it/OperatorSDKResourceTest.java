@@ -14,6 +14,7 @@ import java.util.Locale;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.quarkiverse.operatorsdk.test.reconcilers.ApplicationScopedReconciler;
 import io.quarkiverse.operatorsdk.test.reconcilers.CRUDDependentResource;
 import io.quarkiverse.operatorsdk.test.reconcilers.ConfiguredReconciler;
@@ -22,7 +23,6 @@ import io.quarkiverse.operatorsdk.test.reconcilers.GatewayReconciler;
 import io.quarkiverse.operatorsdk.test.reconcilers.ReadOnlyDependentResource;
 import io.quarkiverse.operatorsdk.test.reconcilers.SecretReconciler;
 import io.quarkiverse.operatorsdk.test.reconcilers.TestReconciler;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.DisabledOnNativeImage;
 import io.quarkus.test.junit.QuarkusTest;
