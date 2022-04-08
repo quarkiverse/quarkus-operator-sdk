@@ -39,6 +39,7 @@ import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
+import io.quarkus.deployment.builditem.LaunchModeBuildItem;
 import io.quarkus.deployment.builditem.LiveReloadBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ForceNonWeakReflectiveClassBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
@@ -92,12 +93,13 @@ class OperatorSDKProcessor {
             RunTimeOperatorConfiguration runTimeConfiguration,
             BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
             GeneratedCRDInfoBuildItem generatedCRDs,
-            ConfigurationServiceBuildItem serviceBuildItem) {
+            ConfigurationServiceBuildItem serviceBuildItem,
+            LaunchModeBuildItem launchMode) {
         final var supplier = recorder
                 .configurationServiceSupplier(serviceBuildItem.getVersion(),
                         serviceBuildItem.getControllerConfigs(),
                         generatedCRDs.getCRDGenerationInfo(),
-                        runTimeConfiguration, buildTimeConfiguration);
+                        runTimeConfiguration, buildTimeConfiguration, launchMode.getLaunchMode());
         syntheticBeanBuildItemBuildProducer.produce(
                 SyntheticBeanBuildItem.configure(QuarkusConfigurationService.class)
                         .scope(Singleton.class)

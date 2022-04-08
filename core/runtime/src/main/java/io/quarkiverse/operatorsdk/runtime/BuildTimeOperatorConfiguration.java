@@ -45,6 +45,6 @@ public class BuildTimeOperatorConfiguration {
     /**
      * Whether the operator should be automatically started or not. Mostly useful for testing scenarios.
      */
-    @ConfigItem(defaultValue = "true")
-    public Boolean startOperator;
+    @ConfigItem
+    public Optional<Boolean> startOperator;
 }
