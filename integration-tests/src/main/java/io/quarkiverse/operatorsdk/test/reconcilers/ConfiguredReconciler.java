@@ -1,4 +1,4 @@
-package io.quarkiverse.operatorsdk.it;
+package io.quarkiverse.operatorsdk.test.reconcilers;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -12,7 +12,7 @@ public class ConfiguredReconciler implements Reconciler<ChildTestResource2> {
 
     @Override
     public UpdateControl<ChildTestResource2> reconcile(ChildTestResource2 childTestResource2,
-            Context<ChildTestResource2> context) throws Exception {
+            Context<ChildTestResource2> context) {
         return null;
     }
 }

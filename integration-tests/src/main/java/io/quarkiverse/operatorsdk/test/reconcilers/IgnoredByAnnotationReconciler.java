@@ -1,4 +1,4 @@
-package io.quarkiverse.operatorsdk.it;
+package io.quarkiverse.operatorsdk.test.reconcilers;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;

@@ -1,4 +1,4 @@
-package io.quarkiverse.operatorsdk.it;
+package io.quarkiverse.operatorsdk.test.reconcilers;
 
 import javax.enterprise.context.ApplicationScoped;
 

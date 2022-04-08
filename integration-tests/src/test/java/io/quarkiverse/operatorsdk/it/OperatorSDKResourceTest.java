@@ -14,6 +14,14 @@ import java.util.Locale;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import io.quarkiverse.operatorsdk.test.reconcilers.ApplicationScopedReconciler;
+import io.quarkiverse.operatorsdk.test.reconcilers.CRUDDependentResource;
+import io.quarkiverse.operatorsdk.test.reconcilers.ConfiguredReconciler;
+import io.quarkiverse.operatorsdk.test.reconcilers.DependentDefiningReconciler;
+import io.quarkiverse.operatorsdk.test.reconcilers.GatewayReconciler;
+import io.quarkiverse.operatorsdk.test.reconcilers.ReadOnlyDependentResource;
+import io.quarkiverse.operatorsdk.test.reconcilers.SecretReconciler;
+import io.quarkiverse.operatorsdk.test.reconcilers.TestReconciler;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.DisabledOnNativeImage;
@@ -83,7 +91,7 @@ class OperatorSDKResourceTest {
     void configurationForControllerShouldExistAndUseOperatorLevelConfigurationWhenSet() {
         // check that the config for the test controller can be retrieved and is conform to our
         // expectations
-        final var resourceName = io.quarkiverse.operatorsdk.it.Test.class.getCanonicalName();
+        final var resourceName = io.quarkiverse.operatorsdk.test.reconcilers.Test.class.getCanonicalName();
         given()
                 .when()
                 .get("/operator/" + TestReconciler.NAME + "/config")

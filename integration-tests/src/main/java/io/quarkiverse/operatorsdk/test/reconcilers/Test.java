@@ -1,4 +1,4 @@
-package io.quarkiverse.operatorsdk.it;
+package io.quarkiverse.operatorsdk.test.reconcilers;
 
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Version;

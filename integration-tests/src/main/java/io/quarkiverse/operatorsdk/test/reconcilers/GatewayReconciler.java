@@ -1,4 +1,4 @@
-package io.quarkiverse.operatorsdk.it;
+package io.quarkiverse.operatorsdk.test.reconcilers;
 
 import io.fabric8.istio.api.networking.v1beta1.Gateway;
 import io.javaoperatorsdk.operator.api.reconciler.Context;

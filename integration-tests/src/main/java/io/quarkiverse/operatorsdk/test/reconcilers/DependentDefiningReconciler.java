@@ -1,4 +1,4 @@
-package io.quarkiverse.operatorsdk.it;
+package io.quarkiverse.operatorsdk.test.reconcilers;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.Context;

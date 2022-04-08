@@ -1,4 +1,4 @@
-package io.quarkiverse.operatorsdk.it;
+package io.quarkiverse.operatorsdk.test.reconcilers;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -10,7 +10,7 @@ public class TestReconciler implements Reconciler<Test> {
     public static final String NAME = "test";
 
     @Override
-    public UpdateControl<Test> reconcile(Test test, Context<Test> context) throws Exception {
+    public UpdateControl<Test> reconcile(Test test, Context<Test> context) {
         return null;
     }
 }
