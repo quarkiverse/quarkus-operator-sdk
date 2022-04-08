@@ -52,7 +52,7 @@ Make sure you have installed the [opm](https://github.com/operator-framework/ope
 2. Generate the Operator image and bundle manifests
 
 This example uses the [Quarkus Jib container image](https://quarkus.io/guides/container-image#jib) extension to build the Operator image. 
-Also, the Quarkus Operator SDK provides the `quarkus-operator-sdk-bundle-generator` extension that generates the Operator bundle manifests at `target/bundle`.
+Also, the Quarkus Operator SDK provides the `quarkus-operator-sdk-bundle-generator` extension that generates the Operator bundle manifests at `target/bundle/<operator name>`.
 So, you simply need to run the next Maven command to build and push the operator image, and also to generate the bundle manifests:
 
 ```shell
@@ -80,11 +80,11 @@ If you're using an insecure container registry, you'd also need to append the ne
 2. Build the Operator Bundle image
 
 An Operator Bundle is a container image that stores Kubernetes manifests and metadata associated with an operator. You can find more information about this in [here](https://olm.operatorframework.io/docs/tasks/creating-operator-bundle/). 
-In the previous step, we generated the bundle manifests at `target/bundle` which includes a ready-to-use Dockerfile at `target/bundle/bundle.Dockerfile` file that you will use to build and push the final Operator Bundle image to your container registry:
+In the previous step, we generated the bundle manifests at `target/bundle/<operator name from the CSV Metadata>` which includes a ready-to-use Dockerfile with name `bundle.Dockerfile` file that you will use to build and push the final Operator Bundle image to your container registry:
 
 ```shell
 JOKE_BUNDLE_IMAGE=<your container registry>/<your container registry namespace>/<bundle image name>:<tag>
-docker build -t $JOKE_BUNDLE_IMAGE -f target/bundle/bundle.Dockerfile target/bundle
+docker build -t $JOKE_BUNDLE_IMAGE -f target/bundle/<operator name>/bundle.Dockerfile target/bundle/<operator name>
 docker push $JOKE_BUNDLE_IMAGE
 ```
 

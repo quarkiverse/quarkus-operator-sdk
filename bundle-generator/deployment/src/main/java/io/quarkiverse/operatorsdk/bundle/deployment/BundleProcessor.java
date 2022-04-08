@@ -1,10 +1,8 @@
 package io.quarkiverse.operatorsdk.bundle.deployment;
 
-import static io.quarkiverse.operatorsdk.bundle.deployment.BundleGenerator.MANIFESTS;
 import static io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator.ALL_VERBS;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -13,8 +11,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
-import org.apache.commons.io.FileUtils;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
@@ -100,6 +98,8 @@ public class BundleProcessor {
             BuildProducer<GeneratedFileSystemResourceBuildItem> generatedCSVs) {
         if (bundleConfiguration.enabled) {
             try {
+                final var crds = generatedCustomResourcesDefinitions.getCRDGenerationInfo().getCrds().values()
+                        .stream().flatMap(entry -> entry.values().stream()).collect(Collectors.toList());
                 final var outputDir = outputTarget.getOutputDirectory().resolve(BUNDLE);
                 final var serviceAccounts = new LinkedList<ServiceAccount>();
                 final var clusterRoleBindings = new LinkedList<ClusterRoleBinding>();
@@ -146,36 +146,25 @@ public class BundleProcessor {
                                         }
                                     });
                                 });
-                final var generated = BundleGenerator.prepareGeneration(configuration, bundleConfiguration,
-                        operatorConfiguration, csvMetadata.getCsvGroups());
+                final var generated = BundleGenerator.prepareGeneration(bundleConfiguration,
+                        operatorConfiguration, csvMetadata.getCsvGroups(), crds);
                 generated.forEach(manifestBuilder -> {
                     final var fileName = manifestBuilder.getFileName();
                     try {
                         generatedCSVs.produce(
                                 new GeneratedFileSystemResourceBuildItem(
-                                        Path.of(BUNDLE).resolve(fileName).toString(),
+                                        Path.of(BUNDLE).resolve(manifestBuilder.getName()).resolve(fileName).toString(),
                                         manifestBuilder.getManifestData(serviceAccounts, clusterRoleBindings, clusterRoles,
                                                 roleBindings, roles, deployments)));
                         log.infov("Generating {0} for {1} controller -> {2}",
                                 manifestBuilder.getManifestType(),
                                 manifestBuilder.getName(),
-                                outputDir.resolve(fileName));
+                                outputDir.resolve(manifestBuilder.getName()).resolve(fileName));
                     } catch (IOException e) {
                         log.errorv("Cannot generate {0} for {1}: {2}",
                                 manifestBuilder.getManifestType(), manifestBuilder.getName(), e.getMessage());
                     }
                 });
-                // copy custom resources to the manifests folder
-                generatedCustomResourcesDefinitions.getCRDGenerationInfo().getCrds().values().stream()
-                        .flatMap(crds -> crds.values().stream())
-                        .forEach(crd -> {
-                            try {
-                                FileUtils.copyFileToDirectory(new File(crd.getFilePath()),
-                                        outputDir.resolve(MANIFESTS).toFile());
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                        });
                 doneGeneratingCSV.produce(new GeneratedBundleBuildItem());
             } catch (Exception e) {
                 log.infov(e, "Couldn't generate bundle:");
