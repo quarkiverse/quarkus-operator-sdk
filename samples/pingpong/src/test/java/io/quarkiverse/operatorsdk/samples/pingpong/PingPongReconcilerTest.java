@@ -8,10 +8,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.notNullValue;
 
+import javax.inject.Inject;
+
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.server.mock.KubernetesServer;
+import io.javaoperatorsdk.operator.Operator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.kubernetes.client.KubernetesTestServer;
 import io.quarkus.test.kubernetes.client.WithKubernetesTestServer;
@@ -26,8 +29,12 @@ class PingPongReconcilerTest {
     @KubernetesTestServer
     KubernetesServer mockServer;
 
+    @Inject
+    Operator operator;
+
     @Test
     void canReconcile() {
+        operator.start();
 
         final Ping testRequest = new Ping();
         testRequest.setMetadata(new ObjectMetaBuilder()

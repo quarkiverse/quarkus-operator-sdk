@@ -14,12 +14,15 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import javax.inject.Inject;
+
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.server.mock.KubernetesServer;
+import io.javaoperatorsdk.operator.Operator;
 import io.quarkiverse.operatorsdk.samples.mysqlschema.schema.SchemaService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -38,8 +41,13 @@ class MySQLSchemaOperatorE2ETest {
     @InjectSpy
     SchemaService schemaService;
 
+    @Inject
+    Operator operator;
+
     @Test
     void test() {
+        operator.start();
+
         KubernetesClient client = mockServer.getClient();
 
         MySQLSchema testSchema = new MySQLSchema();
