@@ -6,10 +6,13 @@ import static org.hamcrest.Matchers.is;
 
 import java.util.concurrent.TimeUnit;
 
+import javax.inject.Inject;
+
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.server.mock.KubernetesServer;
+import io.javaoperatorsdk.operator.Operator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.kubernetes.client.KubernetesTestServer;
 import io.quarkus.test.kubernetes.client.WithKubernetesTestServer;
@@ -21,8 +24,13 @@ class ExposedAppReconcilerTest {
     @KubernetesTestServer
     KubernetesServer mockServer;
 
+    @Inject
+    Operator operator;
+
     @Test
     void reconcileShouldWork() {
+        operator.start();
+
         final var app = new ExposedApp();
         final var client = mockServer.getClient();
         final var metadata = new ObjectMetaBuilder()
