@@ -1,6 +1,7 @@
 package io.quarkiverse.operatorsdk.runtime;
 
 import java.util.List;
+import java.util.Optional;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.quarkus.runtime.annotations.ConfigGroup;
@@ -11,8 +12,6 @@ public class CRDConfiguration {
 
     public static final String DEFAULT_OUTPUT_DIRECTORY = "kubernetes";
     public static final String DEFAULT_VALIDATE = "true";
-    public static final String DEFAULT_GENERATE = "true";
-    public static final String DEFAULT_APPLY = "false";
     public static final String DEFAULT_VERSIONS = "v1";
     /**
      * Whether the operator should check that the CRD is properly deployed and that the associated
@@ -26,15 +25,15 @@ public class CRDConfiguration {
      * Whether the extension should automatically generate the CRD based on {@link CustomResource}
      * implementations.
      */
-    @ConfigItem(defaultValue = DEFAULT_GENERATE)
-    public Boolean generate;
+    @ConfigItem
+    public Optional<Boolean> generate;
 
     /**
      * Whether the extension should automatically apply updated CRDs when they change.
      * When running on DEV mode, the CRD changes will always be applied automatically.
      */
-    @ConfigItem(defaultValue = DEFAULT_APPLY)
-    public Boolean apply;
+    @ConfigItem
+    public Optional<Boolean> apply;
 
     /**
      * Comma-separated list of which CRD versions should be generated.

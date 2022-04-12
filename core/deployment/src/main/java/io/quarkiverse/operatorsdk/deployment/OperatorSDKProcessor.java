@@ -118,14 +118,16 @@ class OperatorSDKProcessor {
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             BuildProducer<GeneratedCRDInfoBuildItem> generatedCRDInfo,
-            LiveReloadBuildItem liveReload) {
+            LiveReloadBuildItem liveReload, LaunchModeBuildItem launchMode) {
 
         final CRDConfiguration crdConfig = buildTimeConfiguration.crd;
         final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(
                 buildTimeConfiguration.crd.validate);
 
         // apply should imply generate: we cannot apply if we're not generating!
-        final var crdGeneration = new CRDGeneration(crdConfig.generate || crdConfig.apply);
+        final var mode = launchMode.getLaunchMode();
+        final var generate = CRDGeneration.shouldGenerate(crdConfig.generate, crdConfig.apply, mode);
+        final var crdGeneration = new CRDGeneration(generate);
         final var index = combinedIndexBuildItem.getIndex();
 
         final var builder = new QuarkusControllerConfigurationBuilder(additionalBeans,
@@ -141,7 +143,7 @@ class OperatorSDKProcessor {
         }
         CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, crdConfig,
                 validateCustomResources,
-                storedCRDInfos.getExisting());
+                storedCRDInfos.getExisting(), mode);
         storedCRDInfos.putAll(crdInfo.getCrds());
         liveReload.setContextObject(ContextStoredCRDInfos.class,
                 storedCRDInfos); // record CRD generation info in context for future use
@@ -159,7 +161,7 @@ class OperatorSDKProcessor {
         }
 
         // apply CRD if enabled
-        if (crdConfig.apply) {
+        if (CRDGeneration.shouldApply(crdConfig.apply, mode)) {
             for (String generatedCrdName : crdInfo.getGenerated()) {
                 applyCRD(kubernetesClientBuildItem.getClient(), crdInfo, generatedCrdName);
             }

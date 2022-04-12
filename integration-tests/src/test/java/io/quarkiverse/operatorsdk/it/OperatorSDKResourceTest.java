@@ -27,9 +27,9 @@ class OperatorSDKResourceTest {
     }
 
     @Test
-    void shouldNotApplyCRDsByDefault() {
+    void shouldApplyCRDsByDefaultInTestMode() {
         given().when().get("/operator/config").then().statusCode(200).body(
-                "applyCRDs", equalTo(false));
+                "applyCRDs", equalTo(true));
     }
 
     @Test

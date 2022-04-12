@@ -32,6 +32,7 @@ public class CRDGenerationInfo {
         return generated;
     }
 
+    // Needed by Quarkus: if this method isn't present, state is not properly set
     public boolean isApplyCRDs() {
         return applyCRDs;
     }
