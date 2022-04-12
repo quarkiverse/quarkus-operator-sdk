@@ -30,7 +30,7 @@ public class CustomResourceManifestsBuilder extends ManifestsBuilder {
 
     @Override
     public Path getFileName() {
-        return Path.of(MANIFESTS, crd.getCrdName());
+        return Path.of(MANIFESTS, crd.getCrdName() + "-" + crd.getCrdSpecVersion() + ".crd.yml");
     }
 
     @Override
