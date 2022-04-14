@@ -87,7 +87,7 @@ For example, if we want to name the package `my-operator` and use the `alpha` ch
 
 [NOTE]
 ====
-Find more information about channels and packages in https://olm.operatorframework.io/docs/best-practices/channel-naming/#channels[this link].
+Find more information about channels and packages https://olm.operatorframework.io/docs/best-practices/channel-naming/#channels[here].
 ====
 
 [NOTE]
