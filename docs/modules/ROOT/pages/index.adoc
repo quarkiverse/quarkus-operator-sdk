@@ -68,7 +68,7 @@ Then, you need to add the `quarkus-operator-sdk-bundle-generator` extension:
 </dependency>
 ----
 
-This extension generates the Operator bundle manifests at `target/bundle`.
+This extension generates the Operator bundle manifests in the `target/bundle` directory.
 
 Finally, to generate the operator image and the bundle manifests at once, you simply need to run the next Maven command:
 
