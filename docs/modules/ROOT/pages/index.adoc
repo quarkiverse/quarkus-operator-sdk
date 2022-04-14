@@ -57,7 +57,7 @@ Make sure you have installed the https://github.com/operator-framework/operator-
 
 1. Generate the Operator image and bundle manifests
 
-Quarkus provides https://quarkus.io/guides/container-image[several extensions] to build the container image. For example, the https://github.com/quarkiverse/quarkus-operator-sdk/tree/main/samples/joke#deployment[Joke] sample uses the https://quarkus.io/guides/container-image#jib[Quarkus Jib container image extension] to build the image. So, you first need to configure one of these extensions at your choice.
+Quarkus provides https://quarkus.io/guides/container-image[several extensions] to build the container image. For example, the https://github.com/quarkiverse/quarkus-operator-sdk/tree/main/samples/joke#deployment[Joke] sample uses the https://quarkus.io/guides/container-image#jib[Quarkus Jib container image extension] to build the image. So, you first need to configure one of these extensions as you prefer.
 Then, you need to add the `quarkus-operator-sdk-bundle-generator` extension:
 
 [source,xml]
