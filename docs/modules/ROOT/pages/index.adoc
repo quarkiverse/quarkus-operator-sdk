@@ -53,7 +53,7 @@ This section explains how to deploy your operator using the https://olm.operator
 
 0. Requirements
 
-Make sure you have installed the https://github.com/operator-framework/operator-registry[opm] command tool and have connected to a Kubernetes cluster with the OLM installed.
+Make sure you have installed the https://github.com/operator-framework/operator-registry[opm] command tool and are connected to a Kubernetes cluster on which OLM is installed.
 
 1. Generate the Operator image and bundle manifests
 
