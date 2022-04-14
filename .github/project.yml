@@ -1,5 +1,5 @@
 name: Java Operator SDK Extension
 release:
-  current-version: 3.0.6
-  next-version: 3.0.7-SNAPSHOT
+  current-version: 4.0.0.Beta1
+  next-version: 4.0.0.Beta2-SNAPSHOT
 
