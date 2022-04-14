@@ -132,7 +132,7 @@ For example, if our catalog name is `my-catalog`, our container registry for the
 If you're using an insecure registry, you'd need to append the argument `--skip-tls` to the `opm index` command.
 ====
 
-Once we have our catalog image built and pushed at `$CATALOG_IMAGE`, we need to install it in the same namespace where OLM is running (by default, OLM is running in the `operators` namespace, we will use the `OLM_NAMESPACE` property to set this namespace) on our cluster using the `CatalogSource` resource by doing the next command:
+Once we have our catalog image built and pushed at `$CATALOG_IMAGE`, we need to install it in the same namespace where OLM is running (by default, OLM is running in the `operators` namespace, we will use the `OLM_NAMESPACE` property to represent this namespace) on our cluster using the `CatalogSource` resource by doing the next command:
 
 [source,shell script]
 ----
