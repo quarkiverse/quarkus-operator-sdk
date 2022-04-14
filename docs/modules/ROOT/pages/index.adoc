@@ -92,7 +92,7 @@ Find more information about channels and packages https://olm.operatorframework.
 
 [NOTE]
 ====
-If you're using an insecure container registry, you'd also need to append the next property to the Maven command `-Dquarkus.container-image.insecure=true`.
+If you're using an insecure container registry, you'll also need to append the next property to the Maven command `-Dquarkus.container-image.insecure=true`.
 ====
 
 2. Build the Operator Bundle image
