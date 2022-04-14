@@ -3,6 +3,7 @@ package io.quarkiverse.operatorsdk.deployment;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 
 import io.fabric8.crd.generator.CRDGenerator;
 import io.fabric8.crd.generator.CustomResourceInfo;
@@ -11,6 +12,7 @@ import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
+import io.quarkus.runtime.LaunchMode;
 
 class CRDGeneration {
     private final CRDGenerator generator = new CRDGenerator();
@@ -22,21 +24,39 @@ class CRDGeneration {
         this.generate = generate;
     }
 
+    static boolean shouldGenerate(Optional<Boolean> configuredGenerate, Optional<Boolean> configuredApply,
+            LaunchMode launchMode) {
+        return shouldApply(configuredApply, launchMode) || configuredGenerate.orElse(true);
+    }
+
+    static boolean shouldApply(Optional<Boolean> configuredApply, LaunchMode launchMode) {
+        if (launchMode == null || !launchMode.isDevOrTest()) {
+            return false;
+        }
+        return configuredApply.orElse(true);
+    }
+
     public boolean wantCRDGenerated() {
         return generate;
     }
 
     /**
-     * Generates the CRD in the location specified by the output target, using the specified CRD generation configuration
-     * 
-     * @param outputTarget the {@link OutputTargetBuildItem} specifying where the CRDs should be generated
-     * @param crdConfig the {@link CRDConfiguration} specifying how the CRDs should be generated
-     * @param validateCustomResources whether the SDK should check if the CRDs are properly deployed on the server
+     * Generates the CRD in the location specified by the output target, using the specified CRD
+     * generation configuration
+     *
+     * @param outputTarget the {@link OutputTargetBuildItem} specifying where the CRDs
+     *        should be generated
+     * @param crdConfig the {@link CRDConfiguration} specifying how the CRDs should be
+     *        generated
+     * @param validateCustomResources whether the SDK should check if the CRDs are properly deployed
+     *        on the server
      * @param existing the already known CRDInfos
+     * @param mode the mode in which the application is running
      * @return a {@link CRDGenerationInfo} detailing information about the CRD generation
      */
     CRDGenerationInfo generate(OutputTargetBuildItem outputTarget, CRDConfiguration crdConfig,
-            boolean validateCustomResources, Map<String, Map<String, CRDInfo>> existing) {
+            boolean validateCustomResources, Map<String, Map<String, CRDInfo>> existing,
+            LaunchMode mode) {
         // initialize CRDInfo with existing data to always have a full view even if we don't generate anything
         final var converted = new HashMap<>(existing);
         // record which CRDs got generated so that we only apply the changed ones
@@ -70,7 +90,7 @@ class CRDGeneration {
                         });
             });
         }
-        return new CRDGenerationInfo(crdConfig.apply, validateCustomResources, converted, generated);
+        return new CRDGenerationInfo(shouldApply(crdConfig.apply, mode), validateCustomResources, converted, generated);
     }
 
     @SuppressWarnings("rawtypes")

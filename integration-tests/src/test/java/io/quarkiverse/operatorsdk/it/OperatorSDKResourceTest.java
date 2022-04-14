@@ -14,6 +14,7 @@ import java.util.Locale;
 import org.junit.jupiter.api.Test;
 
 import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.junit.DisabledOnNativeImage;
 import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest
@@ -27,9 +28,10 @@ class OperatorSDKResourceTest {
     }
 
     @Test
-    void shouldNotApplyCRDsByDefault() {
+    @DisabledOnNativeImage("Skipped because native tests are run using LaunchMode.NORMAL")
+    void shouldApplyCRDsByDefaultInTestMode() {
         given().when().get("/operator/config").then().statusCode(200).body(
-                "applyCRDs", equalTo(false));
+                "applyCRDs", equalTo(true));
     }
 
     @Test
