@@ -132,7 +132,7 @@ For example, if our catalog name is `my-catalog`, our container registry for the
 If you're using an insecure registry, you'd need to append the argument `--skip-tls` to the `opm index` command.
 ====
 
-Once we have our catalog image built and pushed at `$CATALOG_IMAGE`, we need to install it on our cluster using the `CatalogSource` resource by doing the next command:
+Once we have our catalog image built and pushed at `$CATALOG_IMAGE`, we need to install it in the same namespace where OLM is running (by default, OLM is running in the `operators` namespace, we will use the `OLM_NAMESPACE` property to set this namespace) on our cluster using the `CatalogSource` resource by doing the next command:
 
 [source,shell script]
 ----
@@ -141,23 +141,18 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   name: my-catalog-source
-  namespace: operators
+  namespace: $OLM_NAMESPACE
 spec:
   sourceType: grpc
   image: $CATALOG_IMAGE
 EOF
 ----
 
-[NOTE]
-====
-We need to install the catalog source in the Kubernetes namespace where OLM is installed, which by default is `operators`.
-====
-
 Once the catalog is installed, you should see the catalog pod up and running:
 
 [source,shell script]
 ----
-kubectl get pods -n <K8S NAMESPACE> --selector=olm.catalogSource=my-catalog-source
+kubectl get pods -n $OLM_NAMESPACE --selector=olm.catalogSource=my-catalog-source
 ----
 
 4. Install your operator via OLM
@@ -176,20 +171,20 @@ spec:
   channel: alpha
   name: my-operator-name
   source: my-catalog-source
-  sourceNamespace: operators
+  sourceNamespace: $OLM_NAMESPACE
 EOF
 ----
 
 [NOTE]
 ====
-We'll install the operator in the target namespace defined in the metadata object. The `sourceNamespace` value is the Kubernetes namespace where the catalog was installed on (`operators` by default, see the previous step).
+We'll install the operator in the target namespace defined in the metadata object. The `sourceNamespace` value is the Kubernetes namespace where the catalog was installed on.
 ====
 
 Once the subscription is created, you should see your operator pod up and running:
 
 [source,shell script]
 ----
-kubectl get csv -n operators my-operator-name
+kubectl get csv -n $OLM_NAMESPACE my-operator-name
 ----
 
 [[extension-configuration-reference]]
