@@ -34,7 +34,8 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
 
     @Override
     public void visit(KubernetesListBuilder list) {
-        final var serviceAccountName = getMandatoryDeploymentMetadata(list).getName();
+        // passing null matches the default Quarkus kubernetes extension behavior for the SA name generation
+        final var serviceAccountName = getMandatoryDeploymentMetadata(list, null).getName();
         for (Entry<String, QuarkusControllerConfiguration> entry : configs.entrySet()) {
             String controllerName = entry.getKey();
             QuarkusControllerConfiguration<?> config = entry.getValue();
