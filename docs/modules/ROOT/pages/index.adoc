@@ -150,7 +150,7 @@ EOF
 
 [NOTE]
 ====
-We need to install the catalog source at the Kubernetes namespace where we installed OLM, which by default is `operators`.
+We need to install the catalog source in the Kubernetes namespace where OLM is installed, which by default is `operators`.
 ====
 
 Once the catalog is installed, you should see the catalog pod up and running:
