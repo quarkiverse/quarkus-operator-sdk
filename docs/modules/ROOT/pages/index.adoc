@@ -27,14 +27,45 @@ This extension integrates the https://javaoperatorsdk.io[Java Operator SDK] proj
 == Installation
 
 If you want to use this extension, you need to add the `quarkus-operator-sdk` extension first.
-In your `pom.xml` file, add:
+
+You need to add minimally, the following to your `pom.xml` file:
 
 [source,xml]
 ----
 <dependency>
     <groupId>io.quarkiverse.operatorsdk</groupId>
     <artifactId>quarkus-operator-sdk</artifactId>
+    <version>{extension version}</version>
 </dependency>
+----
+
+However, it might be more convenient to use the `quarkus-operator-sdk-bom` dependency to ensure that all dependency versions are properly aligned:
+
+[source,xml]
+----
+<dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.quarkiverse.operatorsdk</groupId>
+        <artifactId>quarkus-operator-sdk-bom</artifactId>
+        <version>{extension version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <!-- other dependencies as needed by your project -->
+
+    </dependencies>
+  </dependencyManagement>
+----
+
+If you do use the BOM, please do make sure to use the same Quarkus version as the one defined in the BOM when configuring the Quarkus plugin as the Quarkus Dev Mode will not work properly otherwise, failing with an error:
+
+[source,shell]
+----
+Exception in thread "main" java.lang.RuntimeException: java.lang.RuntimeException: java.lang.IllegalStateException: Hot deployment of the application is not supported when updating the Quarkus version. The application needs to be stopped and dev mode started up again
+        at io.quarkus.deployment.dev.DevModeMain.start(DevModeMain.java:138)
+        at io.quarkus.deployment.dev.DevModeMain.main(DevModeMain.java:62)
 ----
 
 If you want to use the Bundle generator, you will first need to use Quarkus 2.3.0.Final or above and add the `quarkus-operator-sdk-bundle-generator` extension first:
@@ -44,6 +75,7 @@ If you want to use the Bundle generator, you will first need to use Quarkus 2.3.
 <dependency>
     <groupId>io.quarkiverse.operatorsdk</groupId>
     <artifactId>quarkus-operator-sdk-bundle-generator</artifactId>
+    <version>{extension version}</version>
 </dependency>
 ----
 
@@ -57,7 +89,9 @@ Make sure you have installed the https://github.com/operator-framework/operator-
 
 1. Generate the Operator image and bundle manifests
 
-Quarkus provides https://quarkus.io/guides/container-image[several extensions] to build the container image. For example, the https://github.com/quarkiverse/quarkus-operator-sdk/tree/main/samples/joke#deployment[Joke] sample uses the https://quarkus.io/guides/container-image#jib[Quarkus Jib container image extension] to build the image. So, you first need to configure one of these extensions as you prefer.
+Quarkus provides https://quarkus.io/guides/container-image[several extensions] to build the container image.
+For example, the https://github.com/quarkiverse/quarkus-operator-sdk/tree/main/samples/joke#deployment[Joke] sample uses the https://quarkus.io/guides/container-image#jib[Quarkus Jib container image extension] to build the image.
+So, you first need to configure one of these extensions as you prefer.
 Then, you need to add the `quarkus-operator-sdk-bundle-generator` extension:
 
 [source,xml]
@@ -97,7 +131,8 @@ If you're using an insecure container registry, you'll also need to append the n
 
 2. Build the Operator Bundle image
 
-An Operator Bundle is a container image that stores Kubernetes manifests and metadata associated with an operator. You can find more information about this https://olm.operatorframework.io/docs/tasks/creating-operator-bundle/[here].
+An Operator Bundle is a container image that stores Kubernetes manifests and metadata associated with an operator.
+You can find more information about this https://olm.operatorframework.io/docs/tasks/creating-operator-bundle/[here].
 In the previous step, we generated the bundle manifests at `target/bundle` which includes a ready-to-use `target/bundle/bundle.Dockerfile` Dockerfile that you will use to build and push the final Operator Bundle image to your container registry:
 
 [source,shell script]
@@ -111,9 +146,13 @@ For example, if we want to name our bundle image as `my-manifest-bundle`, our co
 
 3. Make your operator available within a Catalog
 
-OLM uses catalogs to discover and install Operators and their dependencies. So, a catalog is similar to a repository of operators and their associated versions that can be installed on a cluster. Moreover, the catalog is also a container image that contains a collection of bundles and channels. Therefore, we'd need to create a new catalog (or update an existing one if you're already have one), build/push the catalog image and then install it on our cluster.
+OLM uses catalogs to discover and install Operators and their dependencies.
+So, a catalog is similar to a repository of operators and their associated versions that can be installed on a cluster.
+Moreover, the catalog is also a container image that contains a collection of bundles and channels.
+Therefore, we'd need to create a new catalog (or update an existing one if you're already have one), build/push the catalog image and then install it on our cluster.
 
-So far, we have already built the Operator bundle image at `$MY_BUNDLE_IMAGE` (see above) and next, we need to add this Operator bundle image into our catalog. For doing this, we'll use the `olm` tool as follows:
+So far, we have already built the Operator bundle image at `$MY_BUNDLE_IMAGE` (see above) and next, we need to add this Operator bundle image into our catalog.
+For doing this, we'll use the `olm` tool as follows:
 
 [source,shell script]
 ----
@@ -157,7 +196,9 @@ kubectl get pods -n $OLM_NAMESPACE --selector=olm.catalogSource=my-catalog-sourc
 
 4. Install your operator via OLM
 
-OLM deploys operators via https://olm.operatorframework.io/docs/tasks/install-operator-with-olm/#install-your-operator[subscriptions]. Creating a  `Subscription` will trigger the operator deployment. You can simply create the `Subscription` resource that contains the operator name and channel to install by running the following command:
+OLM deploys operators via https://olm.operatorframework.io/docs/tasks/install-operator-with-olm/#install-your-operator[subscriptions].
+Creating a  `Subscription` will trigger the operator deployment.
+You can simply create the `Subscription` resource that contains the operator name and channel to install by running the following command:
 
 [source,shell script]
 ----
@@ -177,7 +218,8 @@ EOF
 
 [NOTE]
 ====
-We'll install the operator in the target namespace defined in the metadata object. The `sourceNamespace` value is the Kubernetes namespace where the catalog was installed on.
+We'll install the operator in the target namespace defined in the metadata object.
+The `sourceNamespace` value is the Kubernetes namespace where the catalog was installed on.
 ====
 
 Once the subscription is created, you should see your operator pod up and running:
