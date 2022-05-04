@@ -56,14 +56,13 @@ public class SchemaDependentResource
     @Override
     public Schema create(Schema target, MySQLSchema mySQLSchema, Context<MySQLSchema> context) {
         try (Connection connection = schemaService.getConnection()) {
-            return context.getSecondaryResource(Secret.class).map(secret -> {
-                var username = decode(secret.getData().get(MYSQL_SECRET_USERNAME));
-                var password = decode(secret.getData().get(MYSQL_SECRET_PASSWORD));
-                return schemaService.createSchemaAndRelatedUser(
-                        connection,
-                        target.getName(),
-                        target.getCharacterSet(), username, password);
-            }).orElse(null);
+            final var secret = context.getSecondaryResource(Secret.class).orElseThrow();
+            var username = decode(secret.getData().get(MYSQL_SECRET_USERNAME));
+            var password = decode(secret.getData().get(MYSQL_SECRET_PASSWORD));
+            return schemaService.createSchemaAndRelatedUser(
+                    connection,
+                    target.getName(),
+                    target.getCharacterSet(), username, password);
         } catch (SQLException e) {
             log.error("Error while creating Schema", e);
             throw new IllegalStateException(e);
