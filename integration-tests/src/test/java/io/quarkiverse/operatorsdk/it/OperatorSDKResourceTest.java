@@ -11,8 +11,10 @@ import static org.hamcrest.Matchers.is;
 
 import java.util.Locale;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.DisabledOnNativeImage;
 import io.quarkus.test.junit.QuarkusTest;
@@ -20,6 +22,11 @@ import io.quarkus.test.junit.QuarkusTest;
 @QuarkusTest
 @QuarkusTestResource(CustomKubernetesServerTestResource.class)
 class OperatorSDKResourceTest {
+
+    @BeforeAll
+    static void setup() {
+        System.setProperty(NamespaceFromEnvReconciler.ENV_VAR_NAME, Constants.WATCH_CURRENT_NAMESPACE);
+    }
 
     @Test
     void shouldNotValidateCRs() {
@@ -69,7 +76,7 @@ class OperatorSDKResourceTest {
                 TestReconciler.NAME,
                 SecretReconciler.class.getSimpleName().toLowerCase(Locale.ROOT),
                 GatewayReconciler.class.getSimpleName().toLowerCase(Locale.ROOT),
-                DependentDefiningReconciler.NAME));
+                DependentDefiningReconciler.NAME, NamespaceFromEnvReconciler.NAME));
     }
 
     @Test
@@ -122,5 +129,16 @@ class OperatorSDKResourceTest {
                         "dependents.dependentClass", hasItems(ReadOnlyDependentResource.class.getCanonicalName(),
                                 CRUDDependentResource.class.getCanonicalName()),
                         "dependents.dependentConfig.labelSelector", hasItem(CRUDDependentResource.LABEL_SELECTOR));
+    }
+
+    @Test
+    void shouldExpandVariablesInNamespacesConfiguration() {
+        given()
+                .when()
+                .get("/operator/" + NamespaceFromEnvReconciler.NAME + "/config")
+                .then()
+                .statusCode(200).body(
+                        "namespaces", hasItem(Constants.WATCH_CURRENT_NAMESPACE),
+                        "watchCurrentNamespace", equalTo(true));
     }
 }

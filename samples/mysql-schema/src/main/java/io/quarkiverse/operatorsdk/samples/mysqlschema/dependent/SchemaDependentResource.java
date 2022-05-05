@@ -6,7 +6,8 @@ import static io.quarkiverse.operatorsdk.samples.mysqlschema.dependent.SecretDep
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Base64;
-import java.util.Optional;
+import java.util.Collections;
+import java.util.Set;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -55,14 +56,13 @@ public class SchemaDependentResource
     @Override
     public Schema create(Schema target, MySQLSchema mySQLSchema, Context<MySQLSchema> context) {
         try (Connection connection = schemaService.getConnection()) {
-            return context.getSecondaryResource(Secret.class).map(secret -> {
-                var username = decode(secret.getData().get(MYSQL_SECRET_USERNAME));
-                var password = decode(secret.getData().get(MYSQL_SECRET_PASSWORD));
-                return schemaService.createSchemaAndRelatedUser(
-                        connection,
-                        target.getName(),
-                        target.getCharacterSet(), username, password);
-            }).orElse(null);
+            final var secret = context.getSecondaryResource(Secret.class).orElseThrow();
+            var username = decode(secret.getData().get(MYSQL_SECRET_USERNAME));
+            var password = decode(secret.getData().get(MYSQL_SECRET_PASSWORD));
+            return schemaService.createSchemaAndRelatedUser(
+                    connection,
+                    target.getName(),
+                    target.getCharacterSet(), username, password);
         } catch (SQLException e) {
             log.error("Error while creating Schema", e);
             throw new IllegalStateException(e);
@@ -82,10 +82,10 @@ public class SchemaDependentResource
     }
 
     @Override
-    public Optional<Schema> fetchResource(MySQLSchema primaryResource) {
+    public Set<Schema> fetchResources(MySQLSchema primaryResource) {
         try (Connection connection = schemaService.getConnection()) {
-            var schema = schemaService.getSchema(connection, primaryResource.getMetadata().getName()).orElse(null);
-            return Optional.ofNullable(schema);
+            return schemaService.getSchema(connection, primaryResource.getMetadata().getName())
+                    .map(Set::of).orElse(Collections.emptySet());
         } catch (SQLException e) {
             throw new RuntimeException("Error while trying read Schema", e);
         }

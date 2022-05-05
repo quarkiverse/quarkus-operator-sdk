@@ -1,7 +1,6 @@
 package io.quarkiverse.operatorsdk.runtime;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -9,6 +8,7 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.quarkus.runtime.annotations.IgnoreProperty;
@@ -53,12 +53,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.specClassName = specClassName;
         this.statusClassName = statusClassName;
         this.dependentResources = dependentResources;
-    }
-
-    public static Set<String> asSet(String[] namespaces) {
-        return namespaces == null || namespaces.length == 0
-                ? Collections.emptySet()
-                : Set.of(namespaces);
     }
 
     @Override
@@ -106,7 +100,8 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     }
 
     void setNamespaces(Collection<String> namespaces) {
-        this.namespaces = namespaces != null && !namespaces.isEmpty() ? Set.copyOf(namespaces) : Collections.emptySet();
+        this.namespaces = namespaces != null && !namespaces.isEmpty() ? Set.copyOf(namespaces)
+                : ResourceConfiguration.DEFAULT_NAMESPACES;
     }
 
     @Override
