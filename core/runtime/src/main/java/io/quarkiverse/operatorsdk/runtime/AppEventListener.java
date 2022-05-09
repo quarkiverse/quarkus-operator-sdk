@@ -21,7 +21,7 @@ public class AppEventListener {
 
     public void onStartup(@Observes StartupEvent event) {
         if (configurationService.shouldStartOperator()) {
-            if (!operator.getControllers().isEmpty()) {
+            if (operator.getRegisteredControllersNumber() > 0) {
                 log.info("Starting operator.");
                 operator.start();
             } else {
