@@ -10,7 +10,7 @@ import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
@@ -79,6 +79,6 @@ class BuildTimeHybridControllerConfiguration {
         return ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
                 "namespaces",
                 v -> new HashSet<>(Arrays.asList(v.asStringArray())),
-                () -> ResourceConfiguration.DEFAULT_NAMESPACES);
+                () -> Constants.DEFAULT_NAMESPACES);
     }
 }

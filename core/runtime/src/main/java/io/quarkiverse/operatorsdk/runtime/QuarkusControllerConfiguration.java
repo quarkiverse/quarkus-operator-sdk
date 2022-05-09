@@ -8,9 +8,9 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.ResourceConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
@@ -101,7 +101,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     void setNamespaces(Collection<String> namespaces) {
         this.namespaces = namespaces != null && !namespaces.isEmpty() ? Set.copyOf(namespaces)
-                : ResourceConfiguration.DEFAULT_NAMESPACES;
+                : Constants.DEFAULT_NAMESPACES;
     }
 
     @Override
