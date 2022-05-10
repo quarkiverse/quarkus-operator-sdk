@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -247,7 +248,7 @@ class QuarkusControllerConfigurationBuilder {
             final var dependents = controllerAnnotation.value("dependents");
             if (dependents != null) {
                 final var dependentAnnotations = dependents.asNestedArray();
-                dependentResources = new HashMap<>(dependentAnnotations.length);
+                dependentResources = new LinkedHashMap<>(dependentAnnotations.length);
                 for (AnnotationInstance dependentConfig : dependentAnnotations) {
                     final var dependentTypeDN = dependentConfig.value("type").asClass().name();
                     final var dependentType = index.getClassByName(dependentTypeDN);
