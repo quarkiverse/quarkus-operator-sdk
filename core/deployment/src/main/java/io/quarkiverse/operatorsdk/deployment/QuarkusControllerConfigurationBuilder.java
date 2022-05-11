@@ -9,7 +9,6 @@ import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;

@@ -79,6 +79,6 @@ class BuildTimeHybridControllerConfiguration {
         return ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
                 "namespaces",
                 v -> new HashSet<>(Arrays.asList(v.asStringArray())),
-                () -> Constants.DEFAULT_NAMESPACES);
+                () -> Constants.DEFAULT_NAMESPACES_SET);
     }
 }
