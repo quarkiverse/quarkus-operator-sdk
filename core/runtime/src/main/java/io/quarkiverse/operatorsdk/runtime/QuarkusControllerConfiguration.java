@@ -101,7 +101,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     void setNamespaces(Collection<String> namespaces) {
         this.namespaces = namespaces != null && !namespaces.isEmpty() ? Set.copyOf(namespaces)
-                : Constants.DEFAULT_NAMESPACES;
+                : Constants.DEFAULT_NAMESPACES_SET;
     }
 
     @Override
