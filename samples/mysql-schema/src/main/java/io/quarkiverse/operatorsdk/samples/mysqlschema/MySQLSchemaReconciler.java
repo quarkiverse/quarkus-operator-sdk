@@ -6,10 +6,8 @@ import static io.quarkiverse.operatorsdk.samples.mysqlschema.dependent.SecretDep
 import javax.inject.Inject;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -26,7 +24,7 @@ import io.quarkus.logging.Log;
         @Dependent(type = SchemaDependentResource.class, name = SchemaDependentResource.NAME)
 })
 public class MySQLSchemaReconciler
-        implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema>, Cleaner<MySQLSchema> {
+        implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema> {
 
     @Inject
     SchemaService schemaService;
@@ -48,6 +46,7 @@ public class MySQLSchemaReconciler
     @Override
     public ErrorStatusUpdateControl<MySQLSchema> updateErrorStatus(MySQLSchema schema,
             Context<MySQLSchema> context, Exception e) {
+        Log.error("updateErrorStatus", e);
         SchemaStatus status = new SchemaStatus();
         status.setUrl(null);
         status.setUserName(null);
@@ -65,11 +64,5 @@ public class MySQLSchemaReconciler
         status.setSecretName(secretName);
         status.setStatus("CREATED");
         schema.setStatus(status);
-    }
-
-    @Override
-    public DeleteControl cleanup(MySQLSchema schema, Context<MySQLSchema> context) {
-        // dependent will do the job, nothing more to do here
-        return DeleteControl.defaultDelete();
     }
 }
