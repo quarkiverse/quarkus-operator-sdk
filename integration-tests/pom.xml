@@ -49,6 +49,11 @@
        <groupId>io.fabric8</groupId>
        <artifactId>istio-model-v1beta1</artifactId>
      </dependency>
+     <dependency>
+       <groupId>org.bouncycastle</groupId>
+       <artifactId>bcpkix-jdk15on</artifactId>
+       <optional>true</optional>
+     </dependency>
    </dependencies>
   <build>
     <plugins>
