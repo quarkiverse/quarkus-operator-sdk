@@ -16,6 +16,14 @@
     <gpg.skip>true</gpg.skip>
   </properties>
 
+  <dependencies>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk15on</artifactId>
+      <optional>true</optional>
+    </dependency>
+  </dependencies>
+
   <modules>
     <module>exposedapp</module>
     <module>joke</module>
