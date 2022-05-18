@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
+import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
@@ -35,6 +36,22 @@ public class DisposableNamespaceTestResource implements
 
     @Override
     public Map<String, String> start() {
+        // copied from AbstractKubernetesTestResource
+        final var systemProps = Map.of(
+                Config.KUBERNETES_TRUST_CERT_SYSTEM_PROPERTY, "true",
+                "quarkus.tls.trust-all", "true",
+                Config.KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY, "false",
+                Config.KUBERNETES_AUTH_TRYSERVICEACCOUNT_SYSTEM_PROPERTY, "false",
+                Config.KUBERNETES_NAMESPACE_SYSTEM_PROPERTY, namespace,
+                Config.KUBERNETES_HTTP2_DISABLE, "true",
+                Config.KUBERNETES_MASTER_SYSTEM_PROPERTY, client.getConfiguration().getMasterUrl());
+
+        //these actually need to be system properties
+        //as they are read directly as system props, and not from Quarkus config
+        for (Map.Entry<String, String> entry : systemProps.entrySet()) {
+            System.setProperty(entry.getKey(), entry.getValue());
+        }
+
         log.info("Creating '{}' namespace", namespace);
         client.namespaces()
                 .create(new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build());
@@ -45,7 +62,7 @@ public class DisposableNamespaceTestResource implements
         resources.createOrReplace();
         resources.waitUntilReady(waitAtMostSecondsForFixturesReadiness, TimeUnit.SECONDS);
 
-        return null;
+        return systemProps;
     }
 
     @Override
