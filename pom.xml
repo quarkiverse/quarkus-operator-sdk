@@ -38,6 +38,7 @@
         <module>common-deployment</module>
         <module>core</module>
         <module>bundle-generator</module>
+        <module>test</module>
       </modules>
     </profile>
     <profile>

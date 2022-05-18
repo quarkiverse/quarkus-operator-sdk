@@ -84,16 +84,22 @@
           <artifactId>quarkus-operator-sdk-deployment</artifactId>
           <version>${project.version}</version>
         </dependency>
-        <dependency>
-          <groupId>io.quarkiverse.operatorsdk</groupId>
-          <artifactId>quarkus-operator-sdk-common</artifactId>
-          <version>${project.version}</version>
-        </dependency>
       <dependency>
-          <groupId>io.quarkiverse.operatorsdk</groupId>
-          <artifactId>quarkus-operator-sdk-common-deployment</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-      </dependencies>
+        <groupId>io.quarkiverse.operatorsdk</groupId>
+        <artifactId>quarkus-operator-sdk-common</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.quarkiverse.operatorsdk</groupId>
+        <artifactId>quarkus-operator-sdk-common-deployment</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.quarkiverse.operatorsdk</groupId>
+        <artifactId>quarkus-operator-sdk-test</artifactId>
+        <version>${project.version}</version>
+        <scope>test</scope>
+      </dependency>
+    </dependencies>
     </dependencyManagement>
 </project>
