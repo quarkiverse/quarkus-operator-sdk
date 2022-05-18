@@ -76,14 +76,13 @@ public class DisposableNamespaceTestResource implements
 
     @Override
     public void init(WithDisposableNamespace annotation) {
-        final var namespace = annotation.namespace();
-        if (namespace != null && !WithDisposableNamespace.UNSET_VALUE.equals(namespace)) {
-            this.namespace = namespace;
-        } else {
-            this.namespace = KubernetesResourceUtil.sanitizeName("ns" + UUID.randomUUID());
+        var namespace = annotation.namespace();
+        if (namespace == null || WithDisposableNamespace.UNSET_VALUE.equals(namespace)) {
+            namespace = KubernetesResourceUtil.sanitizeName("ns" + UUID.randomUUID());
         }
+        this.namespace = namespace;
 
-        client = new DefaultKubernetesClient();
+        client = new DefaultKubernetesClient().inNamespace(namespace);
 
         waitAtMostSecondsForNSDeletion = annotation.waitAtMostSecondsForDeletion();
         preserveNamespaceOnError = annotation.preserveOnError();
