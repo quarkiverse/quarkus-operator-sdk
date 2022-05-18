@@ -11,8 +11,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import javax.inject.Inject;
-
 import org.awaitility.Awaitility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +32,6 @@ public class DisposableNamespaceTestResource implements
     private int waitAtMostSecondsForNSDeletion;
     private int waitAtMostSecondsForFixturesReadiness;
     private boolean preserveNamespaceOnError;
-
-    @Inject
 
     @Override
     public Map<String, String> start() {
@@ -87,7 +83,7 @@ public class DisposableNamespaceTestResource implements
 
         waitAtMostSecondsForNSDeletion = annotation.waitAtMostSecondsForDeletion();
         preserveNamespaceOnError = annotation.preserveOnError();
-        waitAtMostSecondsForFixturesReadiness = annotation.waitAtMostSecondsForDeletion();
+        waitAtMostSecondsForFixturesReadiness = annotation.fixturesReadinessTimeoutSeconds();
 
         final var fixtures = annotation.fixtures();
         if (fixtures != null) {
