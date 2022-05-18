@@ -39,15 +39,11 @@ public class DisposableNamespaceTestResource implements
 
     @Override
     public Map<String, String> start() {
-        client
-                .namespaces()
+        client.namespaces()
                 .create(new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build());
 
-        client
-                .resourceList(resourceFixtures)
-                .createOrReplace();
-        client
-                .resourceList(resourceFixtures)
+        client.resourceList(resourceFixtures).createOrReplace();
+        client.resourceList(resourceFixtures)
                 .waitUntilReady(waitAtMostSecondsForFixturesReadiness, TimeUnit.SECONDS);
 
         return null;
@@ -75,7 +71,7 @@ public class DisposableNamespaceTestResource implements
     @Override
     public void inject(TestInjector testInjector) {
         testInjector.injectIntoFields(client,
-                new TestInjector.AnnotatedAndMatchesType(WithDisposableNamespace.class, KubernetesClient.class));
+                new TestInjector.AnnotatedAndMatchesType(DisposableNamespacedKubernetesClient.class, KubernetesClient.class));
     }
 
     @Override
