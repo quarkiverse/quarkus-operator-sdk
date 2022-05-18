@@ -35,12 +35,15 @@ public class DisposableNamespaceTestResource implements
 
     @Override
     public Map<String, String> start() {
+        log.info("Creating '{}' namespace", namespace);
         client.namespaces()
                 .create(new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build());
 
-        client.resourceList(resourceFixtures).createOrReplace();
-        client.resourceList(resourceFixtures)
-                .waitUntilReady(waitAtMostSecondsForFixturesReadiness, TimeUnit.SECONDS);
+        final var resources = client.resourceList(resourceFixtures);
+        resources.accept(HasMetadata.class,
+                hasMetadata -> log.info("Creating '{}' {}", hasMetadata.getMetadata().getName(), hasMetadata.getKind()));
+        resources.createOrReplace();
+        resources.waitUntilReady(waitAtMostSecondsForFixturesReadiness, TimeUnit.SECONDS);
 
         return null;
     }
