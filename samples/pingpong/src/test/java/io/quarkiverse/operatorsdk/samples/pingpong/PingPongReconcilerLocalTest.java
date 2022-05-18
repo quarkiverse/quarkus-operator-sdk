@@ -13,21 +13,21 @@ import javax.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.client.server.mock.KubernetesServer;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
+import io.quarkiverse.operatorsdk.test.DisposableNamespacedKubernetesClient;
+import io.quarkiverse.operatorsdk.test.WithDisposableNamespace;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.kubernetes.client.KubernetesTestServer;
-import io.quarkus.test.kubernetes.client.WithKubernetesTestServer;
 
-@WithKubernetesTestServer
+@WithDisposableNamespace
 @QuarkusTest
-class PingPongReconcilerTest {
+class PingPongReconcilerLocalTest {
 
     private static final String PING_REQUEST_NAME = "myping1";
     private static final String PONG_REQUEST_NAME = PING_REQUEST_NAME + "-pong";
 
-    @KubernetesTestServer
-    KubernetesServer mockServer;
+    @DisposableNamespacedKubernetesClient
+    KubernetesClient client;
 
     @Inject
     Operator operator;
@@ -37,7 +37,6 @@ class PingPongReconcilerTest {
         operator.start();
 
         final Ping testRequest = new Ping();
-        final var client = mockServer.getClient();
         testRequest.setMetadata(new ObjectMetaBuilder()
                 .withName(PING_REQUEST_NAME)
                 .withNamespace(client.getNamespace())

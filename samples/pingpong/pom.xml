@@ -62,6 +62,11 @@
       <artifactId>awaitility</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>io.quarkiverse.operatorsdk</groupId>
+      <artifactId>quarkus-operator-sdk-test</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
