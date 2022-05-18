@@ -64,6 +64,7 @@ public class DisposableNamespaceTestResource implements
                         .atMost(waitAtMostSecondsForNSDeletion, TimeUnit.SECONDS)
                         .until(() -> client.namespaces().withName(namespace).get() == null);
             }
+            client.close();
         }
     }
 
