@@ -52,6 +52,7 @@ public class DisposableNamespaceTestResource implements
             System.setProperty(entry.getKey(), entry.getValue());
         }
 
+        log.info("Connecting to cluster {}", client.getConfiguration().getMasterUrl());
         log.info("Creating '{}' namespace", namespace);
         client.namespaces()
                 .create(new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build());
