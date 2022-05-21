@@ -54,6 +54,10 @@ jobs:
         with:
           version: v0.11.1
           registry: true
+
+      - name: Run tests requiring a live cluster
+        run: mvn -B test -Dnative -Dquarkus-josdk.tests=RequiresLiveCluster --file pom.xml
+
       - name: Install OPM and Operator SDK tool
         uses: redhat-actions/openshift-tools-installer@v1
         with:
