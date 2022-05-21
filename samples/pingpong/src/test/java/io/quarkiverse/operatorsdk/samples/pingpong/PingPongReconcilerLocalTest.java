@@ -10,6 +10,7 @@ import static org.hamcrest.Matchers.notNullValue;
 
 import javax.inject.Inject;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -19,6 +20,7 @@ import io.quarkiverse.operatorsdk.test.DisposableNamespacedKubernetesClient;
 import io.quarkiverse.operatorsdk.test.WithDisposableNamespace;
 import io.quarkus.test.junit.QuarkusTest;
 
+@Tag("RequiresLiveCluster")
 @WithDisposableNamespace
 @QuarkusTest
 class PingPongReconcilerLocalTest {
@@ -37,9 +39,10 @@ class PingPongReconcilerLocalTest {
         operator.start();
 
         final Ping testRequest = new Ping();
+        final var namespace = client.getNamespace();
         testRequest.setMetadata(new ObjectMetaBuilder()
                 .withName(PING_REQUEST_NAME)
-                .withNamespace(client.getNamespace())
+                .withNamespace(namespace)
                 .build());
 
         // act
@@ -48,14 +51,14 @@ class PingPongReconcilerLocalTest {
         // assert ping reconciler
         await().ignoreException(NullPointerException.class).atMost(5, MINUTES).untilAsserted(() -> {
             Ping updatedRequest = client.resources(Ping.class)
-                    .inNamespace(testRequest.getMetadata().getNamespace())
+                    .inNamespace(namespace)
                     .withName(PING_REQUEST_NAME).get();
             assertThat(updatedRequest.getStatus(), is(notNullValue()));
             assertThat(updatedRequest.getStatus().getState(), is(Status.State.PROCESSED));
         });
 
         var createdPongs = client.resources(Pong.class)
-                .inNamespace(testRequest.getMetadata().getNamespace())
+                .inNamespace(namespace)
                 .list();
 
         assertThat(createdPongs.getItems(), is(not(empty())));
@@ -64,7 +67,7 @@ class PingPongReconcilerLocalTest {
         // assert pong reconciler
         await().ignoreException(NullPointerException.class).atMost(5, MINUTES).untilAsserted(() -> {
             Pong updatedRequest = client.resources(Pong.class)
-                    .inNamespace(testRequest.getMetadata().getNamespace())
+                    .inNamespace(namespace)
                     .withName(PONG_REQUEST_NAME).get();
             assertThat(updatedRequest.getStatus(), is(notNullValue()));
             assertThat(updatedRequest.getStatus().getState(), is(Status.State.PROCESSED));

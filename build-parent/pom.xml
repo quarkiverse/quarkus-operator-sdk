@@ -17,6 +17,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
+    <quarkus-josdk.tests>!RequiresLiveCluster</quarkus-josdk.tests>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -77,6 +78,9 @@
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${surefire-plugin.version}</version>
+          <configuration>
+            <groups>${quarkus-josdk.tests}</groups>
+          </configuration>
         </plugin>
       </plugins>
     </pluginManagement>
