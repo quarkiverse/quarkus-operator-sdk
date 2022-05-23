@@ -37,14 +37,7 @@ public class DisposableNamespaceTestResource implements
     @Override
     public Map<String, String> start() {
         // copied from AbstractKubernetesTestResource
-        final var systemProps = Map.of(
-                Config.KUBERNETES_TRUST_CERT_SYSTEM_PROPERTY, "true",
-                "quarkus.tls.trust-all", "true",
-                Config.KUBERNETES_AUTH_TRYKUBECONFIG_SYSTEM_PROPERTY, "false",
-                Config.KUBERNETES_AUTH_TRYSERVICEACCOUNT_SYSTEM_PROPERTY, "false",
-                Config.KUBERNETES_NAMESPACE_SYSTEM_PROPERTY, namespace,
-                Config.KUBERNETES_HTTP2_DISABLE, "true",
-                Config.KUBERNETES_MASTER_SYSTEM_PROPERTY, client.getConfiguration().getMasterUrl());
+        final var systemProps = Map.of(Config.KUBERNETES_NAMESPACE_SYSTEM_PROPERTY, namespace);
 
         //these actually need to be system properties
         //as they are read directly as system props, and not from Quarkus config
