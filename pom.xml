@@ -13,7 +13,7 @@
   <name>Quarkus - Operator SDK - Parent</name>
   <properties>
     <quarkus.version>2.9.1.Final</quarkus.version>
-    <java-operator-sdk.version>3.0.1</java-operator-sdk.version>
+    <java-operator-sdk.version>3.0.2</java-operator-sdk.version>
     <kubernetes-client.version>5.12.2</kubernetes-client.version>
   </properties>
 
