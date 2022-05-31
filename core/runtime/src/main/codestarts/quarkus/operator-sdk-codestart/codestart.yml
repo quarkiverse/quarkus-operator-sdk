@@ -1,0 +1,7 @@
+name: operator-sdk-codestart
+ref: quarkus-operator-sdk
+type: code
+tags: extension-codestart, operator, kubernetes
+metadata:
+  title: Java Operator SDK Extension
+  description: This bootstraps an operator project using the Java Operator SDK project
