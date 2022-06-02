@@ -3,6 +3,7 @@ package io.quarkiverse.operatorsdk.test;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.lang.reflect.InvocationTargetException;
+import java.net.ConnectException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -20,6 +21,7 @@ import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.quarkus.test.common.QuarkusTestResourceConfigurableLifecycleManager;
 
@@ -33,6 +35,13 @@ public class DisposableNamespaceTestResource implements
     private int waitAtMostSecondsForNSDeletion;
     private int waitAtMostSecondsForFixturesReadiness;
     private boolean preserveNamespaceOnError;
+    private boolean createdNamespace = false;
+    private Context context;
+
+    @Override
+    public void setContext(Context context) {
+        this.context = context;
+    }
 
     @Override
     public Map<String, String> start() {
@@ -45,10 +54,21 @@ public class DisposableNamespaceTestResource implements
             System.setProperty(entry.getKey(), entry.getValue());
         }
 
-        log.info("Connecting to cluster {}", client.getConfiguration().getMasterUrl());
+        final var configuration = client.getConfiguration();
+        log.info("Connecting to cluster {}", configuration.getMasterUrl());
         log.info("Creating '{}' namespace", namespace);
-        client.namespaces()
-                .create(new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build());
+        try {
+            client.namespaces()
+                    .create(new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build());
+            createdNamespace = true;
+        } catch (KubernetesClientException e) {
+            if (e.getCause() instanceof ConnectException) {
+                log.error(
+                        "Couldn't connect to context '{}'. Tests annotated with @{} require a running Kubernetes cluster.",
+                        configuration.getCurrentContext().getName(), WithDisposableNamespace.class.getSimpleName());
+            }
+            throw e;
+        }
 
         final var resources = client.resourceList(resourceFixtures);
         resources.accept(HasMetadata.class,
@@ -61,21 +81,22 @@ public class DisposableNamespaceTestResource implements
 
     @Override
     public void stop() {
-        // todo: not sure if possible to detect test failure in this context
-        if (preserveNamespaceOnError /* && context.getExecutionException().isPresent() */) {
-            log.info("Preserving namespace {}", namespace);
-        } else {
-            client.resourceList(resourceFixtures).delete();
-            log.info("Deleting namespace {} and stopping operator", namespace);
-            client.namespaces().withName(namespace).delete();
-            if (waitAtMostSecondsForNSDeletion > 0) {
-                log.info("Waiting for namespace {} to be deleted", namespace);
-                Awaitility.await("namespace deleted")
-                        .pollInterval(50, TimeUnit.MILLISECONDS)
-                        .atMost(waitAtMostSecondsForNSDeletion, TimeUnit.SECONDS)
-                        .until(() -> client.namespaces().withName(namespace).get() == null);
+        if (createdNamespace) {
+            if (preserveNamespaceOnError && context.getTestFailureResult().isTestFailed()) {
+                log.info("Preserving namespace '{}'", namespace);
+            } else {
+                client.resourceList(resourceFixtures).delete();
+                log.info("Deleting namespace '{}' and stopping operator", namespace);
+                client.namespaces().withName(namespace).delete();
+                if (waitAtMostSecondsForNSDeletion > 0) {
+                    log.info("Waiting for namespace '{}' to be deleted", namespace);
+                    Awaitility.await("namespace deleted")
+                            .pollInterval(50, TimeUnit.MILLISECONDS)
+                            .atMost(waitAtMostSecondsForNSDeletion, TimeUnit.SECONDS)
+                            .until(() -> client.namespaces().withName(namespace).get() == null);
+                }
+                client.close();
             }
-            client.close();
         }
     }
 

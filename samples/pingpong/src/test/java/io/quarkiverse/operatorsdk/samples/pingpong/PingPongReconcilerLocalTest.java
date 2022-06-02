@@ -21,7 +21,7 @@ import io.quarkiverse.operatorsdk.test.WithDisposableNamespace;
 import io.quarkus.test.junit.QuarkusTest;
 
 @Tag("RequiresLiveCluster")
-@WithDisposableNamespace
+@WithDisposableNamespace(preserveOnError = true)
 @QuarkusTest
 class PingPongReconcilerLocalTest {
 
