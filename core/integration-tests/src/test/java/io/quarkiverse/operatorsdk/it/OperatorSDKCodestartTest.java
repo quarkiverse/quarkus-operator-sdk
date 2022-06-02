@@ -12,7 +12,8 @@ public class OperatorSDKCodestartTest {
     @RegisterExtension
     static QuarkusCodestartTest codestartTest = QuarkusCodestartTest.builder()
             .standaloneExtensionCatalog()
-            .extension(ArtifactCoords.fromString("io.quarkiverse.operatorsdk:quarkus-operator-sdk:4.0.0-SNAPSHOT"))
+            .extension(ArtifactCoords
+                    .fromString("io.quarkiverse.operatorsdk:quarkus-operator-sdk:" + System.getProperty("project.version")))
             .languages(Language.JAVA)
             .build();
 
