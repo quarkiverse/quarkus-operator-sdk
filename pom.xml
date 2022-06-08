@@ -11,6 +11,11 @@
   <version>3.0.8-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Quarkus - Operator SDK - Parent</name>
+  <properties>
+    <quarkus.version>2.7.6.Final</quarkus.version>
+    <java-operator-sdk.version>2.1.4</java-operator-sdk.version>
+    <kubernetes-client.version>5.12.2</kubernetes-client.version>
+  </properties>
 
   <profiles>
     <profile>
