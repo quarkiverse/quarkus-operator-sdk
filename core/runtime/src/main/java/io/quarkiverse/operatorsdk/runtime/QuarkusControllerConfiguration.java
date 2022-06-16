@@ -2,7 +2,6 @@ package io.quarkiverse.operatorsdk.runtime;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -22,8 +21,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final String resourceTypeName;
     private final String crVersion;
     private final boolean generationAware;
-    private final Optional<String> specClassName;
-    private final Optional<String> statusClassName;
+    private final boolean statusPresentAndNotVoid;
     private final List<DependentResourceSpec> dependentResources;
     private final Class<R> resourceClass;
     private String finalizer;
@@ -38,7 +36,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             String resourceTypeName,
             String crVersion, boolean generationAware,
             Class<R> resourceClass, Set<String> namespaces, String finalizerName, String labelSelector,
-            Optional<String> specClassName, Optional<String> statusClassName,
+            boolean statusPresentAndNotVoid,
             List<DependentResourceSpec> dependentResources) {
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
@@ -50,8 +48,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         setNamespaces(namespaces);
         setFinalizer(finalizerName);
         this.labelSelector = labelSelector;
-        this.specClassName = specClassName;
-        this.statusClassName = statusClassName;
+        this.statusPresentAndNotVoid = statusPresentAndNotVoid;
         this.dependentResources = dependentResources;
     }
 
@@ -70,6 +67,8 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return resourceTypeName;
     }
 
+    @SuppressWarnings("unused")
+    // this is needed by Quarkus for the RecordableConstructor
     public String getCrVersion() {
         return crVersion;
     }
@@ -129,12 +128,8 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.labelSelector = labelSelector;
     }
 
-    public Optional<String> getSpecClassName() {
-        return specClassName;
-    }
-
-    public Optional<String> getStatusClassName() {
-        return statusClassName;
+    public boolean isStatusPresentAndNotVoid() {
+        return statusPresentAndNotVoid;
     }
 
     @Override

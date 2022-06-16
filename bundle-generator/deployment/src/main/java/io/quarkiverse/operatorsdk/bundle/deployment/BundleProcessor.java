@@ -51,7 +51,7 @@ public class BundleProcessor {
     private static final DotName CSV_METADATA = DotName.createSimple(CSVMetadata.class.getName());
     private static final String BUNDLE = "bundle";
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "unused" })
     @BuildStep
     CSVMetadataBuildItem gatherCSVMetadata(ApplicationInfoBuildItem configuration,
             BundleGenerationConfiguration bundleConfiguration,
@@ -78,7 +78,7 @@ public class BundleProcessor {
                             reconcilerInfo.classInfo()).orElse(operatorCsvMetadata);
                     final var resourceFullName = config.getResourceTypeName();
                     final var resourceInfo = ResourceInfo.createFrom(config.getResourceClass(),
-                            resourceFullName, name, config.getSpecClassName(), config.getStatusClassName());
+                            resourceFullName, name, config.isStatusPresentAndNotVoid());
                     csvGroups.computeIfAbsent(csvMetadata, m -> new ArrayList<>())
                             .add(new AugmentedResourceInfo(resourceInfo, csvMetadata.name));
                 });
@@ -86,6 +86,7 @@ public class BundleProcessor {
         return new CSVMetadataBuildItem(csvGroups);
     }
 
+    @SuppressWarnings("unused")
     @BuildStep
     void generateBundle(ApplicationInfoBuildItem configuration,
             BundleGenerationConfiguration bundleConfiguration,

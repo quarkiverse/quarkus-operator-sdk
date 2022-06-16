@@ -192,7 +192,7 @@ class OperatorSDKProcessor {
         configs.forEach((controllerName, config) -> {
             final var augmented = ResourceInfo.createFrom(config.getResourceClass(),
                     config.getResourceTypeName(),
-                    controllerName, config.getSpecClassName(), config.getStatusClassName());
+                    controllerName, config.isStatusPresentAndNotVoid());
             mappings.put(controllerName, augmented);
         });
 
