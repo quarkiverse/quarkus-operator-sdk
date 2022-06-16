@@ -1,7 +1,5 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import java.util.Optional;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.model.Scope;
@@ -18,15 +16,15 @@ public class ResourceInfo {
     private final boolean served;
     private final Scope scope;
     private final String resourceClassName;
-    private final Optional<String> specClassName;
-    private final Optional<String> statusClassName;
+    private final boolean statusPresentAndNotVoid;
     private final String resourceFullName;
     private final String controllerName;
 
     @RecordableConstructor
     public ResourceInfo(String group, String version, String kind, String singular, String plural, String[] shortNames,
-            boolean storage, boolean served, Scope scope, String resourceClassName, Optional<String> specClassName,
-            Optional<String> statusClassName, String resourceFullName, String controllerName) {
+            boolean storage, boolean served, Scope scope, String resourceClassName, boolean statusPresentAndNotVoid,
+            String resourceFullName,
+            String controllerName) {
         this.group = group;
         this.version = version;
         this.kind = kind;
@@ -37,8 +35,7 @@ public class ResourceInfo {
         this.served = served;
         this.scope = scope;
         this.resourceClassName = resourceClassName;
-        this.specClassName = specClassName;
-        this.statusClassName = statusClassName;
+        this.statusPresentAndNotVoid = statusPresentAndNotVoid;
         this.resourceFullName = resourceFullName;
         this.controllerName = controllerName;
     }
@@ -83,12 +80,8 @@ public class ResourceInfo {
         return resourceClassName;
     }
 
-    public Optional<String> getSpecClassName() {
-        return specClassName;
-    }
-
-    public Optional<String> getStatusClassName() {
-        return statusClassName;
+    public boolean isStatusPresentAndNotVoid() {
+        return statusPresentAndNotVoid;
     }
 
     public String getResourceFullName() {
@@ -124,8 +117,7 @@ public class ResourceInfo {
     }
 
     public static ResourceInfo createFrom(Class<? extends HasMetadata> resourceClass,
-            String resourceFullName, String associatedControllerName, Optional<String> specClassName,
-            Optional<String> statusClassName) {
+            String resourceFullName, String associatedControllerName, boolean hasStatus) {
         Scope scope = Namespaced.class.isAssignableFrom(resourceClass) ? Scope.NAMESPACED : Scope.CLUSTER;
 
         return new ResourceInfo(HasMetadata.getGroup(resourceClass),
@@ -133,7 +125,7 @@ public class ResourceInfo {
                 HasMetadata.getKind(resourceClass), HasMetadata.getSingular(resourceClass),
                 HasMetadata.getPlural(resourceClass), new String[0],
                 false, false, scope, resourceClass.getCanonicalName(),
-                specClassName, statusClassName,
+                hasStatus,
                 resourceFullName, associatedControllerName);
     }
 }

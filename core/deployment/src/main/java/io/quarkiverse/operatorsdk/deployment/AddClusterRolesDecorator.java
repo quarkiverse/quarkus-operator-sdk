@@ -31,11 +31,9 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
             rule.addNewResource(plural);
 
             // if the resource has a non-Void status, also add the status resource
-            cri.getStatusClassName().ifPresent(statusClass -> {
-                if (!"java.lang.Void".equals(statusClass)) {
-                    rule.addNewResource(plural + "/status");
-                }
-            });
+            if (cri.isStatusPresentAndNotVoid()) {
+                rule.addNewResource(plural + "/status");
+            }
 
             // add finalizers sub-resource because it's used in several contexts, even in the absence of finalizers
             // see: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement

@@ -89,7 +89,10 @@ class QuarkusControllerConfigurationBuilder {
         registerForReflection(reflectionClasses, primaryTypeName);
         forcedReflectionClasses.produce(new ForceNonWeakReflectiveClassBuildItem(primaryTypeName));
 
-        // register spec and status for introspection if we're targeting a CustomResource
+        // register spec and status for reflection if we're targeting a CustomResource
+        // note that this shouldn't be necessary anymore once https://github.com/quarkusio/quarkus/pull/26188
+        // is merged and available as the kubernetes-client extension will properly take care of the
+        // registration of the custom resource and associated status / spec classes for reflection
         final var primaryCI = index.getClassByName(primaryTypeDN);
         boolean isCR = false;
         if (primaryCI == null) {
@@ -105,13 +108,13 @@ class QuarkusControllerConfigurationBuilder {
             }
         }
 
-        String specClassName = null;
-        String statusClassName = null;
+        boolean hasStatus = false;
         if (isCR) {
             final var crParamTypes = JandexUtil.resolveTypeParameters(primaryTypeDN, CUSTOM_RESOURCE,
                     index);
-            specClassName = crParamTypes.get(0).name().toString();
-            statusClassName = crParamTypes.get(1).name().toString();
+            final var specClassName = crParamTypes.get(0).name().toString();
+            final var statusClassName = crParamTypes.get(1).name().toString();
+            hasStatus = isStatusNotVoid(statusClassName);
             registerForReflection(reflectionClasses, specClassName);
             registerForReflection(reflectionClasses, statusClassName);
         }
@@ -214,8 +217,7 @@ class QuarkusControllerConfigurationBuilder {
                     namespaces,
                     getFinalizer(controllerAnnotation, resourceFullName),
                     getLabelSelector(controllerAnnotation),
-                    Optional.ofNullable(specClassName),
-                    Optional.ofNullable(statusClassName),
+                    hasStatus,
                     dependentResources.values().stream().collect(Collectors.toUnmodifiableList()));
 
             log.infov(
@@ -234,6 +236,10 @@ class QuarkusControllerConfigurationBuilder {
         liveReload.setContextObject(ContextStoredControllerConfigurations.class, storedConfigurations);
 
         return configuration;
+    }
+
+    static boolean isStatusNotVoid(String statusClassName) {
+        return !Void.class.getName().equals(statusClassName);
     }
 
     @SuppressWarnings("unchecked")
