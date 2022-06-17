@@ -26,7 +26,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
-import io.quarkiverse.operatorsdk.common.ReconcilerInfo;
+import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusDependentResourceSpec;
@@ -60,7 +60,7 @@ class QuarkusControllerConfigurationBuilder {
     }
 
     @SuppressWarnings("unchecked")
-    QuarkusControllerConfiguration build(ReconcilerInfo reconcilerInfo) {
+    QuarkusControllerConfiguration build(ReconcilerAugmentedClassInfo reconcilerInfo) {
         final var primaryTypeDN = reconcilerInfo.primaryTypeName();
         final var primaryTypeName = primaryTypeDN.toString();
 
