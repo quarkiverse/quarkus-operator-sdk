@@ -1,7 +1,7 @@
 package io.quarkiverse.operatorsdk.common;
 
 import static io.quarkiverse.operatorsdk.common.Constants.CUSTOM_RESOURCE;
-import static io.quarkiverse.operatorsdk.common.Constants.IGNORE_RECONCILER;
+import static io.quarkiverse.operatorsdk.common.Constants.IGNORE_ANNOTATION;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -45,7 +45,7 @@ public abstract class SelectiveAugmentedClassInfo {
         }
 
         // Ignore Reconciler implementations annotated with @Ignore
-        if (classInfo.annotations().containsKey(IGNORE_RECONCILER)) {
+        if (classInfo.annotations().containsKey(IGNORE_ANNOTATION)) {
             log.debugv("Skipping ''{0}'' {1} because it''s annotated with @Ignore",
                     consideredClassName, targetClassName);
             return false;
