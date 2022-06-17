@@ -12,13 +12,13 @@ import org.jboss.logging.Logger;
 /**
  * Metadata about a processable reconciler implementation.
  */
-public class ReconcilerInfo extends FilteredClassInfo {
+public class ReconcilerAugmentedClassInfo extends SelectiveAugmentedClassInfo {
 
     private final String name;
     private boolean isCR;
     private boolean hasNonVoidStatus;
 
-    public ReconcilerInfo(ClassInfo classInfo) {
+    public ReconcilerAugmentedClassInfo(ClassInfo classInfo) {
         super(classInfo, RECONCILER, 1);
         this.name = ConfigurationUtils.getReconcilerName(classInfo);
     }
@@ -32,7 +32,7 @@ public class ReconcilerInfo extends FilteredClassInfo {
     }
 
     @Override
-    protected boolean doKeep(IndexView index, Logger log) {
+    protected boolean augmentIfKept(IndexView index, Logger log) {
         final var primaryTypeDN = typeAt(0).name();
 
         // if we get CustomResource instead of a subclass, ignore the controller since we cannot do anything with it

@@ -19,7 +19,7 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.Constants;
-import io.quarkiverse.operatorsdk.common.FilteredClassInfo;
+import io.quarkiverse.operatorsdk.common.SelectiveAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.AppEventListener;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
@@ -182,7 +182,7 @@ class OperatorSDKProcessor {
 
     private void registerAssociatedClassesForReflection(BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
-            FilteredClassInfo classInfo) {
+            SelectiveAugmentedClassInfo classInfo) {
         classInfo.getClassNamesToRegisterForReflection()
                 .forEach(cn -> {
                     reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, cn));

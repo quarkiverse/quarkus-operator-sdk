@@ -25,25 +25,25 @@ public class ClassUtils {
      * 
      * @param index the {@link IndexView} used to retrieve class informations
      * @param log a {@link Logger} used to output skipped reconcilers information
-     * @return a stream of {@link ReconcilerInfo} providing information about processable reconcilers
+     * @return a stream of {@link ReconcilerAugmentedClassInfo} providing information about processable reconcilers
      */
-    public static Stream<ReconcilerInfo> getKnownReconcilers(IndexView index, Logger log) {
+    public static Stream<ReconcilerAugmentedClassInfo> getKnownReconcilers(IndexView index, Logger log) {
         return getProcessableExtensionsOf(RECONCILER, index, log)
-                .map(ReconcilerInfo.class::cast);
+                .map(ReconcilerAugmentedClassInfo.class::cast);
     }
 
-    public static Stream<? extends FilteredClassInfo> getProcessableExtensionsOf(DotName extendedOrImplementedClass,
+    public static Stream<? extends SelectiveAugmentedClassInfo> getProcessableExtensionsOf(DotName extendedOrImplementedClass,
             IndexView index, Logger log) {
         return index.getAllKnownImplementors(extendedOrImplementedClass).stream()
                 .map(classInfo -> {
                     if (RECONCILER.equals(extendedOrImplementedClass)) {
-                        return new ReconcilerInfo(classInfo);
+                        return new ReconcilerAugmentedClassInfo(classInfo);
                     } else if (DEPENDENT_RESOURCE.equals(extendedOrImplementedClass)) {
-                        return new DependentResourceInfo(classInfo);
+                        return new DependentResourceAugmentedClassInfo(classInfo);
                     } else {
                         throw new IllegalArgumentException("Don't know how to process " + extendedOrImplementedClass);
                     }
                 })
-                .filter(fci -> fci.keep(index, log));
+                .filter(fci -> fci.keepAugmented(index, log));
     }
 }

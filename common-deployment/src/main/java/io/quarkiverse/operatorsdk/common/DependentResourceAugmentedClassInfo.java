@@ -6,14 +6,14 @@ import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
 
-public class DependentResourceInfo extends FilteredClassInfo {
+public class DependentResourceAugmentedClassInfo extends SelectiveAugmentedClassInfo {
 
-    public DependentResourceInfo(ClassInfo classInfo) {
+    public DependentResourceAugmentedClassInfo(ClassInfo classInfo) {
         super(classInfo, DEPENDENT_RESOURCE, 2);
     }
 
     @Override
-    protected boolean doKeep(IndexView index, Logger log) {
+    protected boolean augmentIfKept(IndexView index, Logger log) {
         // only need to check the secondary resource type since the primary should have already been processed with the associated reconciler
         final var secondaryTypeDN = typeAt(0).name();
         registerForReflection(secondaryTypeDN.toString());

@@ -16,7 +16,7 @@ import org.jboss.logging.Logger;
 import io.quarkus.builder.BuildException;
 import io.quarkus.deployment.util.JandexUtil;
 
-public abstract class FilteredClassInfo {
+public abstract class SelectiveAugmentedClassInfo {
 
     private final ClassInfo classInfo;
     private Type[] types;
@@ -24,7 +24,7 @@ public abstract class FilteredClassInfo {
     private final int expectedParameterTypesCardinality;
     private final List<String> classNamesToRegisterForReflection = new ArrayList<>();
 
-    protected FilteredClassInfo(ClassInfo classInfo, DotName extendedOrImplementedClass,
+    protected SelectiveAugmentedClassInfo(ClassInfo classInfo, DotName extendedOrImplementedClass,
             int expectedParameterTypesCardinality) {
         this.extendedOrImplementedClass = extendedOrImplementedClass;
         this.classInfo = classInfo;
@@ -35,7 +35,7 @@ public abstract class FilteredClassInfo {
         return classInfo;
     }
 
-    boolean keep(IndexView index, Logger log) {
+    boolean keepAugmented(IndexView index, Logger log) {
         final var targetClassName = extendedOrImplementedClassName();
         final var consideredClassName = classInfo.name();
         if (Modifier.isAbstract(classInfo.flags())) {
@@ -61,7 +61,7 @@ public abstract class FilteredClassInfo {
         }
         this.types = typeParameters.toArray(Type[]::new);
 
-        return doKeep(index, log);
+        return augmentIfKept(index, log);
     }
 
     public List<String> getClassNamesToRegisterForReflection() {
@@ -82,7 +82,7 @@ public abstract class FilteredClassInfo {
         return extendedOrImplementedClass.local();
     }
 
-    protected abstract boolean doKeep(IndexView index, Logger log);
+    protected abstract boolean augmentIfKept(IndexView index, Logger log);
 
     protected CRStatus handlePossibleCR(DotName primaryTypeDN, IndexView index, Logger log) {
         // register spec and status for reflection if we're targeting a CustomResource
