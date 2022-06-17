@@ -3,6 +3,7 @@ package io.quarkiverse.operatorsdk.deployment;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 
 public class ResourceControllerMapping {
@@ -36,7 +37,7 @@ public class ResourceControllerMapping {
                 info.group(), info.version(), info.kind(), info.singular(), info.plural(), info.shortNames(),
                 info.storage(),
                 info.served(), info.scope(), info.crClassName(),
-                info.statusClassName().map(QuarkusControllerConfigurationBuilder::isStatusNotVoid).orElse(false), crdName,
+                info.statusClassName().map(ClassUtils::isStatusNotVoid).orElse(false), crdName,
                 associatedControllerName);
     }
 }
