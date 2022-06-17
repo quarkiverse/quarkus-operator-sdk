@@ -16,7 +16,7 @@ public class Constants {
     }
 
     public static final DotName RECONCILER = DotName.createSimple(Reconciler.class.getName());
-    public static final DotName IGNORE_RECONCILER = DotName.createSimple(Ignore.class.getName());
+    public static final DotName IGNORE_ANNOTATION = DotName.createSimple(Ignore.class.getName());
     public static final DotName CUSTOM_RESOURCE = DotName.createSimple(CustomResource.class.getName());
     public static final DotName HAS_METADATA = DotName.createSimple(HasMetadata.class.getName());
     public static final DotName CONTROLLER_CONFIGURATION = DotName.createSimple(ControllerConfiguration.class.getName());
