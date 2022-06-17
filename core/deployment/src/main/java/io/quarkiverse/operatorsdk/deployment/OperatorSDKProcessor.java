@@ -17,7 +17,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
+import io.quarkiverse.operatorsdk.common.ClassUtils.FilteredClassInfo;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
+import io.quarkiverse.operatorsdk.common.Constants;
 import io.quarkiverse.operatorsdk.runtime.AppEventListener;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
@@ -131,10 +133,16 @@ class OperatorSDKProcessor {
         final var index = combinedIndexBuildItem.getIndex();
 
         final var builder = new QuarkusControllerConfigurationBuilder(additionalBeans,
-                reflectionClasses, forcedReflectionClasses, index, crdGeneration, liveReload, buildTimeConfiguration);
+                index, crdGeneration, liveReload, buildTimeConfiguration);
         final var controllerConfigs = ClassUtils.getKnownReconcilers(index, log)
+                // register strongly reconciler-associated classes that need reflective access
+                .peek(fci -> registerAssociatedClassesForReflection(reflectionClasses, forcedReflectionClasses, fci))
                 .map(builder::build)
                 .collect(Collectors.toList());
+
+        // register strongly classes associated with dependent resources as well
+        ClassUtils.getProcessableExtensionsOf(Constants.DEPENDENT_RESOURCE, index, log)
+                .forEach(fci -> registerAssociatedClassesForReflection(reflectionClasses, forcedReflectionClasses, fci));
 
         // retrieve the known CRD information to make sure we always have a full view
         var storedCRDInfos = liveReload.getContextObject(ContextStoredCRDInfos.class);
@@ -170,6 +178,18 @@ class OperatorSDKProcessor {
         generatedCRDInfo.produce(new GeneratedCRDInfoBuildItem(crdInfo));
 
         return new ConfigurationServiceBuildItem(Version.loadFromProperties(), controllerConfigs);
+    }
+
+    private void registerAssociatedClassesForReflection(BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
+            BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
+            FilteredClassInfo classInfo) {
+        classInfo.getClassNamesToRegisterForReflection()
+                .forEach(cn -> {
+                    reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, cn));
+                    forcedReflectionClasses.produce(
+                            new ForceNonWeakReflectiveClassBuildItem(cn));
+                    log.infov("Registered ''{0}'' for reflection", cn);
+                });
     }
 
     private static class IsRBACEnabled implements BooleanSupplier {

@@ -2,7 +2,6 @@ package io.quarkiverse.operatorsdk.deployment;
 
 import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.loadClass;
 import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATION;
-import static io.quarkiverse.operatorsdk.common.Constants.CUSTOM_RESOURCE;
 import static io.quarkiverse.operatorsdk.common.Constants.KUBERNETES_DEPENDENT;
 import static io.quarkiverse.operatorsdk.common.Constants.KUBERNETES_DEPENDENT_RESOURCE;
 import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
@@ -19,7 +18,6 @@ import java.util.stream.Collectors;
 
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
-import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
 
@@ -37,8 +35,6 @@ import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.builder.BuildException;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.builditem.LiveReloadBuildItem;
-import io.quarkus.deployment.builditem.nativeimage.ForceNonWeakReflectiveClassBuildItem;
-import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.deployment.util.JandexUtil;
 
 @SuppressWarnings("rawtypes")
@@ -46,8 +42,6 @@ class QuarkusControllerConfigurationBuilder {
     static final Logger log = OperatorSDKProcessor.log;
 
     private final BuildProducer<AdditionalBeanBuildItem> additionalBeans;
-    private final BuildProducer<ReflectiveClassBuildItem> reflectionClasses;
-    private final BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses;
     private final IndexView index;
     private final CRDGeneration crdGeneration;
     private final LiveReloadBuildItem liveReload;
@@ -55,13 +49,10 @@ class QuarkusControllerConfigurationBuilder {
     private final BuildTimeOperatorConfiguration buildTimeConfiguration;
 
     public QuarkusControllerConfigurationBuilder(BuildProducer<AdditionalBeanBuildItem> additionalBeans,
-            BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
-            BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses, IndexView index,
+            IndexView index,
             CRDGeneration crdGeneration, LiveReloadBuildItem liveReload,
             BuildTimeOperatorConfiguration buildTimeConfiguration) {
         this.additionalBeans = additionalBeans;
-        this.reflectionClasses = reflectionClasses;
-        this.forcedReflectionClasses = forcedReflectionClasses;
         this.index = index;
         this.crdGeneration = crdGeneration;
         this.liveReload = liveReload;
@@ -86,15 +77,13 @@ class QuarkusControllerConfigurationBuilder {
                         .setDefaultScope(APPLICATION_SCOPED)
                         .build());
 
-        final var crStatus = registerForReflection(primaryTypeDN);
-
         // now check if there's more work to do, depending on reloaded state
         Class<? extends HasMetadata> resourceClass = null;
         String resourceFullName = null;
 
         // check if we need to regenerate the CRD
         final var changeInformation = liveReload.getChangeInformation();
-        if (crStatus.isCR && crdGeneration.wantCRDGenerated()) {
+        if (reconcilerInfo.isCRTargeting() && crdGeneration.wantCRDGenerated()) {
             // check whether we already have generated CRDs
             var storedCRDInfos = liveReload.getContextObject(ContextStoredCRDInfos.class);
 
@@ -173,7 +162,7 @@ class QuarkusControllerConfigurationBuilder {
             final var namespaces = configExtractor.namespaces(name);
 
             final var dependentResources = createDependentResources(
-                    reflectionClasses, index, controllerAnnotation, namespaces, additionalBeans);
+                    index, controllerAnnotation, namespaces, additionalBeans);
 
             // create the configuration
             configuration = new QuarkusControllerConfiguration(
@@ -186,7 +175,7 @@ class QuarkusControllerConfigurationBuilder {
                     namespaces,
                     getFinalizer(controllerAnnotation, resourceFullName),
                     getLabelSelector(controllerAnnotation),
-                    crStatus.hasStatus,
+                    reconcilerInfo.hasNonVoidStatus(),
                     dependentResources.values().stream().collect(Collectors.toUnmodifiableList()));
 
             log.infov(
@@ -207,65 +196,9 @@ class QuarkusControllerConfigurationBuilder {
         return configuration;
     }
 
-    static boolean isStatusNotVoid(String statusClassName) {
-        return !Void.class.getName().equals(statusClassName);
-    }
-
-    private static class CRStatus {
-        private final boolean hasStatus;
-        private final boolean isCR;
-
-        private CRStatus(boolean hasStatus, boolean isCR) {
-            this.hasStatus = hasStatus;
-            this.isCR = isCR;
-        }
-    }
-
-    CRStatus registerForReflection(DotName primaryTypeDN) {
-        final var primaryTypeName = primaryTypeDN.toString();
-
-        // register target resource class for reflection, force it 
-        registerForReflection(reflectionClasses, primaryTypeName);
-        forcedReflectionClasses.produce(new ForceNonWeakReflectiveClassBuildItem(primaryTypeName));
-
-        // register spec and status for reflection if we're targeting a CustomResource
-        // note that this shouldn't be necessary anymore once https://github.com/quarkusio/quarkus/pull/26188
-        // is merged and available as the kubernetes-client extension will properly take care of the
-        // registration of the custom resource and associated status / spec classes for reflection
-        final var primaryCI = index.getClassByName(primaryTypeDN);
-        boolean isCR = false;
-        if (primaryCI == null) {
-            log.warnv(
-                    "''{0}'' has not been found in the Jandex index so it cannot be introspected. Assumed not to be a CustomResource implementation. If you believe this is wrong, please index your classes with Jandex.",
-                    primaryTypeDN);
-        } else {
-            try {
-                isCR = JandexUtil.isSubclassOf(index, primaryCI, CUSTOM_RESOURCE);
-            } catch (BuildException e) {
-                log.errorv(
-                        "Couldn't ascertain if ''{0}'' is a CustomResource subclass. Assumed not to be.",
-                        e);
-            }
-        }
-
-        boolean hasStatus = false;
-        if (isCR) {
-            final var crParamTypes = JandexUtil.resolveTypeParameters(primaryTypeDN,
-                    CUSTOM_RESOURCE,
-                    index);
-            final var specClassName = crParamTypes.get(0).name().toString();
-            final var statusClassName = crParamTypes.get(1).name().toString();
-            hasStatus = isStatusNotVoid(statusClassName);
-            registerForReflection(reflectionClasses, specClassName);
-            registerForReflection(reflectionClasses, statusClassName);
-        }
-
-        return new CRStatus(hasStatus, isCR);
-    }
-
     @SuppressWarnings("unchecked")
     private Map<String, QuarkusDependentResourceSpec> createDependentResources(
-            BuildProducer<ReflectiveClassBuildItem> reflectionClasses, IndexView index,
+            IndexView index,
             AnnotationInstance controllerAnnotation, Set<String> namespaces,
             BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
         // deal with dependent resources
@@ -285,7 +218,6 @@ class QuarkusControllerConfigurationBuilder {
 
                     final var dependentTypeName = dependentTypeDN.toString();
                     final var dependentClass = loadClass(dependentTypeName, DependentResource.class);
-                    registerForReflection(reflectionClasses, dependentTypeName);
 
                     // further process Kubernetes dependents
                     final boolean isKubernetesDependent;
@@ -350,16 +282,4 @@ class QuarkusControllerConfigurationBuilder {
                 AnnotationValue::asString,
                 () -> null);
     }
-
-    private void registerForReflection(
-            BuildProducer<ReflectiveClassBuildItem> reflectionClasses, String className) {
-        Optional.ofNullable(className)
-                .filter(s -> !className.startsWith("java."))
-                .ifPresent(
-                        cn -> {
-                            reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, cn));
-                            log.infov("Registered ''{0}'' for reflection", cn);
-                        });
-    }
-
 }
