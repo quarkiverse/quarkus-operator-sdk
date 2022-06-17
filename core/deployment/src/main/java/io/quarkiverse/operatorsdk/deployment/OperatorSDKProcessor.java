@@ -17,9 +17,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
-import io.quarkiverse.operatorsdk.common.ClassUtils.FilteredClassInfo;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.Constants;
+import io.quarkiverse.operatorsdk.common.FilteredClassInfo;
 import io.quarkiverse.operatorsdk.runtime.AppEventListener;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
