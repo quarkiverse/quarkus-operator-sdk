@@ -44,7 +44,7 @@ public abstract class SelectiveAugmentedClassInfo {
             return false;
         }
 
-        // Ignore Reconciler implementations annotated with @Ignore
+        // Ignore implementations annotated with @Ignore
         if (classInfo.annotations().containsKey(IGNORE_ANNOTATION)) {
             log.debugv("Skipping ''{0}'' {1} because it''s annotated with @Ignore",
                     consideredClassName, targetClassName);
