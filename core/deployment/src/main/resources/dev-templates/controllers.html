@@ -1,0 +1,28 @@
+{#include main}
+{#style}
+.custom {
+color: gray;
+}
+{/style}
+{#title}Controllers{/title}
+{#body}
+<table class="table table-striped custom">
+  <thead class="thead-dark">
+  <tr>
+    <th scope="col">Name</th>
+    <th scope="col">Target resource</th>
+    <th scope="col">Namespace(s)</th>
+  </tr>
+  </thead>
+  <tbody>
+  {#for controller in info:controllers}
+  <tr>
+    <td>{controller.name}</td>
+    <td>{controller.resourceClass}</td>
+    <td>{controller.effectiveNamespaces}</td>
+  </tr>
+  {/for}
+  </tbody>
+</table>
+{/body}
+{/include}
