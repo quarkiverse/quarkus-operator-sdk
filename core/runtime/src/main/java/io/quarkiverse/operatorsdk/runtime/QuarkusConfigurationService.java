@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,7 @@ import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.AbstractConfigurationService;
 import io.javaoperatorsdk.operator.api.config.Cloner;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
@@ -158,5 +160,11 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
                 return Arc.container().instance(spec.getDependentResourceClass()).get();
             }
         };
+    }
+
+    @SuppressWarnings("rawtypes")
+    @Override
+    public Stream<ControllerConfiguration> controllerConfigurations() {
+        return super.controllerConfigurations();
     }
 }
