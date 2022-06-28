@@ -13,8 +13,23 @@
     <artifactId>quarkus-operator-sdk-core-parent</artifactId>
     <packaging>pom</packaging>
 
-     <modules>
-         <module>deployment</module>
-         <module>runtime</module>
-     </modules>
+    <modules>
+        <module>deployment</module>
+        <module>runtime</module>
+    </modules>
+
+    <profiles>
+        <profile>
+            <id>it</id>
+            <activation>
+                <property>
+                    <name>performRelease</name>
+                    <value>!true</value>
+                </property>
+            </activation>
+            <modules>
+                <module>integration-tests</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
