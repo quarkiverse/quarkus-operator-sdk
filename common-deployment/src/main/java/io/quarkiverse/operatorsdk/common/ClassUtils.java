@@ -54,7 +54,7 @@ public class ClassUtils {
      * Only retrieve {@link io.javaoperatorsdk.operator.api.reconciler.Reconciler} implementations that should be considered by
      * the extension, excluding the SDK's own implementations and non-processable (i.e. reconcilers that are not correctly
      * parameterized) ones.
-     * 
+     *
      * @param index the {@link IndexView} used to retrieve class informations
      * @param log a {@link Logger} used to output skipped reconcilers information
      * @return a stream of {@link ReconcilerInfo} providing information about processable reconcilers

@@ -36,7 +36,7 @@ class ContextStoredControllerConfigurations {
      *      </ul>
      *   </li>
      * </ul>
-     * 
+     *
      * Here, perform a simplified check and we request regeneration of the configuration if:
      * <ul>
      *   <li>the Reconciler class has changed</li>
@@ -44,10 +44,10 @@ class ContextStoredControllerConfigurations {
      *   <li>{@code application.properties} as a whole has changed</li>
      *   <li>any of the declared {@link io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource} classes have changed</li>
      * </ul>
-     * 
+     *
      * This could, of course, be further optimized if needed.
-     * 
-     * @param reconcilerClassName the class name associated with the Reconciler for which 
+     *
+     * @param reconcilerClassName the class name associated with the Reconciler for which
      *                            configuration generation is considered
      * @param changedClasses the set of changed class names
      * @param changedResources the set of changed resource names
