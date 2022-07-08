@@ -73,7 +73,7 @@ public class ConfigurationUtils {
      * Checks whether CRD presence should be checked on the cluster and if custom resources should be (somewhat) validated.
      * If the {@link Utils#CHECK_CRD_ENV_KEY} system property is set, this will be used, regardless of other configuration
      * options.
-     * 
+     *
      * @param validate value from the build time configuration
      * @return the value specified by {@link Utils#CHECK_CRD_ENV_KEY} if set, the value specified by the build time
      *         configuration property otherwise
