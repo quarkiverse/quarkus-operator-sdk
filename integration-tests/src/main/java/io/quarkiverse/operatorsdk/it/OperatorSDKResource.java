@@ -1,5 +1,6 @@
 package io.quarkiverse.operatorsdk.it;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -159,6 +160,11 @@ public class OperatorSDKResource {
             return dependents.stream()
                     .map(JSONDependentResourceSpec::new)
                     .collect(Collectors.toList());
+        }
+
+        @JsonProperty("maxReconciliationIntervalSeconds")
+        public long maxReconciliationIntervalSeconds() {
+            return conf.maxReconciliationInterval().map(Duration::getSeconds).orElseThrow();
         }
     }
 

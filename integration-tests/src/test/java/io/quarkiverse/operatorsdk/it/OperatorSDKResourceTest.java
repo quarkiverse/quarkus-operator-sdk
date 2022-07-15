@@ -93,7 +93,8 @@ class OperatorSDKResourceTest {
                         "customResourceClass", equalTo(resourceName),
                         "name", equalTo(TestReconciler.NAME),
                         "watchCurrentNamespace", equalTo(true),
-                        "generationAware", equalTo(false));
+                        "generationAware", equalTo(false),
+                        "maxReconciliationIntervalSeconds", equalTo(TestReconciler.INTERVAL));
     }
 
     @Test
@@ -120,15 +121,17 @@ class OperatorSDKResourceTest {
 
     @Test
     void dependentAnnotationsShouldAppearInConfiguration() {
-        final var config = given()
+        given()
                 .when()
                 .get("/operator/" + DependentDefiningReconciler.NAME + "/config")
                 .then()
                 .statusCode(200).body(
                         "dependents", hasSize(2),
-                        "dependents.dependentClass", hasItems(ReadOnlyDependentResource.class.getCanonicalName(),
+                        "dependents.dependentClass",
+                        hasItems(ReadOnlyDependentResource.class.getCanonicalName(),
                                 CRUDDependentResource.class.getCanonicalName()),
-                        "dependents.dependentConfig.labelSelector", hasItem(CRUDDependentResource.LABEL_SELECTOR));
+                        "dependents.dependentConfig.labelSelector",
+                        hasItem(CRUDDependentResource.LABEL_SELECTOR));
     }
 
     @Test

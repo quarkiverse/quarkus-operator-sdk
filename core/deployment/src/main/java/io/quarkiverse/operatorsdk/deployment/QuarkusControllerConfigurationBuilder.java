@@ -1,11 +1,13 @@
 package io.quarkiverse.operatorsdk.deployment;
 
+import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.instantiate;
 import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.loadClass;
 import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATION;
 import static io.quarkiverse.operatorsdk.common.Constants.KUBERNETES_DEPENDENT;
 import static io.quarkiverse.operatorsdk.common.Constants.KUBERNETES_DEPENDENT_RESOURCE;
 import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -13,18 +15,22 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.IndexView;
+import org.jboss.jandex.Type;
 import org.jboss.logging.Logger;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
@@ -156,6 +162,38 @@ class QuarkusControllerConfigurationBuilder {
                 resourceFullName = getFullResourceName(resourceClass);
             }
 
+            ResourceEventFilter finalFilter = null;
+            final var eventFilterTypes = ConfigurationUtils.annotationValueOrDefault(
+                    controllerAnnotation, "eventFilters",
+                    AnnotationValue::asClassArray, () -> new Type[0]);
+            if (eventFilterTypes.length > 0) {
+
+                for (Type filterType : eventFilterTypes) {
+                    final var filterClass = loadClass(filterType.name().toString(), ResourceEventFilter.class);
+                    final var filter = instantiate(filterClass);
+                    finalFilter = finalFilter == null ? filter : finalFilter.and(filter);
+                }
+            }
+
+            Duration maxReconciliationInterval = null;
+            if (controllerAnnotation != null) {
+                final var intervalFromAnnotation = ConfigurationUtils.annotationValueOrDefault(
+                        controllerAnnotation, "maxReconciliationInterval", AnnotationValue::asNested,
+                        () -> null);
+                // todo: use default value constant when available
+                final var interval = ConfigurationUtils.annotationValueOrDefault(
+                        intervalFromAnnotation, "interval", AnnotationValue::asLong,
+                        () -> MaxReconciliationInterval.DEFAULT_INTERVAL);
+                final var timeUnit = (TimeUnit) ConfigurationUtils.annotationValueOrDefault(
+                        intervalFromAnnotation,
+                        "timeUnit",
+                        av -> TimeUnit.valueOf(av.asEnum()),
+                        () -> TimeUnit.HOURS);
+                if (interval > 0) {
+                    maxReconciliationInterval = Duration.of(interval, timeUnit.toChronoUnit());
+                }
+            }
+
             final var crVersion = HasMetadata.getVersion(resourceClass);
 
             // extract the namespaces
@@ -176,7 +214,9 @@ class QuarkusControllerConfigurationBuilder {
                     getFinalizer(controllerAnnotation, resourceFullName),
                     getLabelSelector(controllerAnnotation),
                     reconcilerInfo.hasNonVoidStatus(),
-                    dependentResources.values().stream().collect(Collectors.toUnmodifiableList()));
+                    dependentResources.values().stream().collect(Collectors.toUnmodifiableList()),
+                    finalFilter,
+                    maxReconciliationInterval);
 
             log.infov(
                     "Processed ''{0}'' reconciler named ''{1}'' for ''{2}'' resource (version ''{3}'')",
