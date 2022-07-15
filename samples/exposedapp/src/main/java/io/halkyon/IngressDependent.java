@@ -8,11 +8,9 @@ import java.util.Map;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.Creator;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 
-public class IngressDependent extends KubernetesDependentResource<Ingress, ExposedApp> implements
-        Creator<Ingress, ExposedApp> {
+public class IngressDependent extends CRUDKubernetesDependentResource<Ingress, ExposedApp> {
 
     public IngressDependent() {
         super(Ingress.class);
