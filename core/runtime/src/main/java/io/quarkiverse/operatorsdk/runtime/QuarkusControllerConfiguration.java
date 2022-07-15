@@ -2,6 +2,7 @@ package io.quarkiverse.operatorsdk.runtime;
 
 import static io.quarkiverse.operatorsdk.common.ClassUtils.loadClass;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
@@ -12,10 +13,24 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
+@SuppressWarnings("rawtypes")
 public class QuarkusControllerConfiguration<R extends HasMetadata> implements ControllerConfiguration<R> {
+    // we need to create this class because Quarkus cannot reference the default implementation that
+    // JOSDK provides as it doesn't like lambdas at build time. The class also needs to be public
+    // because otherwise Quarkus isn't able to access it… :(
+    public final static class PassthroughResourceEventFilter implements ResourceEventFilter {
+        @Override
+        public boolean acceptChange(ControllerConfiguration controllerConfiguration,
+                HasMetadata hasMetadata, HasMetadata t1) {
+            return true;
+        }
+    }
+
+    private final static ResourceEventFilter DEFAULT = new PassthroughResourceEventFilter();
 
     private final String associatedReconcilerClassName;
     private final String name;
@@ -26,6 +41,8 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final String resourceClassName;
     private final Optional<String> specClassName;
     private final Optional<String> statusClassName;
+    private final ResourceEventFilter<R> eventFilter;
+    private final Optional<Duration> maxReconciliationInterval;
     private String finalizer;
     private Set<String> namespaces;
     private RetryConfiguration retryConfiguration;
@@ -34,6 +51,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private ConfigurationService parent;
 
     @RecordableConstructor
+    @SuppressWarnings("unchecked")
     public QuarkusControllerConfiguration(
             String associatedReconcilerClassName,
             String name,
@@ -41,7 +59,8 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             String crVersion, boolean generationAware,
             String resourceClassName,
             boolean registrationDelayed, Set<String> namespaces, String finalizer, String labelSelector,
-            Optional<String> specClassName, Optional<String> statusClassName) {
+            Optional<String> specClassName, Optional<String> statusClassName,
+            ResourceEventFilter<R> eventFilter, Duration maxReconciliationInterval) {
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
         this.resourceTypeName = resourceTypeName;
@@ -55,6 +74,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.labelSelector = labelSelector;
         this.specClassName = specClassName;
         this.statusClassName = statusClassName;
+        this.eventFilter = eventFilter != null ? eventFilter : DEFAULT;
+        this.maxReconciliationInterval = maxReconciliationInterval != null ? Optional.of(maxReconciliationInterval)
+                : ControllerConfiguration.super.reconciliationMaxInterval();
     }
 
     public static Set<String> asSet(String[] namespaces) {
@@ -164,5 +186,24 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     public Optional<String> getStatusClassName() {
         return statusClassName;
+    }
+
+    @Override
+    public ResourceEventFilter<R> getEventFilter() {
+        return eventFilter;
+    }
+
+    @Override
+    public Optional<Duration> reconciliationMaxInterval() {
+        return maxReconciliationInterval();
+    }
+
+    public Optional<Duration> maxReconciliationInterval() {
+        return maxReconciliationInterval;
+    }
+
+    // for Quarkus' RecordableConstructor
+    public Duration getMaxReconciliationInterval() {
+        return maxReconciliationInterval.orElseThrow();
     }
 }

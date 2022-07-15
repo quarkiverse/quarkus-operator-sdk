@@ -1,5 +1,6 @@
 package io.quarkiverse.operatorsdk.deployment;
 
+import static io.quarkiverse.operatorsdk.common.ClassUtils.instantiate;
 import static io.quarkiverse.operatorsdk.common.ClassUtils.loadClass;
 import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATION;
 import static io.quarkiverse.operatorsdk.common.Constants.CUSTOM_RESOURCE;
@@ -7,10 +8,12 @@ import static io.quarkiverse.operatorsdk.common.Constants.RECONCILER;
 import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.lang.annotation.Annotation;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
@@ -23,6 +26,7 @@ import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
+import org.jboss.jandex.Type;
 import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,6 +37,7 @@ import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.ResourceInfo;
@@ -368,6 +373,37 @@ class OperatorSDKProcessor {
                 resourceFullName = getFullResourceName(resourceClass);
             }
 
+            ResourceEventFilter finalFilter = null;
+            final var eventFilterTypes = ConfigurationUtils.annotationValueOrDefault(
+                    controllerAnnotation, "eventFilters",
+                    AnnotationValue::asClassArray, () -> new Type[0]);
+            if (eventFilterTypes.length > 0) {
+
+                for (Type filterType : eventFilterTypes) {
+                    final var filterClass = (Class<? extends ResourceEventFilter>) loadClass(filterType.name().toString());
+                    final var filter = instantiate(filterClass);
+                    finalFilter = finalFilter == null ? filter : finalFilter.and(filter);
+                }
+            }
+
+            Duration maxReconciliationInterval = null;
+            if (controllerAnnotation != null) {
+                final var reconciliationMaxInterval = ConfigurationUtils.annotationValueOrDefault(
+                        controllerAnnotation, "reconciliationMaxInterval", AnnotationValue::asNested,
+                        () -> null);
+                // todo: use default value constant when available
+                final var interval = ConfigurationUtils.annotationValueOrDefault(
+                        reconciliationMaxInterval, "interval", AnnotationValue::asLong, () -> 10L);
+                final var timeUnit = (TimeUnit) ConfigurationUtils.annotationValueOrDefault(
+                        reconciliationMaxInterval,
+                        "timeUnit",
+                        av -> TimeUnit.valueOf(av.asEnum()),
+                        () -> TimeUnit.HOURS);
+                if (interval > 0) {
+                    maxReconciliationInterval = Duration.of(interval, timeUnit.toChronoUnit());
+                }
+            }
+
             final var crVersion = HasMetadata.getVersion(resourceClass);
 
             // create the configuration
@@ -383,7 +419,8 @@ class OperatorSDKProcessor {
                     getFinalizer(controllerAnnotation, resourceFullName),
                     getLabelSelector(controllerAnnotation),
                     Optional.ofNullable(specClassName),
-                    Optional.ofNullable(statusClassName));
+                    Optional.ofNullable(statusClassName),
+                    finalFilter, maxReconciliationInterval);
 
             log.infov(
                     "Processed ''{0}'' reconciler named ''{1}'' for ''{2}'' resource (version ''{3}'')",

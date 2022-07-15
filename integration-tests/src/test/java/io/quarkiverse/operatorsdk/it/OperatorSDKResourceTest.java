@@ -83,7 +83,8 @@ class OperatorSDKResourceTest {
                         "name", equalTo(TestReconciler.NAME),
                         "useFinalizer", equalTo(false),
                         "watchCurrentNamespace", equalTo(true),
-                        "generationAware", equalTo(false));
+                        "generationAware", equalTo(false),
+                        "maxReconciliationIntervalSeconds", equalTo(TestReconciler.INTERVAL));
     }
 
     @Test

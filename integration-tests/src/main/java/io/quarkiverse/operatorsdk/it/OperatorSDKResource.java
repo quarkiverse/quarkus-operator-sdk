@@ -1,5 +1,6 @@
 package io.quarkiverse.operatorsdk.it;
 
+import java.time.Duration;
 import java.util.Set;
 
 import javax.enterprise.event.Event;
@@ -119,7 +120,7 @@ public class OperatorSDKResource {
 
     static class JSONControllerConfiguration {
 
-        private final ControllerConfiguration conf;
+        private final ControllerConfiguration<?> conf;
 
         public JSONControllerConfiguration(ControllerConfiguration conf) {
             this.conf = conf;
@@ -180,6 +181,11 @@ public class OperatorSDKResource {
 
         public String getLabelSelector() {
             return conf.getLabelSelector();
+        }
+
+        @JsonProperty("maxReconciliationIntervalSeconds")
+        public long maxReconciliationIntervalSeconds() {
+            return conf.reconciliationMaxInterval().map(Duration::getSeconds).orElseThrow();
         }
     }
 }
