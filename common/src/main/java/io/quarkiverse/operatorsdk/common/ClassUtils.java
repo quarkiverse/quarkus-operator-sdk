@@ -3,6 +3,7 @@ package io.quarkiverse.operatorsdk.common;
 import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER;
 import static io.quarkiverse.operatorsdk.common.Constants.RECONCILER;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.stream.Stream;
 
@@ -20,6 +21,14 @@ public class ClassUtils {
             return Thread.currentThread().getContextClassLoader().loadClass(className);
         } catch (Exception e) {
             throw new IllegalArgumentException("Couldn't find class " + className, e);
+        }
+    }
+
+    public static <T> T instantiate(Class<T> toInstantiate) {
+        try {
+            return toInstantiate.getConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            throw new IllegalArgumentException("Couldn't instantiate " + toInstantiate.getName(), e);
         }
     }
 
