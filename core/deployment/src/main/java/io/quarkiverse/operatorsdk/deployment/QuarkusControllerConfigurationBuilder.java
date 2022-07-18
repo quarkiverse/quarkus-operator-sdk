@@ -30,11 +30,21 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
+import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
+import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration.DefaultRateLimiter;
 import io.quarkiverse.operatorsdk.runtime.QuarkusDependentResourceSpec;
 import io.quarkiverse.operatorsdk.runtime.QuarkusKubernetesDependentResourceConfig;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
@@ -162,12 +172,12 @@ class QuarkusControllerConfigurationBuilder {
                 resourceFullName = getFullResourceName(resourceClass);
             }
 
+            // deal with event filters
             ResourceEventFilter finalFilter = null;
             final var eventFilterTypes = ConfigurationUtils.annotationValueOrDefault(
                     controllerAnnotation, "eventFilters",
                     AnnotationValue::asClassArray, () -> new Type[0]);
             if (eventFilterTypes.length > 0) {
-
                 for (Type filterType : eventFilterTypes) {
                     final var filterClass = loadClass(filterType.name().toString(), ResourceEventFilter.class);
                     final var filter = instantiate(filterClass);
@@ -176,6 +186,11 @@ class QuarkusControllerConfigurationBuilder {
             }
 
             Duration maxReconciliationInterval = null;
+            OnAddFilter onAddFilter = null;
+            OnUpdateFilter onUpdateFilter = null;
+            GenericFilter genericFilter = null;
+            Retry retry = null;
+            RateLimiter rateLimiter = null;
             if (controllerAnnotation != null) {
                 final var intervalFromAnnotation = ConfigurationUtils.annotationValueOrDefault(
                         controllerAnnotation, "maxReconciliationInterval", AnnotationValue::asNested,
@@ -192,6 +207,21 @@ class QuarkusControllerConfigurationBuilder {
                 if (interval > 0) {
                     maxReconciliationInterval = Duration.of(interval, timeUnit.toChronoUnit());
                 }
+
+                onAddFilter = ConfigurationUtils.instantiateImplementationClass(
+                        controllerAnnotation, "onAddFilter", OnAddFilter.class, VoidOnAddFilter.class, index);
+                onUpdateFilter = ConfigurationUtils.instantiateImplementationClass(
+                        controllerAnnotation, "onUpdateFilter", OnUpdateFilter.class, VoidOnUpdateFilter.class,
+                        index);
+                genericFilter = ConfigurationUtils.instantiateImplementationClass(
+                        controllerAnnotation, "genericFilter", GenericFilter.class, VoidGenericFilter.class,
+                        index);
+                retry = ConfigurationUtils.instantiateImplementationClass(
+                        controllerAnnotation, "retry", Retry.class, GenericRetry.class,
+                        index);
+                rateLimiter = ConfigurationUtils.instantiateImplementationClass(
+                        controllerAnnotation, "rateLimiter", RateLimiter.class, DefaultRateLimiter.class,
+                        index);
             }
 
             final var crVersion = HasMetadata.getVersion(resourceClass);
@@ -216,7 +246,8 @@ class QuarkusControllerConfigurationBuilder {
                     reconcilerInfo.hasNonVoidStatus(),
                     dependentResources.values().stream().collect(Collectors.toUnmodifiableList()),
                     finalFilter,
-                    maxReconciliationInterval);
+                    maxReconciliationInterval,
+                    onAddFilter, onUpdateFilter, genericFilter, retry, rateLimiter);
 
             log.infov(
                     "Processed ''{0}'' reconciler named ''{1}'' for ''{2}'' resource (version ''{3}'')",
@@ -249,14 +280,10 @@ class QuarkusControllerConfigurationBuilder {
                 final var dependentAnnotations = dependents.asNestedArray();
                 dependentResources = new LinkedHashMap<>(dependentAnnotations.length);
                 for (AnnotationInstance dependentConfig : dependentAnnotations) {
-                    final var dependentTypeDN = dependentConfig.value("type").asClass().name();
-                    final var dependentType = index.getClassByName(dependentTypeDN);
-                    if (!dependentType.hasNoArgsConstructor()) {
-                        throw new IllegalArgumentException(
-                                "DependentResource implementations must provide a no-arg constructor for instantiation purposes");
-                    }
+                    final var dependentType = ConfigurationUtils.getClassInfoForInstantiation(dependentConfig.value("type"),
+                            DependentResource.class, index);
 
-                    final var dependentTypeName = dependentTypeDN.toString();
+                    final var dependentTypeName = dependentType.name().toString();
                     final var dependentClass = loadClass(dependentTypeName, DependentResource.class);
 
                     // further process Kubernetes dependents

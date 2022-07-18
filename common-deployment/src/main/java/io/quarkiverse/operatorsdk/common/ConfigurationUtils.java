@@ -9,6 +9,7 @@ import java.util.function.Supplier;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
+import org.jboss.jandex.IndexView;
 
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Utils;
@@ -67,6 +68,45 @@ public class ConfigurationUtils {
                 :
                 // get default
                 defaultValue.get();
+    }
+
+    public static <T> ClassInfo getClassInfoForInstantiation(AnnotationValue toInstantiate,
+            Class<T> interfaceClass,
+            IndexView index) {
+        final var expectedTypeDN = toInstantiate.asClass().name();
+        final var expectedTypeInfo = index.getClassByName(expectedTypeDN);
+        if (!expectedTypeInfo.hasNoArgsConstructor()) {
+            throw new IllegalArgumentException(interfaceClass.getSimpleName() +
+                    " implementations must provide a no-arg constructor for instantiation purposes");
+        }
+        return expectedTypeInfo;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T instantiateImplementationClass(
+            AnnotationInstance annotation,
+            String annotationFieldName,
+            Class<T> interfaceClass,
+            Class<? extends T> defaultImplementation,
+            IndexView index) {
+        final var implementationClass = annotation != null
+                ?
+                // get converted annotation value of get default
+                Optional.ofNullable(annotation.value(annotationFieldName))
+                        .map(av -> {
+                            final var expectedTypeInfo = getClassInfoForInstantiation(av,
+                                    interfaceClass,
+                                    index);
+
+                            final var typeName = expectedTypeInfo.name().toString();
+                            return ClassLoadingUtils.loadClass(typeName,
+                                    interfaceClass);
+                        })
+                        .orElse((Class<T>) defaultImplementation)
+                :
+                // get default
+                defaultImplementation;
+        return ClassLoadingUtils.instantiate(implementationClass);
     }
 
     /**

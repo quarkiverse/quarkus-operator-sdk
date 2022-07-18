@@ -25,6 +25,10 @@
       <artifactId>operator-framework-core</artifactId>
     </dependency>
     <dependency>
+      <groupId>io.quarkiverse.operatorsdk</groupId>
+      <artifactId>quarkus-operator-sdk-common</artifactId>
+    </dependency>
+    <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-core-deployment</artifactId>
     </dependency>
