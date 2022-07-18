@@ -13,8 +13,12 @@ import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.processing.Controller;
+import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
@@ -36,6 +40,20 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     private final static ResourceEventFilter DEFAULT = new PassthroughResourceEventFilter();
 
+    // Needed by Quarkus because LinearRateLimiter doesn't expose setters for byte recording
+    public final static class DefaultRateLimiter extends LinearRateLimiter {
+
+        public DefaultRateLimiter() {
+            super();
+        }
+
+        @RecordableConstructor
+        @SuppressWarnings("unused")
+        public DefaultRateLimiter(Duration refreshPeriod, int limitForPeriod) {
+            super(refreshPeriod, limitForPeriod);
+        }
+    }
+
     private final String associatedReconcilerClassName;
     private final String name;
     private final String resourceTypeName;
@@ -46,6 +64,11 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final Class<R> resourceClass;
     private final ResourceEventFilter<R> eventFilter;
     private final Optional<Duration> maxReconciliationInterval;
+    private final Optional<OnAddFilter<R>> onAddFilter;
+    private final Optional<OnUpdateFilter<R>> onUpdateFilter;
+    private final Optional<GenericFilter<R>> genericFilter;
+    private final Retry retry;
+    private final RateLimiter rateLimiter;
     private String finalizer;
     private Set<String> namespaces;
     private RetryConfiguration retryConfiguration;
@@ -61,7 +84,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             Class<R> resourceClass, Set<String> namespaces, String finalizerName, String labelSelector,
             boolean statusPresentAndNotVoid,
             List<DependentResourceSpec> dependentResources, ResourceEventFilter<R> eventFilter,
-            Duration maxReconciliationInterval) {
+            Duration maxReconciliationInterval,
+            OnAddFilter<R> onAddFilter, OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter, Retry retry,
+            RateLimiter rateLimiter) {
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
         this.resourceTypeName = resourceTypeName;
@@ -77,6 +102,12 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.eventFilter = eventFilter != null ? eventFilter : DEFAULT;
         this.maxReconciliationInterval = maxReconciliationInterval != null ? Optional.of(maxReconciliationInterval)
                 : ControllerConfiguration.super.maxReconciliationInterval();
+        this.onAddFilter = Optional.ofNullable(onAddFilter);
+        this.onUpdateFilter = Optional.ofNullable(onUpdateFilter);
+        this.genericFilter = Optional.ofNullable(genericFilter);
+        this.retry = retry != null ? retry : ControllerConfiguration.super.getRetry();
+        this.rateLimiter = rateLimiter != null ? rateLimiter
+                : new DefaultRateLimiter();
     }
 
     @Override
@@ -166,12 +197,12 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     @Override
     public Retry getRetry() {
-        return ControllerConfiguration.super.getRetry();
+        return retry;
     }
 
     @Override
     public RateLimiter getRateLimiter() {
-        return ControllerConfiguration.super.getRateLimiter();
+        return rateLimiter;
     }
 
     @Override
@@ -184,7 +215,42 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     }
 
     // for Quarkus' RecordableConstructor
+    @SuppressWarnings("unused")
     public Duration getMaxReconciliationInterval() {
         return maxReconciliationInterval.orElseThrow();
     }
+
+    // for Quarkus' RecordableConstructor
+    @SuppressWarnings("unused")
+    public OnAddFilter<R> getOnAddFilter() {
+        return onAddFilter.orElse(null);
+    }
+
+    @Override
+    public Optional<OnAddFilter<R>> onAddFilter() {
+        return onAddFilter;
+    }
+
+    // for Quarkus' RecordableConstructor
+    @SuppressWarnings("unused")
+    public OnUpdateFilter<R> getOnUpdateFilter() {
+        return onUpdateFilter.orElse(null);
+    }
+
+    @Override
+    public Optional<OnUpdateFilter<R>> onUpdateFilter() {
+        return onUpdateFilter;
+    }
+
+    // for Quarkus' RecordableConstructor
+    @SuppressWarnings("unused")
+    public GenericFilter<R> getGenericFilter() {
+        return genericFilter.orElse(null);
+    }
+
+    @Override
+    public Optional<GenericFilter<R>> genericFilter() {
+        return genericFilter;
+    }
+
 }
