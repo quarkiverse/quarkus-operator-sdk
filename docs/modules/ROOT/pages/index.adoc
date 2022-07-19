@@ -18,7 +18,6 @@ This extension integrates the https://javaoperatorsdk.io[Java Operator SDK] proj
 * Only re-generates the CRDs if a change impacting its generation is detected
 * Only re-processes a reconciler's configuration if needed
 * Automatically apply the CRD to the cluster when it has changed
-- Automatically generates CDI observers to allow for delayed registration of reconcilers (for example, to wait until some external resource is available)
 - Supports micrometer registry extensions (adding a Quarkus-supported micrometer registry extension will automatically inject said registry into the operator)
 - Automatically adds a SmallRye health check
 - Can easily generate a Docker image via JIB
