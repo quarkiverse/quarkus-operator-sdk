@@ -7,6 +7,8 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
+// Note that this reconciler implementation and its dependents are not meant to be realistic but
+// rather exercise some of the features
 @ControllerConfiguration(name = DependentDefiningReconciler.NAME, dependents = {
         @Dependent(type = ReadOnlyDependentResource.class),
         @Dependent(type = CRUDDependentResource.class)
