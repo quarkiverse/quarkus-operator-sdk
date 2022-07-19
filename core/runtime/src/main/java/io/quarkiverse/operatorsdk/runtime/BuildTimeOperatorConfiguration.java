@@ -29,12 +29,6 @@ public class BuildTimeOperatorConfiguration {
     @ConfigItem(defaultValue = "true")
     public Optional<Boolean> generationAware;
 
-    /**
-     * The optional fully qualified name of a CDI event class that controllers will wait for before
-     * registering with the Operator. Sets the default value for all controllers.
-     */
-    @ConfigItem
-    public Optional<String> delayRegistrationUntilEvent;
 
     /**
      * Whether Role-Based Access Control (RBAC) resources should be generated in the kubernetes manifests.

@@ -14,11 +14,4 @@ public class BuildTimeControllerConfiguration {
      */
     @ConfigItem(defaultValue = "true")
     public Optional<Boolean> generationAware;
-
-    /**
-     * The optional fully qualified name of a CDI event class that the controller will wait for before
-     * registering with the Operator.
-     */
-    public Optional<String> delayRegistrationUntilEvent;
-
 }
