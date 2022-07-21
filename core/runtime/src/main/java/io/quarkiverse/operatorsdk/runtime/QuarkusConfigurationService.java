@@ -157,7 +157,13 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
         return new DependentResourceFactory() {
             @Override
             public <T extends DependentResource<?, ?>> T createFrom(DependentResourceSpec<T, ?> spec) {
-                return Arc.container().instance(spec.getDependentResourceClass()).get();
+                final var dependentResourceClass = spec.getDependentResourceClass();
+                final var dependent = Arc.container().instance(dependentResourceClass).get();
+                if (dependent == null) {
+                    throw new IllegalStateException(
+                            "Couldn't find bean associated with DependentResource " + dependentResourceClass.getName());
+                }
+                return dependent;
             }
         };
     }

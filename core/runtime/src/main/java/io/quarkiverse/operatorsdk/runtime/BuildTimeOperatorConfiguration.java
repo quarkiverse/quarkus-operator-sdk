@@ -29,7 +29,6 @@ public class BuildTimeOperatorConfiguration {
     @ConfigItem(defaultValue = "true")
     public Optional<Boolean> generationAware;
 
-
     /**
      * Whether Role-Based Access Control (RBAC) resources should be generated in the kubernetes manifests.
      */
