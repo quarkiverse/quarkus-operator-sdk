@@ -1,6 +1,6 @@
 package io.quarkiverse.operatorsdk.deployment.devconsole;
 
-import io.quarkiverse.operatorsdk.runtime.devconsole.ControllerConfigurationSupplier;
+import io.quarkiverse.operatorsdk.runtime.devconsole.ControllersSupplier;
 import io.quarkus.deployment.IsDevelopment;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.pkg.builditem.CurateOutcomeBuildItem;
@@ -12,7 +12,7 @@ public class DevConsoleProcessor {
     @BuildStep(onlyIf = IsDevelopment.class)
     public DevConsoleRuntimeTemplateInfoBuildItem exposeControllerConfigurations(
             CurateOutcomeBuildItem curateOutcomeBI) {
-        return new DevConsoleRuntimeTemplateInfoBuildItem("controllers", new ControllerConfigurationSupplier(), this.getClass(),
+        return new DevConsoleRuntimeTemplateInfoBuildItem("controllers", new ControllersSupplier(), this.getClass(),
                 curateOutcomeBI);
     }
 }

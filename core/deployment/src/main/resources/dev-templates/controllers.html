@@ -12,6 +12,8 @@ color: gray;
     <th scope="col">Name</th>
     <th scope="col">Target resource</th>
     <th scope="col">Namespace(s)</th>
+    <th scope="col">Event Sources</th>
+    <th scope="col">Known Resources</th>
   </tr>
   </thead>
   <tbody>
@@ -20,6 +22,26 @@ color: gray;
     <td>{controller.name}</td>
     <td>{controller.resourceClass}</td>
     <td>{controller.effectiveNamespaces}</td>
+    <td>
+      <ul>
+        {#for eventSource in controller.eventSources}
+        <li>{eventSource.resourceType}:
+          <ul>
+            {#for item in eventSource.items}
+            <li>{item}</li>
+            {/for}
+          </ul>
+        </li>
+        {/for}
+      </ul>
+    </td>
+    <td>
+      <ul>
+        {#for resource in controller.knownResources}
+        <li>{resource}</li>
+        {/for}
+      </ul>
+    </td>
   </tr>
   {/for}
   </tbody>
