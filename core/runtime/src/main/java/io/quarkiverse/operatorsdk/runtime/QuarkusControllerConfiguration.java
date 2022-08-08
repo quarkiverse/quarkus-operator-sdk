@@ -34,7 +34,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         @Override
         public boolean acceptChange(Controller controller, HasMetadata hasMetadata,
                 HasMetadata p1) {
-            return false;
+            return true;
         }
     }
 
