@@ -6,6 +6,7 @@ import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.inject.Singleton;
@@ -16,6 +17,7 @@ import org.jboss.logging.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.Constants;
@@ -132,12 +134,17 @@ class OperatorSDKProcessor {
         final var crdGeneration = new CRDGeneration(generate);
         final var index = combinedIndexBuildItem.getIndex();
 
+        final var configurableInfos = ClassUtils.getProcessableExtensionsOf(Constants.ANNOTATION_CONFIGURABLE,
+                index, log)
+                .map(AnnotationConfigurableAugmentedClassInfo.class::cast)
+                .collect(Collectors.toMap(ac -> ac.classInfo().name().toString(), Function.identity()));
+
         final var builder = new QuarkusControllerConfigurationBuilder(additionalBeans,
                 index, crdGeneration, liveReload, buildTimeConfiguration);
         final var controllerConfigs = ClassUtils.getKnownReconcilers(index, log)
                 // register strongly reconciler-associated classes that need reflective access
                 .peek(fci -> registerAssociatedClassesForReflection(reflectionClasses, forcedReflectionClasses, fci))
-                .map(builder::build)
+                .map(raci -> builder.build(raci, configurableInfos))
                 .collect(Collectors.toList());
 
         // register strongly classes associated with dependent resources as well

@@ -22,8 +22,10 @@ import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
+import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 
+@SuppressWarnings("unused")
 @Path("/operator")
 public class OperatorSDKResource {
 
@@ -147,6 +149,10 @@ public class OperatorSDKResource {
 
         public RetryConfiguration getRetryConfiguration() {
             return conf.getRetryConfiguration();
+        }
+
+        public Retry getRetry() {
+            return conf.getRetry();
         }
 
         public String getLabelSelector() {

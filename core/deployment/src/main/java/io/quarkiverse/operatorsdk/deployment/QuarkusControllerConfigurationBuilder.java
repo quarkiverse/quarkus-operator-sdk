@@ -43,6 +43,8 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnDeleteFi
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
+import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.common.ClassLoadingUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
@@ -79,7 +81,8 @@ class QuarkusControllerConfigurationBuilder {
     }
 
     @SuppressWarnings("unchecked")
-    QuarkusControllerConfiguration build(ReconcilerAugmentedClassInfo reconcilerInfo) {
+    QuarkusControllerConfiguration build(ReconcilerAugmentedClassInfo reconcilerInfo,
+            Map<String, AnnotationConfigurableAugmentedClassInfo> configurableInfos) {
         final var primaryTypeDN = reconcilerInfo.primaryTypeName();
         final var primaryTypeName = primaryTypeDN.toString();
 
@@ -193,7 +196,9 @@ class QuarkusControllerConfigurationBuilder {
             OnUpdateFilter onUpdateFilter = null;
             GenericFilter genericFilter = null;
             Retry retry = null;
+            Class<?> retryConfigurationClass = null;
             RateLimiter rateLimiter = null;
+            Class<?> rateLimiterConfigurationClass = null;
             if (controllerAnnotation != null) {
                 final var intervalFromAnnotation = ConfigurationUtils.annotationValueOrDefault(
                         controllerAnnotation, "maxReconciliationInterval", AnnotationValue::asNested,
@@ -221,10 +226,14 @@ class QuarkusControllerConfigurationBuilder {
                         index);
                 retry = ConfigurationUtils.instantiateImplementationClass(
                         controllerAnnotation, "retry", Retry.class, GenericRetry.class,
-                        index);
+                        false, index);
+                final var retryConfigurableInfo = configurableInfos.get(retry.getClass().getName());
+                retryConfigurationClass = getConfigurationClass(reconcilerInfo, retryConfigurableInfo);
                 rateLimiter = ConfigurationUtils.instantiateImplementationClass(
                         controllerAnnotation, "rateLimiter", RateLimiter.class, DefaultRateLimiter.class,
-                        index);
+                        false, index);
+                final var rateLimiterConfigurableInfo = configurableInfos.get(rateLimiter.getClass().getName());
+                rateLimiterConfigurationClass = getConfigurationClass(reconcilerInfo, rateLimiterConfigurableInfo);
             }
 
             final var crVersion = HasMetadata.getVersion(resourceClass);
@@ -250,7 +259,8 @@ class QuarkusControllerConfigurationBuilder {
                     dependentResources.values().stream().collect(Collectors.toUnmodifiableList()),
                     finalFilter,
                     maxReconciliationInterval,
-                    onAddFilter, onUpdateFilter, genericFilter, retry, rateLimiter);
+                    onAddFilter, onUpdateFilter, genericFilter, retry, retryConfigurationClass, rateLimiter,
+                    rateLimiterConfigurationClass);
 
             log.infov(
                     "Processed ''{0}'' reconciler named ''{1}'' for ''{2}'' resource (version ''{3}'')",
@@ -268,6 +278,18 @@ class QuarkusControllerConfigurationBuilder {
         liveReload.setContextObject(ContextStoredControllerConfigurations.class, storedConfigurations);
 
         return configuration;
+    }
+
+    private static Class<?> getConfigurationClass(ReconcilerAugmentedClassInfo reconcilerInfo,
+            AnnotationConfigurableAugmentedClassInfo configurableInfo) {
+        if (configurableInfo != null) {
+            final var associatedConfigurationClass = configurableInfo.getAssociatedConfigurationClass();
+            if (reconcilerInfo.classInfo().annotationsMap().containsKey(associatedConfigurationClass)) {
+                return ClassLoadingUtils
+                        .loadClass(associatedConfigurationClass.toString(), Object.class);
+            }
+        }
+        return null;
     }
 
     @SuppressWarnings("unchecked")
@@ -359,12 +381,10 @@ class QuarkusControllerConfigurationBuilder {
                             Condition.class, true, index);
                     final var reconcilePrecondition = ConfigurationUtils.instantiateImplementationClass(
                             dependentConfig, "reconcilePrecondition", Condition.class,
-                            Condition.class, true,
-                            index);
+                            Condition.class, true, index);
                     final var deletePostcondition = ConfigurationUtils.instantiateImplementationClass(
                             dependentConfig, "deletePostcondition", Condition.class,
-                            Condition.class, true,
-                            index);
+                            Condition.class, true, index);
 
                     dependentResources.put(name, new QuarkusDependentResourceSpec(dependentClass, cfg, name, dependsOn,
                             readyCondition, reconcilePrecondition, deletePostcondition));
