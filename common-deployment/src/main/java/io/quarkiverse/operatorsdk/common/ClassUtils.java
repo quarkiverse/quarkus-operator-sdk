@@ -1,5 +1,6 @@
 package io.quarkiverse.operatorsdk.common;
 
+import static io.quarkiverse.operatorsdk.common.Constants.ANNOTATION_CONFIGURABLE;
 import static io.quarkiverse.operatorsdk.common.Constants.DEPENDENT_RESOURCE;
 import static io.quarkiverse.operatorsdk.common.Constants.RECONCILER;
 
@@ -40,6 +41,8 @@ public class ClassUtils {
                         return new ReconcilerAugmentedClassInfo(classInfo);
                     } else if (DEPENDENT_RESOURCE.equals(extendedOrImplementedClass)) {
                         return new DependentResourceAugmentedClassInfo(classInfo);
+                    } else if (ANNOTATION_CONFIGURABLE.equals(extendedOrImplementedClass)) {
+                        return new AnnotationConfigurableAugmentedClassInfo(classInfo);
                     } else {
                         throw new IllegalArgumentException("Don't know how to process " + extendedOrImplementedClass);
                     }
