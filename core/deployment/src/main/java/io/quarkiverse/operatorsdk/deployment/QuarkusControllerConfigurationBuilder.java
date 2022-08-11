@@ -30,6 +30,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
@@ -318,7 +319,27 @@ class QuarkusControllerConfigurationBuilder {
                         throw new IllegalArgumentException(
                                 "A DependentResource named: " + name + " already exists: " + spec);
                     }
-                    dependentResources.put(name, new QuarkusDependentResourceSpec(dependentClass, cfg, name));
+
+                    final var dependsOnField = dependentConfig.value("dependsOn");
+                    final var dependsOn = Optional.ofNullable(dependsOnField)
+                            .map(AnnotationValue::asStringArray)
+                            .filter(array -> array.length > 0)
+                            .map(Set::of).orElse(Collections.emptySet());
+
+                    final var readyCondition = ConfigurationUtils.instantiateImplementationClass(
+                            dependentConfig, "readyPostcondition", Condition.class,
+                            Condition.class, true, index);
+                    final var reconcilePrecondition = ConfigurationUtils.instantiateImplementationClass(
+                            dependentConfig, "reconcilePrecondition", Condition.class,
+                            Condition.class, true,
+                            index);
+                    final var deletePostcondition = ConfigurationUtils.instantiateImplementationClass(
+                            dependentConfig, "deletePostcondition", Condition.class,
+                            Condition.class, true,
+                            index);
+
+                    dependentResources.put(name, new QuarkusDependentResourceSpec(dependentClass, cfg, name, dependsOn,
+                            readyCondition, reconcilePrecondition, deletePostcondition));
 
                     additionalBeans.produce(
                             AdditionalBeanBuildItem.builder()
