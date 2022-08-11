@@ -108,6 +108,7 @@ class OperatorSDKResourceTest {
                         "finalizer", equalTo("from-property/finalizer"),
                         "namespaces", hasItem("bar"),
                         "retryConfiguration.maxAttempts", equalTo(10),
+                        "retry.maxAttempts", equalTo(ConfiguredReconciler.MAX_ATTEMPTS),
                         "retryConfiguration.initialInterval", equalTo(20000),
                         "labelSelector", equalTo("environment=production,tier!=frontend"));
 

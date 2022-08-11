@@ -1,5 +1,6 @@
 package io.quarkiverse.operatorsdk.runtime;
 
+import java.lang.annotation.Annotation;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -8,10 +9,12 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -68,7 +71,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final Optional<OnUpdateFilter<R>> onUpdateFilter;
     private final Optional<GenericFilter<R>> genericFilter;
     private final Retry retry;
+    private final Class<? extends Annotation> retryConfigurationClass;
     private final RateLimiter rateLimiter;
+    private final Class<? extends Annotation> rateLimiterConfigurationClass;
     private String finalizer;
     private Set<String> namespaces;
     private RetryConfiguration retryConfiguration;
@@ -85,8 +90,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             boolean statusPresentAndNotVoid,
             List<DependentResourceSpec> dependentResources, ResourceEventFilter<R> eventFilter,
             Duration maxReconciliationInterval,
-            OnAddFilter<R> onAddFilter, OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter, Retry retry,
-            RateLimiter rateLimiter) {
+            OnAddFilter<R> onAddFilter, OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter,
+            Retry retry, Class<? extends Annotation> retryConfigurationClass,
+            RateLimiter rateLimiter, Class<? extends Annotation> rateLimiterConfigurationClass) {
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
         this.resourceTypeName = resourceTypeName;
@@ -106,8 +112,10 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.onUpdateFilter = Optional.ofNullable(onUpdateFilter);
         this.genericFilter = Optional.ofNullable(genericFilter);
         this.retry = retry != null ? retry : ControllerConfiguration.super.getRetry();
+        this.retryConfigurationClass = retryConfigurationClass;
         this.rateLimiter = rateLimiter != null ? rateLimiter
                 : new DefaultRateLimiter();
+        this.rateLimiterConfigurationClass = rateLimiterConfigurationClass;
     }
 
     @Override
@@ -253,4 +261,36 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return genericFilter;
     }
 
+    void initAnnotationConfigurables(Reconciler<R> reconciler) {
+        // todo: investigate if/how this could be done at build time
+        final Class<? extends Reconciler> reconcilerClass = reconciler.getClass();
+        if (retryConfigurationClass != null) {
+            configure(reconcilerClass, retryConfigurationClass, (AnnotationConfigurable) retry);
+        }
+
+        if (rateLimiterConfigurationClass != null) {
+            configure(reconcilerClass, rateLimiterConfigurationClass, (AnnotationConfigurable) rateLimiter);
+        }
+    }
+
+    // Needed for the recordable constructor
+    @SuppressWarnings("unused")
+    public Class<? extends Annotation> getRetryConfigurationClass() {
+        return retryConfigurationClass;
+    }
+
+    // Needed for the recordable constructor
+    @SuppressWarnings("unused")
+    public Class<? extends Annotation> getRateLimiterConfigurationClass() {
+        return rateLimiterConfigurationClass;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void configure(Class<? extends Reconciler> reconcilerClass, Class<? extends Annotation> configurationClass,
+            AnnotationConfigurable configurable) {
+        if (configurationClass != null) {
+            var annotation = reconcilerClass.getAnnotation(configurationClass);
+            configurable.initFrom(annotation);
+        }
+    }
 }

@@ -19,7 +19,7 @@ public class QuarkusDependentResourceSpec<T extends DependentResource<?, ?>, C> 
                 reconcileCondition, deletePostCondition);
     }
 
-    // For Quarkus RecordableConstructor
+    // Needed for the recordable constructor
     @SuppressWarnings("unused")
     public C getDependentResourceConfig() {
         return super.getDependentResourceConfiguration().orElse(null);
