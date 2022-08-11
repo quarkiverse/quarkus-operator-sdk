@@ -82,13 +82,25 @@ public class ConfigurationUtils {
         return expectedTypeInfo;
     }
 
-    @SuppressWarnings("unchecked")
     public static <T> T instantiateImplementationClass(
             AnnotationInstance annotation,
             String annotationFieldName,
             Class<T> interfaceClass,
             Class<? extends T> defaultImplementation,
             IndexView index) {
+        return instantiateImplementationClass(annotation, annotationFieldName, interfaceClass, defaultImplementation, false,
+                index);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T instantiateImplementationClass(
+            AnnotationInstance annotation,
+            String annotationFieldName,
+            Class<T> interfaceClass,
+            Class<? extends T> defaultImplementation,
+            boolean returnNullIfDefault,
+            IndexView index) {
+        defaultImplementation = returnNullIfDefault ? null : defaultImplementation;
         final var implementationClass = annotation != null
                 ?
                 // get converted annotation value of get default
@@ -106,6 +118,9 @@ public class ConfigurationUtils {
                 :
                 // get default
                 defaultImplementation;
+        if (returnNullIfDefault && implementationClass == null) {
+            return null;
+        }
         return ClassLoadingUtils.instantiate(implementationClass);
     }
 
