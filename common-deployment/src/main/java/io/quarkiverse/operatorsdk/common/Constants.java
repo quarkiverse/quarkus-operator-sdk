@@ -4,6 +4,7 @@ import org.jboss.jandex.DotName;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -25,4 +26,7 @@ public class Constants {
     public static final DotName KUBERNETES_DEPENDENT = DotName.createSimple(KubernetesDependent.class.getName());
 
     public static final DotName DEPENDENT_RESOURCE = DotName.createSimple(DependentResource.class.getName());
+
+    public static final DotName ANNOTATION_CONFIGURABLE = DotName.createSimple(
+            AnnotationConfigurable.class.getName());
 }
