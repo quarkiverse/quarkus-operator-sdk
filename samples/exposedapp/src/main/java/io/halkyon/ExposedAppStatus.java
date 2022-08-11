@@ -1,16 +1,23 @@
 package io.halkyon;
 
+@SuppressWarnings("unused")
 public class ExposedAppStatus {
 
     private String host;
     private String message;
 
+    private long waitTime = System.currentTimeMillis();
+    private boolean ready = false;
+
     public ExposedAppStatus() {
+        message = "processing";
     }
 
-    public ExposedAppStatus(String message, String hostname) {
-        this.message = message;
+    public ExposedAppStatus(String hostname) {
+        this.message = "exposed";
         this.host = hostname;
+        ready = true;
+        waitTime = System.currentTimeMillis() - waitTime;
     }
 
     public String getHost() {
@@ -27,5 +34,16 @@ public class ExposedAppStatus {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public long getWaitTime() {
+        if (!ready) {
+            waitTime = System.currentTimeMillis() - waitTime;
+        }
+        return waitTime;
+    }
+
+    public void setWaitTime(long waitTime) {
+        this.waitTime = waitTime;
     }
 }
