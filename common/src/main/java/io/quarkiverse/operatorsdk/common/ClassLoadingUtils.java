@@ -7,7 +7,7 @@ public class ClassLoadingUtils {
     private ClassLoadingUtils() {
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "unused" })
     public static <T> Class<T> loadClass(String className, Class<T> expected) {
         try {
             return (Class<T>) Thread.currentThread().getContextClassLoader().loadClass(className);
@@ -18,7 +18,9 @@ public class ClassLoadingUtils {
 
     public static <T> T instantiate(Class<T> toInstantiate) {
         try {
-            return toInstantiate.getConstructor().newInstance();
+            final var constructor = toInstantiate.getConstructor();
+            constructor.setAccessible(true);
+            return constructor.newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new IllegalArgumentException("Couldn't instantiate " + toInstantiate.getName(),
                     e);
