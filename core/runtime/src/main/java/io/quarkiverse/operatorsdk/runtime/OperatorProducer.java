@@ -44,7 +44,6 @@ public class OperatorProducer {
 
         Operator operator = new Operator(configuration.getClient(), configuration);
         for (Reconciler<? extends HasMetadata> reconciler : reconcilers) {
-            final var config = configuration.getConfigurationFor(reconciler);
             applyCRDAndRegister(operator, reconciler, configuration);
         }
 
