@@ -10,7 +10,6 @@ import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -30,14 +29,17 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
@@ -301,12 +303,38 @@ class QuarkusControllerConfigurationBuilder {
                         final var kubeDepConfig = dependentType.classAnnotation(KUBERNETES_DEPENDENT);
                         final var labelSelector = getLabelSelector(kubeDepConfig);
                         // if the dependent doesn't explicitly provide a namespace configuration, inherit the configuration from the reconciler configuration
-                        final Set<String> dependentNamespaces = ConfigurationUtils.annotationValueOrDefault(
-                                kubeDepConfig,
-                                "namespaces", v -> new HashSet<>(
-                                        Arrays.asList(v.asStringArray())),
-                                () -> namespaces);
-                        cfg = new QuarkusKubernetesDependentResourceConfig(dependentNamespaces, labelSelector);
+                        var dependentNamespaces = namespaces;
+                        var configuredNS = false;
+                        if (kubeDepConfig != null) {
+                            // if the KubernetesDependent provides an explicit namespaces configuration, use that instead of the namespaces inherited from reconciler
+                            final var nonDefaultNS = Optional.ofNullable(
+                                    kubeDepConfig.value("namespaces"))
+                                    .map(AnnotationValue::asStringArray)
+                                    .filter(v -> !Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES, v));
+                            if (nonDefaultNS.isPresent()) {
+                                configuredNS = true;
+                                dependentNamespaces = nonDefaultNS.map(Set::of).orElse(namespaces);
+                            }
+                        }
+                        final var onAddFilter = ConfigurationUtils.instantiateImplementationClass(
+                                kubeDepConfig, "onAddFilter", OnAddFilter.class,
+                                VoidOnAddFilter.class, index);
+                        final var onUpdateFilter = ConfigurationUtils.instantiateImplementationClass(
+                                kubeDepConfig, "onUpdateFilter", OnUpdateFilter.class,
+                                VoidOnUpdateFilter.class,
+                                index);
+                        final var onDeleteFilter = ConfigurationUtils.instantiateImplementationClass(
+                                kubeDepConfig, "onDeleteFilter", OnDeleteFilter.class,
+                                VoidOnDeleteFilter.class,
+                                index);
+                        final var genericFilter = ConfigurationUtils.instantiateImplementationClass(
+                                kubeDepConfig, "genericFilter", GenericFilter.class,
+                                VoidGenericFilter.class,
+                                index);
+
+                        cfg = new QuarkusKubernetesDependentResourceConfig(dependentNamespaces, labelSelector, configuredNS,
+                                onAddFilter, onUpdateFilter,
+                                onDeleteFilter, genericFilter);
                     }
 
                     var nameField = dependentConfig.value("name");

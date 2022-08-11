@@ -131,7 +131,9 @@ class OperatorSDKResourceTest {
                         hasItems(ReadOnlyDependentResource.class.getCanonicalName(),
                                 CRUDDependentResource.class.getCanonicalName()),
                         "dependents.dependentConfig.labelSelector",
-                        hasItem(CRUDDependentResource.LABEL_SELECTOR));
+                        hasItem(CRUDDependentResource.LABEL_SELECTOR),
+                        "dependents.dependentConfig.onAddFilter",
+                        hasItem(CRUDDependentResource.TestOnAddFilter.class.getCanonicalName()));
     }
 
     @Test

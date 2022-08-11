@@ -21,9 +21,8 @@ import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
-import io.quarkiverse.operatorsdk.runtime.QuarkusKubernetesDependentResourceConfig;
-import io.quarkus.runtime.annotations.RegisterForReflection;
 
 @Path("/operator")
 public class OperatorSDKResource {
@@ -169,7 +168,6 @@ public class OperatorSDKResource {
     }
 
     // needed for native tests, see https://quarkus.io/guides/writing-native-applications-tips#registering-for-reflection
-    @RegisterForReflection(targets = QuarkusKubernetesDependentResourceConfig.class)
     static class JSONDependentResourceSpec {
         private final DependentResourceSpec<?, ?> spec;
 
@@ -182,11 +180,31 @@ public class OperatorSDKResource {
         }
 
         public Object getDependentConfig() {
-            return spec.getDependentResourceConfiguration().orElse(null);
+            return spec.getDependentResourceConfiguration()
+                    .map(KubernetesDependentResourceConfig.class::cast)
+                    .map(JSONKubernetesResourceConfig::new)
+                    .orElse(null);
         }
 
         public String getName() {
             return spec.getName();
+        }
+    }
+
+    static class JSONKubernetesResourceConfig {
+
+        private final KubernetesDependentResourceConfig<?> config;
+
+        JSONKubernetesResourceConfig(KubernetesDependentResourceConfig<?> config) {
+            this.config = config;
+        }
+
+        public String getOnAddFilter() {
+            return config.onAddFilter().getClass().getCanonicalName();
+        }
+
+        public String getLabelSelector() {
+            return config.labelSelector();
         }
     }
 }
