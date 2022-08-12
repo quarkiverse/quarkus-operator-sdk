@@ -24,7 +24,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
-import io.quarkiverse.operatorsdk.runtime.QuarkusKubernetesDependentResourceConfig;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
 @SuppressWarnings("unused")
@@ -175,8 +174,6 @@ public class OperatorSDKResource {
         }
     }
 
-    // needed for native tests, see https://quarkus.io/guides/writing-native-applications-tips#registering-for-reflection
-    @RegisterForReflection(targets = QuarkusKubernetesDependentResourceConfig.class)
     static class JSONDependentResourceSpec {
         private final DependentResourceSpec<?, ?> spec;
 
@@ -200,6 +197,8 @@ public class OperatorSDKResource {
         }
     }
 
+    // needed for native tests, see https://quarkus.io/guides/writing-native-applications-tips#registering-for-reflection
+    @RegisterForReflection
     static class JSONKubernetesResourceConfig {
 
         private final KubernetesDependentResourceConfig<?> config;
