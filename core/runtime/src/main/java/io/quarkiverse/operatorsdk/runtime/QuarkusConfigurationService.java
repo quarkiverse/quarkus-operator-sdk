@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.Config;
@@ -34,7 +35,6 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     private final KubernetesClient client;
     private final CRDGenerationInfo crdInfo;
     private final int concurrentReconciliationThreads;
-    private final Cloner cloner;
     private final int terminationTimeout;
     private final Map<String, String> reconcilerClassToName;
     private final Metrics metrics;
@@ -48,18 +48,20 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
             CRDGenerationInfo crdInfo, int maxThreads,
             int timeout, ObjectMapper mapper, Metrics metrics, boolean startOperator) {
         super(version);
-        this.startOperator = startOperator;
-        this.client = client;
-        this.cloner = new Cloner() {
+        final var fMapper = mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        final var cloner = new Cloner() {
             @Override
             public <R extends HasMetadata> R clone(R r) {
                 try {
-                    return (R) mapper.readValue(mapper.writeValueAsString(r), r.getClass());
+                    return (R) fMapper.readValue(fMapper.writeValueAsString(r), r.getClass());
                 } catch (JsonProcessingException e) {
                     throw new IllegalStateException(e);
                 }
             }
         };
+        init(cloner, mapper);
+        this.startOperator = startOperator;
+        this.client = client;
         this.metrics = metrics;
         if (configurations != null && !configurations.isEmpty()) {
             reconcilerClassToName = new HashMap<>(configurations.size());
@@ -121,11 +123,6 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     @Override
     public int concurrentReconciliationThreads() {
         return this.concurrentReconciliationThreads;
-    }
-
-    @Override
-    public Cloner getResourceCloner() {
-        return cloner;
     }
 
     @Override
