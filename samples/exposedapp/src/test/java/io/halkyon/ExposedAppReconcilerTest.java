@@ -8,6 +8,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -27,10 +29,33 @@ class ExposedAppReconcilerTest {
     @Inject
     Operator operator;
 
+
+    @BeforeEach
+    void startOperator() {
+        operator.start();
+    }
+
+    @AfterEach
+    void stopOperator() {
+        operator.stop();
+    }
+
+    @Test
+    void secondTest() {
+        final var app = new ExposedApp();
+        final var client = mockServer.getClient();
+        final var metadata = new ObjectMetaBuilder()
+                .withName("second-test-app")
+                .withNamespace(client.getNamespace())
+                .build();
+        app.setMetadata(metadata);
+        app.getSpec().setImageRef("group/imageName:tag");
+
+        client.resources(ExposedApp.class).create(app);
+    }
+
     @Test
     void reconcileShouldWork() {
-        operator.start();
-
         final var app = new ExposedApp();
         final var client = mockServer.getClient();
         final var metadata = new ObjectMetaBuilder()
