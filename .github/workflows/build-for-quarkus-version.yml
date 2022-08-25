@@ -1,0 +1,110 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      quarkus-version:
+        type: string
+        required: true
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        java: [ 11, 17 ]
+        distribution: [ temurin ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: ${{ matrix.distribution }}
+          java-version: ${{ matrix.java }}
+          cache: 'maven'
+
+      - name: Quarkus version
+        run: |
+          echo ${{inputs.quarkus-version}}
+        shell: bash
+
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "::set-output name=date::$(/bin/date -u "+%Y-%m")"
+        shell: bash
+
+      - name: Build with Maven
+        run: mvn -B formatter:validate install -Dnative --file pom.xml
+
+      - name: Kubernetes KinD Cluster
+        uses: container-tools/kind-action@v1
+        with:
+          version: v0.11.1
+          registry: true
+      - name: Install OPM and Operator SDK tool
+        uses: redhat-actions/openshift-tools-installer@v1
+        with:
+          source: "github"
+          opm: "latest"
+          operator-sdk: "latest"
+
+      - name: Install Operator Lifecycle Manager and Operator SDK into Kind
+        run: operator-sdk olm install
+
+      - name: Run Joke sample using Quarkus DEV mode
+        run: |
+          SCRIPTS=$(pwd)/.github/scripts
+          K8S_NAMESPACE=dev
+          CURRENT_PWD=$(pwd)
+
+          # Create and set namespace
+          kubectl create namespace $K8S_NAMESPACE
+          kubectl config set-context --current --namespace=$K8S_NAMESPACE
+
+          # Run operator in DEV mode
+          cd samples/joke
+          nohup mvn quarkus:dev > app.log 2>&1 &
+          PID=$(echo $!)
+          cd $CURRENT_PWD
+          
+          # Wait until the app installed the jokerequest custom resource definition
+          $SCRIPTS/waitFor.sh crd $K8S_NAMESPACE jokerequests.samples.javaoperatorsdk.io
+
+          # test joke sample
+          $SCRIPTS/testJokeSample.sh $K8S_NAMESPACE
+          
+          # Kill running process
+          kill -9 $PID
+
+          # Delete namespace
+          kubectl delete namespace $K8S_NAMESPACE
+
+      - name: Archive Dev Mode application logs
+        uses: actions/upload-artifact@v1
+        if: failure()
+        with:
+          name: dev-mode-app.log
+          path: samples/joke/app.log
+
+      - name: Run Joke sample into Kubernetes using OLM
+        run: |
+          SCRIPTS=$(pwd)/.github/scripts
+
+          # Install Joke operator
+          $SCRIPTS/installOperatorUsingOlm.sh joke $(pwd)/samples/joke $KIND_REGISTRY
+
+          # test joke sample
+          $SCRIPTS/testJokeSample.sh operators
+
+      - name: Run Ping Pong sample into Kubernetes using OLM
+        run: |
+          SCRIPTS=$(pwd)/.github/scripts
+
+          # Install Ping Pong operator
+          $SCRIPTS/installOperatorUsingOlm.sh pingpong $(pwd)/samples/pingpong $KIND_REGISTRY
+
+          # test joke sample
+          $SCRIPTS/testPingPongSample.sh operators
