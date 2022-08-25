@@ -29,7 +29,10 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - id: set-matrix
-        run: echo "::set-output name=matrix::$(curl https://registry.quarkus.io/client/platforms | jq '[.platforms[].streams[].releases[].version | select(endswith("Final"))]')"
+        run: |
+          versions=$(curl https://registry.quarkus.io/client/platforms | jq '[.platforms[].streams[].releases[].version | select(endswith("Final"))]')
+          echo "${versions}"
+          echo "::set-output name=matrix::${versions}"
   build-for-quarkus-version:
     needs: get-quarkus-versions
     strategy:
