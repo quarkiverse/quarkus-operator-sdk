@@ -23,10 +23,20 @@ on:
       - '.all-contributorsrc'
 
 jobs:
+  get-quarkus-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Install yq
+        run: sudo apt install jq -y
+      - id: set-matrix
+        run: echo "::set-output name=matrix::$(curl https://registry.quarkus.io/client/platforms | jq[.platforms[].streams[].releases[].version |select(endswith("Final"))])"
   build-for-quarkus-version:
+    needs: get-quarkus-version
     strategy:
       matrix:
-        quarkus-version: [ 2.7.6.Final, 2.12.0.Final ]
+        quarkus-version: ${{ needs.get-quarkus-version.outputs.matrix }}
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
       quarkus-version: ${{matrix.quarkus-version}}
