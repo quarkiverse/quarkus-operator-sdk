@@ -30,6 +30,11 @@ jobs:
           echo ${{inputs.quarkus-version}}
         shell: bash
 
+      - name: Change Quarkus version
+        run: |
+          mvn versions:set-property -Dproperty=quarkus.version -DnewVersion=${{inputs.quarkus-version}}
+        shell: bash
+
       - name: Get Date
         id: get-date
         run: |
