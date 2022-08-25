@@ -24,8 +24,6 @@ on:
 
 jobs:
   build-for-quarkus-version:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: ./.github/workflows/build-for-quarkus-version
-        with:
-          quarkus-version: 2.11.3.Final
+    uses: ./.github/workflows/build-for-quarkus-version.yml
+    with:
+      quarkus-version: 2.11.3.Final
