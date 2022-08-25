@@ -33,7 +33,7 @@ jobs:
       - id: set-matrix
         run: echo "::set-output name=matrix::$(curl https://registry.quarkus.io/client/platforms | jq[.platforms[].streams[].releases[].version |select(endswith("Final"))])"
   build-for-quarkus-version:
-    needs: get-quarkus-version
+    needs: get-quarkus-versions
     strategy:
       matrix:
         quarkus-version: ${{ needs.get-quarkus-version.outputs.matrix }}
