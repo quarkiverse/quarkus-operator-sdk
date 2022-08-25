@@ -24,6 +24,9 @@ on:
 
 jobs:
   build-for-quarkus-version:
+    strategy:
+      matrix:
+        quarkus-version: [ 2.7.6.Final, 2.12.0.Final ]
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
-      quarkus-version: 2.11.3.Final
+      quarkus-version: ${{matrix.quarkus-version}}
