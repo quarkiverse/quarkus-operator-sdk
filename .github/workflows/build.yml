@@ -23,22 +23,22 @@ on:
       - '.all-contributorsrc'
 
 jobs:
-  get-quarkus-versions:
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - id: set-matrix
-        run: |
-          versions=$(curl https://registry.quarkus.io/client/platforms | jq '[.platforms[].streams[].releases[].version | select(endswith("Final"))]')
-          echo "${versions}"
-          echo "::set-output name=matrix::${versions}"
+  #  get-quarkus-versions:
+  #    runs-on: ubuntu-latest
+  #    outputs:
+  #      matrix: ${{ steps.set-matrix.outputs.matrix }}
+  #    steps:
+  #      - id: set-matrix
+  #        run: |
+  #          versions=$(curl https://registry.quarkus.io/client/platforms | jq '[.platforms[].streams[].releases[].version | select(endswith("Final"))]')
+  #          echo "${versions}"
+  #          echo "::set-output name=matrix::${versions}"
   build-for-quarkus-version:
-    needs: get-quarkus-versions
+    #    needs: get-quarkus-versions
     strategy:
       matrix:
-        quarkus-version: ${{ fromJSON(needs.get-quarkus-versions.outputs.matrix) }}
-    #        quarkus-version: [ 2.12.0.Final, 2.7.6.Final ]
+        #        quarkus-version: ${{ fromJSON(needs.get-quarkus-versions.outputs.matrix) }}
+        quarkus-version: [ 2.12.0.Final, 2.7.6.Final ]
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
       quarkus-version: ${{matrix.quarkus-version}}
