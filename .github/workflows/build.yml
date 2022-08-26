@@ -36,7 +36,7 @@ jobs:
   build-for-quarkus-version:
     needs: get-quarkus-versions
     strategy:
-      matrix: ${{ fromJson(needs.get-quarkus-versions.outputs.matrix) }}
+      matrix: ${{ fromJSON(needs.get-quarkus-versions.outputs.matrix) }}
     #        quarkus-version: [ 2.12.0.Final, 2.7.6.Final ]
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
