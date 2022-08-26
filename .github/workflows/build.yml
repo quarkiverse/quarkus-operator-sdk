@@ -30,13 +30,14 @@ jobs:
     steps:
       - id: set-matrix
         run: |
-          versions=$(curl https://registry.quarkus.io/client/platforms | jq '{"quarkus-version": [.platforms[].streams[].releases[].version | select(endswith("Final"))]}')
+          versions=$(curl https://registry.quarkus.io/client/platforms | jq '[.platforms[].streams[].releases[].version | select(endswith("Final"))]')
           echo "${versions}"
           echo "::set-output name=matrix::${versions}"
   build-for-quarkus-version:
     needs: get-quarkus-versions
     strategy:
-      matrix: ${{ fromJSON(needs.get-quarkus-versions.outputs.matrix) }}
+      matrix:
+        quarkus-version: ${{ needs.get-quarkus-versions.outputs.matrix }}
     #        quarkus-version: [ 2.12.0.Final, 2.7.6.Final ]
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
