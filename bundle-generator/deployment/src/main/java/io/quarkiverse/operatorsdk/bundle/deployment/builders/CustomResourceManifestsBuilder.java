@@ -2,10 +2,9 @@ package io.quarkiverse.operatorsdk.bundle.deployment.builders;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-
-import org.apache.commons.io.FileUtils;
 
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -37,7 +36,7 @@ public class CustomResourceManifestsBuilder extends ManifestsBuilder {
     public byte[] getManifestData(List<ServiceAccount> serviceAccounts, List<ClusterRoleBinding> clusterRoleBindings,
             List<ClusterRole> clusterRoles, List<RoleBinding> roleBindings, List<Role> roles, List<Deployment> deployments)
             throws IOException {
-        return FileUtils.readFileToByteArray(new File(crd.getFilePath()));
+        return Files.readAllBytes(new File(crd.getFilePath()).toPath());
     }
 
     @Override
