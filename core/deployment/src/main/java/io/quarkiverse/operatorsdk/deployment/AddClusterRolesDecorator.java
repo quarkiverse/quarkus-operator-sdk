@@ -28,18 +28,18 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
         controllerToCustomResourceMappings.forEach((controller, cri) -> {
             final var rule = new PolicyRuleBuilder();
             final var plural = cri.getPlural();
-            rule.addNewResource(plural);
+            rule.addToResources(plural);
 
             // if the resource has a non-Void status, also add the status resource
             if (cri.isStatusPresentAndNotVoid()) {
-                rule.addNewResource(plural + "/status");
+                rule.addToResources(plural + "/status");
             }
 
             // add finalizers sub-resource because it's used in several contexts, even in the absence of finalizers
             // see: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#ownerreferencespermissionenforcement
-            rule.addNewResource(plural + "/finalizers");
+            rule.addToResources(plural + "/finalizers");
 
-            rule.addNewApiGroup(cri.getGroup())
+            rule.addToApiGroups(cri.getGroup())
                     .addToVerbs(ALL_VERBS)
                     .build();
 
@@ -59,8 +59,8 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
             if (!contains(list, HasMetadata.getApiVersion(ClusterRole.class), HasMetadata.getKind(ClusterRole.class), crName)) {
                 list.addToItems(new ClusterRoleBuilder().withNewMetadata().withName(crName).endMetadata()
                         .addToRules(new PolicyRuleBuilder()
-                                .addNewApiGroup("apiextensions.k8s.io")
-                                .addNewResource("customresourcedefinitions")
+                                .addToApiGroups("apiextensions.k8s.io")
+                                .addToResources("customresourcedefinitions")
                                 .addToVerbs("get", "list")
                                 .build()));
             }
