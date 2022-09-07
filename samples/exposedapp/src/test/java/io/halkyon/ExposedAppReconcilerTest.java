@@ -33,14 +33,15 @@ class ExposedAppReconcilerTest {
 
         final var app = new ExposedApp();
         final var client = mockServer.getClient();
+        final String namespace = client.getNamespace();
         final var metadata = new ObjectMetaBuilder()
                 .withName("test-app")
-                .withNamespace(client.getNamespace())
+                .withNamespace(namespace)
                 .build();
         app.setMetadata(metadata);
         app.getSpec().setImageRef("group/imageName:tag");
 
-        client.resources(ExposedApp.class).create(app);
+        client.resource(app).inNamespace(namespace).create();
 
         await().ignoreException(NullPointerException.class).atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
             // check that we create the deployment

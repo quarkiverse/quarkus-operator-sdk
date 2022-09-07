@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.LoadBalancerIngress;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
@@ -52,7 +51,7 @@ public class IngressDependent extends CRUDKubernetesDependentResource<Ingress, E
     }
 
     /**
-     * Assumes Ingress is ready as determined by {@link #isMet(DependentResource, ExposedApp, Context)}
+     * Assumes Ingress is ready as determined by {@link #isMet(ExposedApp, Ingress, Context)}
      *
      * @param ingress the ingress
      * @return the URL exposed by the specified Ingress
@@ -66,10 +65,9 @@ public class IngressDependent extends CRUDKubernetesDependentResource<Ingress, E
     }
 
     @Override
-    public boolean isMet(DependentResource<Ingress, ExposedApp> dependentResource,
-            ExposedApp exposedApp, Context<ExposedApp> context) {
-        return context.getSecondaryResource(Ingress.class).map(ingress -> {
-            final var status = ingress.getStatus();
+    public boolean isMet(ExposedApp exposedApp, Ingress ingress, Context<ExposedApp> context) {
+        return context.getSecondaryResource(Ingress.class).map(in -> {
+            final var status = in.getStatus();
             if (status != null) {
                 final var ingresses = status.getLoadBalancer().getIngress();
                 // only set the status if the ingress is ready to provide the info we need

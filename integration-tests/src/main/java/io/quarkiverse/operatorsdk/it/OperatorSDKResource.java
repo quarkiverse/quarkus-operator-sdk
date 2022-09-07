@@ -3,6 +3,7 @@ package io.quarkiverse.operatorsdk.it;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -208,7 +209,9 @@ public class OperatorSDKResource {
         }
 
         public String getOnAddFilter() {
-            return config.onAddFilter().getClass().getCanonicalName();
+            return Optional.ofNullable(config.onAddFilter())
+                    .map(f -> f.getClass().getCanonicalName())
+                    .orElse(null);
         }
 
         public String getLabelSelector() {

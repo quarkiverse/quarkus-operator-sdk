@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.quarkus.test.common.QuarkusTestResource;
-import io.quarkus.test.junit.DisabledOnNativeImage;
+import io.quarkus.test.junit.DisabledOnIntegrationTest;
 import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest
@@ -35,7 +35,7 @@ class OperatorSDKResourceTest {
     }
 
     @Test
-    @DisabledOnNativeImage("Skipped because native tests are run using LaunchMode.NORMAL")
+    @DisabledOnIntegrationTest("Skipped because native tests are run using LaunchMode.NORMAL")
     void shouldApplyCRDsByDefaultInTestMode() {
         given().when().get("/operator/config").then().statusCode(200).body(
                 "applyCRDs", equalTo(true));
