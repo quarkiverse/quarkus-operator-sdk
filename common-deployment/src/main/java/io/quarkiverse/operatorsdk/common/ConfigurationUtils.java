@@ -82,16 +82,6 @@ public class ConfigurationUtils {
         return expectedTypeInfo;
     }
 
-    public static <T> T instantiateImplementationClass(
-            AnnotationInstance annotation,
-            String annotationFieldName,
-            Class<T> interfaceClass,
-            Class<? extends T> defaultImplementation,
-            IndexView index) {
-        return instantiateImplementationClass(annotation, annotationFieldName, interfaceClass, defaultImplementation, false,
-                index);
-    }
-
     @SuppressWarnings("unchecked")
     public static <T> T instantiateImplementationClass(
             AnnotationInstance annotation,

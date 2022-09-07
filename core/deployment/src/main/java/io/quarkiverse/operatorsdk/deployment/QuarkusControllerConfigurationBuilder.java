@@ -37,10 +37,6 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidGenericFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnAddFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnDeleteFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.VoidOnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInfo;
@@ -217,21 +213,23 @@ class QuarkusControllerConfigurationBuilder {
                 }
 
                 onAddFilter = ConfigurationUtils.instantiateImplementationClass(
-                        controllerAnnotation, "onAddFilter", OnAddFilter.class, VoidOnAddFilter.class, index);
+                        controllerAnnotation, "onAddFilter", OnAddFilter.class, OnAddFilter.class, true, index);
                 onUpdateFilter = ConfigurationUtils.instantiateImplementationClass(
-                        controllerAnnotation, "onUpdateFilter", OnUpdateFilter.class, VoidOnUpdateFilter.class,
-                        index);
+                        controllerAnnotation, "onUpdateFilter", OnUpdateFilter.class, OnUpdateFilter.class,
+                        true, index);
                 genericFilter = ConfigurationUtils.instantiateImplementationClass(
-                        controllerAnnotation, "genericFilter", GenericFilter.class, VoidGenericFilter.class,
-                        index);
+                        controllerAnnotation, "genericFilter", GenericFilter.class, GenericFilter.class,
+                        true, index);
                 retry = ConfigurationUtils.instantiateImplementationClass(
                         controllerAnnotation, "retry", Retry.class, GenericRetry.class,
                         false, index);
+                assert retry != null;
                 final var retryConfigurableInfo = configurableInfos.get(retry.getClass().getName());
                 retryConfigurationClass = getConfigurationClass(reconcilerInfo, retryConfigurableInfo);
                 rateLimiter = ConfigurationUtils.instantiateImplementationClass(
                         controllerAnnotation, "rateLimiter", RateLimiter.class, DefaultRateLimiter.class,
                         false, index);
+                assert rateLimiter != null;
                 final var rateLimiterConfigurableInfo = configurableInfos.get(rateLimiter.getClass().getName());
                 rateLimiterConfigurationClass = getConfigurationClass(reconcilerInfo, rateLimiterConfigurableInfo);
             }
@@ -341,18 +339,18 @@ class QuarkusControllerConfigurationBuilder {
                         }
                         final var onAddFilter = ConfigurationUtils.instantiateImplementationClass(
                                 kubeDepConfig, "onAddFilter", OnAddFilter.class,
-                                VoidOnAddFilter.class, index);
+                                OnAddFilter.class, true, index);
                         final var onUpdateFilter = ConfigurationUtils.instantiateImplementationClass(
                                 kubeDepConfig, "onUpdateFilter", OnUpdateFilter.class,
-                                VoidOnUpdateFilter.class,
+                                OnUpdateFilter.class, true,
                                 index);
                         final var onDeleteFilter = ConfigurationUtils.instantiateImplementationClass(
                                 kubeDepConfig, "onDeleteFilter", OnDeleteFilter.class,
-                                VoidOnDeleteFilter.class,
+                                OnDeleteFilter.class, true,
                                 index);
                         final var genericFilter = ConfigurationUtils.instantiateImplementationClass(
                                 kubeDepConfig, "genericFilter", GenericFilter.class,
-                                VoidGenericFilter.class,
+                                GenericFilter.class, true,
                                 index);
 
                         cfg = new QuarkusKubernetesDependentResourceConfig(dependentNamespaces, labelSelector, configuredNS,
