@@ -4,10 +4,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import io.fabric8.crd.generator.CRDGenerator;
 import io.fabric8.crd.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.quarkiverse.operatorsdk.common.ResourceTargetingAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
@@ -17,11 +19,16 @@ import io.quarkus.runtime.LaunchMode;
 class CRDGeneration {
     private final CRDGenerator generator = new CRDGenerator();
     private final boolean generate;
+    private final LaunchMode mode;
+    private final CRDConfiguration crdConfiguration;
+
     private boolean needGeneration;
     private final ResourceControllerMapping crMappings = new ResourceControllerMapping();
 
-    public CRDGeneration(boolean generate) {
-        this.generate = generate;
+    public CRDGeneration(CRDConfiguration crdConfig, LaunchMode mode) {
+        this.crdConfiguration = crdConfig;
+        this.mode = mode;
+        this.generate = CRDGeneration.shouldGenerate(crdConfig.generate, crdConfig.apply, mode);
     }
 
     static boolean shouldGenerate(Optional<Boolean> configuredGenerate, Optional<Boolean> configuredApply,
@@ -36,6 +43,10 @@ class CRDGeneration {
         return configuredApply.orElse(true);
     }
 
+    boolean shouldApply() {
+        return shouldApply(crdConfiguration.apply, mode);
+    }
+
     public boolean wantCRDGenerated() {
         return generate;
     }
@@ -46,24 +57,20 @@ class CRDGeneration {
      *
      * @param outputTarget the {@link OutputTargetBuildItem} specifying where the CRDs
      *        should be generated
-     * @param crdConfig the {@link CRDConfiguration} specifying how the CRDs should be
-     *        generated
      * @param validateCustomResources whether the SDK should check if the CRDs are properly deployed
      *        on the server
      * @param existing the already known CRDInfos
-     * @param mode the mode in which the application is running
      * @return a {@link CRDGenerationInfo} detailing information about the CRD generation
      */
-    CRDGenerationInfo generate(OutputTargetBuildItem outputTarget, CRDConfiguration crdConfig,
-            boolean validateCustomResources, Map<String, Map<String, CRDInfo>> existing,
-            LaunchMode mode) {
+    CRDGenerationInfo generate(OutputTargetBuildItem outputTarget,
+            boolean validateCustomResources, Map<String, Map<String, CRDInfo>> existing) {
         // initialize CRDInfo with existing data to always have a full view even if we don't generate anything
         final var converted = new HashMap<>(existing);
         // record which CRDs got generated so that we only apply the changed ones
         final var generated = new HashSet<String>();
 
         if (needGeneration) {
-            final String outputDirName = crdConfig.outputDirectory;
+            final String outputDirName = crdConfiguration.outputDirectory;
             final var outputDir = outputTarget.getOutputDirectory().resolve(outputDirName).toFile();
             if (!outputDir.exists()) {
                 if (!outputDir.mkdirs()) {
@@ -72,7 +79,7 @@ class CRDGeneration {
             }
 
             // generate CRDs with detailed information
-            final var info = generator.forCRDVersions(crdConfig.versions).inOutputDir(outputDir).detailedGenerate();
+            final var info = generator.forCRDVersions(crdConfiguration.versions).inOutputDir(outputDir).detailedGenerate();
             final var crdDetailsPerNameAndVersion = info.getCRDDetailsPerNameAndVersion();
 
             crdDetailsPerNameAndVersion.forEach((crdName, initialVersionToCRDInfoMap) -> {
@@ -90,7 +97,48 @@ class CRDGeneration {
                         });
             });
         }
-        return new CRDGenerationInfo(shouldApply(crdConfig.apply, mode), validateCustomResources, converted, generated);
+        return new CRDGenerationInfo(shouldApply(), validateCustomResources, converted, generated);
+    }
+
+    private boolean needsGeneration(Map<String, CRDInfo> existingCRDInfos, Set<String> changedClassNames, String targetCRName) {
+        final boolean[] generateCurrent = { true }; // request CRD generation by default
+        crdConfiguration.versions.forEach(v -> {
+            final var crd = existingCRDInfos.get(v);
+            // if we don't have any information about this CRD version, we need to generate the CRD
+            if (crd == null) {
+                return;
+            }
+
+            // if dependent classes have been changed
+            if (changedClassNames != null && !changedClassNames.isEmpty()) {
+                for (String changedClass : changedClassNames) {
+                    if (crd.getDependentClassNames().contains(changedClass)) {
+                        return; // a dependent class has been changed, so we'll need to generate the CRD
+                    }
+                }
+            }
+
+            // we've looked at all the changed classes and none have been changed for this CR/version: do not regenerate CRD
+            OperatorSDKProcessor.log.infov(
+                    "''{0}'' CRD generation was skipped for ''{1}'' because no changes impacting the CRD were detected",
+                    v, targetCRName);
+            generateCurrent[0] = false;
+        });
+        return generateCurrent[0];
+    }
+
+    void scheduleForGenerationIfNeeded(ResourceTargetingAugmentedClassInfo crInfo,
+            Map<String, CRDInfo> existingCRDInfos, Set<String> changedClasses) {
+        var scheduleCurrent = true;
+        final String targetCRName = crInfo.getAssociatedResourceTypeName();
+
+        if (existingCRDInfos != null && !existingCRDInfos.isEmpty()) {
+            scheduleCurrent = needsGeneration(existingCRDInfos, changedClasses, targetCRName);
+        }
+
+        if (scheduleCurrent) {
+            withCustomResource(crInfo.loadAssociatedClass(), targetCRName, crInfo.getAssociatedReconcilerName().orElse(null));
+        }
     }
 
     @SuppressWarnings("rawtypes")
@@ -101,9 +149,8 @@ class CRDGeneration {
             generator.customResources(info);
             needGeneration = true;
         } catch (Exception e) {
-            throw new IllegalArgumentException(
-                    "Cannot process " + crClass.getName() + " custom resource for controller '" + associatedControllerName
-                            + "'",
+            throw new IllegalArgumentException("Cannot process " + crClass.getName() + " custom resource"
+                    + (associatedControllerName != null ? " for controller '" + associatedControllerName + "'" : ""),
                     e);
         }
     }

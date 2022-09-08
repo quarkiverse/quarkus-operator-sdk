@@ -79,4 +79,12 @@ public class ReconcilerAugmentedClassInfo extends SelectiveAugmentedClassInfo im
     public boolean hasNonVoidStatus() {
         return hasNonVoidStatus;
     }
+
+    public ResourceTargetingAugmentedClassInfo getAssociatedCustomResourceInfo() {
+        if (isCR) {
+            return new ResourceTargetingAugmentedClassInfo(holder.getResourceCI(), name);
+        }
+        throw new IllegalStateException("Cannot get associated Custom Resource information because '"
+                + name + "' targets " + primaryTypeName().toString() + " primary resource which isn't a Custom Resource.");
+    }
 }

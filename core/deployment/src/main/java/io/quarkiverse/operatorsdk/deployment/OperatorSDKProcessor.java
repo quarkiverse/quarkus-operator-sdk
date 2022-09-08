@@ -130,8 +130,7 @@ class OperatorSDKProcessor {
 
         // apply should imply generate: we cannot apply if we're not generating!
         final var mode = launchMode.getLaunchMode();
-        final var generate = CRDGeneration.shouldGenerate(crdConfig.generate, crdConfig.apply, mode);
-        final var crdGeneration = new CRDGeneration(generate);
+        final var crdGeneration = new CRDGeneration(crdConfig, mode);
         final var index = combinedIndexBuildItem.getIndex();
 
         final var configurableInfos = ClassUtils.getProcessableExtensionsOf(Constants.ANNOTATION_CONFIGURABLE,
@@ -156,9 +155,7 @@ class OperatorSDKProcessor {
         if (storedCRDInfos == null) {
             storedCRDInfos = new ContextStoredCRDInfos();
         }
-        CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, crdConfig,
-                validateCustomResources,
-                storedCRDInfos.getExisting(), mode);
+        CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, validateCustomResources, storedCRDInfos.getExisting());
         storedCRDInfos.putAll(crdInfo.getCrds());
         liveReload.setContextObject(ContextStoredCRDInfos.class,
                 storedCRDInfos); // record CRD generation info in context for future use
@@ -176,7 +173,7 @@ class OperatorSDKProcessor {
         }
 
         // apply CRD if enabled
-        if (CRDGeneration.shouldApply(crdConfig.apply, mode)) {
+        if (crdGeneration.shouldApply()) {
             for (String generatedCrdName : crdInfo.getGenerated()) {
                 applyCRD(kubernetesClientBuildItem.getClient(), crdInfo, generatedCrdName);
             }
