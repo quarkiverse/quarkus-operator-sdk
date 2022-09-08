@@ -3,7 +3,9 @@ package io.quarkiverse.operatorsdk.deployment;
 import static io.quarkiverse.operatorsdk.runtime.CRDUtils.applyCRD;
 
 import java.lang.annotation.Annotation;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
@@ -21,11 +23,13 @@ import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInf
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.Constants;
+import io.quarkiverse.operatorsdk.common.ResourceTargetingAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.SelectiveAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.AppEventListener;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
+import io.quarkiverse.operatorsdk.runtime.CRDInfo;
 import io.quarkiverse.operatorsdk.runtime.ConfigurationServiceRecorder;
 import io.quarkiverse.operatorsdk.runtime.NoOpMetricsProvider;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
@@ -133,8 +137,8 @@ class OperatorSDKProcessor {
         final var crdGeneration = new CRDGeneration(crdConfig, mode);
         final var index = combinedIndexBuildItem.getIndex();
 
-        final var configurableInfos = ClassUtils.getProcessableExtensionsOf(Constants.ANNOTATION_CONFIGURABLE,
-                index, log)
+        final var configurableInfos = ClassUtils.getProcessableImplementationsOf(Constants.ANNOTATION_CONFIGURABLE,
+                index, log, Collections.emptyMap())
                 .map(AnnotationConfigurableAugmentedClassInfo.class::cast)
                 .collect(Collectors.toMap(ac -> ac.classInfo().name().toString(), Function.identity()));
 
@@ -147,7 +151,7 @@ class OperatorSDKProcessor {
                 .collect(Collectors.toList());
 
         // register strongly classes associated with dependent resources as well
-        ClassUtils.getProcessableExtensionsOf(Constants.DEPENDENT_RESOURCE, index, log)
+        ClassUtils.getProcessableImplementationsOf(Constants.DEPENDENT_RESOURCE, index, log, Collections.emptyMap())
                 .forEach(fci -> registerAssociatedClassesForReflection(reflectionClasses, forcedReflectionClasses, fci));
 
         // retrieve the known CRD information to make sure we always have a full view
@@ -156,7 +160,24 @@ class OperatorSDKProcessor {
             storedCRDInfos = new ContextStoredCRDInfos();
         }
         CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, validateCustomResources, storedCRDInfos.getExisting());
-        storedCRDInfos.putAll(crdInfo.getCrds());
+        Map<String, Map<String, CRDInfo>> generatedCRDs = crdInfo.getCrds();
+        storedCRDInfos.putAll(generatedCRDs);
+
+        // generate non-reconciler associated CRDs if requested
+        if (crdConfig.alsoGenerateExternal) {
+            log.info("Generating 3rd party CRDs from detected CustomResource extensions");
+            ClassUtils.getProcessableSubClassesOf(Constants.CUSTOM_RESOURCE, index, log,
+                    // pass already generated CRD names so that we can only keep the unhandled ones
+                    Map.of(ResourceTargetingAugmentedClassInfo.EXISTING_CRDS_KEY, generatedCRDs.keySet()))
+                    .map(ResourceTargetingAugmentedClassInfo.class::cast)
+                    .forEach(cr -> crdGeneration.withCustomResource(cr.loadAssociatedClass(),
+                            cr.getAssociatedResourceTypeName(), null));
+            crdInfo = crdGeneration.generate(outputTarget, validateCustomResources,
+                    storedCRDInfos.getExisting());
+            generatedCRDs = crdInfo.getCrds();
+            storedCRDInfos.putAll(generatedCRDs);
+        }
+
         liveReload.setContextObject(ContextStoredCRDInfos.class,
                 storedCRDInfos); // record CRD generation info in context for future use
 

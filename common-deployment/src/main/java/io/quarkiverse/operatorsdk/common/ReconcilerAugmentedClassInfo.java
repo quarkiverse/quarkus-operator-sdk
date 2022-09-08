@@ -4,6 +4,8 @@ import static io.quarkiverse.operatorsdk.common.Constants.CUSTOM_RESOURCE;
 import static io.quarkiverse.operatorsdk.common.Constants.HAS_METADATA;
 import static io.quarkiverse.operatorsdk.common.Constants.RECONCILER;
 
+import java.util.Map;
+
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
@@ -35,7 +37,7 @@ public class ReconcilerAugmentedClassInfo extends SelectiveAugmentedClassInfo im
     }
 
     @Override
-    protected boolean augmentIfKept(IndexView index, Logger log) {
+    protected boolean augmentIfKept(IndexView index, Logger log, Map<String, Object> context) {
         final var primaryTypeDN = primaryTypeName();
 
         // if we get CustomResource instead of a subclass, ignore the controller since we cannot do anything with it
