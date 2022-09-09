@@ -42,6 +42,7 @@ import io.quarkiverse.operatorsdk.runtime.Version;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
+import io.quarkus.bootstrap.app.ClassChangeInformation;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
@@ -144,46 +145,68 @@ class OperatorSDKProcessor {
                 .map(AnnotationConfigurableAugmentedClassInfo.class::cast)
                 .collect(Collectors.toMap(ac -> ac.classInfo().name().toString(), Function.identity()));
 
+        // retrieve the known CRD information to make sure we always have a full view
+        var stored = liveReload.getContextObject(ContextStoredCRDInfos.class);
+        if (stored == null) {
+            stored = new ContextStoredCRDInfos();
+        }
+        final var storedCRDInfos = stored;
+
+        final Set<String> changedClasses = liveReload.isLiveReload() ? Optional.ofNullable(liveReload.getChangeInformation())
+                .map(ClassChangeInformation::getChangedClasses)
+                .orElse(Collections.emptySet()) : Collections.emptySet();
+
+        final var scheduledForGeneration = new HashSet<String>(7);
         final var builder = new QuarkusControllerConfigurationBuilder(additionalBeans,
-                index, crdGeneration, liveReload, buildTimeConfiguration);
+                index, liveReload, buildTimeConfiguration);
         final var controllerConfigs = ClassUtils.getKnownReconcilers(index, log)
-                // register strongly reconciler-associated classes that need reflective access
-                .peek(fci -> registerAssociatedClassesForReflection(reflectionClasses, forcedReflectionClasses, fci))
-                .map(raci -> builder.build(raci, configurableInfos))
+                .map(raci -> {
+                    // register strongly reconciler-associated classes that need reflective access
+                    registerAssociatedClassesForReflection(reflectionClasses,
+                            forcedReflectionClasses, raci);
+
+                    // add associated primary resource for CRD generation if needed
+                    final var changeInformation = liveReload.getChangeInformation();
+                    if (raci.isCRTargeting() && crdGeneration.wantCRDGenerated()) {
+                        final var crInfo = raci.getAssociatedCustomResourceInfo();
+                        // When we have a live reload, check if we need to regenerate the associated CRD
+                        Map<String, CRDInfo> crdInfos = Collections.emptyMap();
+
+                        final String targetCRName = crInfo.getAssociatedResourceTypeName();
+                        if (liveReload.isLiveReload()) {
+                            crdInfos = storedCRDInfos.getCRDInfosFor(targetCRName);
+                        }
+
+                        if (crdGeneration.scheduleForGenerationIfNeeded(crInfo, crdInfos, changedClasses)) {
+                            scheduledForGeneration.add(targetCRName);
+                        }
+                    }
+
+                    return builder.build(raci, configurableInfos);
+                })
                 .collect(Collectors.toList());
 
         // register strongly classes associated with dependent resources as well
         ClassUtils.getProcessableImplementationsOf(Constants.DEPENDENT_RESOURCE, index, log, Collections.emptyMap())
                 .forEach(fci -> registerAssociatedClassesForReflection(reflectionClasses, forcedReflectionClasses, fci));
 
-        // retrieve the known CRD information to make sure we always have a full view
-        var storedCRDInfos = liveReload.getContextObject(ContextStoredCRDInfos.class);
-        if (storedCRDInfos == null) {
-            storedCRDInfos = new ContextStoredCRDInfos();
-        }
-        CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, validateCustomResources, storedCRDInfos.getExisting());
-        Map<String, Map<String, CRDInfo>> generatedCRDs = crdInfo.getCrds();
-        storedCRDInfos.putAll(generatedCRDs);
-
-        // record the names of the CRDs that might need to be applied
-        final Set<String> crdsToBePotentiallyApplied = new HashSet<>(crdInfo.getGenerated());
-
         // generate non-reconciler associated CRDs if requested
         if (crdConfig.alsoGenerateExternal) {
-            log.info("Generating 3rd party CRDs from detected CustomResource extensions");
             ClassUtils.getProcessableSubClassesOf(Constants.CUSTOM_RESOURCE, index, log,
                     // pass already generated CRD names so that we can only keep the unhandled ones
-                    Map.of(ResourceTargetingAugmentedClassInfo.EXISTING_CRDS_KEY, generatedCRDs.keySet()))
+                    Map.of(ResourceTargetingAugmentedClassInfo.EXISTING_CRDS_KEY, scheduledForGeneration))
                     .map(ResourceTargetingAugmentedClassInfo.class::cast)
-                    .forEach(cr -> crdGeneration.withCustomResource(cr.loadAssociatedClass(),
-                            cr.getAssociatedResourceTypeName(), null));
-            crdInfo = crdGeneration.generate(outputTarget, validateCustomResources,
-                    storedCRDInfos.getExisting());
-            generatedCRDs = crdInfo.getCrds();
-            storedCRDInfos.putAll(generatedCRDs);
-            crdsToBePotentiallyApplied.addAll(crdInfo.getGenerated());
+                    .forEach(cr -> {
+                        final var targetCRName = cr.getAssociatedResourceTypeName();
+                        crdGeneration.withCustomResource(cr.loadAssociatedClass(), targetCRName, null);
+                        log.infov("Will generate CRD for non-reconciler bound resource: {0}", targetCRName);
+                    });
         }
 
+        CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, validateCustomResources,
+                storedCRDInfos.getExisting());
+        Map<String, Map<String, CRDInfo>> generatedCRDs = crdInfo.getCrds();
+        storedCRDInfos.putAll(generatedCRDs);
         liveReload.setContextObject(ContextStoredCRDInfos.class,
                 storedCRDInfos); // record CRD generation info in context for future use
 
@@ -201,7 +224,7 @@ class OperatorSDKProcessor {
 
         // apply CRD if enabled
         if (crdGeneration.shouldApply()) {
-            for (String generatedCrdName : crdsToBePotentiallyApplied) {
+            for (String generatedCrdName : crdInfo.getGenerated()) {
                 applyCRD(kubernetesClientBuildItem.getClient(), crdInfo, generatedCrdName);
             }
         }

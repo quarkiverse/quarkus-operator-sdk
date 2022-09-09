@@ -17,10 +17,12 @@ import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.runtime.LaunchMode;
 
 class CRDGeneration {
-    private CRDGenerator generator;
+    private final CRDGenerator generator = new CRDGenerator();
     private final boolean generate;
     private final LaunchMode mode;
     private final CRDConfiguration crdConfiguration;
+
+    private boolean needGeneration;
     private final ResourceControllerMapping crMappings = new ResourceControllerMapping();
 
     public CRDGeneration(CRDConfiguration crdConfig, LaunchMode mode) {
@@ -67,10 +69,7 @@ class CRDGeneration {
         // record which CRDs got generated so that we only apply the changed ones
         final var generated = new HashSet<String>();
 
-        // the generator is reset each time generation occurs to prevent holding onto generation requests
-        // from previous rounds, if new CRDs are requested, the generator will be initialized again in
-        // the withCustomResource method
-        if (generator != null) {
+        if (needGeneration) {
             final String outputDirName = crdConfiguration.outputDirectory;
             final var outputDir = outputTarget.getOutputDirectory().resolve(outputDirName).toFile();
             if (!outputDir.exists()) {
@@ -97,9 +96,6 @@ class CRDGeneration {
                                     version, filePath, crdInfo.getDependentClassNames(), versions));
                         });
             });
-
-            // reset the generator once done
-            generator = null;
         }
         return new CRDGenerationInfo(shouldApply(), validateCustomResources, converted, generated);
     }
@@ -131,7 +127,7 @@ class CRDGeneration {
         return generateCurrent[0];
     }
 
-    void scheduleForGenerationIfNeeded(ResourceTargetingAugmentedClassInfo crInfo,
+    boolean scheduleForGenerationIfNeeded(ResourceTargetingAugmentedClassInfo crInfo,
             Map<String, CRDInfo> existingCRDInfos, Set<String> changedClasses) {
         var scheduleCurrent = true;
         final String targetCRName = crInfo.getAssociatedResourceTypeName();
@@ -143,6 +139,8 @@ class CRDGeneration {
         if (scheduleCurrent) {
             withCustomResource(crInfo.loadAssociatedClass(), targetCRName, crInfo.getAssociatedReconcilerName().orElse(null));
         }
+
+        return scheduleCurrent;
     }
 
     @SuppressWarnings("rawtypes")
@@ -150,10 +148,8 @@ class CRDGeneration {
         try {
             final var info = CustomResourceInfo.fromClass(crClass);
             crMappings.add(info, crdName, associatedControllerName);
-            if (generator == null) {
-                generator = new CRDGenerator();
-            }
             generator.customResources(info);
+            needGeneration = true;
         } catch (Exception e) {
             throw new IllegalArgumentException("Cannot process " + crClass.getName() + " custom resource"
                     + (associatedControllerName != null ? " for controller '" + associatedControllerName + "'" : ""),

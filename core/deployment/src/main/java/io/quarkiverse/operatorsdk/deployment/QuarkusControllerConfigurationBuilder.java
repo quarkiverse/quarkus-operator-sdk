@@ -46,15 +46,12 @@ import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInf
 import io.quarkiverse.operatorsdk.common.ClassLoadingUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
-import io.quarkiverse.operatorsdk.common.ResourceTargetingAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
-import io.quarkiverse.operatorsdk.runtime.CRDInfo;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration.DefaultRateLimiter;
 import io.quarkiverse.operatorsdk.runtime.QuarkusDependentResourceSpec;
 import io.quarkiverse.operatorsdk.runtime.QuarkusKubernetesDependentResourceConfig;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
-import io.quarkus.bootstrap.app.ClassChangeInformation;
 import io.quarkus.builder.BuildException;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.builditem.LiveReloadBuildItem;
@@ -66,18 +63,15 @@ class QuarkusControllerConfigurationBuilder {
 
     private final BuildProducer<AdditionalBeanBuildItem> additionalBeans;
     private final IndexView index;
-    private final CRDGeneration crdGeneration;
     private final LiveReloadBuildItem liveReload;
 
     private final BuildTimeOperatorConfiguration buildTimeConfiguration;
 
     public QuarkusControllerConfigurationBuilder(BuildProducer<AdditionalBeanBuildItem> additionalBeans,
-            IndexView index,
-            CRDGeneration crdGeneration, LiveReloadBuildItem liveReload,
+            IndexView index, LiveReloadBuildItem liveReload,
             BuildTimeOperatorConfiguration buildTimeConfiguration) {
         this.additionalBeans = additionalBeans;
         this.index = index;
-        this.crdGeneration = crdGeneration;
         this.liveReload = liveReload;
         this.buildTimeConfiguration = buildTimeConfiguration;
     }
@@ -99,14 +93,8 @@ class QuarkusControllerConfigurationBuilder {
                         .setDefaultScope(APPLICATION_SCOPED)
                         .build());
 
-        // now check if there's more work to do, depending on reloaded state
-        // check if we need to regenerate the CRD
-        final var changeInformation = liveReload.getChangeInformation();
-        if (reconcilerInfo.isCRTargeting() && crdGeneration.wantCRDGenerated()) {
-            scheduleCRDGenerationIfNeededFor(crdGeneration, reconcilerInfo.getAssociatedCustomResourceInfo(), liveReload);
-        }
-
         // check if we need to regenerate the configuration for this controller
+        final var changeInformation = liveReload.getChangeInformation();
         QuarkusControllerConfiguration configuration = null;
         var storedConfigurations = liveReload.getContextObject(
                 ContextStoredControllerConfigurations.class);
@@ -368,25 +356,5 @@ class QuarkusControllerConfigurationBuilder {
                 "labelSelector",
                 AnnotationValue::asString,
                 () -> null);
-    }
-
-    static void scheduleCRDGenerationIfNeededFor(CRDGeneration crdGeneration,
-            ResourceTargetingAugmentedClassInfo crInfo,
-            LiveReloadBuildItem liveReload) {
-        if (crdGeneration.wantCRDGenerated()) {
-            // check whether we already have generated CRDs
-            var storedCRDInfos = liveReload.getContextObject(ContextStoredCRDInfos.class);
-
-            // When we have a live reload, check if we need to regenerate the associated CRD
-            Map<String, CRDInfo> crdInfos = Collections.emptyMap();
-            Set<String> changedClasses = Collections.emptySet();
-            if (liveReload.isLiveReload() && storedCRDInfos != null) {
-                final String targetCRName = crInfo.getAssociatedResourceTypeName();
-                crdInfos = storedCRDInfos.getCRDInfosFor(targetCRName);
-                changedClasses = Optional.ofNullable(liveReload.getChangeInformation()).map(
-                        ClassChangeInformation::getChangedClasses).orElse(Collections.emptySet());
-            }
-            crdGeneration.scheduleForGenerationIfNeeded(crInfo, crdInfos, changedClasses);
-        }
     }
 }
