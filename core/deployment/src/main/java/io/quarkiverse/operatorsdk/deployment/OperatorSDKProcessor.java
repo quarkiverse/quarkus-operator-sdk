@@ -5,8 +5,10 @@ import static io.quarkiverse.operatorsdk.runtime.CRDUtils.applyCRD;
 import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -163,6 +165,9 @@ class OperatorSDKProcessor {
         Map<String, Map<String, CRDInfo>> generatedCRDs = crdInfo.getCrds();
         storedCRDInfos.putAll(generatedCRDs);
 
+        // record the names of the CRDs that might need to be applied
+        final Set<String> crdsToBePotentiallyApplied = new HashSet<>(crdInfo.getGenerated());
+
         // generate non-reconciler associated CRDs if requested
         if (crdConfig.alsoGenerateExternal) {
             log.info("Generating 3rd party CRDs from detected CustomResource extensions");
@@ -176,6 +181,7 @@ class OperatorSDKProcessor {
                     storedCRDInfos.getExisting());
             generatedCRDs = crdInfo.getCrds();
             storedCRDInfos.putAll(generatedCRDs);
+            crdsToBePotentiallyApplied.addAll(crdInfo.getGenerated());
         }
 
         liveReload.setContextObject(ContextStoredCRDInfos.class,
@@ -195,7 +201,7 @@ class OperatorSDKProcessor {
 
         // apply CRD if enabled
         if (crdGeneration.shouldApply()) {
-            for (String generatedCrdName : crdInfo.getGenerated()) {
+            for (String generatedCrdName : crdsToBePotentiallyApplied) {
                 applyCRD(kubernetesClientBuildItem.getClient(), crdInfo, generatedCrdName);
             }
         }
