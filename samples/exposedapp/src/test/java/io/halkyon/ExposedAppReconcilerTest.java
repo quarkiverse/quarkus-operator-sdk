@@ -41,7 +41,8 @@ class ExposedAppReconcilerTest {
         app.setMetadata(metadata);
         app.getSpec().setImageRef("group/imageName:tag");
 
-        client.resource(app).inNamespace(namespace).create();
+        client.resources(ExposedApp.class).create(app);
+        //        client.resource(app).inNamespace(namespace).create(); // todo: fabric8 6
 
         await().ignoreException(NullPointerException.class).atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
             // check that we create the deployment
