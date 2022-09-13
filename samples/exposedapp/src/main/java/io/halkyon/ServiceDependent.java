@@ -28,7 +28,8 @@ public class ServiceDependent extends CRUDKubernetesDependentResource<Service, E
                 .addNewPort()
                 .withName("http")
                 .withPort(8080)
-                .withNewTargetPort().withValue(8080).endTargetPort()
+                //            .withNewTargetPort().withValue(8080).endTargetPort() // todo: fabric8 6
+                .withNewTargetPort().withIntVal(8080).endTargetPort()
                 .endPort()
                 .withSelector(labels)
                 .withType("ClusterIP")
