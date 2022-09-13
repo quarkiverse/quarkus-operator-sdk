@@ -191,7 +191,7 @@ class OperatorSDKProcessor {
                 .forEach(fci -> registerAssociatedClassesForReflection(reflectionClasses, forcedReflectionClasses, fci));
 
         // generate non-reconciler associated CRDs if requested
-        if (crdConfig.alsoGenerateExternal) {
+        if (crdConfig.generateAll) {
             ClassUtils.getProcessableSubClassesOf(Constants.CUSTOM_RESOURCE, index, log,
                     // pass already generated CRD names so that we can only keep the unhandled ones
                     Map.of(ResourceTargetingAugmentedClassInfo.EXISTING_CRDS_KEY, scheduledForGeneration))

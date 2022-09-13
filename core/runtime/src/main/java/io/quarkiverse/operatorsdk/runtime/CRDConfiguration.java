@@ -48,9 +48,9 @@ public class CRDConfiguration {
     public String outputDirectory;
 
     /**
-     * Whether the extension should also generate CRDs for external (i.e. not tied to a reconciler) Custom Resources
+     * Whether the extension should generate all CRDs even if some are not tied to a Reconciler.
      */
     @ConfigItem(defaultValue = "false")
-    public Boolean alsoGenerateExternal;
+    public Boolean generateAll;
 
 }

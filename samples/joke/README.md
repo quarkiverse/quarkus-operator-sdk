@@ -27,7 +27,7 @@ cluster. You can just follow the steps below to get started quickly:
   - Required CRDs should be applied automatically to your cluster (provided you have the
     permission to do so, which might require to log in as an administrator-level user on OpenShift)
     because the `quarkus.operator-sdk.crd.apply` property has been set to `true`. Additionally,
-    the `quarkus.operator-sdk.crd.also-generate-external` property has been set to `true` as
+    the `quarkus.operator-sdk.crd.generate-all` property has been set to `true` as
     well in `application.properties`, which means that CRDs will also be generated for 3rd party
     Custom Resource (which the `Joke` CR is in this example).
 - Launch the app in dev mode: `mvn quarkus:dev`
