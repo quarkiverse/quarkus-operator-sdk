@@ -25,7 +25,6 @@ import org.jboss.jandex.Type;
 import org.jboss.logging.Logger;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.CustomResource;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
@@ -64,18 +63,15 @@ class QuarkusControllerConfigurationBuilder {
 
     private final BuildProducer<AdditionalBeanBuildItem> additionalBeans;
     private final IndexView index;
-    private final CRDGeneration crdGeneration;
     private final LiveReloadBuildItem liveReload;
 
     private final BuildTimeOperatorConfiguration buildTimeConfiguration;
 
     public QuarkusControllerConfigurationBuilder(BuildProducer<AdditionalBeanBuildItem> additionalBeans,
-            IndexView index,
-            CRDGeneration crdGeneration, LiveReloadBuildItem liveReload,
+            IndexView index, LiveReloadBuildItem liveReload,
             BuildTimeOperatorConfiguration buildTimeConfiguration) {
         this.additionalBeans = additionalBeans;
         this.index = index;
-        this.crdGeneration = crdGeneration;
         this.liveReload = liveReload;
         this.buildTimeConfiguration = buildTimeConfiguration;
     }
@@ -83,8 +79,6 @@ class QuarkusControllerConfigurationBuilder {
     @SuppressWarnings("unchecked")
     QuarkusControllerConfiguration build(ReconcilerAugmentedClassInfo reconcilerInfo,
             Map<String, AnnotationConfigurableAugmentedClassInfo> configurableInfos) {
-        final var primaryTypeDN = reconcilerInfo.primaryTypeName();
-        final var primaryTypeName = primaryTypeDN.toString();
 
         // retrieve the reconciler's name
         final var info = reconcilerInfo.classInfo();
@@ -99,58 +93,8 @@ class QuarkusControllerConfigurationBuilder {
                         .setDefaultScope(APPLICATION_SCOPED)
                         .build());
 
-        // now check if there's more work to do, depending on reloaded state
-        Class<? extends HasMetadata> resourceClass = null;
-        String resourceFullName = null;
-
-        // check if we need to regenerate the CRD
-        final var changeInformation = liveReload.getChangeInformation();
-        if (reconcilerInfo.isCRTargeting() && crdGeneration.wantCRDGenerated()) {
-            // check whether we already have generated CRDs
-            var storedCRDInfos = liveReload.getContextObject(ContextStoredCRDInfos.class);
-
-            final boolean[] generateCurrent = { true }; // request CRD generation by default
-
-            final var crClass = loadClass(primaryTypeName, CustomResource.class);
-            resourceClass = crClass;
-            resourceFullName = getFullResourceName(crClass);
-
-            // When we have a live reload, check if we need to regenerate the associated CRD
-            if (liveReload.isLiveReload() && storedCRDInfos != null) {
-                final var finalCrdName = resourceFullName;
-                final var crdInfos = storedCRDInfos.getCRDInfosFor(resourceFullName);
-
-                // check for all CRD spec version requested
-                buildTimeConfiguration.crd.versions.forEach(v -> {
-                    final var crd = crdInfos.get(v);
-                    // if we don't have any information about this CRD version, we need to generate the CRD
-                    if (crd == null) {
-                        return;
-                    }
-
-                    // if dependent classes have been changed
-                    if (changeInformation != null) {
-                        for (String changedClass : changeInformation.getChangedClasses()) {
-                            if (crd.getDependentClassNames().contains(changedClass)) {
-                                return; // a dependent class has been changed, so we'll need to generate the CRD
-                            }
-                        }
-                    }
-
-                    // we've looked at all the changed classes and none have been changed for this CR/version: do not regenerate CRD
-                    generateCurrent[0] = false;
-                    log.infov(
-                            "''{0}'' CRD generation was skipped for ''{1}'' because no changes impacting the CRD were detected",
-                            v, finalCrdName);
-                });
-            }
-            // if we still need to generate the CRD, add the CR to the set to be generated
-            if (generateCurrent[0]) {
-                crdGeneration.withCustomResource(crClass, resourceFullName, name);
-            }
-        }
-
         // check if we need to regenerate the configuration for this controller
+        final var changeInformation = liveReload.getChangeInformation();
         QuarkusControllerConfiguration configuration = null;
         var storedConfigurations = liveReload.getContextObject(
                 ContextStoredControllerConfigurations.class);
@@ -162,7 +106,6 @@ class QuarkusControllerConfigurationBuilder {
             configuration = storedConfigurations.configurationOrNullIfNeedGeneration(reconcilerClassName,
                     changedClasses,
                     changedResources);
-
         }
 
         if (configuration == null) {
@@ -172,11 +115,6 @@ class QuarkusControllerConfigurationBuilder {
             final var configExtractor = new BuildTimeHybridControllerConfiguration(buildTimeConfiguration,
                     buildTimeConfiguration.controllers.get(name),
                     controllerAnnotation);
-
-            if (resourceFullName == null) {
-                resourceClass = loadClass(primaryTypeName, HasMetadata.class);
-                resourceFullName = getFullResourceName(resourceClass);
-            }
 
             // deal with event filters
             ResourceEventFilter finalFilter = null;
@@ -227,15 +165,18 @@ class QuarkusControllerConfigurationBuilder {
                 retry = ConfigurationUtils.instantiateImplementationClass(
                         controllerAnnotation, "retry", Retry.class, GenericRetry.class,
                         false, index);
+                assert retry != null;
                 final var retryConfigurableInfo = configurableInfos.get(retry.getClass().getName());
                 retryConfigurationClass = getConfigurationClass(reconcilerInfo, retryConfigurableInfo);
                 rateLimiter = ConfigurationUtils.instantiateImplementationClass(
                         controllerAnnotation, "rateLimiter", RateLimiter.class, DefaultRateLimiter.class,
                         false, index);
+                assert rateLimiter != null;
                 final var rateLimiterConfigurableInfo = configurableInfos.get(rateLimiter.getClass().getName());
                 rateLimiterConfigurationClass = getConfigurationClass(reconcilerInfo, rateLimiterConfigurableInfo);
             }
 
+            final var resourceClass = reconcilerInfo.loadAssociatedClass();
             final var crVersion = HasMetadata.getVersion(resourceClass);
 
             // extract the namespaces
@@ -245,6 +186,7 @@ class QuarkusControllerConfigurationBuilder {
                     index, controllerAnnotation, namespaces, additionalBeans);
 
             // create the configuration
+            final String resourceFullName = reconcilerInfo.getAssociatedResourceTypeName();
             configuration = new QuarkusControllerConfiguration(
                     reconcilerClassName,
                     name,
@@ -400,10 +342,6 @@ class QuarkusControllerConfigurationBuilder {
             }
         }
         return dependentResources;
-    }
-
-    private String getFullResourceName(Class<? extends HasMetadata> crClass) {
-        return ReconcilerUtils.getResourceTypeName(crClass);
     }
 
     private String getFinalizer(AnnotationInstance controllerAnnotation, String crdName) {

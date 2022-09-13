@@ -46,4 +46,11 @@ public class CRDConfiguration {
      */
     @ConfigItem(defaultValue = DEFAULT_OUTPUT_DIRECTORY)
     public String outputDirectory;
+
+    /**
+     * Whether the extension should generate all CRDs even if some are not tied to a Reconciler.
+     */
+    @ConfigItem(defaultValue = "false")
+    public Boolean generateAll;
+
 }
