@@ -3,8 +3,12 @@ package io.quarkiverse.operatorsdk.deployment;
 import static io.quarkiverse.operatorsdk.runtime.CRDUtils.applyCRD;
 
 import java.lang.annotation.Annotation;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -21,11 +25,13 @@ import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInf
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.Constants;
+import io.quarkiverse.operatorsdk.common.ResourceTargetingAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.SelectiveAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.AppEventListener;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
+import io.quarkiverse.operatorsdk.runtime.CRDInfo;
 import io.quarkiverse.operatorsdk.runtime.ConfigurationServiceRecorder;
 import io.quarkiverse.operatorsdk.runtime.NoOpMetricsProvider;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
@@ -36,6 +42,7 @@ import io.quarkiverse.operatorsdk.runtime.Version;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
+import io.quarkus.bootstrap.app.ClassChangeInformation;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
@@ -130,36 +137,76 @@ class OperatorSDKProcessor {
 
         // apply should imply generate: we cannot apply if we're not generating!
         final var mode = launchMode.getLaunchMode();
-        final var generate = CRDGeneration.shouldGenerate(crdConfig.generate, crdConfig.apply, mode);
-        final var crdGeneration = new CRDGeneration(generate);
+        final var crdGeneration = new CRDGeneration(crdConfig, mode);
         final var index = combinedIndexBuildItem.getIndex();
 
-        final var configurableInfos = ClassUtils.getProcessableExtensionsOf(Constants.ANNOTATION_CONFIGURABLE,
-                index, log)
+        final var configurableInfos = ClassUtils.getProcessableImplementationsOf(Constants.ANNOTATION_CONFIGURABLE,
+                index, log, Collections.emptyMap())
                 .map(AnnotationConfigurableAugmentedClassInfo.class::cast)
                 .collect(Collectors.toMap(ac -> ac.classInfo().name().toString(), Function.identity()));
 
+        // retrieve the known CRD information to make sure we always have a full view
+        var stored = liveReload.getContextObject(ContextStoredCRDInfos.class);
+        if (stored == null) {
+            stored = new ContextStoredCRDInfos();
+        }
+        final var storedCRDInfos = stored;
+
+        final Set<String> changedClasses = liveReload.isLiveReload() ? Optional.ofNullable(liveReload.getChangeInformation())
+                .map(ClassChangeInformation::getChangedClasses)
+                .orElse(Collections.emptySet()) : Collections.emptySet();
+
+        final var scheduledForGeneration = new HashSet<String>(7);
         final var builder = new QuarkusControllerConfigurationBuilder(additionalBeans,
-                index, crdGeneration, liveReload, buildTimeConfiguration);
+                index, liveReload, buildTimeConfiguration);
         final var controllerConfigs = ClassUtils.getKnownReconcilers(index, log)
-                // register strongly reconciler-associated classes that need reflective access
-                .peek(fci -> registerAssociatedClassesForReflection(reflectionClasses, forcedReflectionClasses, fci))
-                .map(raci -> builder.build(raci, configurableInfos))
+                .map(raci -> {
+                    // register strongly reconciler-associated classes that need reflective access
+                    registerAssociatedClassesForReflection(reflectionClasses,
+                            forcedReflectionClasses, raci);
+
+                    // add associated primary resource for CRD generation if needed
+                    final var changeInformation = liveReload.getChangeInformation();
+                    if (raci.isCRTargeting() && crdGeneration.wantCRDGenerated()) {
+                        final var crInfo = raci.getAssociatedCustomResourceInfo();
+                        // When we have a live reload, check if we need to regenerate the associated CRD
+                        Map<String, CRDInfo> crdInfos = Collections.emptyMap();
+
+                        final String targetCRName = crInfo.getAssociatedResourceTypeName();
+                        if (liveReload.isLiveReload()) {
+                            crdInfos = storedCRDInfos.getCRDInfosFor(targetCRName);
+                        }
+
+                        if (crdGeneration.scheduleForGenerationIfNeeded(crInfo, crdInfos, changedClasses)) {
+                            scheduledForGeneration.add(targetCRName);
+                        }
+                    }
+
+                    return builder.build(raci, configurableInfos);
+                })
                 .collect(Collectors.toList());
 
         // register strongly classes associated with dependent resources as well
-        ClassUtils.getProcessableExtensionsOf(Constants.DEPENDENT_RESOURCE, index, log)
+        ClassUtils.getProcessableImplementationsOf(Constants.DEPENDENT_RESOURCE, index, log, Collections.emptyMap())
                 .forEach(fci -> registerAssociatedClassesForReflection(reflectionClasses, forcedReflectionClasses, fci));
 
-        // retrieve the known CRD information to make sure we always have a full view
-        var storedCRDInfos = liveReload.getContextObject(ContextStoredCRDInfos.class);
-        if (storedCRDInfos == null) {
-            storedCRDInfos = new ContextStoredCRDInfos();
+        // generate non-reconciler associated CRDs if requested
+        if (crdConfig.generateAll) {
+            ClassUtils.getProcessableSubClassesOf(Constants.CUSTOM_RESOURCE, index, log,
+                    // pass already generated CRD names so that we can only keep the unhandled ones
+                    Map.of(ResourceTargetingAugmentedClassInfo.EXISTING_CRDS_KEY, scheduledForGeneration))
+                    .map(ResourceTargetingAugmentedClassInfo.class::cast)
+                    .forEach(cr -> {
+                        final var targetCRName = cr.getAssociatedResourceTypeName();
+                        crdGeneration.withCustomResource(cr.loadAssociatedClass(), targetCRName, null);
+                        log.infov("Will generate CRD for non-reconciler bound resource: {0}", targetCRName);
+                    });
         }
-        CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, crdConfig,
-                validateCustomResources,
-                storedCRDInfos.getExisting(), mode);
-        storedCRDInfos.putAll(crdInfo.getCrds());
+
+        CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, validateCustomResources,
+                storedCRDInfos.getExisting());
+        Map<String, Map<String, CRDInfo>> generatedCRDs = crdInfo.getCrds();
+        storedCRDInfos.putAll(generatedCRDs);
         liveReload.setContextObject(ContextStoredCRDInfos.class,
                 storedCRDInfos); // record CRD generation info in context for future use
 
@@ -176,7 +223,7 @@ class OperatorSDKProcessor {
         }
 
         // apply CRD if enabled
-        if (CRDGeneration.shouldApply(crdConfig.apply, mode)) {
+        if (crdGeneration.shouldApply()) {
             for (String generatedCrdName : crdInfo.getGenerated()) {
                 applyCRD(kubernetesClientBuildItem.getClient(), crdInfo, generatedCrdName);
             }

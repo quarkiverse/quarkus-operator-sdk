@@ -6,6 +6,7 @@ import static io.quarkiverse.operatorsdk.common.Constants.IGNORE_ANNOTATION;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
@@ -35,7 +36,7 @@ public abstract class SelectiveAugmentedClassInfo {
         return classInfo;
     }
 
-    boolean keepAugmented(IndexView index, Logger log) {
+    boolean keepAugmented(IndexView index, Logger log, Map<String, Object> context) {
         final var targetClassName = extendedOrImplementedClassName();
         final var consideredClassName = classInfo.name();
         if (Modifier.isAbstract(classInfo.flags())) {
@@ -61,7 +62,7 @@ public abstract class SelectiveAugmentedClassInfo {
         }
         this.types = typeParameters.toArray(Type[]::new);
 
-        return augmentIfKept(index, log);
+        return augmentIfKept(index, log, context);
     }
 
     public List<String> getClassNamesToRegisterForReflection() {
@@ -82,7 +83,8 @@ public abstract class SelectiveAugmentedClassInfo {
         return extendedOrImplementedClass.local();
     }
 
-    protected abstract boolean augmentIfKept(IndexView index, Logger log);
+    protected abstract boolean augmentIfKept(IndexView index, Logger log,
+            Map<String, Object> context);
 
     protected CRStatus handlePossibleCR(DotName primaryTypeDN, IndexView index, Logger log) {
         // register spec and status for reflection if we're targeting a CustomResource

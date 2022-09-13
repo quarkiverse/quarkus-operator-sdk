@@ -4,19 +4,24 @@ import static io.quarkiverse.operatorsdk.common.Constants.CUSTOM_RESOURCE;
 import static io.quarkiverse.operatorsdk.common.Constants.HAS_METADATA;
 import static io.quarkiverse.operatorsdk.common.Constants.RECONCILER;
 
+import java.util.Map;
+
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+
 /**
  * Metadata about a processable reconciler implementation.
  */
-public class ReconcilerAugmentedClassInfo extends SelectiveAugmentedClassInfo {
+public class ReconcilerAugmentedClassInfo extends SelectiveAugmentedClassInfo implements LoadableResourceHolder<HasMetadata> {
 
     private final String name;
     private boolean isCR;
     private boolean hasNonVoidStatus;
+    private SimpleLoadableResourceHolder<HasMetadata> holder;
 
     public ReconcilerAugmentedClassInfo(ClassInfo classInfo) {
         super(classInfo, RECONCILER, 1);
@@ -32,8 +37,8 @@ public class ReconcilerAugmentedClassInfo extends SelectiveAugmentedClassInfo {
     }
 
     @Override
-    protected boolean augmentIfKept(IndexView index, Logger log) {
-        final var primaryTypeDN = typeAt(0).name();
+    protected boolean augmentIfKept(IndexView index, Logger log, Map<String, Object> context) {
+        final var primaryTypeDN = primaryTypeName();
 
         // if we get CustomResource instead of a subclass, ignore the controller since we cannot do anything with it
         if (primaryTypeDN.toString() == null || CUSTOM_RESOURCE.equals(primaryTypeDN)
@@ -53,7 +58,20 @@ public class ReconcilerAugmentedClassInfo extends SelectiveAugmentedClassInfo {
         isCR = crStatus.isCR;
         hasNonVoidStatus = crStatus.hasNonVoidStatus;
 
+        final ClassInfo primaryCI = index.getClassByName(primaryTypeDN);
+        holder = new SimpleLoadableResourceHolder<>(primaryCI);
+
         return true;
+    }
+
+    @Override
+    public String getAssociatedResourceTypeName() {
+        return holder.getAssociatedResourceTypeName();
+    }
+
+    @Override
+    public Class<HasMetadata> loadAssociatedClass() {
+        return holder.loadAssociatedClass();
     }
 
     public boolean isCRTargeting() {
@@ -62,5 +80,13 @@ public class ReconcilerAugmentedClassInfo extends SelectiveAugmentedClassInfo {
 
     public boolean hasNonVoidStatus() {
         return hasNonVoidStatus;
+    }
+
+    public ResourceTargetingAugmentedClassInfo getAssociatedCustomResourceInfo() {
+        if (isCR) {
+            return new ResourceTargetingAugmentedClassInfo(holder.getResourceCI(), name);
+        }
+        throw new IllegalStateException("Cannot get associated Custom Resource information because '"
+                + name + "' targets " + primaryTypeName().toString() + " primary resource which isn't a Custom Resource.");
     }
 }

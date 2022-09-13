@@ -22,9 +22,19 @@ public class ResourceControllerMapping {
         final var versionsForCR = resourceFullNameToVersionToInfos.computeIfAbsent(crdName, s -> new HashMap<>());
         final var cri = versionsForCR.get(version);
         if (cri != null) {
-            throw new IllegalStateException("Cannot process controller '" + associatedControllerName +
-                    "' because a controller (" + cri.getControllerName() + ") is already associated with CRD "
-                    + crdName + " with version " + version);
+            String msg = "Cannot add CustomResource '" + crdName + "' with version "
+                    + version + " for processing";
+            if (associatedControllerName != null) {
+                msg += " by " + associatedControllerName;
+            }
+
+            msg += " because it's already been added previously";
+            final String existing = cri.getControllerName();
+            if (existing != null) {
+                msg += " to be processed by the controller named '" + existing + "'";
+            }
+
+            throw new IllegalStateException(msg);
         }
 
         final var converted = augment(info, crdName, associatedControllerName);

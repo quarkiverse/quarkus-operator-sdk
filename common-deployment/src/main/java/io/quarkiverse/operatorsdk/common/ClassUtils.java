@@ -1,9 +1,12 @@
 package io.quarkiverse.operatorsdk.common;
 
 import static io.quarkiverse.operatorsdk.common.Constants.ANNOTATION_CONFIGURABLE;
+import static io.quarkiverse.operatorsdk.common.Constants.CUSTOM_RESOURCE;
 import static io.quarkiverse.operatorsdk.common.Constants.DEPENDENT_RESOURCE;
 import static io.quarkiverse.operatorsdk.common.Constants.RECONCILER;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import org.jboss.jandex.DotName;
@@ -29,24 +32,39 @@ public class ClassUtils {
      * @return a stream of {@link ReconcilerAugmentedClassInfo} providing information about processable reconcilers
      */
     public static Stream<ReconcilerAugmentedClassInfo> getKnownReconcilers(IndexView index, Logger log) {
-        return getProcessableExtensionsOf(RECONCILER, index, log)
+        return getProcessableImplementationsOf(RECONCILER, index, log, Collections.emptyMap())
                 .map(ReconcilerAugmentedClassInfo.class::cast);
     }
 
-    public static Stream<? extends SelectiveAugmentedClassInfo> getProcessableExtensionsOf(DotName extendedOrImplementedClass,
-            IndexView index, Logger log) {
-        return index.getAllKnownImplementors(extendedOrImplementedClass).stream()
+    public static Stream<? extends SelectiveAugmentedClassInfo> getProcessableImplementationsOf(DotName interfaceType,
+            IndexView index, Logger log, Map<String, Object> context) {
+        return getProcessableImplementationsOrExtensionsOf(interfaceType, index, log, context, true);
+    }
+
+    public static Stream<? extends SelectiveAugmentedClassInfo> getProcessableSubClassesOf(DotName classType,
+            IndexView index, Logger log, Map<String, Object> context) {
+        return getProcessableImplementationsOrExtensionsOf(classType, index, log, context, false);
+    }
+
+    private static Stream<? extends SelectiveAugmentedClassInfo> getProcessableImplementationsOrExtensionsOf(
+            DotName implementedOrExtendedClass,
+            IndexView index, Logger log, Map<String, Object> context, boolean isInterface) {
+        final var extensions = isInterface ? index.getAllKnownImplementors(implementedOrExtendedClass)
+                : index.getAllKnownSubclasses(implementedOrExtendedClass);
+        return extensions.stream()
                 .map(classInfo -> {
-                    if (RECONCILER.equals(extendedOrImplementedClass)) {
+                    if (RECONCILER.equals(implementedOrExtendedClass)) {
                         return new ReconcilerAugmentedClassInfo(classInfo);
-                    } else if (DEPENDENT_RESOURCE.equals(extendedOrImplementedClass)) {
+                    } else if (DEPENDENT_RESOURCE.equals(implementedOrExtendedClass)) {
                         return new DependentResourceAugmentedClassInfo(classInfo);
-                    } else if (ANNOTATION_CONFIGURABLE.equals(extendedOrImplementedClass)) {
+                    } else if (ANNOTATION_CONFIGURABLE.equals(implementedOrExtendedClass)) {
                         return new AnnotationConfigurableAugmentedClassInfo(classInfo);
+                    } else if (CUSTOM_RESOURCE.equals(implementedOrExtendedClass)) {
+                        return new ResourceTargetingAugmentedClassInfo(classInfo, null);
                     } else {
-                        throw new IllegalArgumentException("Don't know how to process " + extendedOrImplementedClass);
+                        throw new IllegalArgumentException("Don't know how to process " + implementedOrExtendedClass);
                     }
                 })
-                .filter(fci -> fci.keepAugmented(index, log));
+                .filter(fci -> fci.keepAugmented(index, log, context));
     }
 }
