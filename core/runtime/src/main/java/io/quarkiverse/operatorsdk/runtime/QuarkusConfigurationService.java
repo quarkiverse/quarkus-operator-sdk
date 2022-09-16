@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.Config;
@@ -45,20 +45,19 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
             Collection<QuarkusControllerConfiguration> configurations,
             KubernetesClient client,
             CRDGenerationInfo crdInfo, int maxThreads,
-            int timeout, Metrics metrics, boolean startOperator) {
+            int timeout, Metrics metrics, boolean startOperator, ObjectMapper mapper) {
         super(version);
-        final var fMapper = getObjectMapper().configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         final var cloner = new Cloner() {
             @Override
             public <R extends HasMetadata> R clone(R r) {
                 try {
-                    return (R) fMapper.readValue(fMapper.writeValueAsString(r), r.getClass());
+                    return (R) mapper.readValue(mapper.writeValueAsString(r), r.getClass());
                 } catch (JsonProcessingException e) {
                     throw new IllegalStateException(e);
                 }
             }
         };
-        init(cloner, fMapper);
+        init(cloner, mapper);
         this.startOperator = startOperator;
         this.client = client;
         this.metrics = metrics;

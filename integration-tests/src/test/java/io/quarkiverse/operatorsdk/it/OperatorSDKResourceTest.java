@@ -76,7 +76,7 @@ class OperatorSDKResourceTest {
                 TestReconciler.NAME,
                 SecretReconciler.class.getSimpleName().toLowerCase(Locale.ROOT),
                 GatewayReconciler.class.getSimpleName().toLowerCase(Locale.ROOT),
-                DependentDefiningReconciler.NAME, NamespaceFromEnvReconciler.NAME));
+                DependentDefiningReconciler.NAME, NamespaceFromEnvReconciler.NAME, EmptyReconciler.NAME));
     }
 
     @Test
