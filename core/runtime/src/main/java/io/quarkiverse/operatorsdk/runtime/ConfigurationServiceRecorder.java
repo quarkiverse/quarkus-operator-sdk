@@ -4,10 +4,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import com.fasterxml.jackson.databind.SerializationFeature;
+
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.quarkus.arc.Arc;
+import io.quarkus.arc.InstanceHandle;
+import io.quarkus.jackson.ObjectMapperCustomizer;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.annotations.Recorder;
 
@@ -38,15 +43,27 @@ public class ConfigurationServiceRecorder {
             }
         });
 
-        return () -> new QuarkusConfigurationService(
-                version,
-                configurations.values(),
-                Arc.container().instance(KubernetesClient.class).get(),
-                crdInfo,
-                maxThreads,
-                timeout,
-                Arc.container().instance(Metrics.class).get(),
-                shouldStartOperator(buildTimeConfiguration.startOperator, launchMode));
+        return () -> {
+            // customize fabric8 mapper
+            final var mapper = Serialization.jsonMapper();
+            mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+            Arc.container().listAll(ObjectMapperCustomizer.class, KubernetesClientSerializationCustomizer.Literal.INSTANCE)
+                    .stream()
+                    .map(InstanceHandle::get)
+                    .sorted()
+                    .forEach(c -> c.customize(mapper));
+
+            return new QuarkusConfigurationService(
+                    version,
+                    configurations.values(),
+                    Arc.container().instance(KubernetesClient.class).get(),
+                    crdInfo,
+                    maxThreads,
+                    timeout,
+                    Arc.container().instance(Metrics.class).get(),
+                    shouldStartOperator(buildTimeConfiguration.startOperator, launchMode),
+                    mapper);
+        };
     }
 
     static boolean shouldStartOperator(Optional<Boolean> fromConfiguration, LaunchMode launchMode) {
