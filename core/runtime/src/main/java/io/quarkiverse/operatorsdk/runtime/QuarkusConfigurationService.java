@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -46,9 +45,9 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
             Collection<QuarkusControllerConfiguration> configurations,
             KubernetesClient client,
             CRDGenerationInfo crdInfo, int maxThreads,
-            int timeout, ObjectMapper mapper, Metrics metrics, boolean startOperator) {
+            int timeout, Metrics metrics, boolean startOperator) {
         super(version);
-        final var fMapper = mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        final var fMapper = getObjectMapper().configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         final var cloner = new Cloner() {
             @Override
             public <R extends HasMetadata> R clone(R r) {
@@ -59,7 +58,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
                 }
             }
         };
-        init(cloner, mapper);
+        init(cloner, fMapper);
         this.startOperator = startOperator;
         this.client = client;
         this.metrics = metrics;
