@@ -4,8 +4,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
@@ -47,7 +45,6 @@ public class ConfigurationServiceRecorder {
                 crdInfo,
                 maxThreads,
                 timeout,
-                Arc.container().instance(ObjectMapper.class).get(),
                 Arc.container().instance(Metrics.class).get(),
                 shouldStartOperator(buildTimeConfiguration.startOperator, launchMode));
     }
