@@ -22,6 +22,7 @@ This extension integrates the https://javaoperatorsdk.io[Java Operator SDK] proj
 - Automatically adds a SmallRye health check
 - Can easily generate a Docker image via JIB
 - Sets up reflection for native binary generation
+- Customize the JSON serialization that the Fabric8 client relies on by providing an `ObjectMapperCustomizer` implementation, qualified with the `@KubernetesClientSerializationCustomizer` annotation
 
 == Installation
 
