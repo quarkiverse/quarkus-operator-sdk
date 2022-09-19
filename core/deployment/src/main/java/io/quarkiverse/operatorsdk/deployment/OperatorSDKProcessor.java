@@ -33,6 +33,7 @@ import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
 import io.quarkiverse.operatorsdk.runtime.ConfigurationServiceRecorder;
+import io.quarkiverse.operatorsdk.runtime.KubernetesClientSerializationCustomizer;
 import io.quarkiverse.operatorsdk.runtime.NoOpMetricsProvider;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
@@ -85,6 +86,10 @@ class OperatorSDKProcessor {
                 new IndexDependencyBuildItem("io.javaoperatorsdk", "operator-framework-core"));
         // mark ObjectMapper as non-removable
         unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(ObjectMapper.class));
+
+        // register CDI qualifier for customization of the fabric8 ObjectMapper
+        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(
+                KubernetesClientSerializationCustomizer.class));
 
         // only add micrometer support if the capability is supported
         if (metricsCapability.map(m -> m.metricsSupported(MetricsFactory.MICROMETER)).orElse(false)) {
