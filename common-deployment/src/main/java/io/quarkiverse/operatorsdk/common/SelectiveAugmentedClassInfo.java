@@ -46,7 +46,7 @@ public abstract class SelectiveAugmentedClassInfo {
         }
 
         // Ignore implementations annotated with @Ignore
-        if (classInfo.annotations().containsKey(IGNORE_ANNOTATION)) {
+        if (classInfo.annotationsMap().containsKey(IGNORE_ANNOTATION)) {
             log.debugv("Skipping ''{0}'' {1} because it''s annotated with @Ignore",
                     consideredClassName, targetClassName);
             return false;
