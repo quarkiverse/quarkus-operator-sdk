@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.quarkus.arc.Arc;
-import io.quarkus.arc.InstanceHandle;
 import io.quarkus.jackson.ObjectMapperCustomizer;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.annotations.Recorder;
@@ -47,9 +46,8 @@ public class ConfigurationServiceRecorder {
             // customize fabric8 mapper
             final var mapper = Serialization.jsonMapper();
             mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-            Arc.container().listAll(ObjectMapperCustomizer.class, KubernetesClientSerializationCustomizer.Literal.INSTANCE)
+            Arc.container().select(ObjectMapperCustomizer.class, KubernetesClientSerializationCustomizer.Literal.INSTANCE)
                     .stream()
-                    .map(InstanceHandle::get)
                     .sorted()
                     .forEach(c -> c.customize(mapper));
 
