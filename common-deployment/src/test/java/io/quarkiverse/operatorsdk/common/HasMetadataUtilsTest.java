@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Kind;
 import io.fabric8.kubernetes.model.annotation.Plural;
 import io.fabric8.kubernetes.model.annotation.Singular;
+import io.fabric8.kubernetes.model.annotation.Version;
 import io.quarkus.test.common.TestClassIndexer;
 
 class HasMetadataUtilsTest {
@@ -59,6 +60,12 @@ class HasMetadataUtilsTest {
                 TestHasMetadata.class)));
     }
 
+    @Test
+    void getVersion() {
+        assertEquals(HasMetadata.getVersion(TestHasMetadata.class),
+                HasMetadataUtils.getVersion(getClassInfo(TestHasMetadata.class)));
+    }
+
     static class AbstractHasMetadata implements HasMetadata {
 
         @Override
@@ -79,6 +86,7 @@ class HasMetadataUtilsTest {
 
     @Group("foo")
     @Kind("test")
+    @Version("v1")
     static class TestHasMetadata extends AbstractHasMetadata {
     }
 
