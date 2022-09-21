@@ -1,6 +1,8 @@
 package io.quarkiverse.operatorsdk.runtime;
 
+import javax.annotation.Priority;
 import javax.enterprise.event.Observes;
+import javax.interceptor.Interceptor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +21,7 @@ public class AppEventListener {
         this.configurationService = configurationService;
     }
 
-    public void onStartup(@Observes StartupEvent event) {
+    public void onStartup(@Observes @Priority(Interceptor.Priority.LIBRARY_AFTER + 123) StartupEvent event) {
         if (configurationService.shouldStartOperator()) {
             if (operator.getRegisteredControllersNumber() > 0) {
                 log.info("Starting operator.");
