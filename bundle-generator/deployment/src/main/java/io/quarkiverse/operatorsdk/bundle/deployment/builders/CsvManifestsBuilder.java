@@ -32,8 +32,10 @@ import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionFluent;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionSpecFluent;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.NamedInstallStrategyFluent;
-import io.quarkiverse.operatorsdk.bundle.deployment.AugmentedResourceInfo;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
+import io.quarkiverse.operatorsdk.common.ReconciledAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.common.ResourceAssociatedAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 
 public class CsvManifestsBuilder extends ManifestsBuilder {
@@ -50,7 +52,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
 
     private final ClusterServiceVersionBuilder csvBuilder;
 
-    public CsvManifestsBuilder(CSVMetadataHolder metadata, List<AugmentedResourceInfo> controllers) {
+    public CsvManifestsBuilder(CSVMetadataHolder metadata, List<ReconcilerAugmentedClassInfo> controllers) {
         super(metadata);
         csvBuilder = new ClusterServiceVersionBuilder()
                 .withNewMetadata().withName(getName()).endMetadata();
@@ -84,16 +86,35 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             }
         }
 
-        for (AugmentedResourceInfo controller : controllers) {
-            csvSpecBuilder
-                    .editOrNewCustomresourcedefinitions()
-                    .addNewOwned()
-                    .withName(controller.getResourceFullName())
-                    .withVersion(controller.getVersion())
-                    .withKind(controller.getKind())
-                    .endOwned().endCustomresourcedefinitions()
-                    .endSpec();
-        }
+        final var crdsBuilder = csvSpecBuilder.editOrNewCustomresourcedefinitions();
+        controllers.forEach(raci -> {
+            // add owned CRD
+            final var resourceInfo = raci.associatedResourceInfo();
+            if (resourceInfo.isCR()) {
+                final var asResource = resourceInfo.asResourceTargeting();
+                crdsBuilder
+                        .addNewOwned()
+                        .withName(asResource.fullResourceName())
+                        .withVersion(asResource.version())
+                        .withKind(asResource.kind())
+                        .endOwned();
+            }
+
+            // add required CRD for each dependent that targets a CR
+            final var dependents = raci.getDependentResourceInfos();
+            if (dependents != null && !dependents.isEmpty()) {
+                dependents.stream()
+                        .map(ResourceAssociatedAugmentedClassInfo::associatedResourceInfo)
+                        .filter(ReconciledAugmentedClassInfo::isCR)
+                        .map(ReconciledAugmentedClassInfo::asResourceTargeting)
+                        .forEach(secondaryResource -> crdsBuilder.addNewRequired()
+                                .withName(secondaryResource.fullResourceName())
+                                .withVersion(secondaryResource.version())
+                                .withKind(secondaryResource.kind())
+                                .endRequired());
+            }
+        });
+        crdsBuilder.endCustomresourcedefinitions().endSpec();
     }
 
     @Override

@@ -13,6 +13,7 @@ import io.quarkiverse.operatorsdk.bundle.deployment.builders.CustomResourceManif
 import io.quarkiverse.operatorsdk.bundle.deployment.builders.ManifestsBuilder;
 import io.quarkiverse.operatorsdk.bundle.runtime.BundleGenerationConfiguration;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
+import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
 
@@ -37,9 +38,9 @@ public class BundleGenerator {
 
     public static List<ManifestsBuilder> prepareGeneration(BundleGenerationConfiguration bundleConfiguration,
             BuildTimeOperatorConfiguration operatorConfiguration,
-            Map<CSVMetadataHolder, List<AugmentedResourceInfo>> csvGroups, List<CRDInfo> crds) {
+            Map<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>> csvGroups, List<CRDInfo> crds) {
         List<ManifestsBuilder> builders = new ArrayList<>();
-        for (Map.Entry<CSVMetadataHolder, List<AugmentedResourceInfo>> entry : csvGroups.entrySet()) {
+        for (Map.Entry<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>> entry : csvGroups.entrySet()) {
             final var labels = generateBundleLabels(entry.getKey(), bundleConfiguration, operatorConfiguration);
 
             builders.add(new CsvManifestsBuilder(entry.getKey(), entry.getValue()));
@@ -55,13 +56,15 @@ public class BundleGenerator {
         return builders;
     }
 
-    private static CRDInfo findOwnedCustomResource(AugmentedResourceInfo controller, List<CRDInfo> crds) {
-        for (CRDInfo crd : crds) {
-            if (crd.getCrdName().startsWith(controller.getResourceFullName())) {
-                return crd;
-            }
+    private static CRDInfo findOwnedCustomResource(ReconcilerAugmentedClassInfo controller, List<CRDInfo> crds) {
+        final var resourceInfo = controller.associatedResourceInfo();
+        if (resourceInfo.isCR()) {
+            final var resourceName = resourceInfo.asResourceTargeting().fullResourceName();
+            return crds.stream()
+                    .filter(crd -> crd.getCrdName().startsWith(resourceName))
+                    .findFirst()
+                    .orElse(null);
         }
-
         return null;
     }
 

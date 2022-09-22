@@ -2,27 +2,36 @@ package io.quarkiverse.operatorsdk.common;
 
 import static io.quarkiverse.operatorsdk.common.Constants.DEPENDENT_RESOURCE;
 
-import java.util.Map;
+import java.util.Optional;
+import java.util.function.Predicate;
 
+import org.jboss.jandex.AnnotationInstance;
+import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
-import org.jboss.jandex.IndexView;
-import org.jboss.logging.Logger;
 
-public class DependentResourceAugmentedClassInfo extends SelectiveAugmentedClassInfo {
+public class DependentResourceAugmentedClassInfo extends ResourceAssociatedAugmentedClassInfo {
+    private final AnnotationInstance dependentAnnotationFromController;
 
     public DependentResourceAugmentedClassInfo(ClassInfo classInfo) {
-        super(classInfo, DEPENDENT_RESOURCE, 2);
+        this(classInfo, null);
     }
 
-    @Override
-    protected boolean augmentIfKept(IndexView index, Logger log, Map<String, Object> context) {
-        // only need to check the secondary resource type since the primary should have already been processed with the associated reconciler
-        final var secondaryTypeDN = typeAt(0).name();
-        registerForReflection(secondaryTypeDN.toString());
+    public DependentResourceAugmentedClassInfo(ClassInfo classInfo, AnnotationInstance dependentAnnotationFromController) {
+        super(classInfo, DEPENDENT_RESOURCE, 2,
+                Optional.ofNullable(dependentAnnotationFromController)
+                        .map(a -> a.value("name"))
+                        .map(AnnotationValue::asString)
+                        .filter(Predicate.not(String::isBlank))
+                        // note that this should match DependentResource.getDefaultNameFor implementation)
+                        .orElse(classInfo.name().toString()));
+        this.dependentAnnotationFromController = dependentAnnotationFromController;
+    }
 
-        // check if the secondary resource is a CR (rare but possible)
-        handlePossibleCR(secondaryTypeDN, index, log);
+    public AnnotationInstance getDependentAnnotationFromController() {
+        if (dependentAnnotationFromController == null) {
+            throw new IllegalStateException("Should only be called if this instance was manually created");
+        }
 
-        return true;
+        return dependentAnnotationFromController;
     }
 }

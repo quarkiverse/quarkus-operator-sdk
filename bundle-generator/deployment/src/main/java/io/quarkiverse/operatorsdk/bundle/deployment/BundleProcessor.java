@@ -33,10 +33,9 @@ import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.bundle.runtime.SharedCSVMetadata;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
-import io.quarkiverse.operatorsdk.deployment.ConfigurationServiceBuildItem;
+import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
-import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
@@ -55,32 +54,22 @@ public class BundleProcessor {
     @BuildStep
     CSVMetadataBuildItem gatherCSVMetadata(ApplicationInfoBuildItem configuration,
             BundleGenerationConfiguration bundleConfiguration,
-            CombinedIndexBuildItem combinedIndexBuildItem,
-            ConfigurationServiceBuildItem configurations) {
-        final var controllerConfigs = configurations.getControllerConfigs();
+            CombinedIndexBuildItem combinedIndexBuildItem) {
         final var index = combinedIndexBuildItem.getIndex();
         final var operatorCsvMetadata = getCSVMetadataForOperator(
                 bundleConfiguration.packageName.orElse(configuration.getName()), index);
-        final var csvGroups = new HashMap<CSVMetadataHolder, List<AugmentedResourceInfo>>();
+        final var csvGroups = new HashMap<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>>();
 
         ClassUtils.getKnownReconcilers(index, log)
                 .forEach(reconcilerInfo -> {
                     // figure out which group should be used to generate CSV
                     final var name = reconcilerInfo.name();
                     log.debugv("Processing reconciler: {0}", name);
-                    final var config = controllerConfigs.get(name);
-                    if (config == null) {
-                        throw new IllegalStateException("Missing configuration for reconciler " + name);
-                    }
 
                     // Check whether the reconciler must be shipped using a custom bundle
                     CSVMetadataHolder csvMetadata = getCsvMetadataFromAnnotation(operatorCsvMetadata,
                             reconcilerInfo.classInfo()).orElse(operatorCsvMetadata);
-                    final var resourceFullName = config.getResourceTypeName();
-                    final var resourceInfo = ResourceInfo.createFrom(config.getResourceClass(),
-                            resourceFullName, name, config.isStatusPresentAndNotVoid());
-                    csvGroups.computeIfAbsent(csvMetadata, m -> new ArrayList<>())
-                            .add(new AugmentedResourceInfo(resourceInfo, csvMetadata.name));
+                    csvGroups.computeIfAbsent(csvMetadata, m -> new ArrayList<>()).add(reconcilerInfo);
                 });
 
         return new CSVMetadataBuildItem(csvGroups);
