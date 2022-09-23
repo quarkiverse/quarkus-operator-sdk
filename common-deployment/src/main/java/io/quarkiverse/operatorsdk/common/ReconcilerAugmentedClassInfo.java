@@ -60,8 +60,8 @@ public class ReconcilerAugmentedClassInfo extends ResourceAssociatedAugmentedCla
                     final var dependentType = ConfigurationUtils.getClassInfoForInstantiation(
                             dependentConfig.value("type"),
                             DependentResource.class, index);
-                    final var dependent = new DependentResourceAugmentedClassInfo(dependentType,
-                            dependentConfig);
+                    final var dependent = DependentResourceAugmentedClassInfo.createFor(dependentType, dependentConfig, index,
+                            log, context);
                     final var dependentName = dependent.nameOrFailIfUnset();
                     if (dependentResources.containsKey(dependentName)) {
                         throw new IllegalArgumentException(

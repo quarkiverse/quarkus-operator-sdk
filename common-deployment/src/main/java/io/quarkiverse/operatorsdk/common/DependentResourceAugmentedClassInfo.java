@@ -2,12 +2,15 @@ package io.quarkiverse.operatorsdk.common;
 
 import static io.quarkiverse.operatorsdk.common.Constants.DEPENDENT_RESOURCE;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
+import org.jboss.jandex.IndexView;
+import org.jboss.logging.Logger;
 
 public class DependentResourceAugmentedClassInfo extends ResourceAssociatedAugmentedClassInfo {
     private final AnnotationInstance dependentAnnotationFromController;
@@ -16,7 +19,7 @@ public class DependentResourceAugmentedClassInfo extends ResourceAssociatedAugme
         this(classInfo, null);
     }
 
-    public DependentResourceAugmentedClassInfo(ClassInfo classInfo, AnnotationInstance dependentAnnotationFromController) {
+    private DependentResourceAugmentedClassInfo(ClassInfo classInfo, AnnotationInstance dependentAnnotationFromController) {
         super(classInfo, DEPENDENT_RESOURCE, 2,
                 Optional.ofNullable(dependentAnnotationFromController)
                         .map(a -> a.value("name"))
@@ -25,6 +28,14 @@ public class DependentResourceAugmentedClassInfo extends ResourceAssociatedAugme
                         // note that this should match DependentResource.getDefaultNameFor implementation)
                         .orElse(classInfo.name().toString()));
         this.dependentAnnotationFromController = dependentAnnotationFromController;
+    }
+
+    public static DependentResourceAugmentedClassInfo createFor(ClassInfo classInfo,
+            AnnotationInstance dependentAnnotationFromController, IndexView index, Logger log,
+            Map<String, Object> context) {
+        final var info = new DependentResourceAugmentedClassInfo(classInfo, dependentAnnotationFromController);
+        info.augmentIfKept(index, log, context);
+        return info;
     }
 
     public AnnotationInstance getDependentAnnotationFromController() {
