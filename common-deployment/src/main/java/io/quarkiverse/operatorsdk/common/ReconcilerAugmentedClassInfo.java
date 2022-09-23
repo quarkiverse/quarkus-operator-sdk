@@ -29,11 +29,7 @@ public class ReconcilerAugmentedClassInfo extends ResourceAssociatedAugmentedCla
     }
 
     @Override
-    protected boolean keep(IndexView index, Logger log, Map<String, Object> context) {
-        if (!super.keep(index, log, context)) {
-            return false;
-        }
-
+    protected boolean doKeep(IndexView index, Logger log, Map<String, Object> context) {
         // if we get CustomResource instead of a subclass, ignore the controller since we cannot do anything with it
         final var primaryTypeDN = resourceTypeName();
         if (primaryTypeDN.toString() == null || CUSTOM_RESOURCE.equals(primaryTypeDN)
@@ -47,8 +43,8 @@ public class ReconcilerAugmentedClassInfo extends ResourceAssociatedAugmentedCla
     }
 
     @Override
-    protected void augmentIfKept(IndexView index, Logger log, Map<String, Object> context) {
-        super.augmentIfKept(index, log, context);
+    protected void doAugment(IndexView index, Logger log, Map<String, Object> context) {
+        super.doAugment(index, log, context);
 
         // extract dependent information
         final var reconciler = classInfo();

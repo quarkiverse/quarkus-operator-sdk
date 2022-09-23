@@ -26,7 +26,7 @@ public class ReconciledAugmentedClassInfo<T> extends SelectiveAugmentedClassInfo
     }
 
     @Override
-    protected void augmentIfKept(IndexView index, Logger log, Map<String, Object> context) {
+    protected void doAugment(IndexView index, Logger log, Map<String, Object> context) {
         // record target resource class for later forced registration for reflection
         registerForReflection(classInfo().name().toString());
     }
@@ -51,6 +51,7 @@ public class ReconciledAugmentedClassInfo<T> extends SelectiveAugmentedClassInfo
         return Optional.ofNullable(reconcilerName);
     }
 
+    @SuppressWarnings("rawtypes")
     public ReconciledResourceAugmentedClassInfo asResourceTargeting() {
         return (ReconciledResourceAugmentedClassInfo) this;
     }

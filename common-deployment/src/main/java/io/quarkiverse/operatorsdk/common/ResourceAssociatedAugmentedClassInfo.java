@@ -37,7 +37,8 @@ public class ResourceAssociatedAugmentedClassInfo extends SelectiveAugmentedClas
         return Optional.ofNullable(name);
     }
 
-    protected void augmentIfKept(IndexView index, Logger log, Map<String, Object> context) {
+    @Override
+    protected void doAugment(IndexView index, Logger log, Map<String, Object> context) {
         // create associated resource information
         final var primaryTypeDN = resourceTypeName();
         final var primaryCI = index.getClassByName(primaryTypeDN);

@@ -21,10 +21,8 @@ public class CustomResourceAugmentedClassInfo extends ReconciledResourceAugmente
     }
 
     @Override
-    protected boolean keep(IndexView index, Logger log, Map<String, Object> context) {
-        if (!super.keep(index, log, context)) {
-            return false;
-        }
+    protected boolean doKeep(IndexView index, Logger log, Map<String, Object> context) {
+
         // only keep the information if the associated CRD hasn't already been generated
         final var fullName = fullResourceName();
         return Optional.ofNullable(context.get(EXISTING_CRDS_KEY))
@@ -37,8 +35,8 @@ public class CustomResourceAugmentedClassInfo extends ReconciledResourceAugmente
     }
 
     @Override
-    protected void augmentIfKept(IndexView index, Logger log, Map<String, Object> context) {
-        super.augmentIfKept(index, log, context);
+    protected void doAugment(IndexView index, Logger log, Map<String, Object> context) {
+        super.doAugment(index, log, context);
 
         // check if the primary is also a CR, in which case we also need to register its
         // spec and status classes if we can determine them
