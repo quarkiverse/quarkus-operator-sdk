@@ -32,7 +32,7 @@ import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestSpec.ExcludedTopic;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestStatus.State;
 
-@CSVMetadata(permissionRules = @CSVMetadata.PermissionRule(apiGroups = "samples.javaoperatorsdk.io", resources = "jokes"))
+@CSVMetadata(permissionRules = @CSVMetadata.PermissionRule(apiGroups = Joke.GROUP, resources = "jokes"), requiredCRDs = @CSVMetadata.RequiredCRD(kind = "Joke", name = Joke.NAME, version = Joke.VERSION))
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
 public class JokeRequestReconciler implements Reconciler<JokeRequest> {
     @Inject

@@ -15,6 +15,7 @@ public class CSVMetadataHolder {
     public final Maintainer[] maintainers;
     public final InstallMode[] installModes;
     public final PermissionRule[] permissionRules;
+    public final RequiredCRD[] requiredCRDs;
 
     public static class Maintainer {
         public final String name;
@@ -50,18 +51,34 @@ public class CSVMetadataHolder {
         }
     }
 
+    public static class RequiredCRD {
+        public final String kind;
+
+        public final String name;
+
+        public final String version;
+
+        public RequiredCRD(String kind, String name, String version) {
+            this.kind = kind;
+            this.name = name;
+            this.version = version;
+        }
+
+    }
+
     public CSVMetadataHolder(CSVMetadataHolder other) {
         this(other.name, other.description, other.displayName, other.keywords, other.providerName, other.providerURL,
-                other.replaces, other.version, other.maturity, other.maintainers, other.installModes, other.permissionRules);
+                other.replaces, other.version, other.maturity, other.maintainers, other.installModes, other.permissionRules,
+                other.requiredCRDs);
     }
 
     public CSVMetadataHolder(String name) {
-        this(name, null, null, null, null, null, null, null, null, null, null, null);
+        this(name, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     public CSVMetadataHolder(String name, String description, String displayName, String[] keywords, String providerName,
             String providerURL, String replaces, String version, String maturity, Maintainer[] maintainers,
-            InstallMode[] installModes, PermissionRule[] permissionRules) {
+            InstallMode[] installModes, PermissionRule[] permissionRules, RequiredCRD[] requiredCRDs) {
         this.name = name;
         this.description = description;
         this.displayName = displayName;
@@ -74,6 +91,7 @@ public class CSVMetadataHolder {
         this.maintainers = maintainers;
         this.installModes = installModes;
         this.permissionRules = permissionRules;
+        this.requiredCRDs = requiredCRDs;
     }
 
     @Override

@@ -31,6 +31,8 @@ public @interface CSVMetadata {
 
     PermissionRule[] permissionRules() default {};
 
+    RequiredCRD[] requiredCRDs() default {};
+
     @interface Maintainer {
         String email() default "";
 
@@ -61,5 +63,13 @@ public @interface CSVMetadata {
          *         name.
          */
         String serviceAccountName() default "";
+    }
+
+    @interface RequiredCRD {
+        String kind();
+
+        String name();
+
+        String version();
     }
 }

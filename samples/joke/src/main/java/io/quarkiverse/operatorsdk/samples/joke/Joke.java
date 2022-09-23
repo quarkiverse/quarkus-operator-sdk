@@ -22,10 +22,14 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Version;
 
-@Group("samples.javaoperatorsdk.io")
-@Version("v1alpha1")
+@Group(Joke.GROUP)
+@Version(Joke.VERSION)
 @JsonInclude(Include.NON_NULL)
 public class Joke extends CustomResource<Void, Void> implements Namespaced {
+
+    public static final String GROUP = "samples.javaoperatorsdk.io";
+    public static final String VERSION = "v1alpha1";
+    public static final String NAME = "jokes." + GROUP;
     private String joke;
     private String category;
     private boolean safe;

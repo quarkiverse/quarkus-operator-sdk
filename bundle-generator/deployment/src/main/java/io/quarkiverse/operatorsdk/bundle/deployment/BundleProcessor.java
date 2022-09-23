@@ -50,7 +50,7 @@ public class BundleProcessor {
     private static final DotName CSV_METADATA = DotName.createSimple(CSVMetadata.class.getName());
     private static final String BUNDLE = "bundle";
 
-    @SuppressWarnings({ "unchecked", "unused" })
+    @SuppressWarnings({ "unused" })
     @BuildStep
     CSVMetadataBuildItem gatherCSVMetadata(ApplicationInfoBuildItem configuration,
             BundleGenerationConfiguration bundleConfiguration,
@@ -246,6 +246,24 @@ public class BundleProcessor {
             permissionRules = mh.permissionRules;
         }
 
+        final var requiredCRDsField = csvMetadata.value("requiredCRDs");
+        CSVMetadataHolder.RequiredCRD[] requiredCRDs;
+        if (requiredCRDsField != null) {
+            final var requiredCRDAnn = requiredCRDsField.asNestedArray();
+            requiredCRDs = new CSVMetadataHolder.RequiredCRD[requiredCRDAnn.length];
+            for (int i = 0; i < requiredCRDAnn.length; i++) {
+                requiredCRDs[i] = new CSVMetadataHolder.RequiredCRD(
+                        ConfigurationUtils.annotationValueOrDefault(requiredCRDAnn[i], "kind",
+                                AnnotationValue::asString, () -> null),
+                        ConfigurationUtils.annotationValueOrDefault(requiredCRDAnn[i], "name",
+                                AnnotationValue::asString, () -> null),
+                        ConfigurationUtils.annotationValueOrDefault(requiredCRDAnn[i], "version",
+                                AnnotationValue::asString, () -> null));
+            }
+        } else {
+            requiredCRDs = mh.requiredCRDs;
+        }
+
         return new CSVMetadataHolder(
                 ConfigurationUtils.annotationValueOrDefault(csvMetadata, "name",
                         AnnotationValue::asString, () -> mh.name),
@@ -264,6 +282,7 @@ public class BundleProcessor {
                         AnnotationValue::asString, () -> mh.maturity),
                 maintainers,
                 installModes,
-                permissionRules);
+                permissionRules,
+                requiredCRDs);
     }
 }

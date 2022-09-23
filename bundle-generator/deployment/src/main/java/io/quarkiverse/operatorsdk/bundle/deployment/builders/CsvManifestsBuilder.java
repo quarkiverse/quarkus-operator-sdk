@@ -33,6 +33,7 @@ import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionSpecFluent;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.NamedInstallStrategyFluent;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
+import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder.RequiredCRD;
 import io.quarkiverse.operatorsdk.common.ReconciledAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ResourceAssociatedAugmentedClassInfo;
@@ -113,6 +114,18 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                                 .withKind(secondaryResource.kind())
                                 .endRequired());
             }
+
+            // add required CRDs from CSV metadata
+            if (metadata.requiredCRDs != null && metadata.requiredCRDs.length > 0) {
+                for (RequiredCRD requiredCRD : metadata.requiredCRDs) {
+                    crdsBuilder.addNewRequired()
+                            .withKind(requiredCRD.kind)
+                            .withName(requiredCRD.name)
+                            .withVersion(requiredCRD.version)
+                            .endRequired();
+                }
+            }
+
         });
         crdsBuilder.endCustomresourcedefinitions().endSpec();
     }
