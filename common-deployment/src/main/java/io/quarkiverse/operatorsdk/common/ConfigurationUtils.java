@@ -74,12 +74,7 @@ public class ConfigurationUtils {
             Class<T> interfaceClass,
             IndexView index) {
         final var expectedTypeDN = toInstantiate.asClass().name();
-        final var expectedTypeInfo = index.getClassByName(expectedTypeDN);
-        if (!expectedTypeInfo.hasNoArgsConstructor()) {
-            throw new IllegalArgumentException(interfaceClass.getSimpleName() +
-                    " implementations must provide a no-arg constructor for instantiation purposes");
-        }
-        return expectedTypeInfo;
+        return index.getClassByName(expectedTypeDN);
     }
 
     @SuppressWarnings("unchecked")
