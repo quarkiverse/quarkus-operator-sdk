@@ -1,6 +1,7 @@
 package io.quarkiverse.operatorsdk.common;
 
 import static io.quarkiverse.operatorsdk.common.Constants.IGNORE_ANNOTATION;
+import static io.quarkiverse.operatorsdk.common.Constants.OBJECT;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -61,9 +62,15 @@ public abstract class SelectiveAugmentedClassInfo {
     }
 
     private void initTypesIfNeeded(IndexView index) {
-        if (types == null) {
-            final var typeParameters = JandexUtil.resolveTypeParameters(classInfo.name(),
-                    extendedOrImplementedClass, index);
+        if (types == null && !OBJECT.equals(extendedOrImplementedClass)) {
+            final List<Type> typeParameters;
+            try {
+                typeParameters = JandexUtil.resolveTypeParameters(classInfo.name(),
+                        extendedOrImplementedClass, index);
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Cannot process " + classInfo.simpleName()
+                        + " as an implementation/extension of " + extendedOrImplementedClassName(), e);
+            }
             if (expectedParameterTypesCardinality != typeParameters.size()) {
                 throw new IllegalArgumentException("Cannot process " + classInfo.simpleName()
                         + " as an implementation/extension of " + extendedOrImplementedClassName()
