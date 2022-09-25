@@ -40,4 +40,10 @@ public class BuildTimeOperatorConfiguration {
      */
     @ConfigItem
     public Optional<Boolean> startOperator;
+
+    /**
+     * Config for dev services
+     */
+    @ConfigItem
+    public KubernetesDevServicesBuildTimeConfig devservices;
 }
