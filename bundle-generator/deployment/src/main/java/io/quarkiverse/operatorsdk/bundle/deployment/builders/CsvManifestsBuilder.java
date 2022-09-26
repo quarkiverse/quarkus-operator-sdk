@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +53,8 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     private static final Map<String, Set<ResourceInfo>> groupToCRInfo = new ConcurrentHashMap<>(7);
 
     private final ClusterServiceVersionBuilder csvBuilder;
+    private final Set<String> ownedCRs = new HashSet<>();
+    private final Set<String> requiredCRs = new HashSet<>();
 
     public CsvManifestsBuilder(CSVMetadataHolder metadata, List<ReconcilerAugmentedClassInfo> controllers) {
         super(metadata);
@@ -87,15 +90,18 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             }
         }
 
+        // add owned and required CRD, also collect them
         final var crdsBuilder = csvSpecBuilder.editOrNewCustomresourcedefinitions();
         controllers.forEach(raci -> {
             // add owned CRD
             final var resourceInfo = raci.associatedResourceInfo();
             if (resourceInfo.isCR()) {
                 final var asResource = resourceInfo.asResourceTargeting();
+                final var fullResourceName = asResource.fullResourceName();
+                ownedCRs.add(fullResourceName);
                 crdsBuilder
                         .addNewOwned()
-                        .withName(asResource.fullResourceName())
+                        .withName(fullResourceName)
                         .withVersion(asResource.version())
                         .withKind(asResource.kind())
                         .endOwned();
@@ -108,16 +114,21 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                         .map(ResourceAssociatedAugmentedClassInfo::associatedResourceInfo)
                         .filter(ReconciledAugmentedClassInfo::isCR)
                         .map(ReconciledAugmentedClassInfo::asResourceTargeting)
-                        .forEach(secondaryResource -> crdsBuilder.addNewRequired()
-                                .withName(secondaryResource.fullResourceName())
-                                .withVersion(secondaryResource.version())
-                                .withKind(secondaryResource.kind())
-                                .endRequired());
+                        .forEach(secondaryResource -> {
+                            final var fullResourceName = secondaryResource.fullResourceName();
+                            requiredCRs.add(fullResourceName);
+                            crdsBuilder.addNewRequired()
+                                    .withName(fullResourceName)
+                                    .withVersion(secondaryResource.version())
+                                    .withKind(secondaryResource.kind())
+                                    .endRequired();
+                        });
             }
 
             // add required CRDs from CSV metadata
             if (metadata.requiredCRDs != null && metadata.requiredCRDs.length > 0) {
                 for (RequiredCRD requiredCRD : metadata.requiredCRDs) {
+                    requiredCRs.add(requiredCRD.name);
                     crdsBuilder.addNewRequired()
                             .withKind(requiredCRD.kind)
                             .withName(requiredCRD.name)
@@ -128,6 +139,14 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
 
         });
         crdsBuilder.endCustomresourcedefinitions().endSpec();
+    }
+
+    public Set<String> getOwnedCRs() {
+        return Collections.unmodifiableSet(ownedCRs);
+    }
+
+    public Set<String> getRequiredCRs() {
+        return Collections.unmodifiableSet(requiredCRs);
     }
 
     @Override

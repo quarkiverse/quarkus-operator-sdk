@@ -11,6 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.jboss.jandex.AnnotationInstance;
@@ -36,6 +37,7 @@ import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
+import io.quarkiverse.operatorsdk.runtime.CRDInfo;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
@@ -88,8 +90,10 @@ public class BundleProcessor {
             BuildProducer<GeneratedFileSystemResourceBuildItem> generatedCSVs) {
         if (bundleConfiguration.enabled) {
             try {
-                final var crds = generatedCustomResourcesDefinitions.getCRDGenerationInfo().getCrds().values()
-                        .stream().flatMap(entry -> entry.values().stream()).collect(Collectors.toList());
+                final var crds = generatedCustomResourcesDefinitions.getCRDGenerationInfo().getCrds()
+                        .values().stream()
+                        .flatMap(entry -> entry.values().stream())
+                        .collect(Collectors.toMap(CRDInfo::getCrdName, Function.identity()));
                 final var outputDir = outputTarget.getOutputDirectory().resolve(BUNDLE);
                 final var serviceAccounts = new LinkedList<ServiceAccount>();
                 final var clusterRoleBindings = new LinkedList<ClusterRoleBinding>();

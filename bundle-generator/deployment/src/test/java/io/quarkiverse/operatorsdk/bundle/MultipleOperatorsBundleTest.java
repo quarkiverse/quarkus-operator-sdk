@@ -1,6 +1,7 @@
 package io.quarkiverse.operatorsdk.bundle;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -18,6 +19,7 @@ import io.quarkiverse.operatorsdk.bundle.sources.ExternalDependentResource;
 import io.quarkiverse.operatorsdk.bundle.sources.First;
 import io.quarkiverse.operatorsdk.bundle.sources.FirstReconciler;
 import io.quarkiverse.operatorsdk.bundle.sources.Second;
+import io.quarkiverse.operatorsdk.bundle.sources.SecondExternal;
 import io.quarkiverse.operatorsdk.bundle.sources.SecondReconciler;
 import io.quarkiverse.operatorsdk.bundle.sources.Third;
 import io.quarkiverse.operatorsdk.bundle.sources.ThirdReconciler;
@@ -34,7 +36,9 @@ public class MultipleOperatorsBundleTest {
             .withApplicationRoot((jar) -> jar
                     .addClasses(First.class, FirstReconciler.class,
                             Second.class, SecondReconciler.class,
-                            Third.class, External.class, ThirdReconciler.class, ExternalDependentResource.class));
+                            Third.class, External.class, SecondExternal.class, ThirdReconciler.class,
+                            ExternalDependentResource.class))
+            .overrideConfigKey("quarkus.operator-sdk.crd.generate-all", "true");
 
     @SuppressWarnings("unused")
     @ProdBuildResults
@@ -48,13 +52,18 @@ public class MultipleOperatorsBundleTest {
 
         checkBundleFor(bundle, "third-operator", Third.class);
         final var thirdManifests = bundle.resolve("third-operator").resolve("manifests");
-        assertFileExistsIn(thirdManifests, thirdManifests.resolve(getCRDNameFor(External.class)));
+        assertFileExistsIn(thirdManifests.resolve(getCRDNameFor(External.class)), thirdManifests);
         final var csvAsString = Files.readString(thirdManifests.resolve("third-operator.csv.yml"));
         final var csv = Serialization.unmarshal(csvAsString, ClusterServiceVersion.class);
         assertEquals(HasMetadata.getFullResourceName(Third.class),
                 csv.getSpec().getCustomresourcedefinitions().getOwned().get(0).getName());
-        assertEquals(HasMetadata.getFullResourceName(External.class),
-                csv.getSpec().getCustomresourcedefinitions().getRequired().get(0).getName());
+        assertTrue(csvSpecHasRequired(csv, HasMetadata.getFullResourceName(External.class)));
+        assertTrue(csvSpecHasRequired(csv, HasMetadata.getFullResourceName(SecondExternal.class)));
+    }
+
+    private static boolean csvSpecHasRequired(ClusterServiceVersion csv, String externalName) {
+        return csv.getSpec().getCustomresourcedefinitions().getRequired().stream()
+                .anyMatch(desc -> externalName.equals(desc.getName()));
     }
 
     private void checkBundleFor(Path bundle, String operatorName, Class<? extends HasMetadata> resourceClass) {
