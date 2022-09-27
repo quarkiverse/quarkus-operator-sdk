@@ -25,6 +25,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
+@SuppressWarnings("unused")
 public class PingReconciler implements Reconciler<Ping> {
 
     @Inject
@@ -38,12 +39,12 @@ public class PingReconciler implements Reconciler<Ping> {
         }
 
         final String expectedPongResource = ping.getMetadata().getName() + "-pong";
-        final var pongResource = client.resources(Pong.class).withName(expectedPongResource);
-        final var existing = pongResource.get();
+        final var pongs = client.resources(Pong.class);
+        final var existing = pongs.withName(expectedPongResource).get();
         if (existing == null) {
             Pong pong = new Pong();
             pong.getMetadata().setName(expectedPongResource);
-            pongResource.create(pong);
+            pongs.resource(pong).create();
         }
 
         ping.setStatus(new Status(Status.State.PROCESSED));

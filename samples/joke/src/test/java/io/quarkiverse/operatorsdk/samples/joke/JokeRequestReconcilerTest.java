@@ -65,7 +65,7 @@ class JokeRequestReconcilerTest {
         testRequest.getSpec().setCategory(Category.Any);
 
         // act
-        mockServer.getClient().resources(JokeRequest.class).create(testRequest);
+        mockServer.getClient().resources(JokeRequest.class).resource(testRequest).create();
 
         // assert
         await().ignoreException(NullPointerException.class).atMost(5, MINUTES).untilAsserted(() -> {

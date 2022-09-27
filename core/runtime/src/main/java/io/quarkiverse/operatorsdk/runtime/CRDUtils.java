@@ -41,11 +41,13 @@ public final class CRDUtils {
     private static void apply(KubernetesClient client, String v, Object crd) {
         switch (v) {
             case "v1":
-                client.apiextensions().v1().customResourceDefinitions().createOrReplace((CustomResourceDefinition) crd);
+                client.apiextensions().v1().customResourceDefinitions()
+                        .resource((CustomResourceDefinition) crd).createOrReplace();
                 break;
             case "v1beta1":
                 client.apiextensions().v1beta1().customResourceDefinitions()
-                        .createOrReplace((io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition) crd);
+                        .resource((io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition) crd)
+                        .createOrReplace();
                 break;
             default:
                 throw new IllegalArgumentException("Unknown CRD version: " + v);
