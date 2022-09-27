@@ -244,7 +244,7 @@ class QuarkusControllerConfigurationBuilder {
         if (configurableInfo != null) {
             final var associatedConfigurationClass = configurableInfo.getAssociatedConfigurationClass();
             // Keeping the deprecated method due to compatibility with Quarkus 2.7.
-            if (reconcilerInfo.classInfo().annotations().containsKey(associatedConfigurationClass)) {
+            if (reconcilerInfo.classInfo().annotationsMap().containsKey(associatedConfigurationClass)) {
                 return ClassLoadingUtils
                         .loadClass(associatedConfigurationClass.toString(), Object.class);
             }
