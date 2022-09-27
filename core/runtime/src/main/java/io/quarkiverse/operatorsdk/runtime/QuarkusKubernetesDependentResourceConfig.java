@@ -29,31 +29,37 @@ public class QuarkusKubernetesDependentResourceConfig<R extends HasMetadata> ext
     }
 
     // Needed for the recordable constructor
+    @SuppressWarnings("unused")
     public String getLabelSelector() {
         return labelSelector();
     }
 
     // Needed for the recordable constructor
+    @SuppressWarnings({ "unchecked", "unused" })
     public OnAddFilter<R> getOnAddFilter() {
         return onAddFilter();
     }
 
     // Needed for the recordable constructor
+    @SuppressWarnings({ "unchecked", "unused" })
     public OnUpdateFilter<R> getOnUpdateFilter() {
         return onUpdateFilter();
     }
 
     // Needed for the recordable constructor
+    @SuppressWarnings({ "unchecked", "unused" })
     public OnDeleteFilter<R> getOnDeleteFilter() {
         return onDeleteFilter();
     }
 
     // Needed for the recordable constructor
+    @SuppressWarnings("unused")
     public GenericFilter<R> getGenericFilter() {
         return genericFilter();
     }
 
     // Needed for the recordable constructor
+    @SuppressWarnings("unused")
     public boolean getConfiguredNS() {
         return wereNamespacesConfigured();
     }

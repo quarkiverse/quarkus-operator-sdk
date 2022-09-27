@@ -70,6 +70,7 @@ public class ConfigurationUtils {
                 defaultValue.get();
     }
 
+    @SuppressWarnings("unused")
     public static <T> ClassInfo getClassInfoForInstantiation(AnnotationValue toInstantiate,
             Class<T> interfaceClass,
             IndexView index) {
