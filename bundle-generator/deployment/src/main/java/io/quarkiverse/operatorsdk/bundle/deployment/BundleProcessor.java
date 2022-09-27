@@ -11,6 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.jboss.jandex.AnnotationInstance;
@@ -33,10 +34,10 @@ import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.bundle.runtime.SharedCSVMetadata;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
-import io.quarkiverse.operatorsdk.deployment.ConfigurationServiceBuildItem;
+import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
-import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
+import io.quarkiverse.operatorsdk.runtime.CRDInfo;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
@@ -51,36 +52,26 @@ public class BundleProcessor {
     private static final DotName CSV_METADATA = DotName.createSimple(CSVMetadata.class.getName());
     private static final String BUNDLE = "bundle";
 
-    @SuppressWarnings({ "unchecked", "unused" })
+    @SuppressWarnings({ "unused" })
     @BuildStep
     CSVMetadataBuildItem gatherCSVMetadata(ApplicationInfoBuildItem configuration,
             BundleGenerationConfiguration bundleConfiguration,
-            CombinedIndexBuildItem combinedIndexBuildItem,
-            ConfigurationServiceBuildItem configurations) {
-        final var controllerConfigs = configurations.getControllerConfigs();
+            CombinedIndexBuildItem combinedIndexBuildItem) {
         final var index = combinedIndexBuildItem.getIndex();
         final var operatorCsvMetadata = getCSVMetadataForOperator(
                 bundleConfiguration.packageName.orElse(configuration.getName()), index);
-        final var csvGroups = new HashMap<CSVMetadataHolder, List<AugmentedResourceInfo>>();
+        final var csvGroups = new HashMap<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>>();
 
         ClassUtils.getKnownReconcilers(index, log)
                 .forEach(reconcilerInfo -> {
                     // figure out which group should be used to generate CSV
                     final var name = reconcilerInfo.name();
                     log.debugv("Processing reconciler: {0}", name);
-                    final var config = controllerConfigs.get(name);
-                    if (config == null) {
-                        throw new IllegalStateException("Missing configuration for reconciler " + name);
-                    }
 
                     // Check whether the reconciler must be shipped using a custom bundle
                     CSVMetadataHolder csvMetadata = getCsvMetadataFromAnnotation(operatorCsvMetadata,
                             reconcilerInfo.classInfo()).orElse(operatorCsvMetadata);
-                    final var resourceFullName = config.getResourceTypeName();
-                    final var resourceInfo = ResourceInfo.createFrom(config.getResourceClass(),
-                            resourceFullName, name, config.isStatusPresentAndNotVoid());
-                    csvGroups.computeIfAbsent(csvMetadata, m -> new ArrayList<>())
-                            .add(new AugmentedResourceInfo(resourceInfo, csvMetadata.name));
+                    csvGroups.computeIfAbsent(csvMetadata, m -> new ArrayList<>()).add(reconcilerInfo);
                 });
 
         return new CSVMetadataBuildItem(csvGroups);
@@ -99,8 +90,10 @@ public class BundleProcessor {
             BuildProducer<GeneratedFileSystemResourceBuildItem> generatedCSVs) {
         if (bundleConfiguration.enabled) {
             try {
-                final var crds = generatedCustomResourcesDefinitions.getCRDGenerationInfo().getCrds().values()
-                        .stream().flatMap(entry -> entry.values().stream()).collect(Collectors.toList());
+                final var crds = generatedCustomResourcesDefinitions.getCRDGenerationInfo().getCrds()
+                        .values().stream()
+                        .flatMap(entry -> entry.values().stream())
+                        .collect(Collectors.toMap(CRDInfo::getCrdName, Function.identity()));
                 final var outputDir = outputTarget.getOutputDirectory().resolve(BUNDLE);
                 final var serviceAccounts = new LinkedList<ServiceAccount>();
                 final var clusterRoleBindings = new LinkedList<ClusterRoleBinding>();
@@ -257,6 +250,24 @@ public class BundleProcessor {
             permissionRules = mh.permissionRules;
         }
 
+        final var requiredCRDsField = csvMetadata.value("requiredCRDs");
+        CSVMetadataHolder.RequiredCRD[] requiredCRDs;
+        if (requiredCRDsField != null) {
+            final var requiredCRDAnn = requiredCRDsField.asNestedArray();
+            requiredCRDs = new CSVMetadataHolder.RequiredCRD[requiredCRDAnn.length];
+            for (int i = 0; i < requiredCRDAnn.length; i++) {
+                requiredCRDs[i] = new CSVMetadataHolder.RequiredCRD(
+                        ConfigurationUtils.annotationValueOrDefault(requiredCRDAnn[i], "kind",
+                                AnnotationValue::asString, () -> null),
+                        ConfigurationUtils.annotationValueOrDefault(requiredCRDAnn[i], "name",
+                                AnnotationValue::asString, () -> null),
+                        ConfigurationUtils.annotationValueOrDefault(requiredCRDAnn[i], "version",
+                                AnnotationValue::asString, () -> null));
+            }
+        } else {
+            requiredCRDs = mh.requiredCRDs;
+        }
+
         return new CSVMetadataHolder(
                 ConfigurationUtils.annotationValueOrDefault(csvMetadata, "name",
                         AnnotationValue::asString, () -> mh.name),
@@ -275,6 +286,7 @@ public class BundleProcessor {
                         AnnotationValue::asString, () -> mh.maturity),
                 maintainers,
                 installModes,
-                permissionRules);
+                permissionRules,
+                requiredCRDs);
     }
 }

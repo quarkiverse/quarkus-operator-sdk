@@ -15,11 +15,9 @@ public class AnnotationConfigurableAugmentedClassInfo extends SelectiveAugmented
     }
 
     @Override
-    protected boolean augmentIfKept(IndexView index, Logger log, Map<String, Object> context) {
+    protected void doAugment(IndexView index, Logger log, Map<String, Object> context) {
         // record associated configuration class
         associatedConfigurationClass = typeAt(0).name();
-
-        return true;
     }
 
     public DotName getAssociatedConfigurationClass() {

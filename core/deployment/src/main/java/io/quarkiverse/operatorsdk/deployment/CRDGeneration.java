@@ -9,7 +9,7 @@ import java.util.Set;
 import io.fabric8.crd.generator.CRDGenerator;
 import io.fabric8.crd.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.quarkiverse.operatorsdk.common.ResourceTargetingAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.common.CustomResourceAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
@@ -127,10 +127,10 @@ class CRDGeneration {
         return generateCurrent[0];
     }
 
-    boolean scheduleForGenerationIfNeeded(ResourceTargetingAugmentedClassInfo crInfo,
+    boolean scheduleForGenerationIfNeeded(CustomResourceAugmentedClassInfo crInfo,
             Map<String, CRDInfo> existingCRDInfos, Set<String> changedClasses) {
         var scheduleCurrent = true;
-        final String targetCRName = crInfo.getAssociatedResourceTypeName();
+        final String targetCRName = crInfo.asResourceTargeting().fullResourceName();
 
         if (existingCRDInfos != null && !existingCRDInfos.isEmpty()) {
             scheduleCurrent = needsGeneration(existingCRDInfos, changedClasses, targetCRName);

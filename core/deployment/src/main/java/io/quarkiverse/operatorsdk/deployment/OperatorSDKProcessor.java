@@ -25,7 +25,7 @@ import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInf
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.Constants;
-import io.quarkiverse.operatorsdk.common.ResourceTargetingAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.common.CustomResourceAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.SelectiveAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.AppEventListener;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
@@ -172,18 +172,21 @@ class OperatorSDKProcessor {
 
                     // add associated primary resource for CRD generation if needed
                     final var changeInformation = liveReload.getChangeInformation();
-                    if (raci.isCRTargeting() && crdGeneration.wantCRDGenerated()) {
-                        final var crInfo = raci.getAssociatedCustomResourceInfo();
-                        // When we have a live reload, check if we need to regenerate the associated CRD
-                        Map<String, CRDInfo> crdInfos = Collections.emptyMap();
+                    if (crdGeneration.wantCRDGenerated()) {
+                        if (raci.associatedResourceInfo().isCR()) {
+                            final var crInfo = raci.associatedResourceInfo().asResourceTargeting();
+                            // When we have a live reload, check if we need to regenerate the associated CRD
+                            Map<String, CRDInfo> crdInfos = Collections.emptyMap();
 
-                        final String targetCRName = crInfo.getAssociatedResourceTypeName();
-                        if (liveReload.isLiveReload()) {
-                            crdInfos = storedCRDInfos.getCRDInfosFor(targetCRName);
-                        }
+                            final String targetCRName = crInfo.fullResourceName();
+                            if (liveReload.isLiveReload()) {
+                                crdInfos = storedCRDInfos.getCRDInfosFor(targetCRName);
+                            }
 
-                        if (crdGeneration.scheduleForGenerationIfNeeded(crInfo, crdInfos, changedClasses)) {
-                            scheduledForGeneration.add(targetCRName);
+                            if (crdGeneration.scheduleForGenerationIfNeeded((CustomResourceAugmentedClassInfo) crInfo, crdInfos,
+                                    changedClasses)) {
+                                scheduledForGeneration.add(targetCRName);
+                            }
                         }
                     }
 
@@ -199,10 +202,10 @@ class OperatorSDKProcessor {
         if (crdConfig.generateAll) {
             ClassUtils.getProcessableSubClassesOf(Constants.CUSTOM_RESOURCE, index, log,
                     // pass already generated CRD names so that we can only keep the unhandled ones
-                    Map.of(ResourceTargetingAugmentedClassInfo.EXISTING_CRDS_KEY, scheduledForGeneration))
-                    .map(ResourceTargetingAugmentedClassInfo.class::cast)
+                    Map.of(CustomResourceAugmentedClassInfo.EXISTING_CRDS_KEY, scheduledForGeneration))
+                    .map(CustomResourceAugmentedClassInfo.class::cast)
                     .forEach(cr -> {
-                        final var targetCRName = cr.getAssociatedResourceTypeName();
+                        final var targetCRName = cr.fullResourceName();
                         crdGeneration.withCustomResource(cr.loadAssociatedClass(), targetCRName, null);
                         log.infov("Will generate CRD for non-reconciler bound resource: {0}", targetCRName);
                     });

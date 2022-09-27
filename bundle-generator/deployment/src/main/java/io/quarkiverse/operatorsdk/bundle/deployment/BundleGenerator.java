@@ -2,9 +2,12 @@ package io.quarkiverse.operatorsdk.bundle.deployment;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Set;
+
+import org.jboss.logging.Logger;
 
 import io.quarkiverse.operatorsdk.bundle.deployment.builders.AnnotationsManifestsBuilder;
 import io.quarkiverse.operatorsdk.bundle.deployment.builders.BundleDockerfileManifestsBuilder;
@@ -13,10 +16,12 @@ import io.quarkiverse.operatorsdk.bundle.deployment.builders.CustomResourceManif
 import io.quarkiverse.operatorsdk.bundle.deployment.builders.ManifestsBuilder;
 import io.quarkiverse.operatorsdk.bundle.runtime.BundleGenerationConfiguration;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
+import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
 
 public class BundleGenerator {
+    private static final Logger log = Logger.getLogger(BundleGenerator.class);
 
     public static final String MANIFESTS = "manifests";
 
@@ -37,32 +42,43 @@ public class BundleGenerator {
 
     public static List<ManifestsBuilder> prepareGeneration(BundleGenerationConfiguration bundleConfiguration,
             BuildTimeOperatorConfiguration operatorConfiguration,
-            Map<CSVMetadataHolder, List<AugmentedResourceInfo>> csvGroups, List<CRDInfo> crds) {
+            Map<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>> csvGroups, Map<String, CRDInfo> crds) {
         List<ManifestsBuilder> builders = new ArrayList<>();
-        for (Map.Entry<CSVMetadataHolder, List<AugmentedResourceInfo>> entry : csvGroups.entrySet()) {
-            final var labels = generateBundleLabels(entry.getKey(), bundleConfiguration, operatorConfiguration);
+        for (Map.Entry<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>> entry : csvGroups.entrySet()) {
+            final var csvMetadata = entry.getKey();
+            final var labels = generateBundleLabels(csvMetadata, bundleConfiguration, operatorConfiguration);
 
-            builders.add(new CsvManifestsBuilder(entry.getKey(), entry.getValue()));
-            builders.add(new AnnotationsManifestsBuilder(entry.getKey(), labels));
-            builders.add(new BundleDockerfileManifestsBuilder(entry.getKey(), labels));
-            entry.getValue().stream()
-                    .map(controller -> findOwnedCustomResource(controller, crds))
-                    .filter(Objects::nonNull)
-                    .map(crd -> new CustomResourceManifestsBuilder(entry.getKey(), crd))
-                    .forEach(builders::add);
+            final var csvBuilder = new CsvManifestsBuilder(csvMetadata, entry.getValue());
+            builders.add(csvBuilder);
+            builders.add(new AnnotationsManifestsBuilder(csvMetadata, labels));
+            builders.add(new BundleDockerfileManifestsBuilder(csvMetadata, labels));
+
+            // output owned CRDs in the manifest, fail if we're missing some
+            var missing = addCRDManifestBuilder(crds, builders, csvMetadata, csvBuilder.getOwnedCRs());
+            if (!missing.isEmpty()) {
+                throw new IllegalStateException("Missing owned CRD data for resources: " + missing);
+            }
+            // output required CRDs in the manifest, output a warning in case we're missing some
+            missing = addCRDManifestBuilder(crds, builders, csvMetadata, csvBuilder.getRequiredCRs());
+            if (!missing.isEmpty()) {
+                log.warnv("Missing required CRD data for resources: {0}", missing);
+            }
         }
 
         return builders;
     }
 
-    private static CRDInfo findOwnedCustomResource(AugmentedResourceInfo controller, List<CRDInfo> crds) {
-        for (CRDInfo crd : crds) {
-            if (crd.getCrdName().startsWith(controller.getResourceFullName())) {
-                return crd;
+    private static HashSet<String> addCRDManifestBuilder(Map<String, CRDInfo> crds, List<ManifestsBuilder> builders,
+            CSVMetadataHolder csvMetadata, Set<String> controllerDefinedCRs) {
+        final var missing = new HashSet<>(controllerDefinedCRs);
+        controllerDefinedCRs.forEach(crdName -> {
+            final var info = crds.get(crdName);
+            if (info != null) {
+                builders.add(new CustomResourceManifestsBuilder(csvMetadata, info));
+                missing.remove(crdName);
             }
-        }
-
-        return null;
+        });
+        return missing;
     }
 
     private static Map<String, String> generateBundleLabels(CSVMetadataHolder csvMetadata,

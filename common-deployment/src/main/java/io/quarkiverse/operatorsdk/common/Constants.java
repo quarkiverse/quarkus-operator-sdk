@@ -29,4 +29,6 @@ public class Constants {
 
     public static final DotName ANNOTATION_CONFIGURABLE = DotName.createSimple(
             AnnotationConfigurable.class.getName());
+
+    public static final DotName OBJECT = DotName.createSimple(Object.class.getName());
 }

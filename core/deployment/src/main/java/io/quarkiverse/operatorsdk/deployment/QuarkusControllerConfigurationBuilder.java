@@ -8,15 +8,14 @@ import static io.quarkiverse.operatorsdk.common.Constants.KUBERNETES_DEPENDENT_R
 import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
@@ -26,6 +25,7 @@ import org.jboss.logging.Logger;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -41,6 +41,8 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ClassLoadingUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
+import io.quarkiverse.operatorsdk.common.DependentResourceAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.common.ReconciledAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
@@ -79,7 +81,7 @@ class QuarkusControllerConfigurationBuilder {
         // retrieve the reconciler's name
         final var info = reconcilerInfo.classInfo();
         final var reconcilerClassName = info.toString();
-        final String name = reconcilerInfo.name();
+        final String name = reconcilerInfo.nameOrFailIfUnset();
 
         // create Reconciler bean
         additionalBeans.produce(
@@ -172,29 +174,45 @@ class QuarkusControllerConfigurationBuilder {
                 rateLimiterConfigurationClass = getConfigurationClass(reconcilerInfo, rateLimiterConfigurableInfo);
             }
 
-            final var resourceClass = reconcilerInfo.loadAssociatedClass();
-            final var crVersion = HasMetadata.getVersion(resourceClass);
-
             // extract the namespaces
             final var namespaces = configExtractor.namespaces(name);
 
-            final var dependentResources = createDependentResources(
-                    index, controllerAnnotation, namespaces, additionalBeans);
+            final var dependentResourceInfos = reconcilerInfo.getDependentResourceInfos();
+            final List<DependentResourceSpec> dependentResources;
+            if (!dependentResourceInfos.isEmpty()) {
+                dependentResources = new ArrayList<>(dependentResourceInfos.size());
+                dependentResourceInfos.forEach(dependent -> {
+                    dependentResources.add(createDependentResourceSpec(dependent, index, namespaces));
+
+                    final var dependentTypeName = dependent.classInfo().name().toString();
+                    additionalBeans.produce(
+                            AdditionalBeanBuildItem.builder()
+                                    .addBeanClass(dependentTypeName)
+                                    .setUnremovable()
+                                    .setDefaultScope(APPLICATION_SCOPED)
+                                    .build());
+                });
+            } else {
+                dependentResources = Collections.emptyList();
+            }
 
             // create the configuration
-            final String resourceFullName = reconcilerInfo.getAssociatedResourceTypeName();
+            final ReconciledAugmentedClassInfo<?> primaryInfo = reconcilerInfo.associatedResourceInfo();
+            final var primaryAsResource = primaryInfo.asResourceTargeting();
+            final var resourceClass = primaryInfo.loadAssociatedClass();
+            final String resourceFullName = primaryAsResource.fullResourceName();
             configuration = new QuarkusControllerConfiguration(
                     reconcilerClassName,
                     name,
                     resourceFullName,
-                    crVersion,
+                    primaryAsResource.version(),
                     configExtractor.generationAware(),
                     resourceClass,
                     namespaces,
                     getFinalizer(controllerAnnotation, resourceFullName),
                     getLabelSelector(controllerAnnotation),
-                    reconcilerInfo.hasNonVoidStatus(),
-                    dependentResources.values().stream().collect(Collectors.toUnmodifiableList()),
+                    primaryAsResource.hasNonVoidStatus(),
+                    dependentResources,
                     finalFilter,
                     maxReconciliationInterval,
                     onAddFilter, onUpdateFilter, genericFilter, retry, retryConfigurationClass, rateLimiter,
@@ -231,113 +249,83 @@ class QuarkusControllerConfigurationBuilder {
         return null;
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, QuarkusDependentResourceSpec> createDependentResources(
+    private QuarkusDependentResourceSpec createDependentResourceSpec(DependentResourceAugmentedClassInfo dependent,
             IndexView index,
-            AnnotationInstance controllerAnnotation, Set<String> namespaces,
-            BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
-        // deal with dependent resources
-        var dependentResources = Collections.<String, QuarkusDependentResourceSpec> emptyMap();
-        if (controllerAnnotation != null) {
-            final var dependents = controllerAnnotation.value("dependents");
-            if (dependents != null) {
-                final var dependentAnnotations = dependents.asNestedArray();
-                dependentResources = new LinkedHashMap<>(dependentAnnotations.length);
-                for (AnnotationInstance dependentConfig : dependentAnnotations) {
-                    final var dependentType = ConfigurationUtils.getClassInfoForInstantiation(dependentConfig.value("type"),
-                            DependentResource.class, index);
+            Set<String> namespaces) {
+        final var dependentType = dependent.classInfo();
 
-                    final var dependentTypeName = dependentType.name().toString();
-                    final var dependentClass = loadClass(dependentTypeName, DependentResource.class);
+        final var dependentTypeName = dependentType.name().toString();
 
-                    // further process Kubernetes dependents
-                    final boolean isKubernetesDependent;
-                    try {
-                        isKubernetesDependent = JandexUtil.isSubclassOf(index, dependentType,
-                                KUBERNETES_DEPENDENT_RESOURCE);
-                    } catch (BuildException e) {
-                        throw new IllegalStateException(
-                                "DependentResource " + dependentType + " is not indexed", e);
-                    }
-                    Object cfg = null;
-                    if (isKubernetesDependent) {
-                        final var kubeDepConfig = dependentType.classAnnotation(KUBERNETES_DEPENDENT);
-                        final var labelSelector = getLabelSelector(kubeDepConfig);
-                        // if the dependent doesn't explicitly provide a namespace configuration, inherit the configuration from the reconciler configuration
-                        var dependentNamespaces = namespaces;
-                        var configuredNS = false;
-                        if (kubeDepConfig != null) {
-                            // if the KubernetesDependent provides an explicit namespaces configuration, use that instead of the namespaces inherited from reconciler
-                            final var nonDefaultNS = Optional.ofNullable(
-                                    kubeDepConfig.value("namespaces"))
-                                    .map(AnnotationValue::asStringArray)
-                                    .filter(v -> !Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES, v));
-                            if (nonDefaultNS.isPresent()) {
-                                configuredNS = true;
-                                dependentNamespaces = nonDefaultNS.map(Set::of).orElse(namespaces);
-                            }
-                        }
-                        final var onAddFilter = ConfigurationUtils.instantiateImplementationClass(
-                                kubeDepConfig, "onAddFilter", OnAddFilter.class,
-                                OnAddFilter.class, true, index);
-                        final var onUpdateFilter = ConfigurationUtils.instantiateImplementationClass(
-                                kubeDepConfig, "onUpdateFilter", OnUpdateFilter.class,
-                                OnUpdateFilter.class, true,
-                                index);
-                        final var onDeleteFilter = ConfigurationUtils.instantiateImplementationClass(
-                                kubeDepConfig, "onDeleteFilter", OnDeleteFilter.class,
-                                OnDeleteFilter.class, true,
-                                index);
-                        final var genericFilter = ConfigurationUtils.instantiateImplementationClass(
-                                kubeDepConfig, "genericFilter", GenericFilter.class,
-                                GenericFilter.class, true,
-                                index);
-
-                        cfg = new QuarkusKubernetesDependentResourceConfig(dependentNamespaces, labelSelector, configuredNS,
-                                onAddFilter, onUpdateFilter,
-                                onDeleteFilter, genericFilter);
-                    }
-
-                    var nameField = dependentConfig.value("name");
-                    final var name = Optional.ofNullable(nameField)
-                            .map(AnnotationValue::asString)
-                            .filter(Predicate.not(String::isBlank))
-                            .orElse(DependentResource.defaultNameFor(dependentClass));
-                    final var spec = dependentResources.get(name);
-                    if (spec != null) {
-                        throw new IllegalArgumentException(
-                                "A DependentResource named: " + name + " already exists: " + spec);
-                    }
-
-                    final var dependsOnField = dependentConfig.value("dependsOn");
-                    final var dependsOn = Optional.ofNullable(dependsOnField)
-                            .map(AnnotationValue::asStringArray)
-                            .filter(array -> array.length > 0)
-                            .map(Set::of).orElse(Collections.emptySet());
-
-                    final var readyCondition = ConfigurationUtils.instantiateImplementationClass(
-                            dependentConfig, "readyPostcondition", Condition.class,
-                            Condition.class, true, index);
-                    final var reconcilePrecondition = ConfigurationUtils.instantiateImplementationClass(
-                            dependentConfig, "reconcilePrecondition", Condition.class,
-                            Condition.class, true, index);
-                    final var deletePostcondition = ConfigurationUtils.instantiateImplementationClass(
-                            dependentConfig, "deletePostcondition", Condition.class,
-                            Condition.class, true, index);
-
-                    dependentResources.put(name, new QuarkusDependentResourceSpec(dependentClass, cfg, name, dependsOn,
-                            readyCondition, reconcilePrecondition, deletePostcondition));
-
-                    additionalBeans.produce(
-                            AdditionalBeanBuildItem.builder()
-                                    .addBeanClass(dependentTypeName)
-                                    .setUnremovable()
-                                    .setDefaultScope(APPLICATION_SCOPED)
-                                    .build());
+        // further process Kubernetes dependents
+        final boolean isKubernetesDependent;
+        try {
+            isKubernetesDependent = JandexUtil.isSubclassOf(index, dependentType,
+                    KUBERNETES_DEPENDENT_RESOURCE);
+        } catch (BuildException e) {
+            throw new IllegalStateException("DependentResource " + dependentType + " is not indexed", e);
+        }
+        Object cfg = null;
+        if (isKubernetesDependent) {
+            final var kubeDepConfig = dependentType.classAnnotation(KUBERNETES_DEPENDENT);
+            final var labelSelector = getLabelSelector(kubeDepConfig);
+            // if the dependent doesn't explicitly provide a namespace configuration, inherit the configuration from the reconciler configuration
+            var dependentNamespaces = namespaces;
+            var configuredNS = false;
+            if (kubeDepConfig != null) {
+                // if the KubernetesDependent provides an explicit namespaces configuration, use that instead of the namespaces inherited from reconciler
+                final var nonDefaultNS = Optional.ofNullable(
+                        kubeDepConfig.value("namespaces"))
+                        .map(AnnotationValue::asStringArray)
+                        .filter(v -> !Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES, v));
+                if (nonDefaultNS.isPresent()) {
+                    configuredNS = true;
+                    dependentNamespaces = nonDefaultNS.map(Set::of).orElse(namespaces);
                 }
             }
+            final var onAddFilter = ConfigurationUtils.instantiateImplementationClass(
+                    kubeDepConfig, "onAddFilter", OnAddFilter.class,
+                    OnAddFilter.class, true, index);
+            final var onUpdateFilter = ConfigurationUtils.instantiateImplementationClass(
+                    kubeDepConfig, "onUpdateFilter", OnUpdateFilter.class,
+                    OnUpdateFilter.class, true,
+                    index);
+            final var onDeleteFilter = ConfigurationUtils.instantiateImplementationClass(
+                    kubeDepConfig, "onDeleteFilter", OnDeleteFilter.class,
+                    OnDeleteFilter.class, true,
+                    index);
+            final var genericFilter = ConfigurationUtils.instantiateImplementationClass(
+                    kubeDepConfig, "genericFilter", GenericFilter.class,
+                    GenericFilter.class, true,
+                    index);
+
+            cfg = new QuarkusKubernetesDependentResourceConfig(dependentNamespaces, labelSelector, configuredNS,
+                    onAddFilter, onUpdateFilter,
+                    onDeleteFilter, genericFilter);
         }
-        return dependentResources;
+
+        final var dependentClass = loadClass(dependentTypeName,
+                DependentResource.class);
+
+        final var dependentConfig = dependent.getDependentAnnotationFromController();
+        final var dependsOnField = dependentConfig.value("dependsOn");
+        final var dependsOn = Optional.ofNullable(dependsOnField)
+                .map(AnnotationValue::asStringArray)
+                .filter(array -> array.length > 0)
+                .map(Set::of).orElse(Collections.emptySet());
+
+        final var readyCondition = ConfigurationUtils.instantiateImplementationClass(
+                dependentConfig, "readyPostcondition", Condition.class,
+                Condition.class, true, index);
+        final var reconcilePrecondition = ConfigurationUtils.instantiateImplementationClass(
+                dependentConfig, "reconcilePrecondition", Condition.class,
+                Condition.class, true, index);
+        final var deletePostcondition = ConfigurationUtils.instantiateImplementationClass(
+                dependentConfig, "deletePostcondition", Condition.class,
+                Condition.class, true, index);
+
+        return new QuarkusDependentResourceSpec(dependentClass, cfg, dependent.nameOrFailIfUnset(), dependsOn,
+                readyCondition, reconcilePrecondition, deletePostcondition);
+
     }
 
     private String getFinalizer(AnnotationInstance controllerAnnotation, String crdName) {

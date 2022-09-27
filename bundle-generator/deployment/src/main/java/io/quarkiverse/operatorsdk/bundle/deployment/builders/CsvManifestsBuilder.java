@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -32,8 +33,11 @@ import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionFluent;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionSpecFluent;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.NamedInstallStrategyFluent;
-import io.quarkiverse.operatorsdk.bundle.deployment.AugmentedResourceInfo;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
+import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder.RequiredCRD;
+import io.quarkiverse.operatorsdk.common.ReconciledAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.common.ResourceAssociatedAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 
 public class CsvManifestsBuilder extends ManifestsBuilder {
@@ -49,8 +53,10 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     private static final Map<String, Set<ResourceInfo>> groupToCRInfo = new ConcurrentHashMap<>(7);
 
     private final ClusterServiceVersionBuilder csvBuilder;
+    private final Set<String> ownedCRs = new HashSet<>();
+    private final Set<String> requiredCRs = new HashSet<>();
 
-    public CsvManifestsBuilder(CSVMetadataHolder metadata, List<AugmentedResourceInfo> controllers) {
+    public CsvManifestsBuilder(CSVMetadataHolder metadata, List<ReconcilerAugmentedClassInfo> controllers) {
         super(metadata);
         csvBuilder = new ClusterServiceVersionBuilder()
                 .withNewMetadata().withName(getName()).endMetadata();
@@ -84,16 +90,63 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             }
         }
 
-        for (AugmentedResourceInfo controller : controllers) {
-            csvSpecBuilder
-                    .editOrNewCustomresourcedefinitions()
-                    .addNewOwned()
-                    .withName(controller.getResourceFullName())
-                    .withVersion(controller.getVersion())
-                    .withKind(controller.getKind())
-                    .endOwned().endCustomresourcedefinitions()
-                    .endSpec();
-        }
+        // add owned and required CRD, also collect them
+        final var crdsBuilder = csvSpecBuilder.editOrNewCustomresourcedefinitions();
+        controllers.forEach(raci -> {
+            // add owned CRD
+            final var resourceInfo = raci.associatedResourceInfo();
+            if (resourceInfo.isCR()) {
+                final var asResource = resourceInfo.asResourceTargeting();
+                final var fullResourceName = asResource.fullResourceName();
+                ownedCRs.add(fullResourceName);
+                crdsBuilder
+                        .addNewOwned()
+                        .withName(fullResourceName)
+                        .withVersion(asResource.version())
+                        .withKind(asResource.kind())
+                        .endOwned();
+            }
+
+            // add required CRD for each dependent that targets a CR
+            final var dependents = raci.getDependentResourceInfos();
+            if (dependents != null && !dependents.isEmpty()) {
+                dependents.stream()
+                        .map(ResourceAssociatedAugmentedClassInfo::associatedResourceInfo)
+                        .filter(ReconciledAugmentedClassInfo::isCR)
+                        .map(ReconciledAugmentedClassInfo::asResourceTargeting)
+                        .forEach(secondaryResource -> {
+                            final var fullResourceName = secondaryResource.fullResourceName();
+                            requiredCRs.add(fullResourceName);
+                            crdsBuilder.addNewRequired()
+                                    .withName(fullResourceName)
+                                    .withVersion(secondaryResource.version())
+                                    .withKind(secondaryResource.kind())
+                                    .endRequired();
+                        });
+            }
+
+            // add required CRDs from CSV metadata
+            if (metadata.requiredCRDs != null && metadata.requiredCRDs.length > 0) {
+                for (RequiredCRD requiredCRD : metadata.requiredCRDs) {
+                    requiredCRs.add(requiredCRD.name);
+                    crdsBuilder.addNewRequired()
+                            .withKind(requiredCRD.kind)
+                            .withName(requiredCRD.name)
+                            .withVersion(requiredCRD.version)
+                            .endRequired();
+                }
+            }
+
+        });
+        crdsBuilder.endCustomresourcedefinitions().endSpec();
+    }
+
+    public Set<String> getOwnedCRs() {
+        return Collections.unmodifiableSet(ownedCRs);
+    }
+
+    public Set<String> getRequiredCRs() {
+        return Collections.unmodifiableSet(requiredCRs);
     }
 
     @Override
