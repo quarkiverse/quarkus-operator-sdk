@@ -127,7 +127,7 @@ public class ConfigurationUtils {
 
     public static String getReconcilerName(ClassInfo info) {
         final var controllerClassName = info.name().toString();
-        final var controllerAnnotation = info.classAnnotation(CONTROLLER_CONFIGURATION);
+        final var controllerAnnotation = info.declaredAnnotation(CONTROLLER_CONFIGURATION);
         return getReconcilerName(controllerClassName, controllerAnnotation);
     }
 
