@@ -43,7 +43,7 @@ class PingPongReconcilerTest {
                 .build());
 
         // act
-        mockServer.getClient().resources(Ping.class).create(testRequest);
+        mockServer.getClient().resources(Ping.class).resource(testRequest).create();
 
         // assert ping reconciler
         await().ignoreException(NullPointerException.class).atMost(5, MINUTES).untilAsserted(() -> {

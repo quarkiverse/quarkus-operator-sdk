@@ -35,6 +35,7 @@ import io.quarkiverse.operatorsdk.samples.joke.JokeRequestStatus.State;
 
 @CSVMetadata(permissionRules = @CSVMetadata.PermissionRule(apiGroups = Joke.GROUP, resources = "jokes"), requiredCRDs = @CSVMetadata.RequiredCRD(kind = "Joke", name = Joke.NAME, version = Joke.VERSION), icon = @Icon(fileName = "icon.png", mediatype = "image/png"))
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
+@SuppressWarnings("unused")
 public class JokeRequestReconciler implements Reconciler<JokeRequest> {
     @Inject
     @RestClient
@@ -69,14 +70,14 @@ public class JokeRequestReconciler implements Reconciler<JokeRequest> {
                 joke.getMetadata().setLabels(flags);
 
                 // if we don't already have created this joke on the cluster, do so
-                final var jokeResource = client.resources(Joke.class)
-                        .withName("" + fromApi.id);
+                final var jokes = client.resources(Joke.class);
+                final var jokeResource = jokes.withName("" + fromApi.id);
                 final var existing = jokeResource.get();
                 if (existing != null) {
                     status.setMessage("Joke " + fromApi.id + " already exists");
                     status.setState(State.ALREADY_PRESENT);
                 } else {
-                    final var result = jokeResource.create(joke);
+                    jokes.resource(joke).create();
                     status.setMessage("Joke " + fromApi.id + " created");
                     status.setState(State.CREATED);
                 }
