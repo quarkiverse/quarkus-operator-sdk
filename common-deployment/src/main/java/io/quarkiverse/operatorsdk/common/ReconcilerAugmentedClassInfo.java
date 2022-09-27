@@ -48,7 +48,7 @@ public class ReconcilerAugmentedClassInfo extends ResourceAssociatedAugmentedCla
 
         // extract dependent information
         final var reconciler = classInfo();
-        final var controllerAnnotation = reconciler.classAnnotation(CONTROLLER_CONFIGURATION);
+        final var controllerAnnotation = reconciler.declaredAnnotation(CONTROLLER_CONFIGURATION);
         dependentResourceInfos = Collections.emptyList();
         if (controllerAnnotation != null) {
             final var dependents = controllerAnnotation.value("dependents");

@@ -110,7 +110,7 @@ class QuarkusControllerConfigurationBuilder {
 
         if (configuration == null) {
             // extract the configuration from annotation and/or external configuration
-            final var controllerAnnotation = info.classAnnotation(CONTROLLER_CONFIGURATION);
+            final var controllerAnnotation = info.declaredAnnotation(CONTROLLER_CONFIGURATION);
 
             final var configExtractor = new BuildTimeHybridControllerConfiguration(buildTimeConfiguration,
                     buildTimeConfiguration.controllers.get(name),
@@ -271,7 +271,7 @@ class QuarkusControllerConfigurationBuilder {
         }
         Object cfg = null;
         if (isKubernetesDependent) {
-            final var kubeDepConfig = dependentType.classAnnotation(KUBERNETES_DEPENDENT);
+            final var kubeDepConfig = dependentType.declaredAnnotation(KUBERNETES_DEPENDENT);
             final var labelSelector = getLabelSelector(kubeDepConfig);
             // if the dependent doesn't explicitly provide a namespace configuration, inherit the configuration from the reconciler configuration
             var dependentNamespaces = namespaces;

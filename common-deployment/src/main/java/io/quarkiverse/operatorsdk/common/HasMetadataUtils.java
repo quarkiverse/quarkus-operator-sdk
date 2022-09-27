@@ -30,29 +30,29 @@ public class HasMetadataUtils {
     }
 
     public static String getPlural(ClassInfo resourceCI) {
-        return annotationValueOrDefault(resourceCI.classAnnotation(PLURAL),
+        return annotationValueOrDefault(resourceCI.declaredAnnotation(PLURAL),
                 "value",
                 value -> value.asString().toLowerCase(Locale.ROOT),
                 () -> Pluralize.toPlural(getSingular(resourceCI)));
     }
 
     public static String getGroup(ClassInfo resourceCI) {
-        return annotationValueOrDefault(resourceCI.classAnnotation(GROUP), "value",
+        return annotationValueOrDefault(resourceCI.declaredAnnotation(GROUP), "value",
                 AnnotationValue::asString, () -> null);
     }
 
     public static String getSingular(ClassInfo resourceCI) {
-        return annotationValueOrDefault(resourceCI.classAnnotation(SINGULAR), "value",
+        return annotationValueOrDefault(resourceCI.declaredAnnotation(SINGULAR), "value",
                 AnnotationValue::asString, () -> getKind(resourceCI).toLowerCase(Locale.ROOT));
     }
 
     public static String getKind(ClassInfo resourceCI) {
-        return annotationValueOrDefault(resourceCI.classAnnotation(KIND),
+        return annotationValueOrDefault(resourceCI.declaredAnnotation(KIND),
                 "value", AnnotationValue::asString, resourceCI::simpleName);
     }
 
     public static String getVersion(ClassInfo resourceCI) {
-        return annotationValueOrDefault(resourceCI.classAnnotation(VERSION), "value",
+        return annotationValueOrDefault(resourceCI.declaredAnnotation(VERSION), "value",
                 AnnotationValue::asString, () -> null);
     }
 }

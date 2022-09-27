@@ -174,13 +174,13 @@ public class BundleProcessor {
     }
 
     private Optional<CSVMetadataHolder> getCsvMetadataFromAnnotation(CSVMetadataHolder holder, ClassInfo info) {
-        return Optional.ofNullable(info.classAnnotation(CSV_METADATA))
+        return Optional.ofNullable(info.declaredAnnotation(CSV_METADATA))
                 .map(annotationInstance -> createMetadataHolder(annotationInstance, holder));
     }
 
     private CSVMetadataHolder aggregateMetadataFromSharedCsvMetadata(CSVMetadataHolder holder, IndexView index) {
         return index.getAllKnownImplementors(SHARED_CSV_METADATA).stream()
-                .map(t -> t.classAnnotation(CSV_METADATA))
+                .map(t -> t.declaredAnnotation(CSV_METADATA))
                 .filter(Objects::nonNull)
                 .map(annotation -> createMetadataHolder(annotation, holder))
                 .findFirst()
