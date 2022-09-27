@@ -28,12 +28,10 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 import io.quarkus.arc.Arc;
-import io.quarkus.arc.runtime.ClientProxyUnwrapper;
+import io.quarkus.arc.ClientProxy;
 
 public class QuarkusConfigurationService extends AbstractConfigurationService {
     private static final Logger log = LoggerFactory.getLogger(QuarkusConfigurationService.class);
-
-    private static final ClientProxyUnwrapper unwrapper = new ClientProxyUnwrapper();
     private final KubernetesClient client;
     private final CRDGenerationInfo crdInfo;
     private final int concurrentReconciliationThreads;
@@ -102,9 +100,8 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
         return crdInfo.isValidateCRDs();
     }
 
-    @SuppressWarnings("unchecked")
     private static <R extends HasMetadata> Reconciler<R> unwrap(Reconciler<R> reconciler) {
-        return (Reconciler<R>) unwrapper.apply(reconciler);
+        return ClientProxy.unwrap(reconciler);
     }
 
     @Override
