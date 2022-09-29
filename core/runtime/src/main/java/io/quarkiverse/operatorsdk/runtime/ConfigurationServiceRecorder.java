@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
+import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.quarkus.arc.Arc;
 import io.quarkus.jackson.ObjectMapperCustomizer;
@@ -46,7 +48,8 @@ public class ConfigurationServiceRecorder {
             // customize fabric8 mapper
             final var mapper = Serialization.jsonMapper();
             mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-            Arc.container().select(ObjectMapperCustomizer.class, KubernetesClientSerializationCustomizer.Literal.INSTANCE)
+            final var container = Arc.container();
+            container.select(ObjectMapperCustomizer.class, KubernetesClientSerializationCustomizer.Literal.INSTANCE)
                     .stream()
                     .sorted()
                     .forEach(c -> c.customize(mapper));
@@ -54,13 +57,15 @@ public class ConfigurationServiceRecorder {
             return new QuarkusConfigurationService(
                     version,
                     configurations.values(),
-                    Arc.container().instance(KubernetesClient.class).get(),
+                    container.instance(KubernetesClient.class).get(),
                     crdInfo,
                     maxThreads,
                     timeout,
-                    Arc.container().instance(Metrics.class).get(),
+                    container.instance(Metrics.class).get(),
                     shouldStartOperator(buildTimeConfiguration.startOperator, launchMode),
-                    mapper);
+                    mapper,
+                    container.instance(LeaderElectionConfiguration.class).orElse(null),
+                    container.instance(InformerStoppedHandler.class).orElse(null));
         };
     }
 
