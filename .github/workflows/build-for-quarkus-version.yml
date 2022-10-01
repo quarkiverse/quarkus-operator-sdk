@@ -9,20 +9,31 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        java: [ 11, 17 ]
-        distribution: [ temurin ]
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          repository: marcnuri-forks/quarkus
+          ref: kubernetes-client/2.13
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: mvn -Dquickly
+
+      - uses: actions/checkout@v3
 
       - name: Set up Java
         uses: actions/setup-java@v2
         with:
-          distribution: ${{ matrix.distribution }}
-          java-version: ${{ matrix.java }}
+          distribution: temurin
+          java-version: ${{ inputs.java-version }}
           cache: 'maven'
 
       - name: Quarkus version
