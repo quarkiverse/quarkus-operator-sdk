@@ -51,10 +51,6 @@
       <artifactId>crd-generator-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.fabric8</groupId>
-      <artifactId>openshift-model-operatorhub</artifactId>
-    </dependency>
-    <dependency>
       <groupId>io.dekorate</groupId>
       <artifactId>kubernetes-annotations</artifactId>
       <classifier>noapt</classifier>

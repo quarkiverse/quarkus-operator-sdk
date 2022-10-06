@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -18,6 +19,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.AbstractConfigurationService;
 import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
+import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
@@ -38,6 +41,8 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     private final Map<String, String> reconcilerClassToName;
     private final Metrics metrics;
     private final boolean startOperator;
+    private final LeaderElectionConfiguration leaderElectionConfiguration;
+    private final InformerStoppedHandler informerStoppedHandler;
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public QuarkusConfigurationService(
@@ -45,7 +50,8 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
             Collection<QuarkusControllerConfiguration> configurations,
             KubernetesClient client,
             CRDGenerationInfo crdInfo, int maxThreads,
-            int timeout, Metrics metrics, boolean startOperator, ObjectMapper mapper) {
+            int timeout, Metrics metrics, boolean startOperator, ObjectMapper mapper,
+            LeaderElectionConfiguration leaderElectionConfiguration, InformerStoppedHandler informerStoppedHandler) {
         super(version);
         final var cloner = new Cloner() {
             @Override
@@ -73,6 +79,8 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
         this.crdInfo = crdInfo;
         this.concurrentReconciliationThreads = maxThreads;
         this.terminationTimeout = timeout;
+        this.informerStoppedHandler = informerStoppedHandler;
+        this.leaderElectionConfiguration = leaderElectionConfiguration;
     }
 
     @Override
@@ -170,5 +178,15 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     @Override
     public Stream<ControllerConfiguration> controllerConfigurations() {
         return super.controllerConfigurations();
+    }
+
+    @Override
+    public Optional<LeaderElectionConfiguration> getLeaderElectionConfiguration() {
+        return Optional.ofNullable(leaderElectionConfiguration);
+    }
+
+    @Override
+    public Optional<InformerStoppedHandler> getInformerStoppedHandler() {
+        return Optional.ofNullable(informerStoppedHandler);
     }
 }
