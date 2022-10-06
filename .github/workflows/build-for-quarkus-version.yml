@@ -6,6 +6,9 @@ on:
       quarkus-version:
         type: string
         required: true
+      java-version:
+        type: string
+        required: true
 
 jobs:
   build:
