@@ -14,7 +14,6 @@ import java.util.Locale;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.DisabledOnIntegrationTest;
 import io.quarkus.test.junit.QuarkusTest;
@@ -25,7 +24,7 @@ class OperatorSDKResourceTest {
 
     @BeforeAll
     static void setup() {
-        System.setProperty(NamespaceFromEnvReconciler.ENV_VAR_NAME, Constants.WATCH_CURRENT_NAMESPACE);
+
     }
 
     @Test
@@ -76,7 +75,8 @@ class OperatorSDKResourceTest {
                 TestReconciler.NAME,
                 SecretReconciler.class.getSimpleName().toLowerCase(Locale.ROOT),
                 GatewayReconciler.class.getSimpleName().toLowerCase(Locale.ROOT),
-                DependentDefiningReconciler.NAME, NamespaceFromEnvReconciler.NAME, EmptyReconciler.NAME));
+                DependentDefiningReconciler.NAME, NamespaceFromEnvReconciler.NAME,
+                EmptyReconciler.NAME, VariableNSReconciler.NAME));
     }
 
     @Test
@@ -138,13 +138,39 @@ class OperatorSDKResourceTest {
     }
 
     @Test
-    void shouldExpandVariablesInNamespacesConfiguration() {
+    void shouldExpandVariablesInNamespacesConfigurationFromAnnotation() {
         given()
                 .when()
                 .get("/operator/" + NamespaceFromEnvReconciler.NAME + "/config")
                 .then()
                 .statusCode(200).body(
-                        "namespaces", hasItem(Constants.WATCH_CURRENT_NAMESPACE),
-                        "watchCurrentNamespace", equalTo(true));
+                        "namespaces", hasItem(NamespaceFromEnvReconciler.FROM_ENV_VAR_NS),
+                        "namespaces", hasItem("static"),
+                        "namespaces", hasSize(2));
+    }
+
+    @Test
+    void shouldExpandVariablesInNamespacesConfigurationFromProperties() {
+        given()
+                .when()
+                .get("/operator/" + VariableNSReconciler.NAME + "/config")
+                .then()
+                .statusCode(200).body(
+                        "namespaces", hasItem(VariableNSReconciler.EXPECTED_NS_VALUE),
+                        "namespaces", hasSize(1));
+    }
+
+    @Test
+    void shouldUseNamespacesFromEnvVariableIfSet() {
+        given()
+                .when()
+                .get("/operator/" + EmptyReconciler.NAME + "/config")
+                .then()
+                .statusCode(200)
+                .body(
+                        "namespaces", hasItem(EmptyReconciler.FROM_ENV_NS1),
+                        "namespaces", hasItem(EmptyReconciler.FROM_ENV_NS2),
+                        "watchCurrentNamespace", equalTo(false),
+                        "namespaces", hasSize(2));
     }
 }

@@ -11,6 +11,8 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 public class EmptyReconciler implements Reconciler<EmptyCR> {
 
     public static final String NAME = "empty";
+    static final String FROM_ENV_NS1 = "fromEnv1";
+    static final String FROM_ENV_NS2 = "fromEnv2";
 
     @Override
     public UpdateControl<EmptyCR> reconcile(EmptyCR emptyCR, Context<EmptyCR> context)
