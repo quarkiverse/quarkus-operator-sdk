@@ -53,7 +53,7 @@ public class MultipleOperatorsBundleTest {
         checkBundleFor(bundle, "third-operator", Third.class);
         final var thirdManifests = bundle.resolve("third-operator").resolve("manifests");
         assertFileExistsIn(thirdManifests.resolve(getCRDNameFor(External.class)), thirdManifests);
-        final var csvAsString = Files.readString(thirdManifests.resolve("third-operator.csv.yml"));
+        final var csvAsString = Files.readString(thirdManifests.resolve("third-operator.clusterserviceversion.yaml"));
         final var csv = Serialization.unmarshal(csvAsString, ClusterServiceVersion.class);
         assertEquals(HasMetadata.getFullResourceName(Third.class),
                 csv.getSpec().getCustomresourcedefinitions().getOwned().get(0).getName());
@@ -72,7 +72,7 @@ public class MultipleOperatorsBundleTest {
         assertFileExistsIn(operatorManifests.resolve("bundle.Dockerfile"), bundle);
         final var manifests = operatorManifests.resolve("manifests");
         assertFileExistsIn(manifests, bundle);
-        assertFileExistsIn(manifests.resolve(operatorName + ".csv.yml"), manifests);
+        assertFileExistsIn(manifests.resolve(operatorName + ".clusterserviceversion.yaml"), manifests);
         assertFileExistsIn(manifests.resolve(getCRDNameFor(resourceClass)), manifests);
         final var metadata = operatorManifests.resolve("metadata");
         assertFileExistsIn(metadata, bundle);
