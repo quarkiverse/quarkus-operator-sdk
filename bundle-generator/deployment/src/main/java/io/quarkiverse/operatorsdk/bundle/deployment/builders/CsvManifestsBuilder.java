@@ -155,7 +155,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     }
 
     public Path getFileName() {
-        return Path.of(MANIFESTS, getName() + ".csv.yml");
+        return Path.of(MANIFESTS, getName() + ".clusterserviceversion.yaml");
     }
 
     public byte[] getManifestData(List<ServiceAccount> serviceAccounts, List<ClusterRoleBinding> clusterRoleBindings,
