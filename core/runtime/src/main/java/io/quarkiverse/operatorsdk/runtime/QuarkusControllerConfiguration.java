@@ -78,6 +78,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private Set<String> namespaces;
     private RetryConfiguration retryConfiguration;
     private String labelSelector;
+    @IgnoreProperty
     private boolean namespaceExpansionRequired;
 
     @RecordableConstructor
