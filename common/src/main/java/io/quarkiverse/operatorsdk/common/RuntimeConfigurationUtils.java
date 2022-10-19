@@ -51,6 +51,6 @@ public class RuntimeConfigurationUtils {
             }
         };
         final var value = RESOLVER.getValue(context, unexpandedValue);
-        return value.getValue();
+        return value.getValue() == null ? unexpandedValue : value.getValue();
     }
 }
