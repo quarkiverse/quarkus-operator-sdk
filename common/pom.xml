@@ -1,13 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>io.quarkiverse.operatorsdk</groupId>
-        <artifactId>quarkus-operator-sdk-build-parent</artifactId>
-        <version>4.0.4-SNAPSHOT</version>
-        <relativePath>../build-parent/pom.xml</relativePath>
-    </parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>io.quarkiverse.operatorsdk</groupId>
+    <artifactId>quarkus-operator-sdk-build-parent</artifactId>
+    <version>4.0.4-SNAPSHOT</version>
+    <relativePath>../build-parent/pom.xml</relativePath>
+  </parent>
 
-    <name>Quarkus - Operator SDK - Common</name>
-    <artifactId>quarkus-operator-sdk-common</artifactId>
+  <name>Quarkus - Operator SDK - Common</name>
+  <artifactId>quarkus-operator-sdk-common</artifactId>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.smallrye.config</groupId>
+      <artifactId>smallrye-config</artifactId>
+    </dependency>
+  </dependencies>
 </project>

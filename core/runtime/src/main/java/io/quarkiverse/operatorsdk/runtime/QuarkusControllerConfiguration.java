@@ -78,6 +78,8 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private Set<String> namespaces;
     private RetryConfiguration retryConfiguration;
     private String labelSelector;
+    @IgnoreProperty
+    private boolean namespaceExpansionRequired;
 
     @RecordableConstructor
     @SuppressWarnings("unchecked")
@@ -165,8 +167,17 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     }
 
     void setNamespaces(Collection<String> namespaces) {
-        this.namespaces = namespaces != null && !namespaces.isEmpty() ? Set.copyOf(namespaces)
-                : Constants.DEFAULT_NAMESPACES_SET;
+        if (namespaces != null && !namespaces.isEmpty()) {
+            this.namespaces = Set.copyOf(namespaces);
+            namespaceExpansionRequired = namespaces.stream().anyMatch(ns -> ns.contains("${"));
+        } else {
+            this.namespaces = Constants.DEFAULT_NAMESPACES_SET;
+            namespaceExpansionRequired = false;
+        }
+    }
+
+    public boolean isNamespaceExpansionRequired() {
+        return namespaceExpansionRequired;
     }
 
     @Override

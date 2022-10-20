@@ -1,6 +1,5 @@
 package io.quarkiverse.operatorsdk.deployment;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -9,12 +8,11 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 
-import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
+import io.quarkiverse.operatorsdk.common.RuntimeConfigurationUtils;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
-import io.smallrye.config.Converters;
 import io.smallrye.config.Expressions;
 
 class BuildTimeHybridControllerConfiguration {
@@ -38,13 +36,6 @@ class BuildTimeHybridControllerConfiguration {
                 "generationAwareEventProcessing",
                 AnnotationValue::asBoolean,
                 () -> operatorConfiguration.generationAware.orElse(true));
-    }
-
-    String name(String resourceControllerClassName) {
-        // retrieve the controller's name
-        final var defaultControllerName = ReconcilerUtils.getDefaultReconcilerName(resourceControllerClassName);
-        return ConfigurationUtils.annotationValueOrDefault(
-                controllerAnnotation, "name", AnnotationValue::asString, () -> defaultControllerName);
     }
 
     Set<String> namespaces(String controllerName) {
@@ -71,10 +62,7 @@ class BuildTimeHybridControllerConfiguration {
         if (withoutExpansion != null) {
             // if we have a property, use it and convert it to a set of namespaces,
             // potentially with unexpanded variable names as namespace names
-            final var converter = Converters.newCollectionConverter(
-                    Converters.getImplicitConverter(String.class), ArrayList::new);
-            final var namespaces = converter.convert(withoutExpansion);
-            return new HashSet<>(namespaces);
+            return RuntimeConfigurationUtils.stringPropValueAsSet(withoutExpansion);
         }
         return ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
                 "namespaces",
