@@ -30,6 +30,7 @@ import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.quarkiverse.operatorsdk.bundle.runtime.BundleGenerationConfiguration;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata;
+import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata.Icon;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.bundle.runtime.SharedCSVMetadata;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
@@ -141,7 +142,7 @@ public class BundleProcessor {
                                     });
                                 });
                 final var generated = BundleGenerator.prepareGeneration(bundleConfiguration,
-                        operatorConfiguration, csvMetadata.getCsvGroups(), crds);
+                        operatorConfiguration, csvMetadata.getCsvGroups(), crds, outputTarget.getOutputDirectory());
                 generated.forEach(manifestBuilder -> {
                     final var fileName = manifestBuilder.getFileName();
                     try {
@@ -260,10 +261,8 @@ public class BundleProcessor {
                 icon[i] = new CSVMetadataHolder.Icon(
                         ConfigurationUtils.annotationValueOrDefault(iconAnn[i], "fileName",
                                 AnnotationValue::asString, () -> null),
-                        ConfigurationUtils.annotationValueOrDefault(iconAnn[i], "base64data",
-                                AnnotationValue::asString, () -> null),
                         ConfigurationUtils.annotationValueOrDefault(iconAnn[i], "mediatype",
-                                AnnotationValue::asString, () -> "image/svg+xml"));
+                                AnnotationValue::asString, () -> Icon.DEFAULT_MEDIA_TYPE));
             }
         } else {
             icon = mh.icon;

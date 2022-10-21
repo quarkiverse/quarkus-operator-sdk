@@ -2,6 +2,7 @@ package io.quarkiverse.operatorsdk.bundle.deployment.builders;
 
 import static io.quarkiverse.operatorsdk.bundle.deployment.BundleGenerator.MANIFESTS;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -42,6 +43,8 @@ import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 
 public class CsvManifestsBuilder extends ManifestsBuilder {
 
+    private static final Logger log = Logger.getLogger(CsvManifestsBuilder.class);
+
     private static final String DEFAULT_INSTALL_MODE = "AllNamespaces";
     private static final String DEPLOYMENT = "deployment";
     private static final String SERVICE_ACCOUNT_KIND = "ServiceAccount";
@@ -51,13 +54,18 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     private static final Logger LOGGER = Logger.getLogger(CsvManifestsBuilder.class.getName());
 
     private static final Map<String, Set<ResourceInfo>> groupToCRInfo = new ConcurrentHashMap<>(7);
+    private static final String IMAGE_PNG = "image/png";
 
     private final ClusterServiceVersionBuilder csvBuilder;
     private final Set<String> ownedCRs = new HashSet<>();
     private final Set<String> requiredCRs = new HashSet<>();
+    private final Path kubernetesResources;
 
-    public CsvManifestsBuilder(CSVMetadataHolder metadata, List<ReconcilerAugmentedClassInfo> controllers) {
+    public CsvManifestsBuilder(CSVMetadataHolder metadata, List<ReconcilerAugmentedClassInfo> controllers,
+            Path mainSourcesRoot) {
         super(metadata);
+        this.kubernetesResources = mainSourcesRoot.resolve("kubernetes");
+
         csvBuilder = new ClusterServiceVersionBuilder()
                 .withNewMetadata().withName(getName()).endMetadata();
         final var csvSpecBuilder = csvBuilder
@@ -86,29 +94,56 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             csvSpecBuilder.addToAnnotations("alm-examples", metadata.annotations.almExamples);
         }
 
-        if (metadata.maintainers != null && metadata.maintainers.length > 0) {
+        if (metadata.maintainers != null) {
             for (CSVMetadataHolder.Maintainer maintainer : metadata.maintainers) {
                 csvSpecBuilder.addNewMaintainer(maintainer.email, maintainer.name);
             }
         }
 
-        if (metadata.links != null && metadata.links.length > 0) {
+        if (metadata.links != null) {
             for (CSVMetadataHolder.Link link : metadata.links) {
                 csvSpecBuilder.addNewLink(link.name, link.url);
             }
         }
 
-        if (metadata.icon != null && metadata.icon.length > 0) {
+        final var defaultIconName = getIconName();
+        if (metadata.icon != null) {
+            // check if user has auto-detected icon
+            final var defaultIcon = readIconAsBase64(defaultIconName);
+            if (defaultIcon != null) {
+                csvSpecBuilder.addNewIcon(defaultIcon, IMAGE_PNG);
+            }
+
+            // deal with explicit icons
             for (CSVMetadataHolder.Icon icon : metadata.icon) {
-                if (icon.fileName != null && !icon.fileName.isBlank()) {
+                if (!icon.fileName.isBlank() && !defaultIconName.equals(icon.fileName)) {
                     String iconAsBase64 = readIconAsBase64(icon.fileName);
-                    csvSpecBuilder.addNewIcon()
-                            .withBase64data(iconAsBase64)
-                            .withMediatype(icon.mediatype)
-                            .endIcon();
-                } else {
-                    csvSpecBuilder.addNewIcon(icon.base64data, icon.mediatype);
+                    if (iconAsBase64 != null) {
+                        csvSpecBuilder.addNewIcon()
+                                .withBase64data(iconAsBase64)
+                                .withMediatype(icon.mediatype)
+                                .endIcon();
+                    } else {
+                        throw new IllegalArgumentException(
+                                "Couldn't find '" + icon.fileName + "' in " + mainSourcesRoot);
+                    }
                 }
+            }
+        } else {
+            // legacy icon support
+            try (var iconAsStream = Thread.currentThread().getContextClassLoader()
+                    .getResourceAsStream(defaultIconName)) {
+                if (iconAsStream != null) {
+                    final byte[] iconAsBase64 = Base64.getEncoder()
+                            .encode(iconAsStream.readAllBytes());
+                    csvSpecBuilder.addNewIcon(new String(iconAsBase64), IMAGE_PNG);
+                }
+                log.warnv(
+                        "Using icon found at {0}. It is now recommended to put icons in {1} instead of resources and provide an explicit name / media type using the @CSVMetadata.Icon annotation. This avoids unduly bundling unneeded resources into the application.",
+                        Path.of(mainSourcesRoot.toAbsolutePath().toString(), defaultIconName),
+                        mainSourcesRoot);
+            } catch (IOException e) {
+                // ignore
             }
         }
 
@@ -156,7 +191,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             }
 
             // add required CRDs from CSV metadata
-            if (metadata.requiredCRDs != null && metadata.requiredCRDs.length > 0) {
+            if (metadata.requiredCRDs != null) {
                 for (RequiredCRD requiredCRD : metadata.requiredCRDs) {
                     requiredCRs.add(requiredCRD.name);
                     crdsBuilder.addNewRequired()
@@ -188,15 +223,14 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         return Path.of(MANIFESTS, getName() + ".clusterserviceversion.yaml");
     }
 
+    private String getIconName() {
+        return getName() + ".icon.png";
+    }
+
     private String readIconAsBase64(String fileName) {
-        try (var iconAsStream = Thread.currentThread().getContextClassLoader()
-                .getResourceAsStream(fileName)) {
-            if (iconAsStream != null) {
-                final byte[] iconAsBase64 = Base64.getEncoder()
-                        .encode(iconAsStream.readAllBytes());
-                return new String(iconAsBase64);
-            }
-            return null;
+        try (var iconAsStream = new FileInputStream(kubernetesResources.resolve(fileName).toFile())) {
+            final byte[] iconAsBase64 = Base64.getEncoder().encode(iconAsStream.readAllBytes());
+            return new String(iconAsBase64);
         } catch (IOException e) {
             return null;
         }

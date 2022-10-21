@@ -23,12 +23,10 @@ public class CSVMetadataHolder {
 
     public static class Icon {
         public final String fileName;
-        public final String base64data;
         public final String mediatype;
 
-        public Icon(String fileName, String base64data, String mediatype) {
+        public Icon(String fileName, String mediatype) {
             this.fileName = fileName;
-            this.base64data = base64data;
             this.mediatype = mediatype;
         }
     }

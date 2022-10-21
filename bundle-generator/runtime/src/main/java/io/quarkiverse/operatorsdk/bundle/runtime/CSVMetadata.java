@@ -56,11 +56,11 @@ public @interface CSVMetadata {
     }
 
     @interface Icon {
-        String fileName() default "";
+        String DEFAULT_MEDIA_TYPE = "image/svg+xml";
 
-        String base64data() default "";
+        String fileName();
 
-        String mediatype() default "image/svg+xml";
+        String mediatype() default DEFAULT_MEDIA_TYPE;
     }
 
     @interface Maintainer {
