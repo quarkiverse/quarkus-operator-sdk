@@ -51,8 +51,9 @@ public class BundleGenerator {
             final var csvMetadata = entry.getKey();
             final var labels = generateBundleLabels(csvMetadata, bundleConfiguration, operatorConfiguration);
 
+            final var mainSourcesRoot = PathsUtil.findMainSourcesRoot(outputDirectory);
             final var csvBuilder = new CsvManifestsBuilder(csvMetadata, entry.getValue(),
-                    PathsUtil.findMainSourcesRoot(outputDirectory).getKey());
+                    mainSourcesRoot != null ? mainSourcesRoot.getKey() : null);
             builders.add(csvBuilder);
             builders.add(new AnnotationsManifestsBuilder(csvMetadata, labels));
             builders.add(new BundleDockerfileManifestsBuilder(csvMetadata, labels));

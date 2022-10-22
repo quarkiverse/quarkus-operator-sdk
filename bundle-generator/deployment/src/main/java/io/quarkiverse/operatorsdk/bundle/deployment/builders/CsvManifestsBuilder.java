@@ -64,7 +64,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     public CsvManifestsBuilder(CSVMetadataHolder metadata, List<ReconcilerAugmentedClassInfo> controllers,
             Path mainSourcesRoot) {
         super(metadata);
-        this.kubernetesResources = mainSourcesRoot.resolve("kubernetes");
+        this.kubernetesResources = mainSourcesRoot != null ? mainSourcesRoot.resolve("kubernetes") : null;
 
         csvBuilder = new ClusterServiceVersionBuilder()
                 .withNewMetadata().withName(getName()).endMetadata();
@@ -125,7 +125,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                                 .endIcon();
                     } else {
                         throw new IllegalArgumentException(
-                                "Couldn't find '" + icon.fileName + "' in " + mainSourcesRoot);
+                                "Couldn't find '" + icon.fileName + "' in " + kubernetesResources);
                     }
                 }
             }
@@ -139,9 +139,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                     csvSpecBuilder.addNewIcon(new String(iconAsBase64), IMAGE_PNG);
                 }
                 log.warnv(
-                        "Using icon found at {0}. It is now recommended to put icons in {1} instead of resources and provide an explicit name / media type using the @CSVMetadata.Icon annotation. This avoids unduly bundling unneeded resources into the application.",
-                        Path.of(mainSourcesRoot.toAbsolutePath().toString(), defaultIconName),
-                        mainSourcesRoot);
+                        "Using icon found in the application's resource. It is now recommended to put icons in 'src/main/kubernetes' instead of resources and provide an explicit name / media type using the @CSVMetadata.Icon annotation. This avoids unduly bundling unneeded resources into the application.");
             } catch (IOException e) {
                 // ignore
             }
@@ -228,12 +226,15 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     }
 
     private String readIconAsBase64(String fileName) {
-        try (var iconAsStream = new FileInputStream(kubernetesResources.resolve(fileName).toFile())) {
-            final byte[] iconAsBase64 = Base64.getEncoder().encode(iconAsStream.readAllBytes());
-            return new String(iconAsBase64);
-        } catch (IOException e) {
-            return null;
+        if (kubernetesResources != null) {
+            try (var iconAsStream = new FileInputStream(kubernetesResources.resolve(fileName).toFile())) {
+                final byte[] iconAsBase64 = Base64.getEncoder().encode(iconAsStream.readAllBytes());
+                return new String(iconAsBase64);
+            } catch (IOException e) {
+                return null;
+            }
         }
+        return null;
     }
 
     public byte[] getManifestData(List<ServiceAccount> serviceAccounts, List<ClusterRoleBinding> clusterRoleBindings,
