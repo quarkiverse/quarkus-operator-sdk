@@ -2,6 +2,7 @@ package io.quarkiverse.operatorsdk.bundle.deployment.builders;
 
 import static io.quarkiverse.operatorsdk.bundle.deployment.BundleGenerator.MANIFESTS;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -42,6 +43,8 @@ import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 
 public class CsvManifestsBuilder extends ManifestsBuilder {
 
+    private static final Logger log = Logger.getLogger(CsvManifestsBuilder.class);
+
     private static final String DEFAULT_INSTALL_MODE = "AllNamespaces";
     private static final String DEPLOYMENT = "deployment";
     private static final String SERVICE_ACCOUNT_KIND = "ServiceAccount";
@@ -51,13 +54,18 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     private static final Logger LOGGER = Logger.getLogger(CsvManifestsBuilder.class.getName());
 
     private static final Map<String, Set<ResourceInfo>> groupToCRInfo = new ConcurrentHashMap<>(7);
+    private static final String IMAGE_PNG = "image/png";
 
     private final ClusterServiceVersionBuilder csvBuilder;
     private final Set<String> ownedCRs = new HashSet<>();
     private final Set<String> requiredCRs = new HashSet<>();
+    private final Path kubernetesResources;
 
-    public CsvManifestsBuilder(CSVMetadataHolder metadata, List<ReconcilerAugmentedClassInfo> controllers) {
+    public CsvManifestsBuilder(CSVMetadataHolder metadata, List<ReconcilerAugmentedClassInfo> controllers,
+            Path mainSourcesRoot) {
         super(metadata);
+        this.kubernetesResources = mainSourcesRoot != null ? mainSourcesRoot.resolve("kubernetes") : null;
+
         csvBuilder = new ClusterServiceVersionBuilder()
                 .withNewMetadata().withName(getName()).endMetadata();
         final var csvSpecBuilder = csvBuilder
@@ -67,6 +75,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                 .withKeywords(metadata.keywords)
                 .withReplaces(metadata.replaces)
                 .withVersion(metadata.version)
+                .withMinKubeVersion(metadata.minKubeVersion)
                 .withMaturity(metadata.maturity);
 
         if (metadata.providerName != null) {
@@ -76,9 +85,63 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                     .endProvider();
         }
 
-        if (metadata.maintainers != null && metadata.maintainers.length > 0) {
+        if (metadata.annotations != null) {
+            csvSpecBuilder.addToAnnotations("containerImage", metadata.annotations.containerImage);
+            csvSpecBuilder.addToAnnotations("repository", metadata.annotations.repository);
+            csvSpecBuilder.addToAnnotations("capabilities", metadata.annotations.capabilities);
+            csvSpecBuilder.addToAnnotations("categories", metadata.annotations.categories);
+            csvSpecBuilder.addToAnnotations("certified", String.valueOf(metadata.annotations.certified));
+            csvSpecBuilder.addToAnnotations("alm-examples", metadata.annotations.almExamples);
+        }
+
+        if (metadata.maintainers != null) {
             for (CSVMetadataHolder.Maintainer maintainer : metadata.maintainers) {
                 csvSpecBuilder.addNewMaintainer(maintainer.email, maintainer.name);
+            }
+        }
+
+        if (metadata.links != null) {
+            for (CSVMetadataHolder.Link link : metadata.links) {
+                csvSpecBuilder.addNewLink(link.name, link.url);
+            }
+        }
+
+        final var defaultIconName = getIconName();
+        if (metadata.icon != null) {
+            // check if user has auto-detected icon
+            final var defaultIcon = readIconAsBase64(defaultIconName);
+            if (defaultIcon != null) {
+                csvSpecBuilder.addNewIcon(defaultIcon, IMAGE_PNG);
+            }
+
+            // deal with explicit icons
+            for (CSVMetadataHolder.Icon icon : metadata.icon) {
+                if (!icon.fileName.isBlank() && !defaultIconName.equals(icon.fileName)) {
+                    String iconAsBase64 = readIconAsBase64(icon.fileName);
+                    if (iconAsBase64 != null) {
+                        csvSpecBuilder.addNewIcon()
+                                .withBase64data(iconAsBase64)
+                                .withMediatype(icon.mediatype)
+                                .endIcon();
+                    } else {
+                        throw new IllegalArgumentException(
+                                "Couldn't find '" + icon.fileName + "' in " + kubernetesResources);
+                    }
+                }
+            }
+        } else {
+            // legacy icon support
+            try (var iconAsStream = Thread.currentThread().getContextClassLoader()
+                    .getResourceAsStream(defaultIconName)) {
+                if (iconAsStream != null) {
+                    final byte[] iconAsBase64 = Base64.getEncoder()
+                            .encode(iconAsStream.readAllBytes());
+                    csvSpecBuilder.addNewIcon(new String(iconAsBase64), IMAGE_PNG);
+                }
+                log.warnv(
+                        "Using icon found in the application's resource. It is now recommended to put icons in 'src/main/kubernetes' instead of resources and provide an explicit name / media type using the @CSVMetadata.Icon annotation. This avoids unduly bundling unneeded resources into the application.");
+            } catch (IOException e) {
+                // ignore
             }
         }
 
@@ -126,7 +189,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             }
 
             // add required CRDs from CSV metadata
-            if (metadata.requiredCRDs != null && metadata.requiredCRDs.length > 0) {
+            if (metadata.requiredCRDs != null) {
                 for (RequiredCRD requiredCRD : metadata.requiredCRDs) {
                     requiredCRs.add(requiredCRD.name);
                     crdsBuilder.addNewRequired()
@@ -158,26 +221,27 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         return Path.of(MANIFESTS, getName() + ".clusterserviceversion.yaml");
     }
 
+    private String getIconName() {
+        return getName() + ".icon.png";
+    }
+
+    private String readIconAsBase64(String fileName) {
+        if (kubernetesResources != null) {
+            try (var iconAsStream = new FileInputStream(kubernetesResources.resolve(fileName).toFile())) {
+                final byte[] iconAsBase64 = Base64.getEncoder().encode(iconAsStream.readAllBytes());
+                return new String(iconAsBase64);
+            } catch (IOException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
     public byte[] getManifestData(List<ServiceAccount> serviceAccounts, List<ClusterRoleBinding> clusterRoleBindings,
             List<ClusterRole> clusterRoles, List<RoleBinding> roleBindings, List<Role> roles,
             List<Deployment> deployments) throws IOException {
         final var csvSpecBuilder = csvBuilder
                 .editOrNewSpec();
-
-        // deal with icon
-        try (var iconAsStream = Thread.currentThread().getContextClassLoader()
-                .getResourceAsStream(getIconName())) {
-            if (iconAsStream != null) {
-                final byte[] iconAsBase64 = Base64.getEncoder()
-                        .encode(iconAsStream.readAllBytes());
-                csvSpecBuilder.addNewIcon()
-                        .withBase64data(new String(iconAsBase64))
-                        .withMediatype("image/png")
-                        .endIcon();
-            }
-        } catch (IOException e) {
-            // ignore
-        }
 
         String defaultServiceAccountName = NO_SERVICE_ACCOUNT;
         if (!serviceAccounts.isEmpty()) {
@@ -196,10 +260,6 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
 
         final var csv = csvBuilder.build();
         return YAML_MAPPER.writeValueAsBytes(csv);
-    }
-
-    private String getIconName() {
-        return getName() + ".icon.png";
     }
 
     private void handleDeployments(List<Deployment> deployments,
@@ -368,6 +428,6 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     }
 
     private static String defaultIfEmpty(String possiblyNullOrEmpty, String defaultValue) {
-        return Optional.ofNullable(possiblyNullOrEmpty).filter(String::isBlank).orElse(defaultValue);
+        return Optional.ofNullable(possiblyNullOrEmpty).filter(s -> !s.isBlank() && !s.isEmpty()).orElse(defaultValue);
     }
 }

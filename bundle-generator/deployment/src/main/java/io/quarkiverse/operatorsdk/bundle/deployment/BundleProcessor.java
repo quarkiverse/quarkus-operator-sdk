@@ -30,6 +30,7 @@ import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.quarkiverse.operatorsdk.bundle.runtime.BundleGenerationConfiguration;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata;
+import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata.Icon;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.bundle.runtime.SharedCSVMetadata;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
@@ -141,7 +142,7 @@ public class BundleProcessor {
                                     });
                                 });
                 final var generated = BundleGenerator.prepareGeneration(bundleConfiguration,
-                        operatorConfiguration, csvMetadata.getCsvGroups(), crds);
+                        operatorConfiguration, csvMetadata.getCsvGroups(), crds, outputTarget.getOutputDirectory());
                 generated.forEach(manifestBuilder -> {
                     final var fileName = manifestBuilder.getFileName();
                     try {
@@ -198,6 +199,27 @@ public class BundleProcessor {
                     AnnotationValue::asString, () -> mh.providerURL);
         }
 
+        final var annotationsField = csvMetadata.value("annotations");
+        CSVMetadataHolder.Annotations annotations;
+        if (annotationsField != null) {
+            final var annotationsAnn = annotationsField.asNested();
+            annotations = new CSVMetadataHolder.Annotations(
+                    ConfigurationUtils.annotationValueOrDefault(annotationsAnn, "containerImage",
+                            AnnotationValue::asString, () -> null),
+                    ConfigurationUtils.annotationValueOrDefault(annotationsAnn, "repository",
+                            AnnotationValue::asString, () -> null),
+                    ConfigurationUtils.annotationValueOrDefault(annotationsAnn, "capabilities",
+                            AnnotationValue::asString, () -> null),
+                    ConfigurationUtils.annotationValueOrDefault(annotationsAnn, "categories",
+                            AnnotationValue::asString, () -> null),
+                    ConfigurationUtils.annotationValueOrDefault(annotationsAnn, "certified",
+                            AnnotationValue::asBoolean, () -> false),
+                    ConfigurationUtils.annotationValueOrDefault(annotationsAnn, "almExamples",
+                            AnnotationValue::asString, () -> null));
+        } else {
+            annotations = mh.annotations;
+        }
+
         final var maintainersField = csvMetadata.value("maintainers");
         CSVMetadataHolder.Maintainer[] maintainers;
         if (maintainersField != null) {
@@ -212,6 +234,38 @@ public class BundleProcessor {
             }
         } else {
             maintainers = mh.maintainers;
+        }
+
+        final var linksField = csvMetadata.value("links");
+        CSVMetadataHolder.Link[] links;
+        if (linksField != null) {
+            final var linkAnn = linksField.asNestedArray();
+            links = new CSVMetadataHolder.Link[linkAnn.length];
+            for (int i = 0; i < linkAnn.length; i++) {
+                links[i] = new CSVMetadataHolder.Link(
+                        ConfigurationUtils.annotationValueOrDefault(linkAnn[i], "name",
+                                AnnotationValue::asString, () -> null),
+                        ConfigurationUtils.annotationValueOrDefault(linkAnn[i], "url",
+                                AnnotationValue::asString, () -> null));
+            }
+        } else {
+            links = mh.links;
+        }
+
+        final var iconField = csvMetadata.value("icon");
+        CSVMetadataHolder.Icon[] icon;
+        if (iconField != null) {
+            final var iconAnn = iconField.asNestedArray();
+            icon = new CSVMetadataHolder.Icon[iconAnn.length];
+            for (int i = 0; i < iconAnn.length; i++) {
+                icon[i] = new CSVMetadataHolder.Icon(
+                        ConfigurationUtils.annotationValueOrDefault(iconAnn[i], "fileName",
+                                AnnotationValue::asString, () -> null),
+                        ConfigurationUtils.annotationValueOrDefault(iconAnn[i], "mediatype",
+                                AnnotationValue::asString, () -> Icon.DEFAULT_MEDIA_TYPE));
+            }
+        } else {
+            icon = mh.icon;
         }
 
         final var installModesField = csvMetadata.value("installModes");
@@ -275,6 +329,7 @@ public class BundleProcessor {
                         AnnotationValue::asString, () -> mh.description),
                 ConfigurationUtils.annotationValueOrDefault(csvMetadata, "displayName",
                         AnnotationValue::asString, () -> mh.displayName),
+                annotations,
                 ConfigurationUtils.annotationValueOrDefault(csvMetadata, "keywords",
                         AnnotationValue::asStringArray, () -> mh.keywords),
                 providerName, providerURL,
@@ -284,7 +339,11 @@ public class BundleProcessor {
                         AnnotationValue::asString, () -> mh.version),
                 ConfigurationUtils.annotationValueOrDefault(csvMetadata, "maturity",
                         AnnotationValue::asString, () -> mh.maturity),
+                ConfigurationUtils.annotationValueOrDefault(csvMetadata, "minKubeVersion",
+                        AnnotationValue::asString, () -> mh.minKubeVersion),
                 maintainers,
+                links,
+                icon,
                 installModes,
                 permissionRules,
                 requiredCRDs);

@@ -1,5 +1,6 @@
 package io.quarkiverse.operatorsdk.bundle.deployment;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,6 +20,7 @@ import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
+import io.quarkus.container.util.PathsUtil;
 
 public class BundleGenerator {
     private static final Logger log = Logger.getLogger(BundleGenerator.class);
@@ -42,13 +44,16 @@ public class BundleGenerator {
 
     public static List<ManifestsBuilder> prepareGeneration(BundleGenerationConfiguration bundleConfiguration,
             BuildTimeOperatorConfiguration operatorConfiguration,
-            Map<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>> csvGroups, Map<String, CRDInfo> crds) {
+            Map<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>> csvGroups, Map<String, CRDInfo> crds,
+            Path outputDirectory) {
         List<ManifestsBuilder> builders = new ArrayList<>();
         for (Map.Entry<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>> entry : csvGroups.entrySet()) {
             final var csvMetadata = entry.getKey();
             final var labels = generateBundleLabels(csvMetadata, bundleConfiguration, operatorConfiguration);
 
-            final var csvBuilder = new CsvManifestsBuilder(csvMetadata, entry.getValue());
+            final var mainSourcesRoot = PathsUtil.findMainSourcesRoot(outputDirectory);
+            final var csvBuilder = new CsvManifestsBuilder(csvMetadata, entry.getValue(),
+                    mainSourcesRoot != null ? mainSourcesRoot.getKey() : null);
             builders.add(csvBuilder);
             builders.add(new AnnotationsManifestsBuilder(csvMetadata, labels));
             builders.add(new BundleDockerfileManifestsBuilder(csvMetadata, labels));

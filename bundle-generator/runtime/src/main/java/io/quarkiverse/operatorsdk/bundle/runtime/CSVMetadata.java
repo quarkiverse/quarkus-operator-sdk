@@ -11,9 +11,13 @@ import java.lang.annotation.Target;
 public @interface CSVMetadata {
     String name() default "";
 
+    Annotations annotations() default @Annotations;
+
     String description() default "";
 
     String displayName() default "";
+
+    Icon[] icon() default {};
 
     String[] keywords() default "";
 
@@ -32,6 +36,32 @@ public @interface CSVMetadata {
     PermissionRule[] permissionRules() default {};
 
     RequiredCRD[] requiredCRDs() default {};
+
+    String minKubeVersion() default "";
+
+    Link[] links() default {};
+
+    @interface Annotations {
+        String containerImage() default "";
+
+        String repository() default "";
+
+        String capabilities() default "";
+
+        String categories() default "";
+
+        boolean certified() default false;
+
+        String almExamples() default "";
+    }
+
+    @interface Icon {
+        String DEFAULT_MEDIA_TYPE = "image/svg+xml";
+
+        String fileName();
+
+        String mediatype() default DEFAULT_MEDIA_TYPE;
+    }
 
     @interface Maintainer {
         String email() default "";
@@ -71,5 +101,11 @@ public @interface CSVMetadata {
         String name();
 
         String version();
+    }
+
+    @interface Link {
+        String url();
+
+        String name();
     }
 }

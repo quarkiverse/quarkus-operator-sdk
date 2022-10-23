@@ -29,10 +29,11 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata;
+import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata.Icon;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestSpec.ExcludedTopic;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestStatus.State;
 
-@CSVMetadata(permissionRules = @CSVMetadata.PermissionRule(apiGroups = Joke.GROUP, resources = "jokes"), requiredCRDs = @CSVMetadata.RequiredCRD(kind = "Joke", name = Joke.NAME, version = Joke.VERSION))
+@CSVMetadata(permissionRules = @CSVMetadata.PermissionRule(apiGroups = Joke.GROUP, resources = "jokes"), requiredCRDs = @CSVMetadata.RequiredCRD(kind = "Joke", name = Joke.NAME, version = Joke.VERSION), icon = @Icon(fileName = "icon.png", mediatype = "image/png"))
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
 public class JokeRequestReconciler implements Reconciler<JokeRequest> {
     @Inject
