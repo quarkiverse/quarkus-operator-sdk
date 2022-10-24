@@ -40,7 +40,7 @@ public abstract class SelectiveAugmentedClassInfo {
         final var targetClassName = extendedOrImplementedClassName();
         final var consideredClassName = classInfo.name();
         if (Modifier.isAbstract(classInfo.flags())) {
-            log.warnv("Skipping ''{0}'' {1} because it''s abstract",
+            log.debugv("Skipping ''{0}'' {1} because it''s abstract",
                     consideredClassName, targetClassName);
             return false;
         }
