@@ -161,6 +161,7 @@ class OperatorSDKProcessor {
                 .map(ClassChangeInformation::getChangedClasses)
                 .orElse(Collections.emptySet()) : Collections.emptySet();
 
+        final var wantCRDGenerated = crdGeneration.wantCRDGenerated();
         final var scheduledForGeneration = new HashSet<String>(7);
         final var builder = new QuarkusControllerConfigurationBuilder(additionalBeans,
                 index, liveReload, buildTimeConfiguration);
@@ -172,7 +173,7 @@ class OperatorSDKProcessor {
 
                     // add associated primary resource for CRD generation if needed
                     final var changeInformation = liveReload.getChangeInformation();
-                    if (crdGeneration.wantCRDGenerated()) {
+                    if (wantCRDGenerated) {
                         if (raci.associatedResourceInfo().isCR()) {
                             final var crInfo = raci.associatedResourceInfo().asResourceTargeting();
                             // When we have a live reload, check if we need to regenerate the associated CRD
@@ -199,7 +200,7 @@ class OperatorSDKProcessor {
                 .forEach(fci -> registerAssociatedClassesForReflection(reflectionClasses, forcedReflectionClasses, fci));
 
         // generate non-reconciler associated CRDs if requested
-        if (crdConfig.generateAll) {
+        if (wantCRDGenerated && crdConfig.generateAll) {
             ClassUtils.getProcessableSubClassesOf(Constants.CUSTOM_RESOURCE, index, log,
                     // pass already generated CRD names so that we can only keep the unhandled ones
                     Map.of(CustomResourceAugmentedClassInfo.EXISTING_CRDS_KEY, scheduledForGeneration))

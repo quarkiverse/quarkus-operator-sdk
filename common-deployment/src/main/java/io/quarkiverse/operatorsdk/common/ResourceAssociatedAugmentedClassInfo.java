@@ -1,5 +1,7 @@
 package io.quarkiverse.operatorsdk.common;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -45,5 +47,15 @@ public class ResourceAssociatedAugmentedClassInfo extends SelectiveAugmentedClas
 
     public ReconciledAugmentedClassInfo<?> associatedResourceInfo() {
         return resourceInfo;
+    }
+
+    @Override
+    public List<String> getClassNamesToRegisterForReflection() {
+        final var own = super.getClassNamesToRegisterForReflection();
+        final var associated = resourceInfo.getClassNamesToRegisterForReflection();
+        final var result = new ArrayList<String>(own.size() + associated.size());
+        result.addAll(own);
+        result.addAll(associated);
+        return result;
     }
 }

@@ -57,7 +57,8 @@ import io.quarkus.deployment.util.JandexUtil;
 
 @SuppressWarnings("rawtypes")
 class QuarkusControllerConfigurationBuilder {
-    static final Logger log = OperatorSDKProcessor.log;
+
+    static final Logger log = Logger.getLogger(QuarkusControllerConfigurationBuilder.class.getName());
 
     private final BuildProducer<AdditionalBeanBuildItem> additionalBeans;
     private final IndexView index;
@@ -65,7 +66,8 @@ class QuarkusControllerConfigurationBuilder {
 
     private final BuildTimeOperatorConfiguration buildTimeConfiguration;
 
-    public QuarkusControllerConfigurationBuilder(BuildProducer<AdditionalBeanBuildItem> additionalBeans,
+    public QuarkusControllerConfigurationBuilder(
+            BuildProducer<AdditionalBeanBuildItem> additionalBeans,
             IndexView index, LiveReloadBuildItem liveReload,
             BuildTimeOperatorConfiguration buildTimeConfiguration) {
         this.additionalBeans = additionalBeans;
@@ -119,12 +121,11 @@ class QuarkusControllerConfigurationBuilder {
             final var eventFilterTypes = ConfigurationUtils.annotationValueOrDefault(
                     controllerAnnotation, "eventFilters",
                     AnnotationValue::asClassArray, () -> new Type[0]);
-            if (eventFilterTypes.length > 0) {
-                for (Type filterType : eventFilterTypes) {
-                    final var filterClass = loadClass(filterType.name().toString(), ResourceEventFilter.class);
-                    final var filter = instantiate(filterClass);
-                    finalFilter = finalFilter == null ? filter : finalFilter.and(filter);
-                }
+            for (Type filterType : eventFilterTypes) {
+                final var filterClass = loadClass(filterType.name().toString(),
+                        ResourceEventFilter.class);
+                final var filter = instantiate(filterClass);
+                finalFilter = finalFilter == null ? filter : finalFilter.and(filter);
             }
 
             Duration maxReconciliationInterval = null;
@@ -170,8 +171,10 @@ class QuarkusControllerConfigurationBuilder {
                         controllerAnnotation, "rateLimiter", RateLimiter.class, DefaultRateLimiter.class,
                         false, index);
                 assert rateLimiter != null;
-                final var rateLimiterConfigurableInfo = configurableInfos.get(rateLimiter.getClass().getName());
-                rateLimiterConfigurationClass = getConfigurationClass(reconcilerInfo, rateLimiterConfigurableInfo);
+                final var rateLimiterConfigurableInfo = configurableInfos.get(
+                        rateLimiter.getClass().getName());
+                rateLimiterConfigurationClass = getConfigurationClass(reconcilerInfo,
+                        rateLimiterConfigurableInfo);
             }
 
             // extract the namespaces
@@ -249,7 +252,9 @@ class QuarkusControllerConfigurationBuilder {
         return null;
     }
 
-    private QuarkusDependentResourceSpec createDependentResourceSpec(DependentResourceAugmentedClassInfo dependent,
+    @SuppressWarnings("unchecked")
+    private QuarkusDependentResourceSpec createDependentResourceSpec(
+            DependentResourceAugmentedClassInfo dependent,
             IndexView index,
             Set<String> namespaces) {
         final var dependentType = dependent.classInfo();
@@ -298,7 +303,8 @@ class QuarkusControllerConfigurationBuilder {
                     GenericFilter.class, true,
                     index);
 
-            cfg = new QuarkusKubernetesDependentResourceConfig(dependentNamespaces, labelSelector, configuredNS,
+            cfg = new QuarkusKubernetesDependentResourceConfig(dependentNamespaces, labelSelector,
+                    configuredNS,
                     onAddFilter, onUpdateFilter,
                     onDeleteFilter, genericFilter);
         }
@@ -323,8 +329,8 @@ class QuarkusControllerConfigurationBuilder {
                 dependentConfig, "deletePostcondition", Condition.class,
                 Condition.class, true, index);
 
-        return new QuarkusDependentResourceSpec(dependentClass, cfg, dependent.nameOrFailIfUnset(), dependsOn,
-                readyCondition, reconcilePrecondition, deletePostcondition);
+        return new QuarkusDependentResourceSpec(dependentClass, cfg, dependent.nameOrFailIfUnset(),
+                dependsOn, readyCondition, reconcilePrecondition, deletePostcondition);
 
     }
 
