@@ -62,7 +62,7 @@ public class ReconciledAugmentedClassInfo<T> extends SelectiveAugmentedClassInfo
     }
 
     @SuppressWarnings("rawtypes")
-    public static ReconciledAugmentedClassInfo createFor(ClassInfo resourceCI, String reconcilerName,
+    public static ReconciledAugmentedClassInfo createFor(ClassInfo resourceCI, String name,
             IndexView index, Logger log, Map<String, Object> context) {
         var isResource = false;
         var isCR = false;
@@ -79,12 +79,12 @@ public class ReconciledAugmentedClassInfo<T> extends SelectiveAugmentedClassInfo
 
         ReconciledAugmentedClassInfo reconciledInfo;
         if (isCR) {
-            reconciledInfo = new CustomResourceAugmentedClassInfo(resourceCI, reconcilerName);
+            reconciledInfo = new CustomResourceAugmentedClassInfo(resourceCI, name);
         } else if (isResource) {
             reconciledInfo = new ReconciledResourceAugmentedClassInfo<>(resourceCI, HAS_METADATA, 0,
-                    reconcilerName);
+                    name);
         } else {
-            reconciledInfo = new ReconciledAugmentedClassInfo<>(resourceCI, OBJECT, 0, reconcilerName);
+            reconciledInfo = new ReconciledAugmentedClassInfo<>(resourceCI, OBJECT, 0, name);
         }
         // make sure the associated resource is properly initialized
         reconciledInfo.augmentIfKept(index, log, context);
