@@ -1,6 +1,7 @@
 package io.quarkiverse.operatorsdk.deployment;
 
 import static io.quarkiverse.operatorsdk.runtime.CRDUtils.applyCRD;
+import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.lang.annotation.Annotation;
 import java.util.Collections;
@@ -37,6 +38,7 @@ import io.quarkiverse.operatorsdk.runtime.KubernetesClientSerializationCustomize
 import io.quarkiverse.operatorsdk.runtime.NoOpMetricsProvider;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
+import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.Version;
@@ -161,10 +163,9 @@ class OperatorSDKProcessor {
                 .map(ClassChangeInformation::getChangedClasses)
                 .orElse(Collections.emptySet()) : Collections.emptySet();
 
+        final var builder = new QuarkusControllerConfigurationBuilder();
         final var wantCRDGenerated = crdGeneration.wantCRDGenerated();
         final var scheduledForGeneration = new HashSet<String>(7);
-        final var builder = new QuarkusControllerConfigurationBuilder(additionalBeans,
-                index, liveReload, buildTimeConfiguration);
         final var controllerConfigs = ClassUtils.getKnownReconcilers(index, log)
                 .map(raci -> {
                     // register strongly reconciler-associated classes that need reflective access
@@ -191,7 +192,43 @@ class OperatorSDKProcessor {
                         }
                     }
 
-                    return builder.build(raci, configurableInfos);
+                    // check if we need to regenerate the configuration for this controller
+                    QuarkusControllerConfiguration configuration = null;
+                    final var reconcilerClassName = raci.classInfo().toString();
+                    var storedConfigurations = liveReload.getContextObject(ContextStoredControllerConfigurations.class);
+                    if (liveReload.isLiveReload() && storedConfigurations != null) {
+                        // check if we need to regenerate the configuration for this controller
+                        final var changedResources = liveReload.getChangedResources();
+                        configuration = storedConfigurations.configurationOrNullIfNeedGeneration(
+                                reconcilerClassName,
+                                changedClasses,
+                                changedResources);
+                    }
+
+                    if (configuration == null) {
+                        configuration = builder.build(raci, configurableInfos, buildTimeConfiguration, index);
+                    } else {
+                        log.infov(
+                                "Skipped configuration reload for ''{0}'' reconciler as no changes were detected",
+                                reconcilerClassName);
+                    }
+
+                    // store the configuration in the live reload context
+                    if (storedConfigurations == null) {
+                        storedConfigurations = new ContextStoredControllerConfigurations();
+                    }
+                    storedConfigurations.recordConfiguration(configuration);
+                    liveReload.setContextObject(ContextStoredControllerConfigurations.class,
+                            storedConfigurations);
+
+                    // create Reconciler bean
+                    additionalBeans.produce(AdditionalBeanBuildItem.builder()
+                            .addBeanClass(configuration.getAssociatedReconcilerClassName())
+                            .setUnremovable()
+                            .setDefaultScope(APPLICATION_SCOPED)
+                            .build());
+
+                    return configuration;
                 })
                 .collect(Collectors.toList());
 

@@ -25,6 +25,11 @@ public class RuntimeConfigurationUtils {
         return converter.convert(propValue).stream().map(String::trim).collect(Collectors.toSet());
     }
 
+    public static String[] stringPropValueAsArray(String propValue) {
+        return converter.convert(propValue).stream().map(String::trim).distinct()
+                .toArray(String[]::new);
+    }
+
     public static String expandedValueFrom(String unexpandedValue) {
         final var context = new ConfigSourceInterceptorContext() {
             private boolean firstLookup = true;

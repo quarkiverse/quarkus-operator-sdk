@@ -22,12 +22,9 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
-import io.quarkus.arc.Arc;
 import io.quarkus.arc.ClientProxy;
 
 public class QuarkusConfigurationService extends AbstractConfigurationService {
@@ -157,18 +154,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
 
     @Override
     public DependentResourceFactory dependentResourceFactory() {
-        return new DependentResourceFactory() {
-            @Override
-            public <T extends DependentResource<?, ?>> T createFrom(DependentResourceSpec<T, ?> spec) {
-                final var dependentResourceClass = spec.getDependentResourceClass();
-                final var dependent = Arc.container().instance(dependentResourceClass).get();
-                if (dependent == null) {
-                    throw new IllegalStateException(
-                            "Couldn't find bean associated with DependentResource " + dependentResourceClass.getName());
-                }
-                return dependent;
-            }
-        };
+        return null;
     }
 
     @SuppressWarnings("rawtypes")

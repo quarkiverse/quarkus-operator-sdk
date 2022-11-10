@@ -12,8 +12,8 @@
   <packaging>pom</packaging>
   <name>Quarkus - Operator SDK - Parent</name>
   <properties>
-    <quarkus.version>2.14.0.CR1</quarkus.version>
-    <java-operator-sdk.version>4.0.3</java-operator-sdk.version>
+    <quarkus.version>2.14.0.Final</quarkus.version>
+    <java-operator-sdk.version>4.1.1-SNAPSHOT</java-operator-sdk.version>
   </properties>
 
   <repositories>
@@ -22,7 +22,7 @@
       <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
       <snapshots>
         <enabled>false</enabled>
-        <updatePolicy>always</updatePolicy>
+<!--        <updatePolicy>always</updatePolicy>-->
       </snapshots>
     </repository>
   </repositories>
@@ -33,7 +33,7 @@
       <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
       <snapshots>
         <enabled>false</enabled>
-        <updatePolicy>always</updatePolicy>
+<!--        <updatePolicy>always</updatePolicy>-->
       </snapshots>
     </pluginRepository>
   </pluginRepositories>

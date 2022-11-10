@@ -1,9 +1,5 @@
 package io.quarkiverse.operatorsdk.deployment;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
@@ -38,7 +34,7 @@ class BuildTimeHybridControllerConfiguration {
                 () -> operatorConfiguration.generationAware.orElse(true));
     }
 
-    Set<String> namespaces(String controllerName) {
+    String[] namespaces(String controllerName) {
         // first check if we have a property for the namespaces, retrieving it without expanding it
         final var config = ConfigProvider.getConfig();
         var withoutExpansion = Expressions.withoutExpansion(
@@ -62,11 +58,11 @@ class BuildTimeHybridControllerConfiguration {
         if (withoutExpansion != null) {
             // if we have a property, use it and convert it to a set of namespaces,
             // potentially with unexpanded variable names as namespace names
-            return RuntimeConfigurationUtils.stringPropValueAsSet(withoutExpansion);
+            return RuntimeConfigurationUtils.stringPropValueAsArray(withoutExpansion);
         }
         return ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
                 "namespaces",
-                v -> new HashSet<>(Arrays.asList(v.asStringArray())),
-                () -> Constants.DEFAULT_NAMESPACES_SET);
+                AnnotationValue::asStringArray,
+                () -> Constants.DEFAULT_NAMESPACES_SET.toArray(new String[0]));
     }
 }
