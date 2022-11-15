@@ -105,7 +105,7 @@ class OperatorSDKResourceTest {
                 .then()
                 .statusCode(200)
                 .body(
-                        "finalizer", equalTo("from-property/finalizer"),
+                        "finalizer", equalTo("from-property.josdk.org/finalizer"),
                         "namespaces", hasItem("bar"),
                         "retryConfiguration.maxAttempts", equalTo(10),
                         "retry.maxAttempts", equalTo(ConfiguredReconciler.MAX_ATTEMPTS),
