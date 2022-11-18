@@ -43,13 +43,13 @@ public class QuarkusKubernetesDependentResourceConfig<R extends HasMetadata> ext
     }
 
     // Needed for the recordable constructor
-    @SuppressWarnings({"unused" })
+    @SuppressWarnings({ "unused" })
     public OnUpdateFilter<R> getOnUpdateFilter() {
         return onUpdateFilter();
     }
 
     // Needed for the recordable constructor
-    @SuppressWarnings({"unused" })
+    @SuppressWarnings({ "unused" })
     public OnDeleteFilter<R> getOnDeleteFilter() {
         return onDeleteFilter();
     }
