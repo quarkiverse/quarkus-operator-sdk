@@ -9,6 +9,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.AnnotationDependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
@@ -27,8 +28,9 @@ public class Constants {
 
     public static final DotName DEPENDENT_RESOURCE = DotName.createSimple(DependentResource.class.getName());
 
-    public static final DotName ANNOTATION_CONFIGURABLE = DotName.createSimple(
-            AnnotationConfigurable.class.getName());
+    public static final DotName ANNOTATION_CONFIGURABLE = DotName.createSimple(AnnotationConfigurable.class.getName());
+    public static final DotName ANNOTATION_DR_CONFIGURATOR = DotName
+            .createSimple(AnnotationDependentResourceConfigurator.class.getName());
 
     public static final DotName OBJECT = DotName.createSimple(Object.class.getName());
 }

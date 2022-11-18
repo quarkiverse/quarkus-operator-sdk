@@ -25,8 +25,8 @@ import org.jboss.logging.Logger;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
@@ -38,16 +38,18 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
+import io.quarkiverse.operatorsdk.common.AnnotatableDependentResourceAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ClassLoadingUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.DependentResourceAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ReconciledAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.common.SelectiveAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
+import io.quarkiverse.operatorsdk.runtime.DependentResourceSpecMetadata;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration.DefaultRateLimiter;
-import io.quarkiverse.operatorsdk.runtime.QuarkusDependentResourceSpec;
 import io.quarkiverse.operatorsdk.runtime.QuarkusKubernetesDependentResourceConfig;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.builder.BuildException;
@@ -78,7 +80,8 @@ class QuarkusControllerConfigurationBuilder {
 
     @SuppressWarnings("unchecked")
     QuarkusControllerConfiguration build(ReconcilerAugmentedClassInfo reconcilerInfo,
-            Map<String, AnnotationConfigurableAugmentedClassInfo> configurableInfos) {
+            Map<String, AnnotationConfigurableAugmentedClassInfo> configurableInfos,
+            Map<String, AnnotatableDependentResourceAugmentedClassInfo> annotatableDRInfos) {
 
         // retrieve the reconciler's name
         final var info = reconcilerInfo.classInfo();
@@ -132,15 +135,14 @@ class QuarkusControllerConfigurationBuilder {
             OnAddFilter onAddFilter = null;
             OnUpdateFilter onUpdateFilter = null;
             GenericFilter genericFilter = null;
-            Retry retry = null;
+            Class<? extends Retry> retryClass = GenericRetry.class;
             Class<?> retryConfigurationClass = null;
-            RateLimiter rateLimiter = null;
+            Class<? extends RateLimiter> rateLimiterClass = DefaultRateLimiter.class;
             Class<?> rateLimiterConfigurationClass = null;
             if (controllerAnnotation != null) {
                 final var intervalFromAnnotation = ConfigurationUtils.annotationValueOrDefault(
                         controllerAnnotation, "maxReconciliationInterval", AnnotationValue::asNested,
                         () -> null);
-                // todo: use default value constant when available
                 final var interval = ConfigurationUtils.annotationValueOrDefault(
                         intervalFromAnnotation, "interval", AnnotationValue::asLong,
                         () -> MaxReconciliationInterval.DEFAULT_INTERVAL);
@@ -161,19 +163,16 @@ class QuarkusControllerConfigurationBuilder {
                 genericFilter = ConfigurationUtils.instantiateImplementationClass(
                         controllerAnnotation, "genericFilter", GenericFilter.class, GenericFilter.class,
                         true, index);
-                retry = ConfigurationUtils.instantiateImplementationClass(
-                        controllerAnnotation, "retry", Retry.class, GenericRetry.class,
-                        false, index);
-                assert retry != null;
-                final var retryConfigurableInfo = configurableInfos.get(retry.getClass().getName());
-                retryConfigurationClass = getConfigurationClass(reconcilerInfo, retryConfigurableInfo);
-                rateLimiter = ConfigurationUtils.instantiateImplementationClass(
-                        controllerAnnotation, "rateLimiter", RateLimiter.class, DefaultRateLimiter.class,
-                        false, index);
-                assert rateLimiter != null;
-                final var rateLimiterConfigurableInfo = configurableInfos.get(
-                        rateLimiter.getClass().getName());
-                rateLimiterConfigurationClass = getConfigurationClass(reconcilerInfo,
+                retryClass = ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
+                        "retry", av -> loadClass(av.asClass().name().toString(), Retry.class), () -> GenericRetry.class);
+                final var retryConfigurableInfo = configurableInfos.get(retryClass.getName());
+                retryConfigurationClass = getConfigurationAnnotationClass(reconcilerInfo, retryConfigurableInfo);
+                rateLimiterClass = ConfigurationUtils.annotationValueOrDefault(
+                        controllerAnnotation,
+                        "rateLimiter", av -> loadClass(av.asClass().name().toString(), RateLimiter.class),
+                        () -> DefaultRateLimiter.class);
+                final var rateLimiterConfigurableInfo = configurableInfos.get(rateLimiterClass.getName());
+                rateLimiterConfigurationClass = getConfigurationAnnotationClass(reconcilerInfo,
                         rateLimiterConfigurableInfo);
             }
 
@@ -181,11 +180,11 @@ class QuarkusControllerConfigurationBuilder {
             final var namespaces = configExtractor.namespaces(name);
 
             final var dependentResourceInfos = reconcilerInfo.getDependentResourceInfos();
-            final List<DependentResourceSpec> dependentResources;
+            final List<DependentResourceSpecMetadata> dependentResources;
             if (!dependentResourceInfos.isEmpty()) {
                 dependentResources = new ArrayList<>(dependentResourceInfos.size());
                 dependentResourceInfos.forEach(dependent -> {
-                    dependentResources.add(createDependentResourceSpec(dependent, index, namespaces));
+                    dependentResources.add(createDependentResourceSpec(dependent, index, namespaces, annotatableDRInfos));
 
                     final var dependentTypeName = dependent.classInfo().name().toString();
                     additionalBeans.produce(
@@ -218,7 +217,7 @@ class QuarkusControllerConfigurationBuilder {
                     dependentResources,
                     finalFilter,
                     maxReconciliationInterval,
-                    onAddFilter, onUpdateFilter, genericFilter, retry, retryConfigurationClass, rateLimiter,
+                    onAddFilter, onUpdateFilter, genericFilter, retryClass, retryConfigurationClass, rateLimiterClass,
                     rateLimiterConfigurationClass);
 
             log.infov(
@@ -239,12 +238,11 @@ class QuarkusControllerConfigurationBuilder {
         return configuration;
     }
 
-    private static Class<?> getConfigurationClass(ReconcilerAugmentedClassInfo reconcilerInfo,
+    private static Class<?> getConfigurationAnnotationClass(SelectiveAugmentedClassInfo configurationTargetInfo,
             AnnotationConfigurableAugmentedClassInfo configurableInfo) {
         if (configurableInfo != null) {
             final var associatedConfigurationClass = configurableInfo.getAssociatedConfigurationClass();
-            // Keeping the deprecated method due to compatibility with Quarkus 2.7.
-            if (reconcilerInfo.classInfo().annotationsMap().containsKey(associatedConfigurationClass)) {
+            if (configurationTargetInfo.classInfo().annotationsMap().containsKey(associatedConfigurationClass)) {
                 return ClassLoadingUtils
                         .loadClass(associatedConfigurationClass.toString(), Object.class);
             }
@@ -253,10 +251,11 @@ class QuarkusControllerConfigurationBuilder {
     }
 
     @SuppressWarnings("unchecked")
-    private QuarkusDependentResourceSpec createDependentResourceSpec(
+    private DependentResourceSpecMetadata createDependentResourceSpec(
             DependentResourceAugmentedClassInfo dependent,
             IndexView index,
-            Set<String> namespaces) {
+            Set<String> namespaces,
+            Map<String, AnnotatableDependentResourceAugmentedClassInfo> annotatableDRInfos) {
         final var dependentType = dependent.classInfo();
 
         final var dependentTypeName = dependentType.name().toString();
@@ -302,15 +301,18 @@ class QuarkusControllerConfigurationBuilder {
                     kubeDepConfig, "genericFilter", GenericFilter.class,
                     GenericFilter.class, true,
                     index);
+            final var resourceDiscriminator = ConfigurationUtils.instantiateImplementationClass(
+                    kubeDepConfig, "resourceDiscriminator", ResourceDiscriminator.class,
+                    ResourceDiscriminator.class, true,
+                    index);
 
             cfg = new QuarkusKubernetesDependentResourceConfig(dependentNamespaces, labelSelector,
-                    configuredNS,
+                    configuredNS, resourceDiscriminator,
                     onAddFilter, onUpdateFilter,
                     onDeleteFilter, genericFilter);
         }
 
-        final var dependentClass = loadClass(dependentTypeName,
-                DependentResource.class);
+        final var dependentClass = loadClass(dependentTypeName, DependentResource.class);
 
         final var dependentConfig = dependent.getDependentAnnotationFromController();
         final var dependsOnField = dependentConfig.value("dependsOn");
@@ -328,9 +330,15 @@ class QuarkusControllerConfigurationBuilder {
         final var deletePostcondition = ConfigurationUtils.instantiateImplementationClass(
                 dependentConfig, "deletePostcondition", Condition.class,
                 Condition.class, true, index);
+        final var useEventSourceWithName = ConfigurationUtils.annotationValueOrDefault(
+                dependentConfig, "useEventSourceWithName", AnnotationValue::asString,
+                () -> null);
 
-        return new QuarkusDependentResourceSpec(dependentClass, cfg, dependent.nameOrFailIfUnset(),
-                dependsOn, readyCondition, reconcilePrecondition, deletePostcondition);
+        final var annotatableDRInfo = annotatableDRInfos.get(dependentClass.getName());
+        final var drConfigurationClass = getConfigurationAnnotationClass(dependent, annotatableDRInfo);
+
+        return new DependentResourceSpecMetadata(dependentClass, drConfigurationClass, cfg, dependent.nameOrFailIfUnset(),
+                dependsOn, readyCondition, reconcilePrecondition, deletePostcondition, useEventSourceWithName);
 
     }
 
