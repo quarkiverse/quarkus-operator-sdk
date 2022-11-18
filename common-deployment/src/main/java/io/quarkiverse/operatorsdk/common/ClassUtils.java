@@ -1,6 +1,7 @@
 package io.quarkiverse.operatorsdk.common;
 
 import static io.quarkiverse.operatorsdk.common.Constants.ANNOTATION_CONFIGURABLE;
+import static io.quarkiverse.operatorsdk.common.Constants.ANNOTATION_DR_CONFIGURATOR;
 import static io.quarkiverse.operatorsdk.common.Constants.CUSTOM_RESOURCE;
 import static io.quarkiverse.operatorsdk.common.Constants.DEPENDENT_RESOURCE;
 import static io.quarkiverse.operatorsdk.common.Constants.OBJECT;
@@ -69,6 +70,8 @@ public class ClassUtils {
             return new AnnotationConfigurableAugmentedClassInfo(classInfo);
         } else if (CUSTOM_RESOURCE.equals(implementedOrExtendedClass)) {
             return new CustomResourceAugmentedClassInfo(classInfo, null);
+        } else if (ANNOTATION_DR_CONFIGURATOR.equals(implementedOrExtendedClass)) {
+            return new AnnotatableDependentResourceAugmentedClassInfo(classInfo);
         } else {
             throw new IllegalArgumentException("Don't know how to process " + implementedOrExtendedClass);
         }

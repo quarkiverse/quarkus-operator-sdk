@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -46,6 +47,11 @@ public class SchemaDependentResource
     @Override
     public void configureWith(ResourcePollerConfig config) {
         setPollingPeriod(config.getPollPeriod());
+    }
+
+    @Override
+    public Optional<ResourcePollerConfig> configuration() {
+        return Optional.of(new ResourcePollerConfig((int) getPollingPeriod()));
     }
 
     @Override

@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
@@ -15,6 +16,9 @@ import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.AnnotationDependentResourceConfigurator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
@@ -22,7 +26,11 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEv
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
+import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
+import io.quarkiverse.operatorsdk.common.ClassLoadingUtils;
+import io.quarkus.arc.Arc;
+import io.quarkus.arc.ClientProxy;
 import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
@@ -63,23 +71,29 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final String crVersion;
     private final boolean generationAware;
     private final boolean statusPresentAndNotVoid;
-    private final List<DependentResourceSpec> dependentResources;
     private final Class<R> resourceClass;
     private final ResourceEventFilter<R> eventFilter;
     private final Optional<Duration> maxReconciliationInterval;
     private final Optional<OnAddFilter<R>> onAddFilter;
     private final Optional<OnUpdateFilter<R>> onUpdateFilter;
     private final Optional<GenericFilter<R>> genericFilter;
-    private final Retry retry;
-    private final Class<? extends Annotation> retryConfigurationClass;
-    private final RateLimiter rateLimiter;
-    private final Class<? extends Annotation> rateLimiterConfigurationClass;
+    private Class<? extends Annotation> retryConfigurationClass;
+    private Class<? extends Retry> retryClass;
+    private Class<? extends Annotation> rateLimiterConfigurationClass;
+    private Class<? extends RateLimiter> rateLimiterClass;
     private String finalizer;
     private Set<String> namespaces;
     private RetryConfiguration retryConfiguration;
     private String labelSelector;
+    private List<DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata;
     @IgnoreProperty
     private boolean namespaceExpansionRequired;
+    @IgnoreProperty
+    private List<DependentResourceSpec> dependentResources;
+
+    private Retry retry;
+
+    private RateLimiter rateLimiter;
 
     @RecordableConstructor
     @SuppressWarnings("unchecked")
@@ -90,11 +104,11 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             String crVersion, boolean generationAware,
             Class<R> resourceClass, Set<String> namespaces, String finalizerName, String labelSelector,
             boolean statusPresentAndNotVoid,
-            List<DependentResourceSpec> dependentResources, ResourceEventFilter<R> eventFilter,
+            List<DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata, ResourceEventFilter<R> eventFilter,
             Duration maxReconciliationInterval,
             OnAddFilter<R> onAddFilter, OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter,
-            Retry retry, Class<? extends Annotation> retryConfigurationClass,
-            RateLimiter rateLimiter, Class<? extends Annotation> rateLimiterConfigurationClass) {
+            Class<? extends Retry> retryClass, Class<? extends Annotation> retryConfigurationClass,
+            Class<? extends RateLimiter> rateLimiterClass, Class<? extends Annotation> rateLimiterConfigurationClass) {
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
         this.resourceTypeName = resourceTypeName;
@@ -106,17 +120,20 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         setFinalizer(finalizerName);
         this.labelSelector = labelSelector;
         this.statusPresentAndNotVoid = statusPresentAndNotVoid;
-        this.dependentResources = dependentResources;
+        this.dependentsMetadata = dependentsMetadata;
         this.eventFilter = eventFilter != null ? eventFilter : DEFAULT;
         this.maxReconciliationInterval = maxReconciliationInterval != null ? Optional.of(maxReconciliationInterval)
                 : ControllerConfiguration.super.maxReconciliationInterval();
         this.onAddFilter = Optional.ofNullable(onAddFilter);
         this.onUpdateFilter = Optional.ofNullable(onUpdateFilter);
         this.genericFilter = Optional.ofNullable(genericFilter);
-        this.retry = retry != null ? retry : ControllerConfiguration.super.getRetry();
+
+        this.retryClass = retryClass;
+        this.retry = GenericRetry.class.equals(retryClass) ? ControllerConfiguration.super.getRetry() : null;
         this.retryConfigurationClass = retryConfigurationClass;
-        this.rateLimiter = rateLimiter != null ? rateLimiter
-                : new DefaultRateLimiter();
+
+        this.rateLimiterClass = rateLimiterClass;
+        this.rateLimiter = DefaultRateLimiter.class.equals(rateLimiterClass) ? new DefaultRateLimiter() : null;
         this.rateLimiterConfigurationClass = rateLimiterConfigurationClass;
     }
 
@@ -210,7 +227,54 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public List<DependentResourceSpec> getDependentResources() {
+        if (dependentResources == null) {
+            dependentResources = dependentsMetadata.parallelStream()
+                    .map(drsm -> {
+                        final Class<? extends DependentResource<?, ?>> dependentResourceClass = drsm
+                                .getDependentResourceClass();
+                        final var dependent = Arc.container().instance(dependentResourceClass).get();
+                        if (dependent == null) {
+                            throw new IllegalStateException(
+                                    "Couldn't find bean associated with DependentResource "
+                                            + dependentResourceClass.getName());
+                        }
+
+                        // check if we need to configure our DependentResource
+                        if (dependent instanceof DependentResourceConfigurator) {
+                            var config = drsm.getDependentResourceConfig();
+                            final var configurator = (DependentResourceConfigurator) dependent;
+
+                            // check if we need to configure the dependent resource from an annotation only if we don't already have a configuration
+                            if (config == null) {
+                                if (configurator instanceof AnnotationDependentResourceConfigurator) {
+                                    final var annotationConfigClass = drsm.getAnnotationConfigClass();
+                                    if (annotationConfigClass != null) {
+                                        final var configAnnotation = dependentResourceClass
+                                                .getAnnotation(annotationConfigClass);
+                                        // always called even if the annotation is null so that implementations can provide default
+                                        // values
+                                        config = ((AnnotationDependentResourceConfigurator) dependent).configFrom(
+                                                configAnnotation,
+                                                QuarkusControllerConfiguration.this);
+                                        configurator.configureWith(config);
+                                    }
+                                }
+                            } else {
+                                configurator.configureWith(config);
+                            }
+
+                        }
+
+                        return new DependentResourceSpec(ClientProxy.unwrap(dependent), drsm.getName(), drsm.getDependsOn(),
+                                drsm.getReadyCondition(),
+                                drsm.getReconcileCondition(), drsm.getDeletePostCondition(), drsm.getUseEventSourceWithName());
+                    })
+                    .collect(Collectors.toList());
+            // null out metadata to gc now useless data
+            dependentsMetadata = null;
+        }
         return dependentResources;
     }
 
@@ -272,15 +336,42 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return genericFilter;
     }
 
+    // for Quarkus' RecordableConstructor
+    @SuppressWarnings("unused")
+    public Class<? extends Retry> getRetryClass() {
+        return retryClass;
+    }
+
+    // for Quarkus' RecordableConstructor
+    @SuppressWarnings("unused")
+    public Class<? extends RateLimiter> getRateLimiterClass() {
+        return rateLimiterClass;
+    }
+
+    // for Quarkus' RecordableConstructor
+    @SuppressWarnings("unused")
+    public List<DependentResourceSpecMetadata<?, ?, ?>> getDependentsMetadata() {
+        return dependentsMetadata;
+    }
+
     void initAnnotationConfigurables(Reconciler<R> reconciler) {
-        // todo: investigate if/how this could be done at build time
         final Class<? extends Reconciler> reconcilerClass = reconciler.getClass();
         if (retryConfigurationClass != null) {
+            if (retry == null) {
+                retry = ClassLoadingUtils.instantiate(retryClass);
+            }
             configure(reconcilerClass, retryConfigurationClass, (AnnotationConfigurable) retry);
+            retryClass = null;
+            retryConfigurationClass = null;
         }
 
-        if (rateLimiterConfigurationClass != null) {
+        if (rateLimiterClass != null) {
+            if (rateLimiter == null) {
+                rateLimiter = ClassLoadingUtils.instantiate(rateLimiterClass);
+            }
             configure(reconcilerClass, rateLimiterConfigurationClass, (AnnotationConfigurable) rateLimiter);
+            rateLimiterClass = null;
+            rateLimiterConfigurationClass = null;
         }
     }
 

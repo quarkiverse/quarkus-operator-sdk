@@ -176,9 +176,9 @@ public class OperatorSDKResource {
     }
 
     static class JSONDependentResourceSpec {
-        private final DependentResourceSpec<?, ?> spec;
+        private final DependentResourceSpec<?, ?, ?> spec;
 
-        JSONDependentResourceSpec(DependentResourceSpec<?, ?> spec) {
+        JSONDependentResourceSpec(DependentResourceSpec<?, ?, ?> spec) {
             this.spec = spec;
         }
 
