@@ -27,7 +27,6 @@ import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.Constants;
 import io.quarkiverse.operatorsdk.common.CustomResourceAugmentedClassInfo;
-import io.quarkiverse.operatorsdk.common.SelectiveAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.AppEventListener;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
@@ -146,16 +145,18 @@ class OperatorSDKProcessor {
         final var crdGeneration = new CRDGeneration(crdConfig, mode);
         final var index = combinedIndexBuildItem.getIndex();
 
+        final var registerForReflection = new HashSet<String>();
+
         final var configurableInfos = ClassUtils.getProcessableImplementationsOf(Constants.ANNOTATION_CONFIGURABLE,
                 index, log, Collections.emptyMap())
                 .map(AnnotationConfigurableAugmentedClassInfo.class::cast)
-                .peek(ci -> registerAssociatedClassesForReflection(reflectionClasses, forcedReflectionClasses, ci))
+                .peek(ci -> registerForReflection.addAll(ci.getClassNamesToRegisterForReflection()))
                 .collect(Collectors.toMap(ac -> ac.classInfo().name().toString(), Function.identity()));
 
         final var annotatableDRInfos = ClassUtils
                 .getProcessableImplementationsOf(Constants.ANNOTATION_DR_CONFIGURATOR, index, log, Collections.emptyMap())
                 .map(AnnotatableDependentResourceAugmentedClassInfo.class::cast)
-                .peek(ci -> registerAssociatedClassesForReflection(reflectionClasses, forcedReflectionClasses, ci))
+                .peek(ci -> registerForReflection.addAll(ci.getClassNamesToRegisterForReflection()))
                 .collect(Collectors.toMap(ac -> ac.classInfo().name().toString(), Function.identity()));
 
         // retrieve the known CRD information to make sure we always have a full view
@@ -176,8 +177,7 @@ class OperatorSDKProcessor {
         final var controllerConfigs = ClassUtils.getKnownReconcilers(index, log)
                 .map(raci -> {
                     // register strongly reconciler-associated classes that need reflective access
-                    registerAssociatedClassesForReflection(reflectionClasses,
-                            forcedReflectionClasses, raci);
+                    registerForReflection.addAll(raci.getClassNamesToRegisterForReflection());
 
                     // add associated primary resource for CRD generation if needed
                     final var changeInformation = liveReload.getChangeInformation();
@@ -242,6 +242,9 @@ class OperatorSDKProcessor {
             }
         }
 
+        // register classes for reflection
+        registerAssociatedClassesForReflection(reflectionClasses, forcedReflectionClasses, registerForReflection);
+
         generatedCRDInfo.produce(new GeneratedCRDInfoBuildItem(crdInfo));
 
         return new ConfigurationServiceBuildItem(Version.loadFromProperties(), controllerConfigs);
@@ -249,14 +252,13 @@ class OperatorSDKProcessor {
 
     private void registerAssociatedClassesForReflection(BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
-            SelectiveAugmentedClassInfo classInfo) {
-        classInfo.getClassNamesToRegisterForReflection()
-                .forEach(cn -> {
-                    reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, cn));
-                    forcedReflectionClasses.produce(
-                            new ForceNonWeakReflectiveClassBuildItem(cn));
-                    log.infov("Registered ''{0}'' for reflection", cn);
-                });
+            Set<String> classNamesToRegister) {
+        classNamesToRegister.forEach(cn -> {
+            reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, cn));
+            forcedReflectionClasses.produce(
+                    new ForceNonWeakReflectiveClassBuildItem(cn));
+            log.infov("Registered ''{0}'' for reflection", cn);
+        });
     }
 
     private static class IsRBACEnabled implements BooleanSupplier {
