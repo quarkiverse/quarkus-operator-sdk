@@ -63,12 +63,15 @@ public class ReconcilerAugmentedClassInfo extends ResourceAssociatedAugmentedCla
                     final var dependent = DependentResourceAugmentedClassInfo.createFor(dependentType, dependentConfig, index,
                             log, context);
                     final var dependentName = dependent.nameOrFailIfUnset();
+                    final var dependentTypeName = dependentType.name().toString();
                     if (dependentResources.containsKey(dependentName)) {
                         throw new IllegalArgumentException(
                                 "A DependentResource named: " + dependentName + " already exists: "
-                                        + dependentType.name().toString());
+                                        + dependentTypeName);
                     }
                     dependentResources.put(dependentName, dependent);
+                    // mark dependent class as needing reflection registration
+                    registerForReflection(dependentTypeName);
                 }
                 dependentResourceInfos = dependentResources.values();
             }

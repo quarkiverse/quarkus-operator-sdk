@@ -149,11 +149,13 @@ class OperatorSDKProcessor {
         final var configurableInfos = ClassUtils.getProcessableImplementationsOf(Constants.ANNOTATION_CONFIGURABLE,
                 index, log, Collections.emptyMap())
                 .map(AnnotationConfigurableAugmentedClassInfo.class::cast)
+                .peek(ci -> registerAssociatedClassesForReflection(reflectionClasses, forcedReflectionClasses, ci))
                 .collect(Collectors.toMap(ac -> ac.classInfo().name().toString(), Function.identity()));
 
         final var annotatableDRInfos = ClassUtils
                 .getProcessableImplementationsOf(Constants.ANNOTATION_DR_CONFIGURATOR, index, log, Collections.emptyMap())
                 .map(AnnotatableDependentResourceAugmentedClassInfo.class::cast)
+                .peek(ci -> registerAssociatedClassesForReflection(reflectionClasses, forcedReflectionClasses, ci))
                 .collect(Collectors.toMap(ac -> ac.classInfo().name().toString(), Function.identity()));
 
         // retrieve the known CRD information to make sure we always have a full view
@@ -200,10 +202,6 @@ class OperatorSDKProcessor {
                     return builder.build(raci, configurableInfos, annotatableDRInfos);
                 })
                 .collect(Collectors.toList());
-
-        // register strongly classes associated with dependent resources as well
-        ClassUtils.getProcessableImplementationsOf(Constants.DEPENDENT_RESOURCE, index, log, Collections.emptyMap())
-                .forEach(fci -> registerAssociatedClassesForReflection(reflectionClasses, forcedReflectionClasses, fci));
 
         // generate non-reconciler associated CRDs if requested
         if (wantCRDGenerated && crdConfig.generateAll) {
