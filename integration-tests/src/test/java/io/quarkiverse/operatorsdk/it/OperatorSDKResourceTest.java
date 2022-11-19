@@ -76,7 +76,7 @@ class OperatorSDKResourceTest {
                 SecretReconciler.class.getSimpleName().toLowerCase(Locale.ROOT),
                 GatewayReconciler.class.getSimpleName().toLowerCase(Locale.ROOT),
                 DependentDefiningReconciler.NAME, NamespaceFromEnvReconciler.NAME,
-                EmptyReconciler.NAME, VariableNSReconciler.NAME));
+                EmptyReconciler.NAME, VariableNSReconciler.NAME, AnnotatedDependentReconciler.NAME));
     }
 
     @Test
@@ -172,5 +172,18 @@ class OperatorSDKResourceTest {
                         "namespaces", hasItem(EmptyReconciler.FROM_ENV_NS2),
                         "watchCurrentNamespace", equalTo(false),
                         "namespaces", hasSize(2));
+    }
+
+    @Test
+    void customAnnotatedDependentsShouldUseAnnotationValues() {
+        given()
+                .when()
+                .get("/operator/" + AnnotatedDependentReconciler.NAME + "/config")
+                .then()
+                .statusCode(200)
+                .body(
+                        "dependents", hasSize(1),
+                        "dependents[0].dependentClass", equalTo(AnnotatedDependentResource.class.getCanonicalName()),
+                        "dependents[0].dependentConfig.value", equalTo(AnnotatedDependentResource.VALUE));
     }
 }

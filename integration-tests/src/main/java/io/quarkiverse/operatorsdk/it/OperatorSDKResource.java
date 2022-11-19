@@ -188,8 +188,13 @@ public class OperatorSDKResource {
 
         public Object getDependentConfig() {
             return spec.getDependentResourceConfiguration()
-                    .map(KubernetesDependentResourceConfig.class::cast)
-                    .map(JSONKubernetesResourceConfig::new)
+                    .map(c -> {
+                        if (c instanceof KubernetesDependentResourceConfig) {
+                            return new JSONKubernetesResourceConfig((KubernetesDependentResourceConfig<?>) c);
+                        } else {
+                            return c;
+                        }
+                    })
                     .orElse(null);
         }
 
