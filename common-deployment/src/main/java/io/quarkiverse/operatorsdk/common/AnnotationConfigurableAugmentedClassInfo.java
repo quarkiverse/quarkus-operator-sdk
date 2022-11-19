@@ -21,9 +21,10 @@ public class AnnotationConfigurableAugmentedClassInfo extends SelectiveAugmented
 
     @Override
     protected void doAugment(IndexView index, Logger log, Map<String, Object> context) {
-        // record associated configuration class
+        // record associated configuration annotation
         associatedConfigurationClass = typeAt(0).name();
-        // register associated class for reflection
+
+        // register associated class for reflection: this class is the annotation target class
         registerForReflection(classInfo().name().toString());
     }
 
