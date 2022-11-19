@@ -226,6 +226,18 @@ class QuarkusControllerConfigurationBuilder {
         } else {
             log.infov("Skipped configuration reload for ''{0}'' reconciler as no changes were detected",
                     reconcilerClassName);
+
+            // register the dependent beans so that they can be found during dev mode after a restart
+            // where the dependents might not have been resolved yet
+            if (configuration.needsDependentBeansCreation()) {
+                log.debugv("Created dependent beans for ''{0}'' reconciler", reconcilerClassName);
+                reconcilerInfo.getDependentResourceInfos().forEach(dependent -> additionalBeans.produce(
+                        AdditionalBeanBuildItem.builder()
+                                .addBeanClass(dependent.classInfo().name().toString())
+                                .setUnremovable()
+                                .setDefaultScope(APPLICATION_SCOPED)
+                                .build()));
+            }
         }
 
         // store the configuration in the live reload context

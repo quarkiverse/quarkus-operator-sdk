@@ -237,6 +237,10 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         }
     }
 
+    public boolean needsDependentBeansCreation() {
+        return dependentsMetadata != null && !dependentsMetadata.isEmpty();
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public List<DependentResourceSpec> getDependentResources() {
