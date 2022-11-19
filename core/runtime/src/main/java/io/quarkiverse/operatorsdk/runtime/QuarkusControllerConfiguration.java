@@ -4,6 +4,7 @@ import java.lang.annotation.Annotation;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -85,7 +86,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private Set<String> namespaces;
     private RetryConfiguration retryConfiguration;
     private String labelSelector;
-    private List<DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata;
+    private Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata;
     @IgnoreProperty
     private boolean namespaceExpansionRequired;
     @IgnoreProperty
@@ -102,9 +103,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             String name,
             String resourceTypeName,
             String crVersion, boolean generationAware,
-            Class<R> resourceClass, Set<String> namespaces, String finalizerName, String labelSelector,
+            Class resourceClass, Set<String> namespaces, String finalizerName, String labelSelector,
             boolean statusPresentAndNotVoid,
-            List<DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata, ResourceEventFilter<R> eventFilter,
+            Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata, ResourceEventFilter eventFilter,
             Duration maxReconciliationInterval,
             OnAddFilter<R> onAddFilter, OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter,
             Class<? extends Retry> retryClass, Class<? extends Annotation> retryConfigurationClass,
@@ -226,11 +227,21 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return statusPresentAndNotVoid;
     }
 
+    public boolean areDependentsImpactedBy(Set<String> changedClasses) {
+        if (dependentResources != null) {
+            return dependentResources.parallelStream()
+                    .map(dr -> dr.getDependentResourceClass().getCanonicalName())
+                    .anyMatch(changedClasses::contains);
+        } else {
+            return dependentsMetadata.keySet().parallelStream().anyMatch(changedClasses::contains);
+        }
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public List<DependentResourceSpec> getDependentResources() {
         if (dependentResources == null) {
-            dependentResources = dependentsMetadata.parallelStream()
+            dependentResources = dependentsMetadata.values().parallelStream()
                     .map(drsm -> {
                         final Class<? extends DependentResource<?, ?>> dependentResourceClass = drsm
                                 .getDependentResourceClass();
@@ -350,7 +361,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     // for Quarkus' RecordableConstructor
     @SuppressWarnings("unused")
-    public List<DependentResourceSpecMetadata<?, ?, ?>> getDependentsMetadata() {
+    public Map<String, DependentResourceSpecMetadata<?, ?, ?>> getDependentsMetadata() {
         return dependentsMetadata;
     }
 

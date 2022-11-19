@@ -8,10 +8,9 @@ import static io.quarkiverse.operatorsdk.common.Constants.KUBERNETES_DEPENDENT_R
 import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -180,11 +179,12 @@ class QuarkusControllerConfigurationBuilder {
             final var namespaces = configExtractor.namespaces(name);
 
             final var dependentResourceInfos = reconcilerInfo.getDependentResourceInfos();
-            final List<DependentResourceSpecMetadata> dependentResources;
+            final Map<String, DependentResourceSpecMetadata> dependentResources;
             if (!dependentResourceInfos.isEmpty()) {
-                dependentResources = new ArrayList<>(dependentResourceInfos.size());
+                dependentResources = new HashMap<>(dependentResourceInfos.size());
                 dependentResourceInfos.forEach(dependent -> {
-                    dependentResources.add(createDependentResourceSpec(dependent, index, namespaces, annotatableDRInfos));
+                    final var spec = createDependentResourceSpec(dependent, index, namespaces, annotatableDRInfos);
+                    dependentResources.put(dependent.classInfo().name().toString(), spec);
 
                     final var dependentTypeName = dependent.classInfo().name().toString();
                     additionalBeans.produce(
@@ -195,7 +195,7 @@ class QuarkusControllerConfigurationBuilder {
                                     .build());
                 });
             } else {
-                dependentResources = Collections.emptyList();
+                dependentResources = Collections.emptyMap();
             }
 
             // create the configuration

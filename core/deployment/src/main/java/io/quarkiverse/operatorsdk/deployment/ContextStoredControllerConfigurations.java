@@ -66,8 +66,6 @@ class ContextStoredControllerConfigurations {
         return changedClasses.contains(reconcilerClassName)
                 || changedClasses.contains(configuration.getResourceTypeName())
                 || changedResources.contains("application.properties")
-                || configuration.getDependentResources().stream()
-                        .map(dr -> dr.getDependentResourceClass().getCanonicalName())
-                        .anyMatch(changedClasses::contains);
+                || configuration.areDependentsImpactedBy(changedClasses);
     }
 }
