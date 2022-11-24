@@ -1,47 +1,24 @@
 package io.quarkiverse.operatorsdk.runtime.devconsole;
 
-import java.util.Collection;
-import java.util.stream.Collectors;
-
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
+import io.javaoperatorsdk.operator.processing.event.EventSourceMetadata;
 
 public class EventSourceInfo {
-    private final EventSource eventSource;
+    private final EventSourceMetadata metadata;
 
-    public EventSourceInfo(EventSource eventSource) {
-        this.eventSource = eventSource;
+    public EventSourceInfo(EventSourceMetadata metadata) {
+        this.metadata = metadata;
     }
 
-    @SuppressWarnings({ "unused", "unchecked" })
-    public Collection<ResourceID> getItems() {
-        return (Collection<ResourceID>) asInformer().keys().collect(Collectors.toList());
+    public String getName() {
+        return metadata.name();
     }
 
     @SuppressWarnings("unused")
-    public Class<?> getResourceType() {
-        return asInformer().resourceType();
+    public String getResourceClass() {
+        return metadata.resourceType().map(Class::getName).orElse(null);
     }
 
-    @SuppressWarnings({ "rawtypes" })
-    private InformerEventSource asInformer() {
-        return (InformerEventSource) eventSource;
-    }
-
-    @Override
-    public String toString() {
-        if (eventSource instanceof InformerEventSource) {
-            final var informer = asInformer();
-            final var configuration = informer.getConfiguration();
-            return String.format("Informer (%b) -> %s\n\t- onAdd: %s\n\t- onUpdate: %s\n\t- onDelete: %s\n\t- generic: %s",
-                    informer.isRunning(),
-                    configuration.getResourceClass(),
-                    configuration.onAddFilter(),
-                    configuration.onUpdateFilter(),
-                    configuration.onDeleteFilter(),
-                    configuration.genericFilter());
-        }
-        return super.toString();
+    public String getType() {
+        return metadata.type().getName();
     }
 }

@@ -13,7 +13,7 @@ color: gray;
     <th scope="col">Target resource</th>
     <th scope="col">Namespace(s)</th>
     <th scope="col">Event Sources</th>
-    <th scope="col">Known Resources</th>
+    <th scope="col">Dependents</th>
   </tr>
   </thead>
   <tbody>
@@ -25,11 +25,9 @@ color: gray;
     <td>
       <ul>
         {#for eventSource in controller.eventSources}
-        <li>{eventSource.resourceType}:
+        <li><em>{eventSource.name}</em> {eventSource.type}
           <ul>
-            {#for item in eventSource.items}
-            <li>{item}</li>
-            {/for}
+            <li>Target resource: {eventSource.resourceClass ?: 'none'}</li>
           </ul>
         </li>
         {/for}
@@ -37,8 +35,21 @@ color: gray;
     </td>
     <td>
       <ul>
-        {#for resource in controller.knownResources}
-        <li>{resource}</li>
+        {#for dep in controller.dependents}
+        <li><em>{dep.name}</em> {dep.type}
+          <ul>
+            <li>Target resource: {dep.resourceClass}</li>
+            <li>Depends on: {dep.dependsOn}</li>
+            <li>Ready condition: {dep.readyCondition}</li>
+            <li>Reconcile condition: {dep.reconcileCondition}</li>
+            <li>Delete condition: {dep.deletePostCondition}</li>
+            {#if dep.eventSource}
+            <li>
+              <em>{dep.eventSource.name}</em> EventSource
+            </li>
+            {/if}
+          </ul>
+        </li>
         {/for}
       </ul>
     </td>
