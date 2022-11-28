@@ -12,7 +12,7 @@ import io.javaoperatorsdk.operator.processing.event.source.Configurable;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 
-@SuppressWarnings({"unused", "rawtypes"})
+@SuppressWarnings({ "unused", "rawtypes" })
 public class DependentInfo<R, P extends HasMetadata> {
     private final DependentResourceSpec<R, P, ?> spec;
     private final EventSourceContext<P> context;
@@ -25,7 +25,7 @@ public class DependentInfo<R, P extends HasMetadata> {
     EventSource eventSource() {
         return spec.getDependentResource().eventSource(context).orElse(null);
     }
-    
+
     public EventSourceInfo getEventSource() {
         return Optional.ofNullable(eventSource()).map(es -> new EventSourceMetadata() {
             @Override
@@ -54,7 +54,7 @@ public class DependentInfo<R, P extends HasMetadata> {
 
         }).map(EventSourceInfo::new).orElse(null);
     }
-    
+
     public String getResourceClass() {
         return spec.getDependentResource().resourceType().getName();
     }
