@@ -33,6 +33,9 @@ public class ConfigurationServiceRecorder {
                 .orElse(ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
         final var timeout = runTimeConfiguration.terminationTimeoutSeconds
                 .orElse(ConfigurationService.DEFAULT_TERMINATION_TIMEOUT_SECONDS);
+        final var workflowThreads = runTimeConfiguration.concurrentWorkflowThreads
+                .orElse(ConfigurationService.DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER);
+        final var cacheSyncTimeout = runTimeConfiguration.cacheSyncTimeout;
 
         configurations.forEach((name, c) -> {
             final var extConfig = runTimeConfiguration.controllers.get(name);
@@ -73,7 +76,8 @@ public class ConfigurationServiceRecorder {
             final var mapper = Serialization.jsonMapper();
             mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
             final var container = Arc.container();
-            container.select(ObjectMapperCustomizer.class, KubernetesClientSerializationCustomizer.Literal.INSTANCE)
+            container.select(ObjectMapperCustomizer.class,
+                    KubernetesClientSerializationCustomizer.Literal.INSTANCE)
                     .stream()
                     .sorted()
                     .forEach(c -> c.customize(mapper));
@@ -84,12 +88,16 @@ public class ConfigurationServiceRecorder {
                     container.instance(KubernetesClient.class).get(),
                     crdInfo,
                     maxThreads,
+                    workflowThreads,
                     timeout,
+                    cacheSyncTimeout,
                     container.instance(Metrics.class).get(),
                     shouldStartOperator(buildTimeConfiguration.startOperator, launchMode),
                     mapper,
                     container.instance(LeaderElectionConfiguration.class).orElse(null),
-                    container.instance(InformerStoppedHandler.class).orElse(null));
+                    container.instance(InformerStoppedHandler.class).orElse(null),
+                    buildTimeConfiguration.closeClientOnStop,
+                    buildTimeConfiguration.stopOnInformerErrorDuringStartup);
         };
     }
 

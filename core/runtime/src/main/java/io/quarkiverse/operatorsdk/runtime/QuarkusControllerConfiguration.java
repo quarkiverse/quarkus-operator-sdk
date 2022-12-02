@@ -91,9 +91,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private boolean namespaceExpansionRequired;
     @IgnoreProperty
     private List<DependentResourceSpec> dependentResources;
-
     private Retry retry;
-
     private RateLimiter rateLimiter;
 
     @RecordableConstructor

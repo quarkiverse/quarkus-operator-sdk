@@ -14,6 +14,7 @@
  */
 package io.quarkiverse.operatorsdk.runtime;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -49,4 +50,17 @@ public class RunTimeOperatorConfiguration {
      */
     @ConfigItem
     public Optional<List<String>> namespaces;
+
+    /**
+     * The max number of concurrent workflow processing requests.
+     */
+    @ConfigItem
+    public Optional<Integer> concurrentWorkflowThreads;
+
+    /**
+     * How long the operator will wait for informers to finish synchronizing their caches on startup
+     * before timing out.
+     */
+    @ConfigItem(defaultValue = "2M")
+    public Duration cacheSyncTimeout;
 }
