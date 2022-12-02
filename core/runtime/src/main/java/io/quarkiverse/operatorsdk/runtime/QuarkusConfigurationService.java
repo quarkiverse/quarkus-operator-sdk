@@ -1,5 +1,6 @@
 package io.quarkiverse.operatorsdk.runtime;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,16 +38,23 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     private final boolean startOperator;
     private final LeaderElectionConfiguration leaderElectionConfiguration;
     private final InformerStoppedHandler informerStoppedHandler;
+    private final boolean closeClientOnStop;
+    private final boolean stopOnInformerErrorDuringStartup;
+    private final int concurrentWorkflowExecutorThreads;
+    private final Duration cacheSyncTimeout;
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public QuarkusConfigurationService(
             Version version,
             Collection<QuarkusControllerConfiguration> configurations,
             KubernetesClient client,
-            CRDGenerationInfo crdInfo, int maxThreads,
-            int timeout, Metrics metrics, boolean startOperator, ObjectMapper mapper,
-            LeaderElectionConfiguration leaderElectionConfiguration, InformerStoppedHandler informerStoppedHandler) {
+            CRDGenerationInfo crdInfo, int maxThreads, int maxWorflowThreads,
+            int timeout, Duration cacheSyncTimeout, Metrics metrics, boolean startOperator, ObjectMapper mapper,
+            LeaderElectionConfiguration leaderElectionConfiguration, InformerStoppedHandler informerStoppedHandler,
+            boolean closeClientOnStop, boolean stopOnInformerErrorDuringStartup) {
         super(version);
+        this.closeClientOnStop = closeClientOnStop;
+        this.stopOnInformerErrorDuringStartup = stopOnInformerErrorDuringStartup;
         final var cloner = new Cloner() {
             @Override
             public <R extends HasMetadata> R clone(R r) {
@@ -62,9 +70,11 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
         this.client = client;
         this.metrics = metrics;
         if (configurations != null && !configurations.isEmpty()) {
-            reconcilerClassToName = new HashMap<>(configurations.size());
+            final var size = configurations.size();
+            reconcilerClassToName = new HashMap<>(size);
             configurations.forEach(c -> {
-                reconcilerClassToName.put(c.getAssociatedReconcilerClassName(), c.getName());
+                final var name = c.getName();
+                reconcilerClassToName.put(c.getAssociatedReconcilerClassName(), name);
                 register(c);
             });
         } else {
@@ -72,7 +82,9 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
         }
         this.crdInfo = crdInfo;
         this.concurrentReconciliationThreads = maxThreads;
+        this.concurrentWorkflowExecutorThreads = maxWorflowThreads;
         this.terminationTimeout = timeout;
+        this.cacheSyncTimeout = cacheSyncTimeout;
         this.informerStoppedHandler = informerStoppedHandler;
         this.leaderElectionConfiguration = leaderElectionConfiguration;
     }
@@ -165,5 +177,25 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     @Override
     public Optional<InformerStoppedHandler> getInformerStoppedHandler() {
         return Optional.ofNullable(informerStoppedHandler);
+    }
+
+    @Override
+    public int concurrentWorkflowExecutorThreads() {
+        return concurrentWorkflowExecutorThreads;
+    }
+
+    @Override
+    public boolean closeClientOnStop() {
+        return closeClientOnStop;
+    }
+
+    @Override
+    public boolean stopOnInformerErrorDuringStartup() {
+        return stopOnInformerErrorDuringStartup;
+    }
+
+    @Override
+    public Duration cacheSyncTimeout() {
+        return cacheSyncTimeout;
     }
 }

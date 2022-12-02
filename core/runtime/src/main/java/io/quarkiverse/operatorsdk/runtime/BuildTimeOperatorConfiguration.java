@@ -24,20 +24,36 @@ public class BuildTimeOperatorConfiguration {
 
     /**
      * Whether controllers should only process events if the associated resource generation has
-     * increased since last reconciliation, otherwise will process all events. Sets the default value for all controllers.
+     * increased since last reconciliation, otherwise will process all events. Sets the default value
+     * for all controllers.
      */
     @ConfigItem(defaultValue = "true")
     public Optional<Boolean> generationAware;
 
     /**
-     * Whether Role-Based Access Control (RBAC) resources should be generated in the kubernetes manifests.
+     * Whether Role-Based Access Control (RBAC) resources should be generated in the kubernetes
+     * manifests.
      */
     @ConfigItem(defaultValue = "false")
     public Boolean disableRbacGeneration;
 
     /**
-     * Whether the operator should be automatically started or not. Mostly useful for testing scenarios.
+     * Whether the operator should be automatically started or not. Mostly useful for testing
+     * scenarios.
      */
     @ConfigItem
     public Optional<Boolean> startOperator;
+
+    /**
+     * Whether the injected Kubernetes client should be stopped when the operator is stopped.
+     */
+    @ConfigItem(defaultValue = "true")
+    public Boolean closeClientOnStop;
+
+    /**
+     * Whether the operator should stop if an informer error (such as one caused by missing / improper
+     * RBACs) occurs during startup.
+     */
+    @ConfigItem(defaultValue = "true")
+    public Boolean stopOnInformerErrorDuringStartup;
 }
