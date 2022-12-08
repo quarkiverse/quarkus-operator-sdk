@@ -21,7 +21,6 @@ import org.jboss.logging.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
-import io.quarkiverse.operatorsdk.common.AnnotatableDependentResourceAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
@@ -153,11 +152,13 @@ class OperatorSDKProcessor {
                 .peek(ci -> registerForReflection.addAll(ci.getClassNamesToRegisterForReflection()))
                 .collect(Collectors.toMap(ac -> ac.classInfo().name().toString(), Function.identity()));
 
-        final var annotatableDRInfos = ClassUtils
-                .getProcessableImplementationsOf(Constants.ANNOTATION_DR_CONFIGURATOR, index, log, Collections.emptyMap())
-                .map(AnnotatableDependentResourceAugmentedClassInfo.class::cast)
-                .peek(ci -> registerForReflection.addAll(ci.getClassNamesToRegisterForReflection()))
-                .collect(Collectors.toMap(ac -> ac.classInfo().name().toString(), Function.identity()));
+        /*
+         * final var annotatableDRInfos = ClassUtils
+         * .getProcessableImplementationsOf(Constants.ANNOTATION_DR_CONFIGURATOR, index, log, Collections.emptyMap())
+         * .map(AnnotatableDependentResourceAugmentedClassInfo.class::cast)
+         * .peek(ci -> registerForReflection.addAll(ci.getClassNamesToRegisterForReflection()))
+         * .collect(Collectors.toMap(ac -> ac.classInfo().name().toString(), Function.identity()));
+         */
 
         // retrieve the known CRD information to make sure we always have a full view
         var stored = liveReload.getContextObject(ContextStoredCRDInfos.class);
@@ -199,7 +200,7 @@ class OperatorSDKProcessor {
                         }
                     }
 
-                    return builder.build(raci, configurableInfos, annotatableDRInfos);
+                    return builder.build(raci, configurableInfos);
                 })
                 .collect(Collectors.toList());
 

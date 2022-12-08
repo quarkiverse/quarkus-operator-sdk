@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -23,11 +24,19 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
+import io.quarkus.arc.Arc;
 import io.quarkus.arc.ClientProxy;
 
-public class QuarkusConfigurationService extends AbstractConfigurationService {
+public class QuarkusConfigurationService extends AbstractConfigurationService implements
+        DependentResourceFactory<QuarkusControllerConfiguration<?>>,
+        ManagedWorkflowFactory<QuarkusControllerConfiguration<?>> {
     private static final Logger log = LoggerFactory.getLogger(QuarkusConfigurationService.class);
     private final KubernetesClient client;
     private final CRDGenerationInfo crdInfo;
@@ -42,6 +51,8 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     private final boolean stopOnInformerErrorDuringStartup;
     private final int concurrentWorkflowExecutorThreads;
     private final Duration cacheSyncTimeout;
+    private ExecutorService reconcileExecutorService;
+    private ExecutorService workflowExecutorService;
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public QuarkusConfigurationService(
@@ -197,5 +208,57 @@ public class QuarkusConfigurationService extends AbstractConfigurationService {
     @Override
     public Duration cacheSyncTimeout() {
         return cacheSyncTimeout;
+    }
+
+    @Override
+    public ExecutorService getExecutorService() {
+        if (reconcileExecutorService == null) {
+            reconcileExecutorService = super.getExecutorService();
+        }
+        return reconcileExecutorService;
+    }
+
+    @Override
+    public ExecutorService getWorkflowExecutorService() {
+        if (workflowExecutorService == null) {
+            workflowExecutorService = super.getWorkflowExecutorService();
+        }
+        return workflowExecutorService;
+    }
+
+    @Override
+    public DependentResourceFactory<QuarkusControllerConfiguration<?>> dependentResourceFactory() {
+        return this;
+    }
+
+    @Override
+    public ManagedWorkflowFactory<QuarkusControllerConfiguration<?>> getWorkflowFactory() {
+        return this;
+    }
+
+    @Override
+    public ManagedWorkflow<?> workflowFor(QuarkusControllerConfiguration<?> controllerConfiguration) {
+        return controllerConfiguration.getWorkflow();
+    }
+
+    @Override
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public DependentResource createFrom(DependentResourceSpec spec,
+            QuarkusControllerConfiguration configuration) {
+        final Class<? extends DependentResource<?, ?>> dependentResourceClass = spec
+                .getDependentResourceClass();
+        final var dependent = Arc.container().instance(dependentResourceClass).get();
+        if (dependent == null) {
+            throw new IllegalStateException(
+                    "Couldn't find bean associated with DependentResource "
+                            + dependentResourceClass.getName());
+        }
+
+        return ClientProxy.unwrap(dependent);
+    }
+
+    @SuppressWarnings("rawtypes")
+    public ManagedWorkflow workflowByName(String name) {
+        return ((QuarkusControllerConfiguration) getFor(name)).getWorkflow();
     }
 }

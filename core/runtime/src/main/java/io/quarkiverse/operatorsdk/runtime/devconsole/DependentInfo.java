@@ -6,24 +6,29 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.EventSourceMetadata;
 import io.javaoperatorsdk.operator.processing.event.source.Configurable;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
+import io.quarkus.arc.Arc;
 
 @SuppressWarnings({ "unused", "rawtypes" })
 public class DependentInfo<R, P extends HasMetadata> {
-    private final DependentResourceSpec<R, P, ?> spec;
+    private final DependentResourceSpec<R, P> spec;
     private final EventSourceContext<P> context;
 
-    public DependentInfo(DependentResourceSpec<R, P, ?> spec, EventSourceContext<P> context) {
+    public DependentInfo(DependentResourceSpec<R, P> spec, EventSourceContext<P> context) {
         this.spec = spec;
         this.context = context;
     }
 
     EventSource eventSource() {
-        return spec.getDependentResource().eventSource(context).orElse(null);
+        // todo: fix-me
+        final DependentResource<R, P> dependent = Arc.container()
+                .instance(spec.getDependentResourceClass()).get();
+        return dependent.eventSource(context).orElse(null);
     }
 
     public EventSourceInfo getEventSource() {
@@ -56,11 +61,14 @@ public class DependentInfo<R, P extends HasMetadata> {
     }
 
     public String getResourceClass() {
-        return spec.getDependentResource().resourceType().getName();
+        // todo: fix-me
+        final DependentResource<R, P> dependent = Arc.container()
+                .instance(spec.getDependentResourceClass()).get();
+        return dependent.resourceType().getName();
     }
 
     public Optional<?> getDependentResourceConfiguration() {
-        return spec.getDependentResourceConfiguration();
+        return null; // todo
     }
 
     public String getName() {

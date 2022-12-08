@@ -3,6 +3,7 @@ package io.quarkiverse.operatorsdk.it;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -20,9 +21,11 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkus.runtime.annotations.RegisterForReflection;
@@ -44,7 +47,7 @@ public class OperatorSDKResource {
 
     @GET
     @Path("{name}")
-    public boolean getController(@PathParam("name") String name) {
+    public boolean exists(@PathParam("name") String name) {
         return configurationService.getKnownReconcilerNames().contains(name);
     }
 
@@ -64,6 +67,12 @@ public class OperatorSDKResource {
                 .findFirst()
                 .map(JSONControllerConfiguration::new)
                 .orElse(null);
+    }
+
+    @GET
+    @Path("{name}/workflow")
+    public JSONWorkflow getWorkflow(@PathParam("name") String name) {
+        return new JSONWorkflow(configurationService.workflowByName(name));
     }
 
     static class JSONConfiguration {
@@ -165,7 +174,7 @@ public class OperatorSDKResource {
             final var dependents = conf.getDependentResources();
             final var result = new ArrayList<JSONDependentResourceSpec>(dependents.size());
             return dependents.stream()
-                    .map(JSONDependentResourceSpec::new)
+                    .map(spec -> new JSONDependentResourceSpec(spec, conf))
                     .collect(Collectors.toList());
         }
 
@@ -176,10 +185,12 @@ public class OperatorSDKResource {
     }
 
     static class JSONDependentResourceSpec {
-        private final DependentResourceSpec<?, ?, ?> spec;
+        private final DependentResourceSpec<?, ?> spec;
+        private final ControllerConfiguration<?> conf;
 
-        JSONDependentResourceSpec(DependentResourceSpec<?, ?, ?> spec) {
+        JSONDependentResourceSpec(DependentResourceSpec<?, ?> spec, ControllerConfiguration<?> conf) {
             this.spec = spec;
+            this.conf = conf;
         }
 
         public String getDependentClass() {
@@ -187,15 +198,12 @@ public class OperatorSDKResource {
         }
 
         public Object getDependentConfig() {
-            return spec.getDependentResourceConfiguration()
-                    .map(c -> {
-                        if (c instanceof KubernetesDependentResourceConfig) {
-                            return new JSONKubernetesResourceConfig((KubernetesDependentResourceConfig<?>) c);
-                        } else {
-                            return c;
-                        }
-                    })
-                    .orElse(null);
+            final var c = DependentResourceConfigurationResolver.configurationFor(spec, conf);
+            if (c instanceof KubernetesDependentResourceConfig) {
+                return new JSONKubernetesResourceConfig((KubernetesDependentResourceConfig<?>) c);
+            } else {
+                return c;
+            }
         }
 
         public String getName() {
@@ -221,6 +229,28 @@ public class OperatorSDKResource {
 
         public String getLabelSelector() {
             return config.labelSelector();
+        }
+    }
+
+    static class JSONWorkflow {
+        private final ManagedWorkflow<?> workflow;
+
+        @SuppressWarnings("rawtypes")
+        JSONWorkflow(ManagedWorkflow workflow) {
+            this.workflow = workflow;
+        }
+
+        public boolean isCleaner() {
+            return workflow.hasCleaner();
+        }
+
+        public boolean isEmpty() {
+            return workflow.isEmpty();
+        }
+
+        public Map<String, String> getDependents() {
+            return workflow.getOrderedSpecs().stream().collect(
+                    Collectors.toMap(DependentResourceSpec::getName, spec -> spec.getDependentResourceClass().getName()));
         }
     }
 }

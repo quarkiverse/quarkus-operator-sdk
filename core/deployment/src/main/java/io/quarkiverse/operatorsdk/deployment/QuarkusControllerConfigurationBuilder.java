@@ -3,12 +3,9 @@ package io.quarkiverse.operatorsdk.deployment;
 import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.instantiate;
 import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.loadClass;
 import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATION;
-import static io.quarkiverse.operatorsdk.common.Constants.KUBERNETES_DEPENDENT;
-import static io.quarkiverse.operatorsdk.common.Constants.KUBERNETES_DEPENDENT_RESOURCE;
 import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,20 +21,24 @@ import org.jboss.logging.Logger;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentConverter;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
-import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
-import io.quarkiverse.operatorsdk.common.AnnotatableDependentResourceAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ClassLoadingUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
@@ -50,11 +51,10 @@ import io.quarkiverse.operatorsdk.runtime.DependentResourceSpecMetadata;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration.DefaultRateLimiter;
 import io.quarkiverse.operatorsdk.runtime.QuarkusKubernetesDependentResourceConfig;
+import io.quarkiverse.operatorsdk.runtime.QuarkusManagedWorkflow;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
-import io.quarkus.builder.BuildException;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.builditem.LiveReloadBuildItem;
-import io.quarkus.deployment.util.JandexUtil;
 
 @SuppressWarnings("rawtypes")
 class QuarkusControllerConfigurationBuilder {
@@ -79,8 +79,7 @@ class QuarkusControllerConfigurationBuilder {
 
     @SuppressWarnings("unchecked")
     QuarkusControllerConfiguration build(ReconcilerAugmentedClassInfo reconcilerInfo,
-            Map<String, AnnotationConfigurableAugmentedClassInfo> configurableInfos,
-            Map<String, AnnotatableDependentResourceAugmentedClassInfo> annotatableDRInfos) {
+            Map<String, AnnotationConfigurableAugmentedClassInfo> configurableInfos) {
 
         // retrieve the reconciler's name
         final var info = reconcilerInfo.classInfo();
@@ -178,31 +177,20 @@ class QuarkusControllerConfigurationBuilder {
             // extract the namespaces
             final var namespaces = configExtractor.namespaces(name);
 
-            final var dependentResourceInfos = reconcilerInfo.getDependentResourceInfos();
-            final Map<String, DependentResourceSpecMetadata> dependentResources;
-            if (!dependentResourceInfos.isEmpty()) {
-                dependentResources = new HashMap<>(dependentResourceInfos.size());
-                dependentResourceInfos.forEach(dependent -> {
-                    final var spec = createDependentResourceSpec(dependent, index, namespaces, annotatableDRInfos);
-                    dependentResources.put(dependent.classInfo().name().toString(), spec);
-
-                    final var dependentTypeName = dependent.classInfo().name().toString();
-                    additionalBeans.produce(
-                            AdditionalBeanBuildItem.builder()
-                                    .addBeanClass(dependentTypeName)
-                                    .setUnremovable()
-                                    .setDefaultScope(APPLICATION_SCOPED)
-                                    .build());
-                });
-            } else {
-                dependentResources = Collections.emptyMap();
-            }
-
             // create the configuration
             final ReconciledAugmentedClassInfo<?> primaryInfo = reconcilerInfo.associatedResourceInfo();
             final var primaryAsResource = primaryInfo.asResourceTargeting();
             final var resourceClass = primaryInfo.loadAssociatedClass();
             final String resourceFullName = primaryAsResource.fullResourceName();
+            // initialize dependent specs
+            final Map<String, DependentResourceSpecMetadata> dependentResources;
+            final var dependentResourceInfos = reconcilerInfo.getDependentResourceInfos();
+            final var hasDependents = !dependentResourceInfos.isEmpty();
+            if (hasDependents) {
+                dependentResources = new HashMap<>(dependentResourceInfos.size());
+            } else {
+                dependentResources = Collections.emptyMap();
+            }
             configuration = new QuarkusControllerConfiguration(
                     reconcilerClassName,
                     name,
@@ -214,11 +202,40 @@ class QuarkusControllerConfigurationBuilder {
                     getFinalizer(controllerAnnotation, resourceFullName),
                     getLabelSelector(controllerAnnotation),
                     primaryAsResource.hasNonVoidStatus(),
-                    dependentResources,
                     finalFilter,
                     maxReconciliationInterval,
-                    onAddFilter, onUpdateFilter, genericFilter, retryClass, retryConfigurationClass, rateLimiterClass,
-                    rateLimiterConfigurationClass);
+                    onAddFilter, onUpdateFilter, genericFilter, retryClass, retryConfigurationClass,
+                    rateLimiterClass,
+                    rateLimiterConfigurationClass, dependentResources, null);
+
+            if (hasDependents) {
+                QuarkusControllerConfiguration finalConfiguration = configuration;
+                dependentResourceInfos.forEach(dependent -> {
+                    final var spec = createDependentResourceSpec(dependent, index,
+                            finalConfiguration);
+                    dependentResources.put(dependent.classInfo().name().toString(), spec);
+
+                    final var dependentTypeName = dependent.classInfo().name().toString();
+                    additionalBeans.produce(
+                            AdditionalBeanBuildItem.builder()
+                                    .addBeanClass(dependentTypeName)
+                                    .setUnremovable()
+                                    .setDefaultScope(APPLICATION_SCOPED)
+                                    .build());
+                });
+            }
+
+            // compute workflow and set it (originally set to null in constructor)
+            final ManagedWorkflow workflow;
+            if (hasDependents) {
+                // make workflow bytecode serializable
+                final var original = ManagedWorkflowFactory.DEFAULT.workflowFor(configuration);
+                workflow = new QuarkusManagedWorkflow<>(original.getOrderedSpecs(),
+                        original.hasCleaner());
+            } else {
+                workflow = QuarkusManagedWorkflow.noOpManagedWorkflow;
+            }
+            configuration.setWorkflow(workflow);
 
             log.infov(
                     "Processed ''{0}'' reconciler named ''{1}'' for ''{2}'' resource (version ''{3}'')",
@@ -266,65 +283,27 @@ class QuarkusControllerConfigurationBuilder {
     private DependentResourceSpecMetadata createDependentResourceSpec(
             DependentResourceAugmentedClassInfo dependent,
             IndexView index,
-            Set<String> namespaces,
-            Map<String, AnnotatableDependentResourceAugmentedClassInfo> annotatableDRInfos) {
+            QuarkusControllerConfiguration configuration) {
         final var dependentType = dependent.classInfo();
 
         final var dependentTypeName = dependentType.name().toString();
-
-        // further process Kubernetes dependents
-        final boolean isKubernetesDependent;
-        try {
-            isKubernetesDependent = JandexUtil.isSubclassOf(index, dependentType,
-                    KUBERNETES_DEPENDENT_RESOURCE);
-        } catch (BuildException e) {
-            throw new IllegalStateException("DependentResource " + dependentType + " is not indexed", e);
-        }
-        Object cfg = null;
-        if (isKubernetesDependent) {
-            final var kubeDepConfig = dependentType.declaredAnnotation(KUBERNETES_DEPENDENT);
-            final var labelSelector = getLabelSelector(kubeDepConfig);
-            // if the dependent doesn't explicitly provide a namespace configuration, inherit the configuration from the reconciler configuration
-            var dependentNamespaces = namespaces;
-            var configuredNS = false;
-            if (kubeDepConfig != null) {
-                // if the KubernetesDependent provides an explicit namespaces configuration, use that instead of the namespaces inherited from reconciler
-                final var nonDefaultNS = Optional.ofNullable(
-                        kubeDepConfig.value("namespaces"))
-                        .map(AnnotationValue::asStringArray)
-                        .filter(v -> !Arrays.equals(KubernetesDependent.DEFAULT_NAMESPACES, v));
-                if (nonDefaultNS.isPresent()) {
-                    configuredNS = true;
-                    dependentNamespaces = nonDefaultNS.map(Set::of).orElse(namespaces);
-                }
-            }
-            final var onAddFilter = ConfigurationUtils.instantiateImplementationClass(
-                    kubeDepConfig, "onAddFilter", OnAddFilter.class,
-                    OnAddFilter.class, true, index);
-            final var onUpdateFilter = ConfigurationUtils.instantiateImplementationClass(
-                    kubeDepConfig, "onUpdateFilter", OnUpdateFilter.class,
-                    OnUpdateFilter.class, true,
-                    index);
-            final var onDeleteFilter = ConfigurationUtils.instantiateImplementationClass(
-                    kubeDepConfig, "onDeleteFilter", OnDeleteFilter.class,
-                    OnDeleteFilter.class, true,
-                    index);
-            final var genericFilter = ConfigurationUtils.instantiateImplementationClass(
-                    kubeDepConfig, "genericFilter", GenericFilter.class,
-                    GenericFilter.class, true,
-                    index);
-            final var resourceDiscriminator = ConfigurationUtils.instantiateImplementationClass(
-                    kubeDepConfig, "resourceDiscriminator", ResourceDiscriminator.class,
-                    ResourceDiscriminator.class, true,
-                    index);
-
-            cfg = new QuarkusKubernetesDependentResourceConfig(dependentNamespaces, labelSelector,
-                    configuredNS, resourceDiscriminator,
-                    onAddFilter, onUpdateFilter,
-                    onDeleteFilter, genericFilter);
-        }
-
         final var dependentClass = loadClass(dependentTypeName, DependentResource.class);
+        DependentResourceConfigurationResolver.registerConverter(KubernetesDependentResource.class,
+                new KubernetesDependentConverter() {
+                    @Override
+                    public KubernetesDependentResourceConfig configFrom(
+                            KubernetesDependent configAnnotation,
+                            ControllerConfiguration parentConfiguration, Class originatingClass) {
+                        final var original = super.configFrom(configAnnotation,
+                                parentConfiguration, originatingClass);
+                        return new QuarkusKubernetesDependentResourceConfig(original.namespaces(), original.labelSelector(),
+                                original.wereNamespacesConfigured(),
+                                original.getResourceDiscriminator(), original.onAddFilter(),
+                                original.onUpdateFilter(), original.onDeleteFilter(), original.genericFilter());
+                    }
+                });
+        final var cfg = DependentResourceConfigurationResolver.extractConfigurationFromConfigured(
+                dependentClass, configuration);
 
         final var dependentConfig = dependent.getDependentAnnotationFromController();
         final var dependsOnField = dependentConfig.value("dependsOn");
@@ -346,10 +325,7 @@ class QuarkusControllerConfigurationBuilder {
                 dependentConfig, "useEventSourceWithName", AnnotationValue::asString,
                 () -> null);
 
-        final var annotatableDRInfo = annotatableDRInfos.get(dependentClass.getName());
-        final var drConfigurationClass = getConfigurationAnnotationClass(dependent, annotatableDRInfo);
-
-        return new DependentResourceSpecMetadata(dependentClass, drConfigurationClass, cfg, dependent.nameOrFailIfUnset(),
+        return new DependentResourceSpecMetadata(dependentClass, null, cfg, dependent.nameOrFailIfUnset(),
                 dependsOn, readyCondition, reconcilePrecondition, deletePostcondition, useEventSourceWithName);
 
     }

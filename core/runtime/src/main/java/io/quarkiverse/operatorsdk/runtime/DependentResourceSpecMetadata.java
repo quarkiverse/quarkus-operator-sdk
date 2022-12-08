@@ -4,27 +4,15 @@ import java.lang.annotation.Annotation;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
-public class DependentResourceSpecMetadata<R, P extends HasMetadata, C> {
-
-    private final Class<? extends DependentResource<R, P>> dependentResourceClass;
+public class DependentResourceSpecMetadata<R, P extends HasMetadata, C> extends
+        DependentResourceSpec<R, P> {
     private final Class<? extends Annotation> annotationConfigClass;
     private final C dependentResourceConfig;
-
-    private final String name;
-
-    private final Set<String> dependsOn;
-
-    private final Condition<?, ?> readyCondition;
-
-    private final Condition<?, ?> reconcileCondition;
-
-    private final Condition<?, ?> deletePostCondition;
-
-    private final String useEventSourceWithName;
 
     @RecordableConstructor
     public DependentResourceSpecMetadata(Class<? extends DependentResource<R, P>> dependentResourceClass,
@@ -34,16 +22,11 @@ public class DependentResourceSpecMetadata<R, P extends HasMetadata, C> {
             Condition<?, ?> readyCondition,
             Condition<?, ?> reconcileCondition,
             Condition<?, ?> deletePostCondition,
-            String useEventSourceWithName) {
-        this.dependentResourceClass = dependentResourceClass;
+            String quarkusUseEventSourceWithName) {
+        super(dependentResourceClass, name, dependsOn, readyCondition, reconcileCondition, deletePostCondition,
+                quarkusUseEventSourceWithName);
         this.annotationConfigClass = annotationConfigClass;
         this.dependentResourceConfig = dependentResourceConfig;
-        this.name = name;
-        this.dependsOn = dependsOn;
-        this.readyCondition = readyCondition;
-        this.reconcileCondition = reconcileCondition;
-        this.deletePostCondition = deletePostCondition;
-        this.useEventSourceWithName = useEventSourceWithName;
     }
 
     // Needed for the recordable constructor
@@ -52,42 +35,14 @@ public class DependentResourceSpecMetadata<R, P extends HasMetadata, C> {
     }
 
     // Needed for the recordable constructor
-    public Class<? extends DependentResource<R, P>> getDependentResourceClass() {
-        return dependentResourceClass;
-    }
-
-    // Needed for the recordable constructor
+    @SuppressWarnings("unused")
     public Class<? extends Annotation> getAnnotationConfigClass() {
         return annotationConfigClass;
     }
 
     // Needed for the recordable constructor
-    public String getName() {
-        return name;
-    }
-
-    // Needed for the recordable constructor
-    public Set<String> getDependsOn() {
-        return dependsOn;
-    }
-
-    // Needed for the recordable constructor
-    public Condition<?, ?> getReadyCondition() {
-        return readyCondition;
-    }
-
-    // Needed for the recordable constructor
-    public Condition<?, ?> getReconcileCondition() {
-        return reconcileCondition;
-    }
-
-    // Needed for the recordable constructor
-    public Condition<?, ?> getDeletePostCondition() {
-        return deletePostCondition;
-    }
-
-    // Needed for the recordable constructor
-    public String getUseEventSourceWithName() {
-        return useEventSourceWithName;
+    @SuppressWarnings("unused")
+    public String getQuarkusUseEventSourceWithName() {
+        return getUseEventSourceWithName().orElse(null);
     }
 }

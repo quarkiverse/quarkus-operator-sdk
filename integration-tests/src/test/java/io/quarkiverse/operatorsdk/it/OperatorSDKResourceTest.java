@@ -8,6 +8,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.startsWith;
 
 import java.util.Locale;
 
@@ -135,6 +136,19 @@ class OperatorSDKResourceTest {
                         hasItem(CRUDDependentResource.LABEL_SELECTOR),
                         "dependents.dependentConfig.onAddFilter",
                         hasItem(CRUDDependentResource.TestOnAddFilter.class.getCanonicalName()));
+    }
+
+    @Test
+    void workflowShouldBeRetrievable() {
+        given()
+                .when()
+                .get("/operator/" + DependentDefiningReconciler.NAME + "/workflow")
+                .then()
+                .statusCode(200).body(
+                        "cleaner", is(false),
+                        "empty", is(false),
+                        "dependents.read-only", startsWith(ReadOnlyDependentResource.class.getName()),
+                        "dependents.crud", startsWith(CRUDDependentResource.class.getName()));
     }
 
     @Test
