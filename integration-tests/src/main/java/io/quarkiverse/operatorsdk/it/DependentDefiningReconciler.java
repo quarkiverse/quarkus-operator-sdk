@@ -10,8 +10,8 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 // Note that this reconciler implementation and its dependents are not meant to be realistic but
 // rather exercise some of the features
 @ControllerConfiguration(name = DependentDefiningReconciler.NAME, dependents = {
-        @Dependent(type = ReadOnlyDependentResource.class),
-        @Dependent(type = CRUDDependentResource.class)
+        @Dependent(type = ReadOnlyDependentResource.class, name = "read-only"),
+        @Dependent(type = CRUDDependentResource.class, name = "crud", dependsOn = "read-only")
 })
 public class DependentDefiningReconciler implements Reconciler<ConfigMap> {
 

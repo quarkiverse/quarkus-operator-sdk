@@ -14,13 +14,12 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.AnnotationDependentResourceConfigurator;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.Controller;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
@@ -30,14 +29,12 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.quarkiverse.operatorsdk.common.ClassLoadingUtils;
-import io.quarkus.arc.Arc;
-import io.quarkus.arc.ClientProxy;
 import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
 @SuppressWarnings("rawtypes")
-public class QuarkusControllerConfiguration<R extends HasMetadata> implements ControllerConfiguration<R> {
-
+public class QuarkusControllerConfiguration<R extends HasMetadata> implements ControllerConfiguration<R>,
+        DependentResourceConfigurationProvider {
     // we need to create this class because Quarkus cannot reference the default implementation that
     // JOSDK provides as it doesn't like lambdas at build time. The class also needs to be public
     // because otherwise Quarkus isn't able to access it… :(
@@ -86,13 +83,12 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private Set<String> namespaces;
     private RetryConfiguration retryConfiguration;
     private String labelSelector;
-    private Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata;
+    private final Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata;
     @IgnoreProperty
     private boolean namespaceExpansionRequired;
-    @IgnoreProperty
-    private List<DependentResourceSpec> dependentResources;
     private Retry retry;
     private RateLimiter rateLimiter;
+    private ManagedWorkflow<R> workflow;
 
     @RecordableConstructor
     @SuppressWarnings("unchecked")
@@ -102,24 +98,26 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             String resourceTypeName,
             String crVersion, boolean generationAware,
             Class resourceClass, Set<String> namespaces, String finalizerName, String labelSelector,
-            boolean statusPresentAndNotVoid,
-            Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata, ResourceEventFilter eventFilter,
+            boolean statusPresentAndNotVoid, ResourceEventFilter eventFilter,
             Duration maxReconciliationInterval,
             OnAddFilter<R> onAddFilter, OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter,
             Class<? extends Retry> retryClass, Class<? extends Annotation> retryConfigurationClass,
-            Class<? extends RateLimiter> rateLimiterClass, Class<? extends Annotation> rateLimiterConfigurationClass) {
+            Class<? extends RateLimiter> rateLimiterClass, Class<? extends Annotation> rateLimiterConfigurationClass,
+            Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata,
+            ManagedWorkflow<R> workflow) {
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
         this.resourceTypeName = resourceTypeName;
         this.crVersion = crVersion;
         this.generationAware = generationAware;
         this.resourceClass = resourceClass;
+        this.dependentsMetadata = dependentsMetadata;
+        this.workflow = workflow;
         this.retryConfiguration = ControllerConfiguration.super.getRetryConfiguration();
         setNamespaces(namespaces);
         setFinalizer(finalizerName);
         this.labelSelector = labelSelector;
         this.statusPresentAndNotVoid = statusPresentAndNotVoid;
-        this.dependentsMetadata = dependentsMetadata;
         this.eventFilter = eventFilter != null ? eventFilter : DEFAULT;
         this.maxReconciliationInterval = maxReconciliationInterval != null ? Optional.of(maxReconciliationInterval)
                 : ControllerConfiguration.super.maxReconciliationInterval();
@@ -226,69 +224,29 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     }
 
     public boolean areDependentsImpactedBy(Set<String> changedClasses) {
-        if (dependentResources != null) {
-            return dependentResources.parallelStream()
-                    .map(dr -> dr.getDependentResourceClass().getCanonicalName())
-                    .anyMatch(changedClasses::contains);
-        } else {
-            return dependentsMetadata.keySet().parallelStream().anyMatch(changedClasses::contains);
-        }
+        return dependentsMetadata.keySet().parallelStream().anyMatch(changedClasses::contains);
     }
 
     public boolean needsDependentBeansCreation() {
         return dependentsMetadata != null && !dependentsMetadata.isEmpty();
     }
 
+    public ManagedWorkflow<R> getWorkflow() {
+        return workflow;
+    }
+
+    public void setWorkflow(ManagedWorkflow<R> workflow) {
+        this.workflow = workflow;
+    }
+
     @Override
-    @SuppressWarnings("unchecked")
+    public Object getConfigurationFor(DependentResourceSpec dependentResourceSpec) {
+        return ((DependentResourceSpecMetadata) dependentResourceSpec).getDependentResourceConfig();
+    }
+
+    @Override
     public List<DependentResourceSpec> getDependentResources() {
-        if (dependentResources == null) {
-            dependentResources = dependentsMetadata.values().parallelStream()
-                    .map(drsm -> {
-                        final Class<? extends DependentResource<?, ?>> dependentResourceClass = drsm
-                                .getDependentResourceClass();
-                        final var dependent = Arc.container().instance(dependentResourceClass).get();
-                        if (dependent == null) {
-                            throw new IllegalStateException(
-                                    "Couldn't find bean associated with DependentResource "
-                                            + dependentResourceClass.getName());
-                        }
-
-                        // check if we need to configure our DependentResource
-                        if (dependent instanceof DependentResourceConfigurator) {
-                            var config = drsm.getDependentResourceConfig();
-                            final var configurator = (DependentResourceConfigurator) dependent;
-
-                            // check if we need to configure the dependent resource from an annotation only if we don't already have a configuration
-                            if (config == null) {
-                                if (configurator instanceof AnnotationDependentResourceConfigurator) {
-                                    final var annotationConfigClass = drsm.getAnnotationConfigClass();
-                                    if (annotationConfigClass != null) {
-                                        final var configAnnotation = dependentResourceClass
-                                                .getAnnotation(annotationConfigClass);
-                                        // always called even if the annotation is null so that implementations can provide default
-                                        // values
-                                        config = ((AnnotationDependentResourceConfigurator) dependent).configFrom(
-                                                configAnnotation,
-                                                QuarkusControllerConfiguration.this);
-                                        configurator.configureWith(config);
-                                    }
-                                }
-                            } else {
-                                configurator.configureWith(config);
-                            }
-
-                        }
-
-                        return new DependentResourceSpec(ClientProxy.unwrap(dependent), drsm.getName(), drsm.getDependsOn(),
-                                drsm.getReadyCondition(),
-                                drsm.getReconcileCondition(), drsm.getDeletePostCondition(), drsm.getUseEventSourceWithName());
-                    })
-                    .collect(Collectors.toList());
-            // null out metadata to gc now useless data
-            dependentsMetadata = null;
-        }
-        return dependentResources;
+        return dependentsMetadata.values().parallelStream().collect(Collectors.toList());
     }
 
     @Override
