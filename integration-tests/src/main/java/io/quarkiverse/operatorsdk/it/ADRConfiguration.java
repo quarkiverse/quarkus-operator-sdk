@@ -1,7 +1,9 @@
 package io.quarkiverse.operatorsdk.it;
 
 import io.quarkus.runtime.annotations.RecordableConstructor;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
+@RegisterForReflection
 public class ADRConfiguration {
     private final int value;
 
