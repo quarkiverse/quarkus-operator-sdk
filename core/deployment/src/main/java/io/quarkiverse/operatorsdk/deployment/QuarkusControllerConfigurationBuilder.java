@@ -61,6 +61,28 @@ class QuarkusControllerConfigurationBuilder {
 
     static final Logger log = Logger.getLogger(QuarkusControllerConfigurationBuilder.class.getName());
 
+    private static final KubernetesDependentConverter KUBERNETES_DEPENDENT_CONVERTER = new KubernetesDependentConverter() {
+        @Override
+        @SuppressWarnings("unchecked")
+        public KubernetesDependentResourceConfig configFrom(
+                KubernetesDependent configAnnotation,
+                ControllerConfiguration parentConfiguration, Class originatingClass) {
+            final var original = super.configFrom(configAnnotation,
+                    parentConfiguration, originatingClass);
+            // make the configuration bytecode-serializable
+            return new QuarkusKubernetesDependentResourceConfig(original.namespaces(),
+                    original.labelSelector(),
+                    original.wereNamespacesConfigured(),
+                    original.getResourceDiscriminator(), original.onAddFilter(),
+                    original.onUpdateFilter(), original.onDeleteFilter(), original.genericFilter());
+        }
+    };
+    static {
+        // register Quarkus-specific converter for Kubernetes dependent resources
+        DependentResourceConfigurationResolver.registerConverter(KubernetesDependentResource.class,
+                KUBERNETES_DEPENDENT_CONVERTER);
+    }
+
     private final BuildProducer<AdditionalBeanBuildItem> additionalBeans;
     private final IndexView index;
     private final LiveReloadBuildItem liveReload;
@@ -288,20 +310,7 @@ class QuarkusControllerConfigurationBuilder {
 
         final var dependentTypeName = dependentType.name().toString();
         final var dependentClass = loadClass(dependentTypeName, DependentResource.class);
-        DependentResourceConfigurationResolver.registerConverter(KubernetesDependentResource.class,
-                new KubernetesDependentConverter() {
-                    @Override
-                    public KubernetesDependentResourceConfig configFrom(
-                            KubernetesDependent configAnnotation,
-                            ControllerConfiguration parentConfiguration, Class originatingClass) {
-                        final var original = super.configFrom(configAnnotation,
-                                parentConfiguration, originatingClass);
-                        return new QuarkusKubernetesDependentResourceConfig(original.namespaces(), original.labelSelector(),
-                                original.wereNamespacesConfigured(),
-                                original.getResourceDiscriminator(), original.onAddFilter(),
-                                original.onUpdateFilter(), original.onDeleteFilter(), original.genericFilter());
-                    }
-                });
+
         final var cfg = DependentResourceConfigurationResolver.extractConfigurationFromConfigured(
                 dependentClass, configuration);
 
