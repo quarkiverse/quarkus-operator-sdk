@@ -69,11 +69,7 @@ public class ClassUtils {
             return new AnnotationConfigurableAugmentedClassInfo(classInfo);
         } else if (CUSTOM_RESOURCE.equals(implementedOrExtendedClass)) {
             return new CustomResourceAugmentedClassInfo(classInfo, null);
-        } /*
-           * else if (ANNOTATION_DR_CONFIGURATOR.equals(implementedOrExtendedClass)) {
-           * return new AnnotatableDependentResourceAugmentedClassInfo(classInfo);
-           * }
-           */ else {
+        } else {
             throw new IllegalArgumentException("Don't know how to process " + implementedOrExtendedClass);
         }
     }

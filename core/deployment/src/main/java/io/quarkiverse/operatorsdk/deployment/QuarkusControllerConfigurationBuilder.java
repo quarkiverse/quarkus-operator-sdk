@@ -235,9 +235,10 @@ class QuarkusControllerConfigurationBuilder {
                 dependentResourceInfos.forEach(dependent -> {
                     final var spec = createDependentResourceSpec(dependent, index,
                             finalConfiguration);
-                    dependentResources.put(dependent.classInfo().name().toString(), spec);
+                    final var dependentName = dependent.classInfo().name();
+                    dependentResources.put(dependentName.toString(), spec);
 
-                    final var dependentTypeName = dependent.classInfo().name().toString();
+                    final var dependentTypeName = dependentName.toString();
                     additionalBeans.produce(
                             AdditionalBeanBuildItem.builder()
                                     .addBeanClass(dependentTypeName)

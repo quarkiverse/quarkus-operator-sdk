@@ -10,13 +10,8 @@ import org.jboss.logging.Logger;
 public class AnnotationConfigurableAugmentedClassInfo extends SelectiveAugmentedClassInfo {
     private DotName associatedConfigurationClass;
 
-    protected AnnotationConfigurableAugmentedClassInfo(ClassInfo classInfo, DotName configurationInterface,
-            int expectedParameterTypesCardinality) {
-        super(classInfo, configurationInterface, expectedParameterTypesCardinality);
-    }
-
     public AnnotationConfigurableAugmentedClassInfo(ClassInfo classInfo) {
-        this(classInfo, Constants.ANNOTATION_CONFIGURABLE, 1);
+        super(classInfo, Constants.ANNOTATION_CONFIGURABLE, 1);
     }
 
     @Override
