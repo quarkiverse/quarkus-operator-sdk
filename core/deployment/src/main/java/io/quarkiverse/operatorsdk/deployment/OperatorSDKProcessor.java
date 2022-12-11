@@ -152,13 +152,9 @@ class OperatorSDKProcessor {
                 .peek(ci -> registerForReflection.addAll(ci.getClassNamesToRegisterForReflection()))
                 .collect(Collectors.toMap(ac -> ac.classInfo().name().toString(), Function.identity()));
 
-        /*
-         * final var annotatableDRInfos = ClassUtils
-         * .getProcessableImplementationsOf(Constants.ANNOTATION_DR_CONFIGURATOR, index, log, Collections.emptyMap())
-         * .map(AnnotatableDependentResourceAugmentedClassInfo.class::cast)
-         * .peek(ci -> registerForReflection.addAll(ci.getClassNamesToRegisterForReflection()))
-         * .collect(Collectors.toMap(ac -> ac.classInfo().name().toString(), Function.identity()));
-         */
+        // register configuration targets (i.e. value of the `with` field) of Configured-annotated classes
+        index.getAnnotations(Constants.CONFIGURED)
+                .forEach(ai -> registerForReflection.add(ai.value("with").asClass().name().toString()));
 
         // retrieve the known CRD information to make sure we always have a full view
         var stored = liveReload.getContextObject(ContextStoredCRDInfos.class);
