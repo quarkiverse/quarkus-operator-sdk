@@ -17,22 +17,17 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.client.server.mock.KubernetesServer;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestSpec.Category;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestStatus.State;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
-import io.quarkus.test.kubernetes.client.KubernetesTestServer;
-import io.quarkus.test.kubernetes.client.WithKubernetesTestServer;
 
-@Disabled
-@WithKubernetesTestServer
 @QuarkusTest
 class JokeRequestReconcilerTest {
 
@@ -40,8 +35,8 @@ class JokeRequestReconcilerTest {
     @RestClient
     JokeService jokeService;
 
-    @KubernetesTestServer
-    KubernetesServer mockServer;
+    @Inject
+    KubernetesClient client;
 
     @Inject
     Operator operator;
@@ -61,24 +56,24 @@ class JokeRequestReconcilerTest {
         final JokeRequest testRequest = new JokeRequest();
         testRequest.setMetadata(new ObjectMetaBuilder()
                 .withName("myjoke1")
-                .withNamespace(mockServer.getClient().getNamespace())
+                .withNamespace("default")
                 .build());
         testRequest.setSpec(new JokeRequestSpec());
         testRequest.getSpec().setCategory(Category.Any);
 
         // act
-        mockServer.getClient().resources(JokeRequest.class).resource(testRequest).create();
+        client.resources(JokeRequest.class).resource(testRequest).create();
 
         // assert
         await().ignoreException(NullPointerException.class).atMost(5, MINUTES).untilAsserted(() -> {
-            JokeRequest updatedRequest = mockServer.getClient().resources(JokeRequest.class)
+            JokeRequest updatedRequest = client.resources(JokeRequest.class)
                     .inNamespace(testRequest.getMetadata().getNamespace())
                     .withName(testRequest.getMetadata().getName()).get();
             assertThat(updatedRequest.getStatus(), is(notNullValue()));
             assertThat(updatedRequest.getStatus().getState(), equalTo(State.CREATED));
         });
 
-        var createdJokes = mockServer.getClient().resources(Joke.class).inNamespace(testRequest.getMetadata().getNamespace())
+        var createdJokes = client.resources(Joke.class).inNamespace(testRequest.getMetadata().getNamespace())
                 .list();
 
         assertThat(createdJokes.getItems(), is(not(empty())));
