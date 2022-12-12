@@ -56,13 +56,13 @@ class JokeRequestReconcilerTest {
         final JokeRequest testRequest = new JokeRequest();
         testRequest.setMetadata(new ObjectMetaBuilder()
                 .withName("myjoke1")
-                .withNamespace("default")
+                .withNamespace(client.getNamespace())
                 .build());
         testRequest.setSpec(new JokeRequestSpec());
         testRequest.getSpec().setCategory(Category.Any);
 
         // act
-        client.resources(JokeRequest.class).resource(testRequest).create();
+        client.resource(testRequest).create();
 
         // assert
         await().ignoreException(NullPointerException.class).atMost(5, MINUTES).untilAsserted(() -> {

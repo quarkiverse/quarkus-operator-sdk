@@ -36,7 +36,7 @@ class PingPongReconcilerTest {
         final Ping testRequest = new Ping();
         testRequest.setMetadata(new ObjectMetaBuilder()
                 .withName(PING_REQUEST_NAME)
-                .withNamespace("default")
+                .withNamespace(client.getNamespace())
                 .build());
 
         // act

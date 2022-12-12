@@ -46,7 +46,7 @@ class MySQLSchemaOperatorE2ETest {
         MySQLSchema testSchema = new MySQLSchema();
         testSchema.setMetadata(new ObjectMetaBuilder()
                 .withName("mydb1")
-                .withNamespace("default")
+                .withNamespace(client.getNamespace())
                 .build());
         testSchema.setSpec(new SchemaSpec());
         testSchema.getSpec().setEncoding("utf8");
