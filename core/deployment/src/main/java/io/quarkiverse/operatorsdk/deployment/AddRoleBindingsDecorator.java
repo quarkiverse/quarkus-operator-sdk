@@ -10,11 +10,13 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 
+import io.dekorate.kubernetes.decorator.Decorator;
 import io.dekorate.kubernetes.decorator.ResourceProvidingDecorator;
 import io.fabric8.kubernetes.api.model.KubernetesListBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
+import io.quarkus.kubernetes.deployment.AddNamespaceDecorator;
 
 @SuppressWarnings("rawtypes")
 public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<KubernetesListBuilder> {
@@ -25,6 +27,8 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
     private final Map<String, QuarkusControllerConfiguration> configs;
     private final boolean validateCRDs;
     private static final ConcurrentMap<String, Object> alreadyLogged = new ConcurrentHashMap<>();
+    private static final Optional<String> deployNamespace = ConfigProvider.getConfig()
+            .getOptionalValue("quarkus.kubernetes.namespace", String.class);
 
     public AddRoleBindingsDecorator(Map<String, QuarkusControllerConfiguration> configs,
             boolean validateCRDs) {
@@ -53,6 +57,7 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
                         controllerName + "-cluster-role-binding", "watch all namespaces",
                         getClusterRoleName(controllerName));
             } else {
+                // create a RoleBinding using either the provided deployment namespace or the desired watched namespace name
                 config.getEffectiveNamespaces().forEach(ns -> list.addToItems(
                         new RoleBindingBuilder()
                                 .withNewMetadata()
@@ -61,7 +66,7 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
                                 .endMetadata()
                                 .withNewRoleRef(RBAC_AUTHORIZATION_GROUP, CLUSTER_ROLE,
                                         getClusterRoleName(controllerName))
-                                .addNewSubject(null, SERVICE_ACCOUNT, serviceAccountName, null)
+                                .addNewSubject(null, SERVICE_ACCOUNT, serviceAccountName, deployNamespace.orElse(null))
                                 .build()));
             }
 
@@ -77,23 +82,21 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
     private void handleClusterRoleBinding(KubernetesListBuilder list, String serviceAccountName,
             String controllerName, String bindingName, String controllerConfMessage,
             String clusterRoleName) {
-        final var namespace = ConfigProvider.getConfig()
-                .getOptionalValue("quarkus.kubernetes.namespace", String.class);
-        outputWarningIfNeeded(controllerName, bindingName, namespace, controllerConfMessage);
+        outputWarningIfNeeded(controllerName, bindingName, controllerConfMessage);
         list.addToItems(new ClusterRoleBindingBuilder()
                 .withNewMetadata().withName(bindingName)
                 .endMetadata()
                 .withNewRoleRef(RBAC_AUTHORIZATION_GROUP, CLUSTER_ROLE, clusterRoleName)
                 .addNewSubject()
-                .withKind(SERVICE_ACCOUNT).withName(serviceAccountName).withNamespace(namespace.orElse(null))
+                .withKind(SERVICE_ACCOUNT).withName(serviceAccountName).withNamespace(
+                        deployNamespace.orElse(null))
                 .endSubject()
                 .build());
     }
 
-    private void outputWarningIfNeeded(String controllerName, String crBindingName,
-            Optional<String> namespace, String controllerConfMessage) {
+    private void outputWarningIfNeeded(String controllerName, String crBindingName, String controllerConfMessage) {
         // the decorator can be called several times but we only want to output the warning once
-        if (namespace.isEmpty()
+        if (deployNamespace.isEmpty()
                 && alreadyLogged.putIfAbsent(controllerName + crBindingName, new Object()) == null) {
             OperatorSDKProcessor.log.warnv(
                     "''{0}'' controller is configured to "
