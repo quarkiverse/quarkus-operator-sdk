@@ -17,6 +17,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -30,6 +31,7 @@ import io.quarkus.test.junit.mockito.InjectMock;
 import io.quarkus.test.kubernetes.client.KubernetesTestServer;
 import io.quarkus.test.kubernetes.client.WithKubernetesTestServer;
 
+@Disabled
 @WithKubernetesTestServer
 @QuarkusTest
 class JokeRequestReconcilerTest {
