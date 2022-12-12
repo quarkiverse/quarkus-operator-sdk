@@ -105,4 +105,10 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
                     controllerName, crBindingName);
         }
     }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Class<? extends Decorator>[] after() {
+        return new Class[] { AddNamespaceDecorator.class };
+    }
 }
