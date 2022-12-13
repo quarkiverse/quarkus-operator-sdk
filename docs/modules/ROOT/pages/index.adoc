@@ -20,7 +20,6 @@ This extension integrates the https://javaoperatorsdk.io[Java Operator SDK] proj
 * Automatically apply the CRD to the cluster when it has changed
 - Supports micrometer registry extensions (adding a Quarkus-supported micrometer registry extension will automatically inject said registry into the operator)
 - Automatically adds a SmallRye health check
-- Can easily generate a Docker image via JIB
 - Sets up reflection for native binary generation
 - Customize the JSON serialization that the Fabric8 client relies on by providing an `ObjectMapperCustomizer` implementation, qualified with the `@KubernetesClientSerializationCustomizer` annotation
 
