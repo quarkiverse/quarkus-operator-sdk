@@ -6,8 +6,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -21,22 +20,15 @@ import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.server.mock.KubernetesServer;
 import io.javaoperatorsdk.operator.Operator;
 import io.quarkiverse.operatorsdk.samples.mysqlschema.schema.SchemaService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
-import io.quarkus.test.kubernetes.client.KubernetesTestServer;
-import io.quarkus.test.kubernetes.client.WithKubernetesTestServer;
 
-@WithKubernetesTestServer
 @QuarkusTest
 class MySQLSchemaOperatorE2ETest {
 
     final static Logger log = Logger.getLogger(MySQLSchemaOperatorE2ETest.class);
-
-    @KubernetesTestServer
-    KubernetesServer mockServer;
 
     @InjectSpy
     SchemaService schemaService;
@@ -44,16 +36,17 @@ class MySQLSchemaOperatorE2ETest {
     @Inject
     Operator operator;
 
+    @Inject
+    KubernetesClient client;
+
     @Test
     void test() {
         operator.start();
 
-        KubernetesClient client = mockServer.getClient();
-
         MySQLSchema testSchema = new MySQLSchema();
         testSchema.setMetadata(new ObjectMetaBuilder()
                 .withName("mydb1")
-                .withNamespace(mockServer.getClient().getNamespace())
+                .withNamespace(client.getNamespace())
                 .build());
         testSchema.setSpec(new SchemaSpec());
         testSchema.getSpec().setEncoding("utf8");
@@ -76,7 +69,7 @@ class MySQLSchemaOperatorE2ETest {
         verify(schemaService, times(1)).createSchemaAndRelatedUser(any(), eq("mydb1"), eq("utf8"), anyString(),
                 anyString());
 
-        fakeDeletion(client, testSchema);
+        client.resource(testSchema).delete();
 
         await()
                 .atMost(10, SECONDS)
@@ -88,19 +81,9 @@ class MySQLSchemaOperatorE2ETest {
                                     .inNamespace(testSchema.getMetadata().getNamespace())
                                     .withName(testSchema.getMetadata().getName())
                                     .get();
-                            assertThat(updatedSchema.getMetadata().getFinalizers(), is(empty()));
+                            assertThat(updatedSchema, is(nullValue()));
                         });
 
         verify(schemaService, times(1)).deleteSchemaAndRelatedUser(any(), eq("mydb1"), anyString());
-    }
-
-    private void fakeDeletion(KubernetesClient client, MySQLSchema testSchema) {
-        var aSchema = client
-                .resources(MySQLSchema.class)
-                .inNamespace(testSchema.getMetadata().getNamespace())
-                .withName(testSchema.getMetadata().getName())
-                .get();
-        aSchema.getMetadata().setDeletionTimestamp("2022-02-06T14:21:44.719489Z");
-        client.resource(aSchema).createOrReplace();
     }
 }
