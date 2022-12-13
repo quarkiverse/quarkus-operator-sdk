@@ -29,12 +29,9 @@ class ExposedAppReconcilerTest {
         operator.start();
 
         final var app = new ExposedApp();
-
-        // use namespace name defined in application.properties for test profile
-        final String namespace = "crns";
         final var metadata = new ObjectMetaBuilder()
                 .withName("test-app")
-                .withNamespace(namespace)
+                .withNamespace(client.getNamespace())
                 .build();
         app.setMetadata(metadata);
         app.getSpec().setImageRef("group/imageName:tag");
