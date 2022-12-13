@@ -29,15 +29,14 @@ class ExposedAppReconcilerTest {
         operator.start();
 
         final var app = new ExposedApp();
-        final String namespace = "default";
         final var metadata = new ObjectMetaBuilder()
                 .withName("test-app")
-                .withNamespace(namespace)
+                .withNamespace(client.getNamespace())
                 .build();
         app.setMetadata(metadata);
         app.getSpec().setImageRef("group/imageName:tag");
 
-        client.resource(app).inNamespace(namespace).create();
+        client.resource(app).create();
 
         await().ignoreException(NullPointerException.class).atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
             // check that we create the deployment

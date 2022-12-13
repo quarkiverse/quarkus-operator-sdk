@@ -40,13 +40,11 @@ class PingPongReconcilerTest {
                 .build());
 
         // act
-        client.resources(Ping.class).resource(testRequest).create();
+        client.resource(testRequest).create();
 
         // assert ping reconciler
         await().ignoreException(NullPointerException.class).atMost(5, MINUTES).untilAsserted(() -> {
-            Ping updatedRequest = client.resources(Ping.class)
-                    .inNamespace(testRequest.getMetadata().getNamespace())
-                    .withName(PING_REQUEST_NAME).get();
+            Ping updatedRequest = client.resource(testRequest).fromServer().get();
             assertThat(updatedRequest.getStatus(), is(notNullValue()));
             assertThat(updatedRequest.getStatus().getState(), is(Status.State.PROCESSED));
         });
