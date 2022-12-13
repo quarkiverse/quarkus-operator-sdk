@@ -82,6 +82,13 @@ public class ConfigurationServiceRecorder {
                     .sorted()
                     .forEach(c -> c.customize(mapper));
 
+            // deactivate leader election in dev mode
+            var leaderElectionConfiguration = container.instance(LeaderElectionConfiguration.class).orElse(null);
+            if (leaderElectionConfiguration != null) {
+                leaderElectionConfiguration = new LeaderElectionConfigurationWrapper(leaderElectionConfiguration,
+                        LaunchMode.DEVELOPMENT != launchMode);
+            }
+
             return new QuarkusConfigurationService(
                     version,
                     configurations.values(),
@@ -94,7 +101,7 @@ public class ConfigurationServiceRecorder {
                     container.instance(Metrics.class).get(),
                     shouldStartOperator(buildTimeConfiguration.startOperator, launchMode),
                     mapper,
-                    container.instance(LeaderElectionConfiguration.class).orElse(null),
+                    leaderElectionConfiguration,
                     container.instance(InformerStoppedHandler.class).orElse(null),
                     buildTimeConfiguration.closeClientOnStop,
                     buildTimeConfiguration.stopOnInformerErrorDuringStartup);
@@ -106,6 +113,14 @@ public class ConfigurationServiceRecorder {
             return LaunchMode.TEST != launchMode;
         } else {
             return fromConfiguration.orElse(true);
+        }
+    }
+
+    private static class LeaderElectionConfigurationWrapper extends LeaderElectionConfiguration {
+        private LeaderElectionConfigurationWrapper(LeaderElectionConfiguration original, boolean enabled) {
+            super(original.getLeaseName(), original.getLeaseNamespace().orElse(null), original.getLeaseDuration(),
+                    original.getRenewDeadline(), original.getRetryPeriod(), original.getIdentity().orElse(null));
+            setEnabled(enabled);
         }
     }
 }
