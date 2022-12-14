@@ -5,6 +5,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.jboss.logging.Logger;
+
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -23,6 +25,8 @@ import io.smallrye.config.common.utils.StringUtil;
 
 @Recorder
 public class ConfigurationServiceRecorder {
+
+    static final Logger log = Logger.getLogger(ConfigurationServiceRecorder.class.getName());
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public Supplier<QuarkusConfigurationService> configurationServiceSupplier(Version version,
@@ -82,6 +86,13 @@ public class ConfigurationServiceRecorder {
                     .sorted()
                     .forEach(c -> c.customize(mapper));
 
+            // deactivate leader election in dev mode
+            var leaderElectionConfiguration = container.instance(LeaderElectionConfiguration.class).get();
+            if (LaunchMode.DEVELOPMENT == launchMode && leaderElectionConfiguration != null) {
+                leaderElectionConfiguration = null;
+                log.info("Leader election configuration ignored in Dev mode");
+            }
+
             return new QuarkusConfigurationService(
                     version,
                     configurations.values(),
@@ -94,7 +105,7 @@ public class ConfigurationServiceRecorder {
                     container.instance(Metrics.class).get(),
                     shouldStartOperator(buildTimeConfiguration.startOperator, launchMode),
                     mapper,
-                    container.instance(LeaderElectionConfiguration.class).orElse(null),
+                    leaderElectionConfiguration,
                     container.instance(InformerStoppedHandler.class).orElse(null),
                     buildTimeConfiguration.closeClientOnStop,
                     buildTimeConfiguration.stopOnInformerErrorDuringStartup);
