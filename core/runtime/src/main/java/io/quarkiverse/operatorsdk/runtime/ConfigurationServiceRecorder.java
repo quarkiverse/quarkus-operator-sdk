@@ -5,6 +5,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.jboss.logging.Logger;
+
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -23,6 +25,8 @@ import io.smallrye.config.common.utils.StringUtil;
 
 @Recorder
 public class ConfigurationServiceRecorder {
+
+    static final Logger log = Logger.getLogger(ConfigurationServiceRecorder.class.getName());
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public Supplier<QuarkusConfigurationService> configurationServiceSupplier(Version version,
@@ -83,10 +87,10 @@ public class ConfigurationServiceRecorder {
                     .forEach(c -> c.customize(mapper));
 
             // deactivate leader election in dev mode
-            var leaderElectionConfiguration = container.instance(LeaderElectionConfiguration.class).orElse(null);
-            if (leaderElectionConfiguration != null) {
-                leaderElectionConfiguration = new LeaderElectionConfigurationWrapper(leaderElectionConfiguration,
-                        LaunchMode.DEVELOPMENT != launchMode);
+            var leaderElectionConfiguration = container.instance(LeaderElectionConfiguration.class).get();
+            if (LaunchMode.DEVELOPMENT == launchMode && leaderElectionConfiguration != null) {
+                leaderElectionConfiguration = null;
+                log.info("Leader election configuration ignored in Dev mode");
             }
 
             return new QuarkusConfigurationService(
@@ -113,14 +117,6 @@ public class ConfigurationServiceRecorder {
             return LaunchMode.TEST != launchMode;
         } else {
             return fromConfiguration.orElse(true);
-        }
-    }
-
-    private static class LeaderElectionConfigurationWrapper extends LeaderElectionConfiguration {
-        private LeaderElectionConfigurationWrapper(LeaderElectionConfiguration original, boolean enabled) {
-            super(original.getLeaseName(), original.getLeaseNamespace().orElse(null), original.getLeaseDuration(),
-                    original.getRenewDeadline(), original.getRetryPeriod(), original.getIdentity().orElse(null));
-            setEnabled(enabled);
         }
     }
 }
