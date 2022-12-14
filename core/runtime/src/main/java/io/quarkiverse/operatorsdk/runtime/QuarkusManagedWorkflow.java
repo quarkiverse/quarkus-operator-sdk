@@ -31,7 +31,7 @@ public class QuarkusManagedWorkflow<P extends HasMetadata> extends DefaultManage
     }
 
     @RecordableConstructor
-    public QuarkusManagedWorkflow(List<DependentResourceSpec<?, ?>> orderedSpecs,
+    public QuarkusManagedWorkflow(List<DependentResourceSpec> orderedSpecs,
             boolean hasCleaner) {
         super(orderedSpecs, hasCleaner);
     }
