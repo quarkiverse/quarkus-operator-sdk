@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Singleton;
 
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.jandex.DotName;
 import org.jboss.logging.Logger;
 
@@ -134,6 +135,12 @@ class OperatorSDKProcessor {
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             BuildProducer<GeneratedCRDInfoBuildItem> generatedCRDInfo,
             LiveReloadBuildItem liveReload, LaunchModeBuildItem launchMode) {
+        
+        String runtimeQuarkusVersion = ConfigProvider.getConfig().getValue("quarkus.platform.version", String.class);
+        if (!runtimeQuarkusVersion.equals(Versions.QUARKUS)) {
+            throw new RuntimeException("Incompatible Quarkus version, found: \"" + runtimeQuarkusVersion + "\", expected: \""
+                    + Versions.QUARKUS + "\"");
+        }
 
         final CRDConfiguration crdConfig = buildTimeConfiguration.crd;
         final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(
