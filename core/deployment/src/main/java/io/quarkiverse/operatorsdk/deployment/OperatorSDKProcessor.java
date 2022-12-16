@@ -34,6 +34,7 @@ import io.quarkiverse.operatorsdk.runtime.CRDInfo;
 import io.quarkiverse.operatorsdk.runtime.ConfigurationServiceRecorder;
 import io.quarkiverse.operatorsdk.runtime.KubernetesClientSerializationCustomizer;
 import io.quarkiverse.operatorsdk.runtime.NoOpMetricsProvider;
+import io.quarkiverse.operatorsdk.runtime.OperatorHealthCheck;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
@@ -99,6 +100,9 @@ class OperatorSDKProcessor {
         } else {
             additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(NoOpMetricsProvider.class));
         }
+
+        // register health check
+        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorHealthCheck.class));
     }
 
     @BuildStep
