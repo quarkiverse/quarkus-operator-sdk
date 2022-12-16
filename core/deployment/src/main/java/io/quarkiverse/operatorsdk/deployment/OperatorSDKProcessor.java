@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Singleton;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.jandex.DotName;
 import org.jboss.logging.Logger;
 
@@ -63,6 +62,7 @@ import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
 import io.quarkus.kubernetes.client.spi.KubernetesClientBuildItem;
 import io.quarkus.kubernetes.spi.DecoratorBuildItem;
+import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.metrics.MetricsFactory;
 
@@ -135,8 +135,8 @@ class OperatorSDKProcessor {
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             BuildProducer<GeneratedCRDInfoBuildItem> generatedCRDInfo,
             LiveReloadBuildItem liveReload, LaunchModeBuildItem launchMode) {
-        
-        String runtimeQuarkusVersion = ConfigProvider.getConfig().getValue("quarkus.platform.version", String.class);
+
+        String runtimeQuarkusVersion = Quarkus.class.getPackage().getImplementationVersion();
         if (!runtimeQuarkusVersion.equals(Versions.QUARKUS)) {
             throw new RuntimeException("Incompatible Quarkus version, found: \"" + runtimeQuarkusVersion + "\", expected: \""
                     + Versions.QUARKUS + "\"");
