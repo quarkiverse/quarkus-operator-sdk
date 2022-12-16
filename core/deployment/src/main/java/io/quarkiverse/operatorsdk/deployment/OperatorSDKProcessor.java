@@ -138,8 +138,13 @@ class OperatorSDKProcessor {
 
         String runtimeQuarkusVersion = Quarkus.class.getPackage().getImplementationVersion();
         if (!runtimeQuarkusVersion.equals(Versions.QUARKUS)) {
-            throw new RuntimeException("Incompatible Quarkus version, found: \"" + runtimeQuarkusVersion + "\", expected: \""
-                    + Versions.QUARKUS + "\"");
+            String message = "Incompatible Quarkus version found: \"" + runtimeQuarkusVersion + "\", expected: \""
+                    + Versions.QUARKUS + "\"";
+            if (buildTimeConfiguration.failOnVersionCheck) {
+                throw new RuntimeException(message);
+            } else {
+                log.warn(message);
+            }
         }
 
         final CRDConfiguration crdConfig = buildTimeConfiguration.crd;
