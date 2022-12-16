@@ -60,6 +60,7 @@ import io.quarkus.gizmo.AssignableResultHandle;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
+import io.quarkus.kubernetes.client.deployment.KubernetesClientProcessor;
 import io.quarkus.kubernetes.client.spi.KubernetesClientBuildItem;
 import io.quarkus.kubernetes.spi.DecoratorBuildItem;
 import io.quarkus.runtime.Quarkus;
@@ -125,6 +126,17 @@ class OperatorSDKProcessor {
                         .done());
     }
 
+    private void checkVersionCompatibility(String found, String expected, String name) {
+        if (!found.equals(expected)) {
+            String message = "Incompatible " + name + " version found: \"" + found + "\", expected: \"" + expected + "\"";
+            if (buildTimeConfiguration.failOnVersionCheck) {
+                throw new RuntimeException(message);
+            } else {
+                log.warn(message);
+            }
+        }
+    }
+
     @BuildStep
     ConfigurationServiceBuildItem createConfigurationServiceAndOperator(
             OutputTargetBuildItem outputTarget,
@@ -137,15 +149,12 @@ class OperatorSDKProcessor {
             LiveReloadBuildItem liveReload, LaunchModeBuildItem launchMode) {
 
         String runtimeQuarkusVersion = Quarkus.class.getPackage().getImplementationVersion();
-        if (!runtimeQuarkusVersion.equals(Versions.QUARKUS)) {
-            String message = "Incompatible Quarkus version found: \"" + runtimeQuarkusVersion + "\", expected: \""
-                    + Versions.QUARKUS + "\"";
-            if (buildTimeConfiguration.failOnVersionCheck) {
-                throw new RuntimeException(message);
-            } else {
-                log.warn(message);
-            }
-        }
+        checkVersionCompatibility(runtimeQuarkusVersion, Versions.QUARKUS, "Quarkus");
+
+//        String runtimeFabric8Version = io.fabric8.kubernetes.client.Version.clientVersion();
+//        String josdkFabric8Version = io.javaoperatorsdk.operator.Versions.KUBERNETES_CLIENT;
+//        String quarkusFabric8Version = io.quarkus.kubernetes.client.deployment.Versions.KUBERNETES_CLIENT;
+//        checkVersionCompatibility(runtimeFabric8Version, quarkusFabric8Version, "Fabric8 kubernetes-client");
 
         final CRDConfiguration crdConfig = buildTimeConfiguration.crd;
         final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(
