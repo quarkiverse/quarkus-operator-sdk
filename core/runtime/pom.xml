@@ -4,7 +4,7 @@
   <parent>
     <groupId>io.quarkiverse.operatorsdk</groupId>
     <artifactId>quarkus-operator-sdk-core-parent</artifactId>
-    <version>5.0.1-SNAPSHOT</version>
+    <version>5.0.1</version>
   </parent>
   <artifactId>quarkus-operator-sdk</artifactId>
   <name>Quarkus - Operator SDK - Core - Runtime</name>
