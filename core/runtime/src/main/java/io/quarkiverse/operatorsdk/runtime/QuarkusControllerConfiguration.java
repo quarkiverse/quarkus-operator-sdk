@@ -22,6 +22,7 @@ import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEv
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
+import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
@@ -70,7 +71,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final Optional<OnAddFilter<R>> onAddFilter;
     private final Optional<OnUpdateFilter<R>> onUpdateFilter;
     private final Optional<GenericFilter<R>> genericFilter;
-    private final Retry retry;
+    private Retry retry;
     private final Class<? extends Annotation> retryConfigurationClass;
     private final RateLimiter rateLimiter;
     private final Class<? extends Annotation> rateLimiterConfigurationClass;
@@ -113,7 +114,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.onAddFilter = Optional.ofNullable(onAddFilter);
         this.onUpdateFilter = Optional.ofNullable(onUpdateFilter);
         this.genericFilter = Optional.ofNullable(genericFilter);
-        this.retry = retry != null ? retry : ControllerConfiguration.super.getRetry();
+        this.retry = retry;
         this.retryConfigurationClass = retryConfigurationClass;
         this.rateLimiter = rateLimiter != null ? rateLimiter
                 : new DefaultRateLimiter();
@@ -188,6 +189,10 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     void setRetryConfiguration(RetryConfiguration retryConfiguration) {
         this.retryConfiguration = retryConfiguration != null ? retryConfiguration
                 : ControllerConfiguration.super.getRetryConfiguration();
+        // reset retry if needed
+        if (retry == null || retry instanceof GenericRetry) {
+            retry = GenericRetry.fromConfiguration(retryConfiguration);
+        }
     }
 
     @IgnoreProperty
@@ -301,7 +306,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             AnnotationConfigurable configurable) {
         if (configurationClass != null) {
             var annotation = reconcilerClass.getAnnotation(configurationClass);
-            configurable.initFrom(annotation);
+            if (annotation != null) {
+                configurable.initFrom(annotation);
+            }
         }
     }
 }
