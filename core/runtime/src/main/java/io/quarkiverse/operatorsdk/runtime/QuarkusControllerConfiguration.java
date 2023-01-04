@@ -202,6 +202,10 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     void setRetryConfiguration(RetryConfiguration retryConfiguration) {
         this.retryConfiguration = retryConfiguration != null ? retryConfiguration
                 : ControllerConfiguration.super.getRetryConfiguration();
+        // reset retry if needed
+        if (retry == null || retry instanceof GenericRetry) {
+            retry = GenericRetry.fromConfiguration(retryConfiguration);
+        }
     }
 
     @IgnoreProperty
@@ -363,7 +367,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             AnnotationConfigurable configurable) {
         if (configurationClass != null) {
             var annotation = reconcilerClass.getAnnotation(configurationClass);
-            configurable.initFrom(annotation);
+            if (annotation != null) {
+                configurable.initFrom(annotation);
+            }
         }
     }
 }
