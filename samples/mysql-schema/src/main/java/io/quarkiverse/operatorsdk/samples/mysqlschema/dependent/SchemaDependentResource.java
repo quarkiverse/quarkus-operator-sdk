@@ -46,7 +46,9 @@ public class SchemaDependentResource
 
     @Override
     public void configureWith(ResourcePollerConfig config) {
-        setPollingPeriod(config.getPollPeriod());
+        if (config != null) {
+            setPollingPeriod(config.getPollPeriod());
+        }
     }
 
     @Override

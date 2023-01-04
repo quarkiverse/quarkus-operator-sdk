@@ -24,10 +24,12 @@ import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
+import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
 @SuppressWarnings("unused")
@@ -61,18 +63,41 @@ public class OperatorSDKResource {
     @GET
     @Path("{name}/config")
     public JSONControllerConfiguration getConfig(@PathParam("name") String name) {
+        return getControllerConfigurationByName(name)
+                .map(JSONControllerConfiguration::new)
+                .orElse(null);
+    }
+
+    private Optional<? extends QuarkusControllerConfiguration<? extends HasMetadata>> getControllerConfigurationByName(
+            String name) {
         return controllers.stream()
                 .map(c -> configurationService.getConfigurationFor(c))
                 .filter(c -> c.getName().equals(name))
-                .findFirst()
-                .map(JSONControllerConfiguration::new)
-                .orElse(null);
+                .findFirst();
     }
 
     @GET
     @Path("{name}/workflow")
     public JSONWorkflow getWorkflow(@PathParam("name") String name) {
         return new JSONWorkflow(configurationService.workflowByName(name));
+    }
+
+    @GET
+    @Path("{name}/dependents/{dependent}")
+    public JSONKubernetesResourceConfig getDependentConfig(@PathParam("name") String name,
+            @PathParam("dependent") String dependent) {
+        final var dr = configurationService.getDependentByName(name, dependent);
+        if (dr == null) {
+            return null;
+        }
+        if (dr instanceof DependentResourceConfigurator) {
+            DependentResourceConfigurator<?> configurator = (DependentResourceConfigurator<?>) dr;
+            return configurator.configuration()
+                    .filter(c -> c instanceof KubernetesDependentResourceConfig)
+                    .map(c -> new JSONKubernetesResourceConfig((KubernetesDependentResourceConfig<?>) c))
+                    .orElse(null);
+        }
+        return null;
     }
 
     static class JSONConfiguration {
@@ -227,6 +252,12 @@ public class OperatorSDKResource {
                     .orElse(null);
         }
 
+        public String getResourceDiscriminator() {
+            return Optional.ofNullable(config.getResourceDiscriminator())
+                    .map(f -> f.getClass().getCanonicalName())
+                    .orElse(null);
+        }
+
         public String getLabelSelector() {
             return config.labelSelector();
         }
@@ -248,9 +279,27 @@ public class OperatorSDKResource {
             return workflow.isEmpty();
         }
 
-        public Map<String, String> getDependents() {
-            return workflow.getOrderedSpecs().stream().collect(
-                    Collectors.toMap(DependentResourceSpec::getName, spec -> spec.getDependentResourceClass().getName()));
+        public Map<String, JSONDRSpec> getDependents() {
+            return workflow.getOrderedSpecs().stream()
+                    .collect(Collectors.toMap(DependentResourceSpec::getName, JSONDRSpec::new));
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    static class JSONDRSpec {
+        private final DependentResourceSpec spec;
+
+        JSONDRSpec(DependentResourceSpec spec) {
+            this.spec = spec;
+        }
+
+        public String getType() {
+            return spec.getDependentResourceClass().getName();
+        }
+
+        public String getReadyCondition() {
+            final var readyCondition = spec.getReadyCondition();
+            return readyCondition == null ? null : readyCondition.getClass().getName();
         }
     }
 }
