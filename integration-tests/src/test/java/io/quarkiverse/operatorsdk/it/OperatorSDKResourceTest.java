@@ -133,9 +133,12 @@ class OperatorSDKResourceTest {
                         hasItems(ReadOnlyDependentResource.class.getCanonicalName(),
                                 CRUDDependentResource.class.getCanonicalName()),
                         "dependents.dependentConfig.labelSelector",
-                        hasItem(CRUDDependentResource.LABEL_SELECTOR),
+                        hasItems(ReadOnlyDependentResource.LABEL_SELECTOR, CRUDDependentResource.LABEL_SELECTOR),
                         "dependents.dependentConfig.onAddFilter",
-                        hasItem(CRUDDependentResource.TestOnAddFilter.class.getCanonicalName()));
+                        hasItem(CRUDDependentResource.TestOnAddFilter.class.getCanonicalName()),
+                        "dependents.dependentConfig.resourceDiscriminator",
+                        hasItems(ReadOnlyDependentResource.ReadOnlyResourceDiscriminator.class.getCanonicalName(),
+                                CRUDDependentResource.TestResourceDiscriminator.class.getCanonicalName()));
     }
 
     @Test
@@ -147,8 +150,22 @@ class OperatorSDKResourceTest {
                 .statusCode(200).body(
                         "cleaner", is(false),
                         "empty", is(false),
-                        "dependents.read-only", startsWith(ReadOnlyDependentResource.class.getName()),
-                        "dependents.crud", startsWith(CRUDDependentResource.class.getName()));
+                        "dependents." + ReadOnlyDependentResource.NAME + ".type",
+                        startsWith(ReadOnlyDependentResource.class.getName()),
+                        "dependents." + ReadOnlyDependentResource.NAME + ".readyCondition",
+                        startsWith(ReadOnlyDependentResource.ReadOnlyReadyCondition.class.getName()),
+                        "dependents.crud.type", startsWith(CRUDDependentResource.class.getName()));
+    }
+
+    @Test
+    void dependentConfigurationShouldBeRetrievableAfterConfiguration() {
+        given()
+                .when()
+                .get("/operator/" + DependentDefiningReconciler.NAME + "/dependents/" + ReadOnlyDependentResource.NAME)
+                .then()
+                .statusCode(200).body(
+                        "resourceDiscriminator",
+                        is(ReadOnlyDependentResource.ReadOnlyResourceDiscriminator.class.getCanonicalName()));
     }
 
     @Test
