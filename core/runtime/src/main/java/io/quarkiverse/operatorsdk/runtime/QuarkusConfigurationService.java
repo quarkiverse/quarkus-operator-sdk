@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Stream;
 
@@ -24,6 +25,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -53,6 +55,8 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     private final Duration cacheSyncTimeout;
     private ExecutorService reconcileExecutorService;
     private ExecutorService workflowExecutorService;
+    @SuppressWarnings("rawtypes")
+    private final Map<String, DependentResource> knownDependents = new ConcurrentHashMap<>();
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public QuarkusConfigurationService(
@@ -245,16 +249,40 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public DependentResource createFrom(DependentResourceSpec spec,
             QuarkusControllerConfiguration configuration) {
-        final Class<? extends DependentResource<?, ?>> dependentResourceClass = spec
-                .getDependentResourceClass();
-        final var dependent = Arc.container().instance(dependentResourceClass).get();
-        if (dependent == null) {
-            throw new IllegalStateException(
-                    "Couldn't find bean associated with DependentResource "
-                            + dependentResourceClass.getName());
-        }
+        final var dependentKey = getDependentKey(configuration, spec);
+        var dependentResource = knownDependents.get(dependentKey);
+        if (dependentResource == null) {
+            final Class<? extends DependentResource<?, ?>> dependentResourceClass = spec
+                    .getDependentResourceClass();
+            final var dependent = Arc.container().instance(dependentResourceClass).get();
+            if (dependent == null) {
+                throw new IllegalStateException(
+                        "Couldn't find bean associated with DependentResource "
+                                + dependentResourceClass.getName());
+            }
 
-        return ClientProxy.unwrap(dependent);
+            dependentResource = ClientProxy.unwrap(dependent);
+            // configure the bean
+            DependentResourceConfigurationResolver.configure(dependentResource, spec, configuration);
+            // record the configured dependent for later retrieval if needed
+            knownDependents.put(dependentKey, dependentResource);
+        }
+        return dependentResource;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static String getDependentKey(QuarkusControllerConfiguration configuration,
+            DependentResourceSpec spec) {
+        return getDependentKeyFromNames(configuration.getName(), spec.getName());
+    }
+
+    private static String getDependentKeyFromNames(String controllerName, String dependentName) {
+        return controllerName + "#" + dependentName;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <R, P extends HasMetadata> DependentResource<R, P> getDependentByName(String controllerName, String dependentName) {
+        return (DependentResource<R, P>) knownDependents.get(getDependentKeyFromNames(controllerName, dependentName));
     }
 
     @SuppressWarnings("rawtypes")
