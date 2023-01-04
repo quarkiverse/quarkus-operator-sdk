@@ -52,6 +52,15 @@ public class ConfigurationServiceRecorder {
                 c.setRetryConfiguration(RetryConfigurationResolver.resolve(extConfig.retry));
             }
 
+            // set retry to default if it hasn't been set already
+            // note that this is a little hackish but we can't set the default version at built time
+            // because it will get recorded in the byte code and this would make it harder to
+            // override it using the old style (i.e. using setRetryConfiguration) at runtime
+            final var retry = c.getRetry();
+            if (retry == null) {
+                c.setRetryConfiguration(null);
+            }
+
             // check if we need to expand variable names from namespaces
             if (c.isNamespaceExpansionRequired()) {
                 final var expandedNS = ((QuarkusControllerConfiguration<?>) c).getNamespaces().stream()

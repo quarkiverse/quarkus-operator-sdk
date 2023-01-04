@@ -94,6 +94,7 @@ class OperatorSDKResourceTest {
                         "customResourceClass", equalTo(resourceName),
                         "name", equalTo(TestReconciler.NAME),
                         "watchCurrentNamespace", equalTo(true),
+                        "retry.maxAttempts", equalTo(1),
                         "generationAware", equalTo(false),
                         "maxReconciliationIntervalSeconds", equalTo(TestReconciler.INTERVAL));
     }
