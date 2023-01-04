@@ -30,6 +30,7 @@ import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
+import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
@@ -161,18 +162,19 @@ class QuarkusControllerConfigurationBuilder {
                 genericFilter = ConfigurationUtils.instantiateImplementationClass(
                         controllerAnnotation, "genericFilter", GenericFilter.class, GenericFilter.class,
                         true, index);
+
                 retry = ConfigurationUtils.instantiateImplementationClass(
                         controllerAnnotation, "retry", Retry.class, GenericRetry.class,
-                        false, index);
-                assert retry != null;
-                final var retryConfigurableInfo = configurableInfos.get(retry.getClass().getName());
+                        true, index);
+                final var retryClass = retry != null ? retry.getClass() : GenericRetry.class;
+                final var retryConfigurableInfo = configurableInfos.get(retryClass.getName());
                 retryConfigurationClass = getConfigurationClass(reconcilerInfo, retryConfigurableInfo);
+
                 rateLimiter = ConfigurationUtils.instantiateImplementationClass(
                         controllerAnnotation, "rateLimiter", RateLimiter.class, DefaultRateLimiter.class,
-                        false, index);
-                assert rateLimiter != null;
-                final var rateLimiterConfigurableInfo = configurableInfos.get(
-                        rateLimiter.getClass().getName());
+                        true, index);
+                final var rateLimiterClass = rateLimiter != null ? rateLimiter.getClass() : LinearRateLimiter.class;
+                final var rateLimiterConfigurableInfo = configurableInfos.get(rateLimiterClass.getName());
                 rateLimiterConfigurationClass = getConfigurationClass(reconcilerInfo,
                         rateLimiterConfigurableInfo);
             }
