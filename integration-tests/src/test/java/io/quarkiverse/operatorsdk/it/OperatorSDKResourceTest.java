@@ -10,11 +10,10 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
 
-import java.util.Locale;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.DisabledOnIntegrationTest;
 import io.quarkus.test.junit.QuarkusTest;
@@ -74,10 +73,12 @@ class OperatorSDKResourceTest {
         assertThat(names, arrayContainingInAnyOrder(ApplicationScopedReconciler.NAME,
                 ConfiguredReconciler.NAME,
                 TestReconciler.NAME,
-                SecretReconciler.class.getSimpleName().toLowerCase(Locale.ROOT),
-                GatewayReconciler.class.getSimpleName().toLowerCase(Locale.ROOT),
+                ReconcilerUtils.getDefaultNameFor(SecretReconciler.class),
+                ReconcilerUtils.getDefaultNameFor(GatewayReconciler.class),
                 DependentDefiningReconciler.NAME, NamespaceFromEnvReconciler.NAME,
-                EmptyReconciler.NAME, VariableNSReconciler.NAME, AnnotatedDependentReconciler.NAME));
+                EmptyReconciler.NAME, VariableNSReconciler.NAME,
+                AnnotatedDependentReconciler.NAME,
+                ReconcilerUtils.getDefaultNameFor(KeycloakController.class)));
     }
 
     @Test
@@ -209,6 +210,16 @@ class OperatorSDKResourceTest {
                         "namespaces", hasItem(EmptyReconciler.FROM_ENV_NS2),
                         "watchCurrentNamespace", equalTo(false),
                         "namespaces", hasSize(2));
+
+        given()
+                .when()
+                .get("/operator/" + ReconcilerUtils.getDefaultNameFor(KeycloakController.class) + "/config")
+                .then()
+                .statusCode(200)
+                .body(
+                        "namespaces", hasItem(KeycloakController.FROM_ENV),
+                        "watchCurrentNamespace", equalTo(false),
+                        "namespaces", hasSize(1));
     }
 
     @Test
