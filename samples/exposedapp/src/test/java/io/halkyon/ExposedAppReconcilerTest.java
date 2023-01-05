@@ -3,11 +3,15 @@ package io.halkyon;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -18,19 +22,55 @@ import io.quarkus.test.junit.QuarkusTest;
 @QuarkusTest
 class ExposedAppReconcilerTest {
 
+    public static final String TEST_APP = "test-app";
     @Inject
     KubernetesClient client;
 
     @Inject
     Operator operator;
 
-    @Test
-    void reconcileShouldWork() {
+    @BeforeEach
+    void startOperator() {
         operator.start();
+    }
 
+    @AfterEach
+    void stopOperator() {
+        operator.stop();
+    }
+
+    @Test
+    @Order(2)
+    void deleteShouldWork() {
         final var app = new ExposedApp();
         final var metadata = new ObjectMetaBuilder()
-                .withName("test-app")
+                .withName(TEST_APP)
+                .withNamespace(client.getNamespace())
+                .build();
+        app.setMetadata(metadata);
+        app.getSpec().setImageRef("group/imageName:tag");
+
+        client.resource(app).delete();
+
+        await().atMost(30, TimeUnit.SECONDS).untilAsserted(() -> {
+            assertThat(client.apps().deployments()
+                    .inNamespace(metadata.getNamespace())
+                    .withName(metadata.getName()).get(), nullValue());
+            assertThat(client.services()
+                    .inNamespace(metadata.getNamespace())
+                    .withName(metadata.getName()).get(), nullValue());
+            assertThat(client.network().v1().ingresses()
+                    .inNamespace(metadata.getNamespace())
+                    .withName(metadata.getName()).get(), nullValue());
+        });
+    }
+
+    @Test
+    @Order(1)
+    void reconcileShouldWork() {
+        final var app = new ExposedApp();
+        final var metadata = new ObjectMetaBuilder()
+                .withName(TEST_APP)
                 .withNamespace(client.getNamespace())
                 .build();
         app.setMetadata(metadata);
