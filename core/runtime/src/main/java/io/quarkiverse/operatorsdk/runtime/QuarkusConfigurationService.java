@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -53,8 +52,6 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     private final boolean stopOnInformerErrorDuringStartup;
     private final int concurrentWorkflowExecutorThreads;
     private final Duration cacheSyncTimeout;
-    private ExecutorService reconcileExecutorService;
-    private ExecutorService workflowExecutorService;
     @SuppressWarnings("rawtypes")
     private final Map<String, DependentResource> knownDependents = new ConcurrentHashMap<>();
 
@@ -215,22 +212,6 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     }
 
     @Override
-    public ExecutorService getExecutorService() {
-        if (reconcileExecutorService == null) {
-            reconcileExecutorService = super.getExecutorService();
-        }
-        return reconcileExecutorService;
-    }
-
-    @Override
-    public ExecutorService getWorkflowExecutorService() {
-        if (workflowExecutorService == null) {
-            workflowExecutorService = super.getWorkflowExecutorService();
-        }
-        return workflowExecutorService;
-    }
-
-    @Override
     public DependentResourceFactory<QuarkusControllerConfiguration<?>> dependentResourceFactory() {
         return this;
     }
@@ -289,4 +270,5 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     public ManagedWorkflow workflowByName(String name) {
         return ((QuarkusControllerConfiguration) getFor(name)).getWorkflow();
     }
+
 }
