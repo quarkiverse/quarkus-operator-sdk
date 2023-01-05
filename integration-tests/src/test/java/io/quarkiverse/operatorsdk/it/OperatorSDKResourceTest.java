@@ -92,7 +92,9 @@ class OperatorSDKResourceTest {
                 .body(
                         "customResourceClass", equalTo(resourceName),
                         "name", equalTo(TestReconciler.NAME),
-                        "watchCurrentNamespace", equalTo(true),
+                        "watchCurrentNamespace", equalTo(false),
+                        "namespaces", hasSize(1),
+                        "namespaces", hasItem("operator-level"),
                         "retry.maxAttempts", equalTo(1),
                         "generationAware", equalTo(false),
                         "maxReconciliationIntervalSeconds", equalTo(TestReconciler.INTERVAL));
@@ -128,6 +130,9 @@ class OperatorSDKResourceTest {
                 .get("/operator/" + DependentDefiningReconciler.NAME + "/config")
                 .then()
                 .statusCode(200).body(
+                        "watchCurrentNamespace", equalTo(false),
+                        "namespaces", hasSize(1),
+                        "namespaces", hasItem("operator-level"),
                         "dependents", hasSize(2),
                         "dependents.dependentClass",
                         hasItems(ReadOnlyDependentResource.class.getCanonicalName(),
