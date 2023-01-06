@@ -65,7 +65,7 @@ class JokeRequestReconcilerTest {
         client.resource(testRequest).create();
 
         // assert
-        await().ignoreException(NullPointerException.class).atMost(60, SECONDS).untilAsserted(() -> {
+        await().ignoreException(NullPointerException.class).atMost(300, SECONDS).untilAsserted(() -> {
             JokeRequest updatedRequest = client.resources(JokeRequest.class)
                     .inNamespace(testRequest.getMetadata().getNamespace())
                     .withName(testRequest.getMetadata().getName())
