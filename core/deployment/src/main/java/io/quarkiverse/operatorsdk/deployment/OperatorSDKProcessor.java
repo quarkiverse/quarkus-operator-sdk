@@ -1,7 +1,5 @@
 package io.quarkiverse.operatorsdk.deployment;
 
-import static io.quarkiverse.operatorsdk.runtime.CRDUtils.applyCRD;
-
 import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.HashMap;
@@ -234,13 +232,6 @@ class OperatorSDKProcessor {
                     .setDefaultScope(DotName.createSimple(Singleton.class.getName()))
                     .setUnremovable()
                     .build());
-        }
-
-        // apply CRD if enabled
-        if (crdGeneration.shouldApply()) {
-            for (String generatedCrdName : crdInfo.getGenerated()) {
-                applyCRD(kubernetesClientBuildItem.getClient(), crdInfo, generatedCrdName);
-            }
         }
 
         // register classes for reflection
