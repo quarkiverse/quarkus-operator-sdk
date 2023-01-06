@@ -75,7 +75,8 @@ jobs:
 
           # Run operator in DEV mode
           cd samples/joke
-          nohup mvn quarkus:dev > app.log 2>&1 &
+          # Need to override application.properties setting to avoid using dev services instead of set up cluster
+          nohup mvn quarkus:dev -Dquarkus.kubernetes-client.devservices.override-kubeconfig=false> app.log 2>&1 &
           PID=$(echo $!)
           cd $CURRENT_PWD
           
