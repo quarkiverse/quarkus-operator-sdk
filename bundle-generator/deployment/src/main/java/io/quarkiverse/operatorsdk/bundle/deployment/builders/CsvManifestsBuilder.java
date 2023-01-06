@@ -131,15 +131,13 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             }
         } else {
             // legacy icon support
-            try (var iconAsStream = Thread.currentThread().getContextClassLoader()
-                    .getResourceAsStream(defaultIconName)) {
+            try (var iconAsStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(defaultIconName)) {
                 if (iconAsStream != null) {
-                    final byte[] iconAsBase64 = Base64.getEncoder()
-                            .encode(iconAsStream.readAllBytes());
+                    log.warnv(
+                            "Using icon found in the application's resource. It is now recommended to put icons in 'src/main/kubernetes' instead of resources and provide an explicit name / media type using the @CSVMetadata.Icon annotation. This avoids unduly bundling unneeded resources into the application.");
+                    final byte[] iconAsBase64 = Base64.getEncoder().encode(iconAsStream.readAllBytes());
                     csvSpecBuilder.addNewIcon(new String(iconAsBase64), IMAGE_PNG);
                 }
-                log.warnv(
-                        "Using icon found in the application's resource. It is now recommended to put icons in 'src/main/kubernetes' instead of resources and provide an explicit name / media type using the @CSVMetadata.Icon annotation. This avoids unduly bundling unneeded resources into the application.");
             } catch (IOException e) {
                 // ignore
             }
