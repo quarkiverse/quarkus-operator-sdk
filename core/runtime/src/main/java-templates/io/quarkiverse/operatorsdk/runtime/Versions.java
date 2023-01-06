@@ -1,4 +1,4 @@
-package io.quarkiverse.operatorsdk.deployment;
+package io.quarkiverse.operatorsdk.runtime;
 
 public final class Versions {
 
