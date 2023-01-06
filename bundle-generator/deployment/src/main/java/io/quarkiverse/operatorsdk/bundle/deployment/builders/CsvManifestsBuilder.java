@@ -107,13 +107,13 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         }
 
         final var defaultIconName = getIconName();
-        if (metadata.icon != null) {
-            // check if user has auto-detected icon
-            final var defaultIcon = readIconAsBase64(defaultIconName);
-            if (defaultIcon != null) {
-                csvSpecBuilder.addNewIcon(defaultIcon, IMAGE_PNG);
-            }
+        // check if user has auto-detected icon
+        final var defaultIcon = readIconAsBase64(defaultIconName);
+        if (defaultIcon != null) {
+            csvSpecBuilder.addNewIcon(defaultIcon, IMAGE_PNG);
+        }
 
+        if (metadata.icon != null) {
             // deal with explicit icons
             for (CSVMetadataHolder.Icon icon : metadata.icon) {
                 if (!icon.fileName.isBlank() && !defaultIconName.equals(icon.fileName)) {
