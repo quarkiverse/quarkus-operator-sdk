@@ -10,7 +10,7 @@
   <packaging>pom</packaging>
   <name>Quarkus - Operator SDK - Build Parent</name>
   <properties>
-    <compiler-plugin.version>3.8.1</compiler-plugin.version>
+    <compiler-plugin.version>3.10.1</compiler-plugin.version>
     <maven.compiler.parameters>true</maven.compiler.parameters>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
@@ -71,6 +71,7 @@
           <version>${quarkus.version}</version>
         </plugin>
         <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
           <version>${compiler-plugin.version}</version>
         </plugin>
