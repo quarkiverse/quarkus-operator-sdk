@@ -41,24 +41,19 @@ public class OperatorProducer {
         // make sure we reset the ConfigurationService in case we restarted in dev mode
         ConfigurationServiceProvider.reset();
 
-        Operator operator = new Operator(configuration.getClient(), configuration);
-        for (Reconciler<? extends HasMetadata> reconciler : reconcilers) {
-            applyCRDAndRegister(operator, reconciler, configuration);
-        }
-
-        return operator;
-    }
-
-    public static void applyCRDAndRegister(Operator operator, Reconciler<? extends HasMetadata> reconciler,
-            QuarkusConfigurationService configuration) {
-        final var crdInfo = configuration.getCRDGenerationInfo();
-
         // if some CRDs just got generated and need to be applied, apply them
+        final var crdInfo = configuration.getCRDGenerationInfo();
         if (crdInfo.isApplyCRDs()) {
             for (String generatedCrdName : crdInfo.getGenerated()) {
                 applyCRD(configuration.getClient(), crdInfo, generatedCrdName);
             }
         }
-        operator.register(reconciler);
+
+        Operator operator = new Operator(configuration.getClient(), configuration);
+        for (Reconciler<? extends HasMetadata> reconciler : reconcilers) {
+            operator.register(reconciler);
+        }
+
+        return operator;
     }
 }
