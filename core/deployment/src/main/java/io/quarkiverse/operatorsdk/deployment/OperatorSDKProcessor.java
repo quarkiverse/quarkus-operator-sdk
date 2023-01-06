@@ -59,7 +59,6 @@ import io.quarkus.gizmo.AssignableResultHandle;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
-import io.quarkus.kubernetes.client.deployment.KubernetesClientProcessor;
 import io.quarkus.kubernetes.client.spi.KubernetesClientBuildItem;
 import io.quarkus.kubernetes.spi.DecoratorBuildItem;
 import io.quarkus.runtime.Quarkus;
@@ -150,13 +149,14 @@ class OperatorSDKProcessor {
             BuildProducer<GeneratedCRDInfoBuildItem> generatedCRDInfo,
             LiveReloadBuildItem liveReload, LaunchModeBuildItem launchMode) {
 
-        String runtimeQuarkusVersion = Quarkus.class.getPackage().getImplementationVersion();
-        checkVersionCompatibility(runtimeQuarkusVersion, Versions.QUARKUS, "Quarkus");
-
-        //        String runtimeFabric8Version = io.fabric8.kubernetes.client.Version.clientVersion();
-        //        String josdkFabric8Version = io.javaoperatorsdk.operator.Versions.KUBERNETES_CLIENT;
+        // check versions alignment
+        final var version = Version.loadFromProperties();
+        final var runtimeQuarkusVersion = Quarkus.class.getPackage().getImplementationVersion();
+        checkVersionCompatibility(runtimeQuarkusVersion, version.getQuarkusVersion(), "Quarkus");
+        final var runtimeFabric8Version = io.fabric8.kubernetes.client.Version.clientVersion();
+        checkVersionCompatibility(runtimeFabric8Version, version.getKubernetesClientVersion(),
+                "JOSDK Fabric8 Kubernetes Client");
         //        String quarkusFabric8Version = io.quarkus.kubernetes.client.deployment.Versions.KUBERNETES_CLIENT;
-        //        checkVersionCompatibility(josdkFabric8Version, quarkusFabric8Version, "JOSDK Fabric8 kubernetes-client ");
         //        checkVersionCompatibility(runtimeFabric8Version, quarkusFabric8Version, "Fabric8 kubernetes-client");
 
         final CRDConfiguration crdConfig = buildTimeConfiguration.crd;
@@ -261,7 +261,7 @@ class OperatorSDKProcessor {
 
         generatedCRDInfo.produce(new GeneratedCRDInfoBuildItem(crdInfo));
 
-        return new ConfigurationServiceBuildItem(Version.loadFromProperties(), controllerConfigs);
+        return new ConfigurationServiceBuildItem(version, controllerConfigs);
     }
 
     private void registerAssociatedClassesForReflection(BuildProducer<ReflectiveClassBuildItem> reflectionClasses,

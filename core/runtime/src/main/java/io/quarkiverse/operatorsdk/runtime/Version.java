@@ -23,9 +23,9 @@ public class Version extends io.javaoperatorsdk.operator.api.config.Version {
     private final Date extensionBuildTime;
 
     @RecordableConstructor // constructor needs to be recordable for the class to be passed around by Quarkus
-    public Version(String sdkVersion, String commit, Date builtTime, String extensionVersion, String extensionCommit,
+    public Version(String commit, Date builtTime, String extensionVersion, String extensionCommit,
             String extensionBranch, Date extensionBuildTime) {
-        super(sdkVersion, commit, builtTime);
+        super(commit, builtTime);
         this.extensionVersion = extensionVersion;
         this.extensionBranch = extensionBranch;
         this.extensionCommit = extensionCommit;
@@ -46,6 +46,10 @@ public class Version extends io.javaoperatorsdk.operator.api.config.Version {
 
     public Date getExtensionBuildTime() {
         return extensionBuildTime;
+    }
+
+    public String getQuarkusVersion() {
+        return Versions.QUARKUS;
     }
 
     public static Version loadFromProperties() {
@@ -69,7 +73,7 @@ public class Version extends io.javaoperatorsdk.operator.api.config.Version {
             builtTime = Date.from(Instant.EPOCH);
         }
 
-        return new Version(sdkVersion.getSdkVersion(), sdkVersion.getCommit(), sdkVersion.getBuiltTime(),
+        return new Version(sdkVersion.getCommit(), sdkVersion.getBuiltTime(),
                 properties.getProperty("git.build.version", UNKNOWN),
                 properties.getProperty("git.commit.id.abbrev", UNKNOWN),
                 properties.getProperty("git.branch", UNKNOWN),
