@@ -4,7 +4,7 @@
   <parent>
     <groupId>io.quarkiverse.operatorsdk</groupId>
     <artifactId>quarkus-operator-sdk-parent</artifactId>
-    <version>4.0.6</version>
+    <version>4.0.7-SNAPSHOT</version>
   </parent>
   <artifactId>quarkus-operator-sdk-bom</artifactId>
   <name>Quarkus - Operator SDK - BOM</name>
@@ -31,7 +31,7 @@
     <developerConnection>scm:git:git@github.com:quarkiverse/quarkus-operator-sdk.git/bom
     </developerConnection>
     <url>https://github.com/quarkiverse/quarkus-operator-sdk/bom</url>
-    <tag>4.0.6</tag>
+    <tag>HEAD</tag>
   </scm>
   <issueManagement>
     <system>GitHub</system>
