@@ -15,8 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Predicate;
 
 import org.jboss.logging.Logger;
 
@@ -39,7 +37,6 @@ import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder.RequiredCRD;
 import io.quarkiverse.operatorsdk.common.ReconciledAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ResourceAssociatedAugmentedClassInfo;
-import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 
 public class CsvManifestsBuilder extends ManifestsBuilder {
 
@@ -53,7 +50,6 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     private static final String NO_SERVICE_ACCOUNT = "";
     private static final Logger LOGGER = Logger.getLogger(CsvManifestsBuilder.class.getName());
 
-    private static final Map<String, Set<ResourceInfo>> groupToCRInfo = new ConcurrentHashMap<>(7);
     private static final String IMAGE_PNG = "image/png";
 
     private final ClusterServiceVersionBuilder csvBuilder;
@@ -338,53 +334,6 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     private void handleClusterPermission(List<PolicyRule> rules,
             String serviceAccountName,
             NamedInstallStrategyFluent.SpecNested<ClusterServiceVersionSpecFluent.InstallNested<ClusterServiceVersionFluent.SpecNested<ClusterServiceVersionBuilder>>> installSpec) {
-        // check if we have our CR group in the cluster role fragment and remove the one we added
-        // before since we presume that if the user defined a fragment for permissions associated with their
-        // CR they want that fragment to take precedence over automatically generated code
-        final var clusterPermissions = installSpec.buildClusterPermissions();
-        groupToCRInfo.forEach((group, infos) -> {
-
-            final Predicate<PolicyRule> hasGroup = pr -> pr.getApiGroups()
-                    .contains(group);
-            final var nowEmptyPermissions = new LinkedList<Integer>();
-            final var permissionPosition = new Integer[] { 0 };
-            if (rules.stream().anyMatch(hasGroup)) {
-                clusterPermissions.forEach(p -> {
-                    // record the position of all rules that match the group
-                    Integer[] index = new Integer[] { 0 };
-                    List<Integer> matchingRuleIndices = new LinkedList<>();
-                    p.getRules().forEach(r -> {
-                        if (hasGroup.test(r)) {
-                            matchingRuleIndices.add(index[0]);
-                        }
-                        index[0]++;
-                    });
-
-                    // remove the group from all matching rules
-                    matchingRuleIndices.forEach(i -> {
-                        final var groups = p.getRules().get(i).getApiGroups();
-                        groups.remove(group);
-                        // if the rule doesn't have any groups anymore, remove it
-                        if (groups.isEmpty()) {
-                            p.getRules().remove(i.intValue());
-                            // if the permission doesn't have any rules anymore, mark it for removal
-                            // or the service account name is empty
-                            final var san = p.getServiceAccountName();
-                            if (p.getRules().isEmpty() || (san == null || san.isBlank())) {
-                                nowEmptyPermissions.add(permissionPosition[0]);
-                            }
-                        }
-                    });
-
-                    permissionPosition[0]++;
-                });
-
-                // remove now empty permissions
-                nowEmptyPermissions.forEach(i -> clusterPermissions.remove(i.intValue()));
-                installSpec.addAllToClusterPermissions(clusterPermissions);
-            }
-        });
-
         installSpec
                 .addNewClusterPermission()
                 .withServiceAccountName(serviceAccountName)
