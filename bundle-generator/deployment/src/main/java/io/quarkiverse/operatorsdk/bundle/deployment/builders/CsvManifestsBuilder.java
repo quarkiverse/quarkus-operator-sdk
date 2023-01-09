@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import org.jboss.logging.Logger;
 
@@ -32,6 +33,8 @@ import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionFluent;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionSpecFluent;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.NamedInstallStrategyFluent;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.StrategyDeploymentPermissionsBuilder;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.StrategyDeploymentPermissionsFluent;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder.RequiredCRD;
 import io.quarkiverse.operatorsdk.common.ReconciledAugmentedClassInfo;
@@ -323,22 +326,37 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             String serviceAccountName,
             NamedInstallStrategyFluent.SpecNested<ClusterServiceVersionSpecFluent.InstallNested<ClusterServiceVersionFluent.SpecNested<ClusterServiceVersionBuilder>>> installSpec) {
         if (!rules.isEmpty()) {
-            installSpec
-                    .addNewPermission()
-                    .withServiceAccountName(serviceAccountName)
-                    .addAllToRules(rules)
-                    .endPermission();
+            Predicate<StrategyDeploymentPermissionsBuilder> sameServiceAccountName = p -> serviceAccountName
+                    .equals(p.getServiceAccountName());
+            if (installSpec.hasMatchingPermission(sameServiceAccountName)) {
+                var permission = installSpec.editMatchingPermission(sameServiceAccountName);
+                appendRulesInPermission(permission, rules);
+                permission.endPermission();
+            } else {
+                installSpec.addNewPermission()
+                        .withServiceAccountName(serviceAccountName)
+                        .addAllToRules(rules)
+                        .endPermission();
+            }
         }
     }
 
     private void handleClusterPermission(List<PolicyRule> rules,
             String serviceAccountName,
             NamedInstallStrategyFluent.SpecNested<ClusterServiceVersionSpecFluent.InstallNested<ClusterServiceVersionFluent.SpecNested<ClusterServiceVersionBuilder>>> installSpec) {
-        installSpec
-                .addNewClusterPermission()
-                .withServiceAccountName(serviceAccountName)
-                .addAllToRules(rules)
-                .endClusterPermission();
+
+        Predicate<StrategyDeploymentPermissionsBuilder> sameServiceAccountName = p -> serviceAccountName
+                .equals(p.getServiceAccountName());
+        if (installSpec.hasMatchingClusterPermission(sameServiceAccountName)) {
+            var permission = installSpec.editMatchingClusterPermission(sameServiceAccountName);
+            appendRulesInPermission(permission, rules);
+            permission.endClusterPermission();
+        } else {
+            installSpec.addNewClusterPermission()
+                    .withServiceAccountName(serviceAccountName)
+                    .addAllToRules(rules)
+                    .endClusterPermission();
+        }
     }
 
     private String findServiceAccountFromSubjects(List<Subject> subjects, String defaultServiceAccountName) {
@@ -372,6 +390,14 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         }
 
         return Collections.emptyList();
+    }
+
+    private void appendRulesInPermission(StrategyDeploymentPermissionsFluent permission, List<PolicyRule> rules) {
+        for (PolicyRule rule : rules) {
+            if (!permission.hasMatchingRule(r -> r.equals(rule))) {
+                permission.addToRules(rule);
+            }
+        }
     }
 
     private static String defaultIfEmpty(String possiblyNullOrEmpty, String defaultValue) {
