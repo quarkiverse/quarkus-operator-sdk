@@ -14,8 +14,6 @@ import static org.mockito.ArgumentMatchers.eq;
 
 import java.util.Map;
 
-import javax.inject.Inject;
-
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -27,6 +25,7 @@ import io.quarkiverse.operatorsdk.samples.joke.JokeRequestSpec.Category;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestStatus.State;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
+import jakarta.inject.Inject;
 
 @QuarkusTest
 class JokeRequestReconcilerTest {

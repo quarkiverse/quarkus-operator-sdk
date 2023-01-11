@@ -1,8 +1,7 @@
 package io.quarkiverse.operatorsdk.it;
 
-import javax.inject.Singleton;
-
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class TestLeaderElectionConfiguration extends LeaderElectionConfiguration {
