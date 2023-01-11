@@ -1,11 +1,10 @@
 package io.quarkiverse.operatorsdk.it;
 
-import javax.enterprise.context.ApplicationScoped;
-
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 @ControllerConfiguration(name = ApplicationScopedReconciler.NAME)

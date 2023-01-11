@@ -2,8 +2,6 @@ package io.quarkiverse.operatorsdk.samples.mysqlschema.dependent;
 
 import java.util.Base64;
 
-import javax.enterprise.context.ApplicationScoped;
-
 import org.apache.commons.lang3.RandomStringUtils;
 
 import io.fabric8.kubernetes.api.model.Secret;
@@ -13,6 +11,7 @@ import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher.Result;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.quarkiverse.operatorsdk.samples.mysqlschema.MySQLSchema;
+import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class SecretDependentResource extends KubernetesDependentResource<Secret, MySQLSchema>

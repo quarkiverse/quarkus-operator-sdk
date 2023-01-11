@@ -19,8 +19,6 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import javax.inject.Inject;
-
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -32,6 +30,7 @@ import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata.Icon;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestSpec.ExcludedTopic;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestStatus.State;
+import jakarta.inject.Inject;
 
 @CSVMetadata(permissionRules = @CSVMetadata.PermissionRule(apiGroups = Joke.GROUP, resources = "jokes"), requiredCRDs = @CSVMetadata.RequiredCRD(kind = "Joke", name = Joke.NAME, version = Joke.VERSION), icon = @Icon(fileName = "icon.png", mediatype = "image/png"))
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
