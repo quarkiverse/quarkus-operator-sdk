@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
@@ -34,8 +35,8 @@ public class ReadOnlyDependentResource extends KubernetesDependentResource<Deplo
     public static class ReadOnlyReadyCondition implements Condition<Deployment, ConfigMap> {
 
         @Override
-        public boolean isMet(ConfigMap configMap, Deployment deployment,
-                Context<ConfigMap> context) {
+        public boolean isMet(DependentResource<Deployment, ConfigMap> dependentResource,
+                ConfigMap configMap, Context<ConfigMap> context) {
             return false;
         }
     }
