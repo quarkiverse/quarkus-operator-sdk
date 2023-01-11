@@ -4,7 +4,7 @@
   <parent>
     <groupId>io.quarkiverse.operatorsdk</groupId>
     <artifactId>quarkus-operator-sdk-core-parent</artifactId>
-    <version>5.0.3-SNAPSHOT</version>
+    <version>5.1.0-SNAPSHOT</version>
   </parent>
   <artifactId>quarkus-operator-sdk</artifactId>
   <name>Quarkus - Operator SDK - Core - Runtime</name>
@@ -107,6 +107,20 @@
         </configuration>
       </plugin>
       <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>templating-maven-plugin</artifactId>
+        <version>1.0.0</version>
+        <executions>
+          <execution>
+            <id>filtering-java-templates</id>
+            <goals>
+              <goal>filter-sources</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
           <annotationProcessorPaths>

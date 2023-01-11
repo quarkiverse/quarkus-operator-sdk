@@ -56,4 +56,10 @@ public class BuildTimeOperatorConfiguration {
      */
     @ConfigItem(defaultValue = "true")
     public Boolean stopOnInformerErrorDuringStartup;
+
+    /**
+     * Whether to fail or only emit a warning on version validation at compile time.
+     */
+    @ConfigItem(defaultValue = "true")
+    public Boolean failOnVersionCheck;
 }

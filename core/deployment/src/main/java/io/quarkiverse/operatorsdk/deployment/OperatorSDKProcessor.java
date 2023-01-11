@@ -61,6 +61,7 @@ import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
 import io.quarkus.kubernetes.client.spi.KubernetesClientBuildItem;
 import io.quarkus.kubernetes.spi.DecoratorBuildItem;
+import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.metrics.MetricsFactory;
 
@@ -126,6 +127,17 @@ class OperatorSDKProcessor {
                         .done());
     }
 
+    private void checkVersionCompatibility(String found, String expected, String name) {
+        if (!found.equals(expected)) {
+            String message = "Incompatible " + name + " version found: \"" + found + "\", expected: \"" + expected + "\"";
+            if (buildTimeConfiguration.failOnVersionCheck) {
+                throw new RuntimeException(message);
+            } else {
+                log.warn(message);
+            }
+        }
+    }
+
     @BuildStep
     ConfigurationServiceBuildItem createConfigurationServiceAndOperator(
             OutputTargetBuildItem outputTarget,
@@ -136,6 +148,16 @@ class OperatorSDKProcessor {
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             BuildProducer<GeneratedCRDInfoBuildItem> generatedCRDInfo,
             LiveReloadBuildItem liveReload, LaunchModeBuildItem launchMode) {
+
+        // check versions alignment
+        final var version = Version.loadFromProperties();
+        final var runtimeQuarkusVersion = Quarkus.class.getPackage().getImplementationVersion();
+        checkVersionCompatibility(runtimeQuarkusVersion, version.getQuarkusVersion(), "Quarkus");
+        final var runtimeFabric8Version = io.fabric8.kubernetes.client.Version.clientVersion();
+        checkVersionCompatibility(runtimeFabric8Version, version.getKubernetesClientVersion(),
+                "JOSDK Fabric8 Kubernetes Client");
+        //        String quarkusFabric8Version = io.quarkus.kubernetes.client.deployment.Versions.KUBERNETES_CLIENT;
+        //        checkVersionCompatibility(runtimeFabric8Version, quarkusFabric8Version, "Fabric8 kubernetes-client");
 
         final CRDConfiguration crdConfig = buildTimeConfiguration.crd;
         final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(
@@ -239,7 +261,7 @@ class OperatorSDKProcessor {
 
         generatedCRDInfo.produce(new GeneratedCRDInfoBuildItem(crdInfo));
 
-        return new ConfigurationServiceBuildItem(Version.loadFromProperties(), controllerConfigs);
+        return new ConfigurationServiceBuildItem(version, controllerConfigs);
     }
 
     private void registerAssociatedClassesForReflection(BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
