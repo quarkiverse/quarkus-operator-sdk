@@ -41,7 +41,7 @@ jobs:
           ref: next
 
       - name: Checkout Ecosystem
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: ${{ env.ECOSYSTEM_CI_REPO }}
           path: ecosystem-ci
