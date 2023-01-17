@@ -69,8 +69,7 @@ class QuarkusControllerConfigurationBuilder {
         public KubernetesDependentResourceConfig configFrom(
                 KubernetesDependent configAnnotation,
                 ControllerConfiguration parentConfiguration, Class originatingClass) {
-            final var original = super.configFrom(configAnnotation,
-                    parentConfiguration, originatingClass);
+            final var original = super.configFrom(configAnnotation, parentConfiguration, originatingClass);
             // make the configuration bytecode-serializable
             return new QuarkusKubernetesDependentResourceConfig(original.namespaces(),
                     original.labelSelector(),
