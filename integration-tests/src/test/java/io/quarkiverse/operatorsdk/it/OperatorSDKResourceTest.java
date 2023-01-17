@@ -18,13 +18,26 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.DisabledOnIntegrationTest;
 import io.quarkus.test.junit.QuarkusTest;
 
+/**
+ * This test will only pass in IDEs if you set your runner to set env properties as follow:
+ *
+ * <ul>
+ * <li>{@link NamespaceFromEnvReconciler#ENV_VAR_NAME} = {@link NamespaceFromEnvReconciler#FROM_ENV_VAR_NS}</li>
+ * <li>QUARKUS_OPERATOR_SDK_CONTROLLERS_{@link EmptyReconciler#NAME}.toUpperCase()_NAMESPACES =
+ * {@link EmptyReconciler#FROM_ENV_NS1} + ", " + {@link EmptyReconciler#FROM_ENV_NS2}</li>
+ * <li>{@link VariableNSReconciler#ENV_VAR_NAME} = {@link VariableNSReconciler#EXPECTED_NS_VALUE}</li>
+ * <li>QUARKUS_OPERATOR_SDK_CONTROLLERS_ReconcilerUtils.getDefaultNameFor(KeycloakController.class).toUpperCase()_NAMESPACES =
+ * {@link KeycloakController#FROM_ENV}</li>
+ * </ul>
+ *
+ * See also {@code maven-surefire-plugin} configuration where these same environment variables are set
+ */
 @QuarkusTest
 @QuarkusTestResource(CustomKubernetesServerTestResource.class)
 class OperatorSDKResourceTest {
 
     @BeforeAll
     static void setup() {
-
     }
 
     @Test
@@ -78,7 +91,8 @@ class OperatorSDKResourceTest {
                 DependentDefiningReconciler.NAME, NamespaceFromEnvReconciler.NAME,
                 EmptyReconciler.NAME, VariableNSReconciler.NAME,
                 AnnotatedDependentReconciler.NAME,
-                ReconcilerUtils.getDefaultNameFor(KeycloakController.class)));
+                ReconcilerUtils.getDefaultNameFor(KeycloakController.class),
+                NameWithSpaceReconciler.NAME));
     }
 
     @Test
@@ -123,6 +137,13 @@ class OperatorSDKResourceTest {
                 .then()
                 .statusCode(200)
                 .body("namespaces", hasItem("default"));
+
+        given()
+                .when()
+                .get("/operator/" + NameWithSpaceReconciler.NAME + "/config")
+                .then()
+                .statusCode(200)
+                .body("namespaces", hasItem("name-with-space"));
     }
 
     @Test
@@ -177,6 +198,8 @@ class OperatorSDKResourceTest {
 
     @Test
     void shouldExpandVariablesInNamespacesConfigurationFromAnnotation() {
+        assertThat(System.getenv(NamespaceFromEnvReconciler.ENV_VAR_NAME),
+                is(NamespaceFromEnvReconciler.FROM_ENV_VAR_NS));
         given()
                 .when()
                 .get("/operator/" + NamespaceFromEnvReconciler.NAME + "/config")
@@ -189,6 +212,7 @@ class OperatorSDKResourceTest {
 
     @Test
     void shouldExpandVariablesInNamespacesConfigurationFromProperties() {
+        assertThat(System.getenv(VariableNSReconciler.ENV_VAR_NAME), is(VariableNSReconciler.EXPECTED_NS_VALUE));
         given()
                 .when()
                 .get("/operator/" + VariableNSReconciler.NAME + "/config")
