@@ -20,6 +20,38 @@ public class RuntimeConfigurationUtils {
     private final static Converter<HashSet<String>> converter = Converters.newCollectionConverter(
             Converters.getImplicitConverter(String.class), HashSet::new);
     private final static Config config = ConfigProvider.getConfig();
+    private static final String QUARKUS_OPERATOR_SDK_CONTROLLERS = "quarkus.operator-sdk.controllers.";
+    private static final String NAMESPACES = ".namespaces";
+
+    public static Set<String> namespacesFromConfigurationFor(String controllerName) {
+        // first check if we have a property for the namespaces
+        var namespaces = getNamespacesFromConfigFor(controllerName);
+
+        // check if the controller name is doubly quoted
+        if (namespaces == null) {
+            namespaces = getNamespacesFromConfigFor("\"" + controllerName + '"');
+        }
+
+        // check if the controller name is simply quoted
+        if (namespaces == null) {
+            namespaces = getNamespacesFromConfigFor("'" + controllerName + '\'');
+        }
+
+        if (namespaces != null) {
+            // if we have a property, use it and convert it to a set of namespaces
+            final var namespacesValue = namespaces.getValue();
+            if (namespacesValue != null) {
+                return stringPropValueAsSet(namespacesValue);
+            }
+        }
+
+        return null;
+    }
+
+    private static org.eclipse.microprofile.config.ConfigValue getNamespacesFromConfigFor(String controllerName) {
+        final var propName = QUARKUS_OPERATOR_SDK_CONTROLLERS + controllerName + NAMESPACES;
+        return config.getConfigValue(propName);
+    }
 
     public static Set<String> stringPropValueAsSet(String propValue) {
         return converter.convert(propValue).stream().map(String::trim).collect(Collectors.toSet());
