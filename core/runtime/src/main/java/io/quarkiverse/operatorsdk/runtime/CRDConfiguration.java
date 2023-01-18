@@ -53,4 +53,11 @@ public class CRDConfiguration {
     @ConfigItem(defaultValue = "false")
     public Boolean generateAll;
 
+    /**
+     * Whether the CRDs should be generated in parallel. Please note that this feature is experimental
+     * and it may lead to unexpected results.
+     */
+    @ConfigItem(defaultValue = "false")
+    public Boolean generateInParallel;
+
 }
