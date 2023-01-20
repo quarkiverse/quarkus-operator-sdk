@@ -2,7 +2,6 @@ package io.quarkiverse.operatorsdk.deployment;
 
 import java.lang.annotation.Annotation;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -35,7 +34,6 @@ import io.quarkiverse.operatorsdk.runtime.NoOpMetricsProvider;
 import io.quarkiverse.operatorsdk.runtime.OperatorHealthCheck;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
-import io.quarkiverse.operatorsdk.runtime.ResourceInfo;
 import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.Version;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
@@ -264,21 +262,12 @@ class OperatorSDKProcessor {
     }
 
     @BuildStep(onlyIf = IsRBACEnabled.class)
-    @SuppressWarnings("unchecked")
     public void addRBACForResources(BuildProducer<DecoratorBuildItem> decorators,
             ConfigurationServiceBuildItem configurations) {
 
         final var configs = configurations.getControllerConfigs();
-        final var mappings = new HashMap<String, ResourceInfo>(configs.size());
-        configs.forEach((controllerName, config) -> {
-            final var augmented = ResourceInfo.createFrom(config.getResourceClass(),
-                    config.getResourceTypeName(),
-                    controllerName, config.isStatusPresentAndNotVoid());
-            mappings.put(controllerName, augmented);
-        });
-
         decorators.produce(new DecoratorBuildItem(
-                new AddClusterRolesDecorator(mappings, buildTimeConfiguration.crd.validate)));
+                new AddClusterRolesDecorator(configs, buildTimeConfiguration.crd.validate)));
         decorators.produce(new DecoratorBuildItem(
                 new AddRoleBindingsDecorator(configs, buildTimeConfiguration.crd.validate)));
     }
