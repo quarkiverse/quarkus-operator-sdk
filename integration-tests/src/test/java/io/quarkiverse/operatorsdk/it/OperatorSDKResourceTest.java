@@ -88,8 +88,9 @@ class OperatorSDKResourceTest {
                 ReconcilerUtils.getDefaultNameFor(SecretReconciler.class),
                 ReconcilerUtils.getDefaultNameFor(GatewayReconciler.class),
                 DependentDefiningReconciler.NAME, NamespaceFromEnvReconciler.NAME,
-                EmptyReconciler.NAME, VariableNSReconciler.NAME, ReconcilerUtils.getDefaultNameFor(
-                        KeycloakController.class)));
+                EmptyReconciler.NAME, VariableNSReconciler.NAME,
+                ReconcilerUtils.getDefaultNameFor(KeycloakController.class),
+                NameWithSpaceReconciler.NAME));
     }
 
     @Test
@@ -134,6 +135,13 @@ class OperatorSDKResourceTest {
                 .then()
                 .statusCode(200)
                 .body("namespaces", hasItem("default"));
+
+        given()
+                .when()
+                .get("/operator/" + NameWithSpaceReconciler.NAME + "/config")
+                .then()
+                .statusCode(200)
+                .body("namespaces", hasItem("name-with-space"));
     }
 
     @Test

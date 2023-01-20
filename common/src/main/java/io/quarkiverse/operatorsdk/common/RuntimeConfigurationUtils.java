@@ -15,7 +15,6 @@ import io.smallrye.config.Converters;
 import io.smallrye.config.ExpressionConfigSourceInterceptor;
 
 public class RuntimeConfigurationUtils {
-
     private static final ExpressionConfigSourceInterceptor RESOLVER = new ExpressionConfigSourceInterceptor();
     private final static Converter<HashSet<String>> converter = Converters.newCollectionConverter(
             Converters.getImplicitConverter(String.class), HashSet::new);
@@ -25,36 +24,16 @@ public class RuntimeConfigurationUtils {
 
     public static Set<String> namespacesFromConfigurationFor(String controllerName) {
         // first check if we have a property for the namespaces
-        var namespaces = getNamespacesFromConfigFor(controllerName);
-
-        // check if the controller name is doubly quoted
-        if (namespaces == null) {
-            namespaces = getNamespacesFromConfigFor("\"" + controllerName + '"');
-        }
-
-        // check if the controller name is simply quoted
-        if (namespaces == null) {
-            namespaces = getNamespacesFromConfigFor("'" + controllerName + '\'');
-        }
+        var propName = QUARKUS_OPERATOR_SDK_CONTROLLERS + controllerName + NAMESPACES;
+        var configValue = config.getConfigValue(propName);
+        var namespaces = configValue.getValue();
 
         if (namespaces != null) {
             // if we have a property, use it and convert it to a set of namespaces
-            final var namespacesValue = namespaces.getValue();
-            if (namespacesValue != null) {
-                return stringPropValueAsSet(namespacesValue);
-            }
+            return converter.convert(namespaces).stream().map(String::trim).collect(Collectors.toSet());
         }
 
         return null;
-    }
-
-    private static org.eclipse.microprofile.config.ConfigValue getNamespacesFromConfigFor(String controllerName) {
-        final var propName = QUARKUS_OPERATOR_SDK_CONTROLLERS + controllerName + NAMESPACES;
-        return config.getConfigValue(propName);
-    }
-
-    public static Set<String> stringPropValueAsSet(String propValue) {
-        return converter.convert(propValue).stream().map(String::trim).collect(Collectors.toSet());
     }
 
     public static String expandedValueFrom(String unexpandedValue) {
