@@ -42,6 +42,7 @@ import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ClassLoadingUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
+import io.quarkiverse.operatorsdk.common.Constants;
 import io.quarkiverse.operatorsdk.common.DependentResourceAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ReconciledAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
@@ -55,6 +56,7 @@ import io.quarkiverse.operatorsdk.runtime.QuarkusManagedWorkflow;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.builditem.LiveReloadBuildItem;
+import io.quarkus.deployment.util.JandexUtil;
 
 @SuppressWarnings("rawtypes")
 class QuarkusControllerConfigurationBuilder {
@@ -307,9 +309,21 @@ class QuarkusControllerConfigurationBuilder {
             DependentResourceAugmentedClassInfo dependent,
             IndexView index,
             QuarkusControllerConfiguration configuration) {
-        final var dependentType = dependent.classInfo();
+        final var dependentResourceType = dependent.classInfo();
 
-        final var dependentTypeName = dependentType.name().toString();
+        // resolve the associated resource type
+        final var drTypeName = dependentResourceType.name();
+        final var types = JandexUtil.resolveTypeParameters(drTypeName, Constants.DEPENDENT_RESOURCE,
+                index);
+        final String resourceTypeName;
+        if (types.size() == 2) {
+            resourceTypeName = types.get(0).name().toString();
+        } else {
+            throw new IllegalArgumentException(
+                    "Improperly parameterized DependentResource implementation: " + drTypeName.toString());
+        }
+
+        final var dependentTypeName = drTypeName.toString();
         final var dependentClass = loadClass(dependentTypeName, DependentResource.class);
 
         final var cfg = DependentResourceConfigurationResolver.extractConfigurationFromConfigured(
@@ -335,8 +349,9 @@ class QuarkusControllerConfigurationBuilder {
                 dependentConfig, "useEventSourceWithName", AnnotationValue::asString,
                 () -> null);
 
-        return new DependentResourceSpecMetadata(dependentClass, null, cfg, dependent.nameOrFailIfUnset(),
-                dependsOn, readyCondition, reconcilePrecondition, deletePostcondition, useEventSourceWithName);
+        return new DependentResourceSpecMetadata(dependentClass, cfg, dependent.nameOrFailIfUnset(),
+                dependsOn, readyCondition, reconcilePrecondition, deletePostcondition, useEventSourceWithName,
+                resourceTypeName);
 
     }
 
