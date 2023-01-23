@@ -9,6 +9,7 @@ import org.jboss.jandex.AnnotationValue;
 
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
+import io.quarkiverse.operatorsdk.common.RuntimeConfigurationUtils;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 
@@ -35,7 +36,12 @@ class BuildTimeHybridControllerConfiguration {
                 () -> operatorConfiguration.generationAware.orElse(true));
     }
 
-    Set<String> namespaces() {
+    Set<String> namespaces(String controllerName) {
+        final var namespaces = RuntimeConfigurationUtils.namespacesFromConfigurationFor(controllerName);
+        if (namespaces != null && !namespaces.isEmpty()) {
+            return namespaces;
+        }
+
         return ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
                 "namespaces",
                 v -> new HashSet<>(Arrays.asList(v.asStringArray())),

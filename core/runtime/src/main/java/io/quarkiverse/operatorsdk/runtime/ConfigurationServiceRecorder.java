@@ -1,5 +1,6 @@
 package io.quarkiverse.operatorsdk.runtime;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -54,24 +55,25 @@ public class ConfigurationServiceRecorder {
 
             // replace already set namespaces if there is a configuration property overriding the value
             final var namespaces = RuntimeConfigurationUtils.namespacesFromConfigurationFor(name);
-            if (namespaces != null) {
+            if (namespaces != null && !Constants.DEFAULT_NAMESPACES_SET.equals(namespaces)
+                    && !c.getNamespaces().equals(namespaces)) {
                 c.setNamespaces(namespaces);
-            } else {
-                // this happens when we have namespace configuration from annotation
-                // check if we need to expand variable names from namespaces
-                if (c.isNamespaceExpansionRequired()) {
-                    final var expandedNS = ((QuarkusControllerConfiguration<?>) c).getNamespaces()
-                            .stream()
-                            .map(RuntimeConfigurationUtils::expandedValueFrom)
-                            .collect(Collectors.toSet());
-                    c.setNamespaces(expandedNS);
-                }
+            }
 
+            // check for potential expansion need:
+            // this happens when we have namespace configuration from annotation
+            // check if we need to expand variable names from namespaces
+            if (c.isNamespaceExpansionRequired()) {
+                final var expandedNS = ((QuarkusControllerConfiguration<?>) c).getNamespaces()
+                        .stream()
+                        .map(RuntimeConfigurationUtils::expandedValueFrom)
+                        .collect(Collectors.toSet());
+                c.setNamespaces(expandedNS);
             }
 
             // if despite all of this, we still haven't set the namespaces, use the operator-level default if it exists
             if (Constants.DEFAULT_NAMESPACES_SET.equals(c.getNamespaces())) {
-                runTimeConfiguration.namespaces.ifPresent(c::setNamespaces);
+                runTimeConfiguration.namespaces.ifPresent(ns -> c.setNamespaces(new HashSet<>(ns)));
             }
         });
 

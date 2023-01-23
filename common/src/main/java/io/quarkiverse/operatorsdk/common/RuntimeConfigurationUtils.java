@@ -13,6 +13,8 @@ import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.Converters;
 import io.smallrye.config.ExpressionConfigSourceInterceptor;
+import io.smallrye.config.Expressions;
+import io.smallrye.config.common.utils.StringUtil;
 
 public class RuntimeConfigurationUtils {
     private static final ExpressionConfigSourceInterceptor RESOLVER = new ExpressionConfigSourceInterceptor();
@@ -23,17 +25,48 @@ public class RuntimeConfigurationUtils {
     private static final String NAMESPACES = ".namespaces";
 
     public static Set<String> namespacesFromConfigurationFor(String controllerName) {
-        // first check if we have a property for the namespaces
-        var propName = QUARKUS_OPERATOR_SDK_CONTROLLERS + controllerName + NAMESPACES;
-        var configValue = config.getConfigValue(propName);
-        var namespaces = configValue.getValue();
+        final var propName = namespacePropertyKey(controllerName);
 
-        if (namespaces != null) {
-            // if we have a property, use it and convert it to a set of namespaces
-            return converter.convert(namespaces).stream().map(String::trim).collect(Collectors.toSet());
+        // todo: might need to check several alternatives here :(
+        // first check system properties
+        final var envOrSysVarName = StringUtil.replaceNonAlphanumericByUnderscores(propName.toUpperCase());
+        var namespaces = System.getProperty(envOrSysVarName);
+        if (namespaces != null && !namespaces.isBlank()) {
+            return toSet(namespaces);
+        }
+
+        // then check env variables
+        namespaces = System.getenv(envOrSysVarName);
+        if (namespaces != null && !namespaces.isBlank()) {
+            return toSet(namespaces);
+        }
+
+        // finally check if we have a property for the namespaces
+        var configValue = config.getConfigValue(propName);
+        namespaces = Expressions.withoutExpansion(configValue::getRawValue);
+        if (namespaces != null && !namespaces.isBlank()) {
+            return toSet(namespaces);
         }
 
         return null;
+    }
+
+    private static Set<String> toSet(String namespaces) {
+        return converter.convert(namespaces).stream().map(String::trim).collect(Collectors.toSet());
+    }
+
+    // todo: remove
+    public static String expandedValueFrom2(String unexpanded) {
+        if (unexpanded.startsWith("${")) {
+            final var substring = unexpanded.substring(2, unexpanded.length() - 1);
+            var expanded = System.getProperty(substring);
+            if (expanded != null) {
+                return expanded;
+            }
+            return System.getenv(substring);
+        } else {
+            return unexpanded;
+        }
     }
 
     public static String expandedValueFrom(String unexpandedValue) {
@@ -63,5 +96,9 @@ public class RuntimeConfigurationUtils {
         };
         final var value = RESOLVER.getValue(context, unexpandedValue);
         return value.getValue() == null ? unexpandedValue : value.getValue();
+    }
+
+    public static String namespacePropertyKey(String controllerName) {
+        return QUARKUS_OPERATOR_SDK_CONTROLLERS + controllerName + NAMESPACES;
     }
 }
