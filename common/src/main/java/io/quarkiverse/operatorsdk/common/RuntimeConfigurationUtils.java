@@ -55,7 +55,7 @@ public class RuntimeConfigurationUtils {
         return converter.convert(namespaces).stream().map(String::trim).collect(Collectors.toSet());
     }
 
-    // todo: remove
+    // todo: remove, use {@link #expandedValueFrom} when it actually works
     public static String expandedValueFrom2(String unexpanded) {
         if (unexpanded.startsWith("${")) {
             final var substring = unexpanded.substring(2, unexpanded.length() - 1);

@@ -180,7 +180,7 @@ class QuarkusControllerConfigurationBuilder {
             }
 
             // extract the namespaces
-            final var namespaces = configExtractor.namespaces();
+            final var namespaces = configExtractor.namespaces(name);
 
             final var dependentResourceInfos = reconcilerInfo.getDependentResourceInfos();
             final List<DependentResourceSpec> dependentResources;

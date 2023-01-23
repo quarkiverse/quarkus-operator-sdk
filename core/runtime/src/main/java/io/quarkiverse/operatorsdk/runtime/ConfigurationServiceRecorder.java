@@ -66,7 +66,7 @@ public class ConfigurationServiceRecorder {
             if (c.isNamespaceExpansionRequired()) {
                 final var expandedNS = ((QuarkusControllerConfiguration<?>) c).getNamespaces()
                         .stream()
-                        .map(RuntimeConfigurationUtils::expandedValueFrom)
+                        .map(RuntimeConfigurationUtils::expandedValueFrom2) // todo: fix
                         .collect(Collectors.toSet());
                 c.setNamespaces(expandedNS);
             }
