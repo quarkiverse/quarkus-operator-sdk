@@ -23,6 +23,7 @@ import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.Constants;
 import io.quarkiverse.operatorsdk.common.CustomResourceAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.common.RuntimeConfigurationUtils;
 import io.quarkiverse.operatorsdk.runtime.AppEventListener;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
@@ -49,6 +50,7 @@ import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.deployment.builditem.LaunchModeBuildItem;
 import io.quarkus.deployment.builditem.LiveReloadBuildItem;
+import io.quarkus.deployment.builditem.RunTimeConfigurationDefaultBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ForceNonWeakReflectiveClassBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.deployment.metrics.MetricsCapabilityBuildItem;
@@ -145,7 +147,8 @@ class OperatorSDKProcessor {
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             BuildProducer<GeneratedCRDInfoBuildItem> generatedCRDInfo,
-            LiveReloadBuildItem liveReload, LaunchModeBuildItem launchMode) {
+            LiveReloadBuildItem liveReload, LaunchModeBuildItem launchMode,
+            BuildProducer<RunTimeConfigurationDefaultBuildItem> runtimeConfig) {
 
         // check versions alignment
         final var version = Version.loadFromProperties();
@@ -218,7 +221,13 @@ class OperatorSDKProcessor {
                         }
                     }
 
-                    return builder.build(raci, configurableInfos);
+                    // todo: is this actually needed? Doesn't seem to impact availability of config properties one way or the other
+                    final var configuration = builder.build(raci, configurableInfos);
+                    runtimeConfig.produce(new RunTimeConfigurationDefaultBuildItem(
+                            RuntimeConfigurationUtils.namespacePropertyKey(configuration.getName()),
+                            io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_ALL_NAMESPACES));
+
+                    return configuration;
                 })
                 .collect(Collectors.toList());
 
