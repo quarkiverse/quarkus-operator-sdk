@@ -1,5 +1,6 @@
 package io.quarkiverse.operatorsdk.runtime;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -19,7 +20,6 @@ import io.quarkus.arc.Arc;
 import io.quarkus.jackson.ObjectMapperCustomizer;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.annotations.Recorder;
-import io.smallrye.config.common.utils.StringUtil;
 
 @Recorder
 public class ConfigurationServiceRecorder {
@@ -40,7 +40,6 @@ public class ConfigurationServiceRecorder {
             // then override with controller-specific configuration if present
             if (extConfig != null) {
                 extConfig.finalizer.ifPresent(c::setFinalizer);
-                extConfig.namespaces.ifPresent(c::setNamespaces);
                 extConfig.selector.ifPresent(c::setLabelSelector);
                 c.setRetryConfiguration(RetryConfigurationResolver.resolve(extConfig.retry));
             }
@@ -54,26 +53,27 @@ public class ConfigurationServiceRecorder {
                 c.setRetryConfiguration(null);
             }
 
-            // check if we need to expand variable names from namespaces
-            if (c.isNamespaceExpansionRequired()) {
-                final var expandedNS = ((QuarkusControllerConfiguration<?>) c).getNamespaces().stream()
-                        .map(RuntimeConfigurationUtils::expandedValueFrom).collect(Collectors.toSet());
-                c.setNamespaces(expandedNS);
+            // replace already set namespaces if there is a configuration property overriding the value
+            final var namespaces = RuntimeConfigurationUtils.namespacesFromConfigurationFor(name);
+            if (namespaces != null && !Constants.DEFAULT_NAMESPACES_SET.equals(namespaces)
+                    && !c.getNamespaces().equals(namespaces)) {
+                c.setNamespaces(namespaces);
             }
 
-            // replace already set namespaces if there is an env variable overriding the value
-            final var propName = "quarkus.operator-sdk.controllers." + name + ".namespaces";
-            final var envVarName = StringUtil.replaceNonAlphanumericByUnderscores(
-                    propName.toUpperCase());
-            final var nsFromEnv = System.getProperty(envVarName);
-            if (nsFromEnv != null) {
-                final var namespaces = RuntimeConfigurationUtils.stringPropValueAsSet(nsFromEnv);
-                c.setNamespaces(namespaces);
+            // check for potential expansion need:
+            // this happens when we have namespace configuration from annotation
+            // check if we need to expand variable names from namespaces
+            if (c.isNamespaceExpansionRequired()) {
+                final var expandedNS = ((QuarkusControllerConfiguration<?>) c).getNamespaces()
+                        .stream()
+                        .map(RuntimeConfigurationUtils::expandedValueFrom2) // todo: fix
+                        .collect(Collectors.toSet());
+                c.setNamespaces(expandedNS);
             }
 
             // if despite all of this, we still haven't set the namespaces, use the operator-level default if it exists
             if (Constants.DEFAULT_NAMESPACES_SET.equals(c.getNamespaces())) {
-                runTimeConfiguration.namespaces.ifPresent(c::setNamespaces);
+                runTimeConfiguration.namespaces.ifPresent(ns -> c.setNamespaces(new HashSet<>(ns)));
             }
         });
 

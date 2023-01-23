@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 
@@ -13,7 +12,6 @@ import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.RuntimeConfigurationUtils;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
-import io.smallrye.config.Expressions;
 
 class BuildTimeHybridControllerConfiguration {
 
@@ -39,31 +37,11 @@ class BuildTimeHybridControllerConfiguration {
     }
 
     Set<String> namespaces(String controllerName) {
-        // first check if we have a property for the namespaces, retrieving it without expanding it
-        final var config = ConfigProvider.getConfig();
-        var withoutExpansion = Expressions.withoutExpansion(
-                () -> config.getConfigValue("quarkus.operator-sdk.controllers."
-                        + controllerName + ".namespaces").getRawValue());
-
-        // check if the controller name is doubly quoted
-        if (withoutExpansion == null) {
-            withoutExpansion = Expressions.withoutExpansion(
-                    () -> config.getConfigValue("quarkus.operator-sdk.controllers.\""
-                            + controllerName + "\".namespaces").getRawValue());
+        final var namespaces = RuntimeConfigurationUtils.namespacesFromConfigurationFor(controllerName);
+        if (namespaces != null && !namespaces.isEmpty()) {
+            return namespaces;
         }
 
-        // check if the controller name is simply quoted
-        if (withoutExpansion == null) {
-            withoutExpansion = Expressions.withoutExpansion(
-                    () -> config.getConfigValue("quarkus.operator-sdk.controllers.'"
-                            + controllerName + "'.namespaces").getRawValue());
-        }
-
-        if (withoutExpansion != null) {
-            // if we have a property, use it and convert it to a set of namespaces,
-            // potentially with unexpanded variable names as namespace names
-            return RuntimeConfigurationUtils.stringPropValueAsSet(withoutExpansion);
-        }
         return ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
                 "namespaces",
                 v -> new HashSet<>(Arrays.asList(v.asStringArray())),
