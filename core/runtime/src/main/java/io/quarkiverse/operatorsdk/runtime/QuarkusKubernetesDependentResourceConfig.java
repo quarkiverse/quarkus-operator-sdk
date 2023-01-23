@@ -30,6 +30,10 @@ public class QuarkusKubernetesDependentResourceConfig<R extends HasMetadata> ext
         return namespaces();
     }
 
+    public void setNamespaces(Set<String> namespaces) {
+        super.setNamespaces(namespaces);
+    }
+
     // Needed for the recordable constructor
     @SuppressWarnings("unused")
     public String getLabelSelector() {
