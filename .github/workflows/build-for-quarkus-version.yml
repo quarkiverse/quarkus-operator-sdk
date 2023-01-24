@@ -49,7 +49,7 @@ jobs:
         run: mvn -B formatter:validate install -Dnative --file pom.xml -Dquarkus.test.arg-line="-DNAMESPACE_FROM_ENV=fromEnvVarNS -DQUARKUS_OPERATOR_SDK_CONTROLLERS_EMPTY_NAMESPACES=fromEnv1,fromEnv2 -DVARIABLE_NS_ENV=variableNSFromEnv -DQUARKUS_OPERATOR_SDK_CONTROLLERS_KEYCLOAKCONTROLLER_NAMESPACES=keycloak-ns"
 
       - name: Kubernetes KinD Cluster
-        uses: container-tools/kind-action@v1
+        uses: container-tools/kind-action@v2
         with:
           version: v0.11.1
           registry: true
