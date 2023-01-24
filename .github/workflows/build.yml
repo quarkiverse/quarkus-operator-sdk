@@ -32,7 +32,7 @@ jobs:
   #        run: |
   #          versions=$(curl https://registry.quarkus.io/client/platforms | jq '[.platforms[].streams[].releases[].version | select(endswith("Final"))]')
   #          echo "${versions}"
-  #          echo "::set-output name=matrix::${versions}"
+  #          echo "{matrix}=${versions}" >> $GITHUB_OUTPUT
   build-for-quarkus-version:
     #    needs: get-quarkus-versions
     strategy:
