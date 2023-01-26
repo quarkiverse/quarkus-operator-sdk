@@ -82,8 +82,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private RetryConfiguration retryConfiguration;
     private String labelSelector;
     private final Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata;
-    @IgnoreProperty
-    private boolean namespaceExpansionRequired;
     private Retry retry;
     private RateLimiter rateLimiter;
     private ManagedWorkflow<R> workflow;
@@ -113,7 +111,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.workflow = workflow;
         this.retryConfiguration = ControllerConfiguration.super.getRetryConfiguration();
         this.namespaces = Set.copyOf(namespaces);
-        namespaceExpansionRequired = namespaces.stream().anyMatch(ns -> ns.contains("${"));
         setFinalizer(finalizerName);
         this.labelSelector = labelSelector;
         this.statusPresentAndNotVoid = statusPresentAndNotVoid;
@@ -191,10 +188,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
                 }
             });
         }
-    }
-
-    public boolean isNamespaceExpansionRequired() {
-        return namespaceExpansionRequired;
     }
 
     @Override

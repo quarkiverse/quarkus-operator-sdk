@@ -23,7 +23,6 @@ import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.Constants;
 import io.quarkiverse.operatorsdk.common.CustomResourceAugmentedClassInfo;
-import io.quarkiverse.operatorsdk.common.RuntimeConfigurationUtils;
 import io.quarkiverse.operatorsdk.runtime.AppEventListener;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
@@ -35,6 +34,7 @@ import io.quarkiverse.operatorsdk.runtime.NoOpMetricsProvider;
 import io.quarkiverse.operatorsdk.runtime.OperatorHealthCheck;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
+import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.Version;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
@@ -220,14 +220,7 @@ class OperatorSDKProcessor {
                             }
                         }
                     }
-
-                    // todo: is this actually needed? Doesn't seem to impact availability of config properties one way or the other
-                    final var configuration = builder.build(raci, configurableInfos);
-                    runtimeConfig.produce(new RunTimeConfigurationDefaultBuildItem(
-                            RuntimeConfigurationUtils.namespacePropertyKey(configuration.getName()),
-                            io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_ALL_NAMESPACES));
-
-                    return configuration;
+                    return builder.build(raci, configurableInfos);
                 })
                 .collect(Collectors.toList());
 
@@ -269,6 +262,19 @@ class OperatorSDKProcessor {
         generatedCRDInfo.produce(new GeneratedCRDInfoBuildItem(crdInfo));
 
         return new ConfigurationServiceBuildItem(version, controllerConfigs);
+    }
+
+    @BuildStep
+    void recordConfiguration(
+            ConfigurationServiceBuildItem configurationService,
+            BuildProducer<RunTimeConfigurationDefaultBuildItem> runTimeConfigurationDefault) {
+        for (Map.Entry<String, QuarkusControllerConfiguration> entry : configurationService.getControllerConfigs().entrySet()) {
+            String controller = entry.getKey();
+            QuarkusControllerConfiguration configuration = entry.getValue();
+            String namespaces = String.join(",", configuration.getNamespaces());
+            runTimeConfigurationDefault.produce(new RunTimeConfigurationDefaultBuildItem(
+                    "quarkus.operator-sdk.controllers." + controller + ".namespaces", namespaces));
+        }
     }
 
     private void registerAssociatedClassesForReflection(BuildProducer<ReflectiveClassBuildItem> reflectionClasses,

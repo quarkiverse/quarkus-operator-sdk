@@ -51,3 +51,6 @@ jobs:
         run: ./ecosystem-ci/setup-and-test
         env:
           ECOSYSTEM_CI_TOKEN: ${{ secrets.ECOSYSTEM_CI_TOKEN }}
+          NAMESPACE_FROM_ENV: fromEnvVarNS
+          QUARKUS_OPERATOR_SDK_CONTROLLERS_EMPTY_NAMESPACES: "fromEnv1,fromEnv2"
+          VARIABLE_NS_ENV: variableNSFromEnv

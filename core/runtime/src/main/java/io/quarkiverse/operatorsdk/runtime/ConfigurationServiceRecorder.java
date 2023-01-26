@@ -1,10 +1,11 @@
 package io.quarkiverse.operatorsdk.runtime;
 
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
+
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 
@@ -16,8 +17,6 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
-import io.quarkiverse.operatorsdk.common.RuntimeConfigurationUtils;
 import io.quarkus.arc.Arc;
 import io.quarkus.jackson.ObjectMapperCustomizer;
 import io.quarkus.runtime.LaunchMode;
@@ -61,25 +60,13 @@ public class ConfigurationServiceRecorder {
             }
 
             // replace already set namespaces if there is a configuration property overriding the value
-            final var namespaces = RuntimeConfigurationUtils.namespacesFromConfigurationFor(name);
-            if (namespaces != null && !Constants.DEFAULT_NAMESPACES_SET.equals(namespaces)
-                    && !c.getNamespaces().equals(namespaces)) {
-                c.setNamespaces(namespaces);
-            }
-
-            // check for potential expansion need:
-            // this happens when we have namespace configuration from annotation
-            // check if we need to expand variable names from namespaces
-            if (c.isNamespaceExpansionRequired()) {
-                final var expandedNS = ((QuarkusControllerConfiguration<?>) c).getNamespaces()
-                        .stream()
-                        .map(RuntimeConfigurationUtils::expandedValueFrom)
-                        .collect(Collectors.toSet());
-                c.setNamespaces(expandedNS);
+            RunTimeControllerConfiguration runTimeControllerConfiguration = runTimeConfiguration.controllers.get(name);
+            if (runTimeControllerConfiguration != null) {
+                runTimeControllerConfiguration.namespaces.map(HashSet::new).ifPresent(c::setNamespaces);
             }
 
             // if despite all of this, we still haven't set the namespaces, use the operator-level default if it exists
-            if (Constants.DEFAULT_NAMESPACES_SET.equals(c.getNamespaces())) {
+            if (DEFAULT_NAMESPACES_SET.equals(c.getNamespaces())) {
                 runTimeConfiguration.namespaces.ifPresent(ns -> c.setNamespaces(new HashSet<>(ns)));
             }
         });
