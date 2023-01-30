@@ -47,6 +47,7 @@ public class ConfigurationServiceRecorder {
             if (extConfig != null) {
                 extConfig.finalizer.ifPresent(c::setFinalizer);
                 extConfig.selector.ifPresent(c::setLabelSelector);
+                extConfig.namespaces.map(HashSet::new).ifPresent(c::setNamespaces);
                 c.setRetryConfiguration(RetryConfigurationResolver.resolve(extConfig.retry));
             }
 
@@ -57,12 +58,6 @@ public class ConfigurationServiceRecorder {
             final var retry = c.getRetry();
             if (retry == null) {
                 c.setRetryConfiguration(null);
-            }
-
-            // replace already set namespaces if there is a configuration property overriding the value
-            RunTimeControllerConfiguration runTimeControllerConfiguration = runTimeConfiguration.controllers.get(name);
-            if (runTimeControllerConfiguration != null) {
-                runTimeControllerConfiguration.namespaces.map(HashSet::new).ifPresent(c::setNamespaces);
             }
 
             // if despite all of this, we still haven't set the namespaces, use the operator-level default if it exists
