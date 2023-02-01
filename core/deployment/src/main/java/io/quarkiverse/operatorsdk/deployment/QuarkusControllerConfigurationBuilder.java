@@ -6,11 +6,8 @@ import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATI
 import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -50,7 +47,6 @@ import io.quarkiverse.operatorsdk.common.DependentResourceAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ReconciledAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.SelectiveAugmentedClassInfo;
-import io.quarkiverse.operatorsdk.runtime.BuildTimeControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.DependentResourceSpecMetadata;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
@@ -201,20 +197,6 @@ class QuarkusControllerConfigurationBuilder {
                         rateLimiterConfigurableInfo);
             }
 
-            Set<String> namespaces = ConfigurationUtils.annotationValueOrDefault(
-                    controllerAnnotation,
-                    "namespaces",
-                    v -> new HashSet<>(Arrays.asList(v.asStringArray())),
-                    () -> io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET);
-
-            BuildTimeControllerConfiguration controllerConfiguration = buildTimeConfiguration.controllers.get(name);
-            if (controllerConfiguration != null) {
-                Optional<List<String>> overrideNamespaces = controllerConfiguration.namespaces;
-                if (overrideNamespaces.isPresent()) {
-                    namespaces = new HashSet<>(overrideNamespaces.get());
-                }
-            }
-
             // create the configuration
             final ReconciledAugmentedClassInfo<?> primaryInfo = reconcilerInfo.associatedResourceInfo();
             final var primaryAsResource = primaryInfo.asResourceTargeting();
@@ -236,7 +218,7 @@ class QuarkusControllerConfigurationBuilder {
                     primaryAsResource.version(),
                     configExtractor.generationAware(),
                     resourceClass,
-                    namespaces,
+                    configExtractor.namespaces(),
                     getFinalizer(controllerAnnotation, resourceFullName),
                     getLabelSelector(controllerAnnotation),
                     primaryAsResource.hasNonVoidStatus(),
