@@ -34,7 +34,6 @@ import io.quarkiverse.operatorsdk.runtime.NoOpMetricsProvider;
 import io.quarkiverse.operatorsdk.runtime.OperatorHealthCheck;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
-import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.Version;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
@@ -220,7 +219,16 @@ class OperatorSDKProcessor {
                             }
                         }
                     }
-                    return builder.build(raci, configurableInfos);
+
+                    // create default configuration entry to ensure that env variable names will be properly mapped to what we expect. This is needed because the conversion function is not a bijection i.e. there's no way to tell that OPERATOR_SDK should be mapped to operator-sdk instead of operator.sdk for example.
+                    final var configuration = builder.build(raci, configurableInfos);
+                    @SuppressWarnings("unchecked")
+                    final var namespaces = String.join(",", configuration.getNamespaces());
+                    runtimeConfig.produce(new RunTimeConfigurationDefaultBuildItem(
+                            "quarkus.operator-sdk.controllers." + configuration.getName() + ".namespaces",
+                            namespaces));
+
+                    return configuration;
                 })
                 .collect(Collectors.toList());
 
@@ -262,19 +270,6 @@ class OperatorSDKProcessor {
         generatedCRDInfo.produce(new GeneratedCRDInfoBuildItem(crdInfo));
 
         return new ConfigurationServiceBuildItem(version, controllerConfigs);
-    }
-
-    @BuildStep
-    void recordConfiguration(
-            ConfigurationServiceBuildItem configurationService,
-            BuildProducer<RunTimeConfigurationDefaultBuildItem> runTimeConfigurationDefault) {
-        for (Map.Entry<String, QuarkusControllerConfiguration> entry : configurationService.getControllerConfigs().entrySet()) {
-            String controller = entry.getKey();
-            QuarkusControllerConfiguration configuration = entry.getValue();
-            String namespaces = String.join(",", configuration.getNamespaces());
-            runTimeConfigurationDefault.produce(new RunTimeConfigurationDefaultBuildItem(
-                    "quarkus.operator-sdk.controllers." + controller + ".namespaces", namespaces));
-        }
     }
 
     private void registerAssociatedClassesForReflection(BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
