@@ -12,7 +12,7 @@
   <packaging>pom</packaging>
   <name>Quarkus - Operator SDK - Parent</name>
   <properties>
-    <quarkus.version>2.16.0.Final</quarkus.version>
+    <quarkus.version>999-SNAPSHOT</quarkus.version>
     <java-operator-sdk.version>4.3.0-SNAPSHOT</java-operator-sdk.version>
   </properties>
 
@@ -21,7 +21,7 @@
       <id>ossrh</id>
       <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
       <snapshots>
-        <enabled>false</enabled>
+        <enabled>true</enabled>
         <updatePolicy>always</updatePolicy>
       </snapshots>
     </repository>
@@ -32,7 +32,7 @@
       <id>ossrh</id>
       <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
       <snapshots>
-        <enabled>false</enabled>
+        <enabled>true</enabled>
         <updatePolicy>always</updatePolicy>
       </snapshots>
     </pluginRepository>

@@ -75,6 +75,19 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <environmentVariables>
+            <NAMESPACE_FROM_ENV>fromEnvVarNS</NAMESPACE_FROM_ENV>
+            <QUARKUS_OPERATOR_SDK_CONTROLLERS_EMPTY_NAMESPACES>fromEnv1,fromEnv2
+            </QUARKUS_OPERATOR_SDK_CONTROLLERS_EMPTY_NAMESPACES>
+            <VARIABLE_NS_ENV>variableNSFromEnv</VARIABLE_NS_ENV>
+            <QUARKUS_OPERATOR_SDK_CONTROLLERS_KEYCLOAKCONTROLLER_NAMESPACES>keycloak-ns
+            </QUARKUS_OPERATOR_SDK_CONTROLLERS_KEYCLOAKCONTROLLER_NAMESPACES>
+          </environmentVariables>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   <profiles>
@@ -91,16 +104,19 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
               <skipTests>${native.surefire.skip}</skipTests>
-              <environmentVariables>
-                <NAMESPACE_FROM_ENV>fromEnvVarNS</NAMESPACE_FROM_ENV>
-                <QUARKUS_OPERATOR_SDK_CONTROLLERS_EMPTY_NAMESPACES>fromEnv1,  fromEnv2</QUARKUS_OPERATOR_SDK_CONTROLLERS_EMPTY_NAMESPACES>
-                <VARIABLE_NS_ENV>variableNSFromEnv</VARIABLE_NS_ENV>
-              </environmentVariables>
               <systemPropertyVariables>
                 <java.util.logging.manager>org.jboss.logmanager.LogManager
                 </java.util.logging.manager>
                 <maven.home>${maven.home}</maven.home>
               </systemPropertyVariables>
+              <environmentVariables>
+                <NAMESPACE_FROM_ENV>fromEnvVarNS</NAMESPACE_FROM_ENV>
+                <QUARKUS_OPERATOR_SDK_CONTROLLERS_EMPTY_NAMESPACES>fromEnv1,fromEnv2
+                </QUARKUS_OPERATOR_SDK_CONTROLLERS_EMPTY_NAMESPACES>
+                <VARIABLE_NS_ENV>variableNSFromEnv</VARIABLE_NS_ENV>
+                <QUARKUS_OPERATOR_SDK_CONTROLLERS_KEYCLOAKCONTROLLER_NAMESPACES>keycloak-ns
+                </QUARKUS_OPERATOR_SDK_CONTROLLERS_KEYCLOAKCONTROLLER_NAMESPACES>
+              </environmentVariables>
             </configuration>
           </plugin>
           <plugin>
@@ -120,6 +136,14 @@
                     </java.util.logging.manager>
                     <maven.home>${maven.home}</maven.home>
                   </systemPropertyVariables>
+                  <environmentVariables>
+                    <NAMESPACE_FROM_ENV>fromEnvVarNS</NAMESPACE_FROM_ENV>
+                    <QUARKUS_OPERATOR_SDK_CONTROLLERS_EMPTY_NAMESPACES>fromEnv1,fromEnv2
+                    </QUARKUS_OPERATOR_SDK_CONTROLLERS_EMPTY_NAMESPACES>
+                    <VARIABLE_NS_ENV>variableNSFromEnv</VARIABLE_NS_ENV>
+                    <QUARKUS_OPERATOR_SDK_CONTROLLERS_KEYCLOAKCONTROLLER_NAMESPACES>keycloak-ns
+                    </QUARKUS_OPERATOR_SDK_CONTROLLERS_KEYCLOAKCONTROLLER_NAMESPACES>
+                  </environmentVariables>
                 </configuration>
               </execution>
             </executions>

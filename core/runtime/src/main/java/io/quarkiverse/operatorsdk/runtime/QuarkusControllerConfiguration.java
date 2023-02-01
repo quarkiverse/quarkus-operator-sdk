@@ -2,7 +2,6 @@ package io.quarkiverse.operatorsdk.runtime;
 
 import java.lang.annotation.Annotation;
 import java.time.Duration;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -16,7 +15,6 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
@@ -84,8 +82,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private RetryConfiguration retryConfiguration;
     private String labelSelector;
     private final Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata;
-    @IgnoreProperty
-    private boolean namespaceExpansionRequired;
     private Retry retry;
     private RateLimiter rateLimiter;
     private ManagedWorkflow<R> workflow;
@@ -114,7 +110,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.dependentsMetadata = dependentsMetadata;
         this.workflow = workflow;
         this.retryConfiguration = ControllerConfiguration.super.getRetryConfiguration();
-        setNamespaces(namespaces);
+        this.namespaces = Set.copyOf(namespaces);
         setFinalizer(finalizerName);
         this.labelSelector = labelSelector;
         this.statusPresentAndNotVoid = statusPresentAndNotVoid;
@@ -180,18 +176,18 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return namespaces;
     }
 
-    void setNamespaces(Collection<String> namespaces) {
-        if (namespaces != null && !namespaces.isEmpty()) {
-            this.namespaces = Set.copyOf(namespaces);
-            namespaceExpansionRequired = namespaces.stream().anyMatch(ns -> ns.contains("${"));
-        } else {
-            this.namespaces = Constants.DEFAULT_NAMESPACES_SET;
-            namespaceExpansionRequired = false;
+    void setNamespaces(Set<String> namespaces) {
+        if (!namespaces.equals(this.namespaces)) {
+            this.namespaces = namespaces;
+            // propagate namespace changes to the dependents' config if needed
+            this.dependentsMetadata.forEach((name, spec) -> {
+                final var config = spec.getDependentResourceConfig();
+                if (config instanceof QuarkusKubernetesDependentResourceConfig) {
+                    final var qConfig = (QuarkusKubernetesDependentResourceConfig) config;
+                    qConfig.setNamespaces(this.namespaces);
+                }
+            });
         }
-    }
-
-    public boolean isNamespaceExpansionRequired() {
-        return namespaceExpansionRequired;
     }
 
     @Override

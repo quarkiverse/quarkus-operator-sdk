@@ -49,6 +49,7 @@ import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.deployment.builditem.LaunchModeBuildItem;
 import io.quarkus.deployment.builditem.LiveReloadBuildItem;
+import io.quarkus.deployment.builditem.RunTimeConfigurationDefaultBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ForceNonWeakReflectiveClassBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.deployment.metrics.MetricsCapabilityBuildItem;
@@ -145,7 +146,8 @@ class OperatorSDKProcessor {
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             BuildProducer<GeneratedCRDInfoBuildItem> generatedCRDInfo,
-            LiveReloadBuildItem liveReload, LaunchModeBuildItem launchMode) {
+            LiveReloadBuildItem liveReload, LaunchModeBuildItem launchMode,
+            BuildProducer<RunTimeConfigurationDefaultBuildItem> runtimeConfig) {
 
         // check versions alignment
         final var version = Version.loadFromProperties();
@@ -218,7 +220,15 @@ class OperatorSDKProcessor {
                         }
                     }
 
-                    return builder.build(raci, configurableInfos);
+                    // create default configuration entry to ensure that env variable names will be properly mapped to what we expect. This is needed because the conversion function is not a bijection i.e. there's no way to tell that OPERATOR_SDK should be mapped to operator-sdk instead of operator.sdk for example.
+                    final var configuration = builder.build(raci, configurableInfos);
+                    @SuppressWarnings("unchecked")
+                    final var namespaces = String.join(",", configuration.getNamespaces());
+                    runtimeConfig.produce(new RunTimeConfigurationDefaultBuildItem(
+                            "quarkus.operator-sdk.controllers." + configuration.getName() + ".namespaces",
+                            namespaces));
+
+                    return configuration;
                 })
                 .collect(Collectors.toList());
 

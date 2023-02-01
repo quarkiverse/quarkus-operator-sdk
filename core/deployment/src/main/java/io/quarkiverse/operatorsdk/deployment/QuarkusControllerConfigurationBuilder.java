@@ -69,8 +69,7 @@ class QuarkusControllerConfigurationBuilder {
         public KubernetesDependentResourceConfig configFrom(
                 KubernetesDependent configAnnotation,
                 ControllerConfiguration parentConfiguration, Class originatingClass) {
-            final var original = super.configFrom(configAnnotation,
-                    parentConfiguration, originatingClass);
+            final var original = super.configFrom(configAnnotation, parentConfiguration, originatingClass);
             // make the configuration bytecode-serializable
             return new QuarkusKubernetesDependentResourceConfig(original.namespaces(),
                     original.labelSelector(),
@@ -198,9 +197,6 @@ class QuarkusControllerConfigurationBuilder {
                         rateLimiterConfigurableInfo);
             }
 
-            // extract the namespaces
-            final var namespaces = configExtractor.namespaces(name);
-
             // create the configuration
             final ReconciledAugmentedClassInfo<?> primaryInfo = reconcilerInfo.associatedResourceInfo();
             final var primaryAsResource = primaryInfo.asResourceTargeting();
@@ -222,7 +218,7 @@ class QuarkusControllerConfigurationBuilder {
                     primaryAsResource.version(),
                     configExtractor.generationAware(),
                     resourceClass,
-                    namespaces,
+                    configExtractor.namespaces(),
                     getFinalizer(controllerAnnotation, resourceFullName),
                     getLabelSelector(controllerAnnotation),
                     primaryAsResource.hasNonVoidStatus(),
