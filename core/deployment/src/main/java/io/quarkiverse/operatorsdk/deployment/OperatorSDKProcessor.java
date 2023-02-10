@@ -18,6 +18,7 @@ import org.jboss.logging.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
@@ -68,6 +69,7 @@ class OperatorSDKProcessor {
     static final Logger log = Logger.getLogger(OperatorSDKProcessor.class.getName());
 
     private static final String FEATURE = "operator-sdk";
+    private static final String DEFAULT_METRIC_BINDER_CLASS_NAME = "io.quarkiverse.operatorsdk.runtime.MicrometerMetricsProvider";
 
     private BuildTimeOperatorConfiguration buildTimeConfiguration;
 
@@ -83,16 +85,17 @@ class OperatorSDKProcessor {
         // mark ObjectMapper as non-removable
         unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(ObjectMapper.class));
 
+        // mark Metrics implementations as unremovable
+        unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(Metrics.class));
+
         // register CDI qualifier for customization of the fabric8 ObjectMapper
         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(
                 KubernetesClientSerializationCustomizer.class));
 
-        // only add micrometer support if the capability is supported
+        // add default bean based on whether or not micrometer is enabled
         if (metricsCapability.map(m -> m.metricsSupported(MetricsFactory.MICROMETER)).orElse(false)) {
             // we use the class name to not import any micrometer-related dependencies to prevent activation
-            additionalBeans.produce(
-                    AdditionalBeanBuildItem.unremovableOf(
-                            "io.quarkiverse.operatorsdk.runtime.MicrometerMetricsProvider"));
+            additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(DEFAULT_METRIC_BINDER_CLASS_NAME));
         } else {
             additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(NoOpMetricsProvider.class));
         }

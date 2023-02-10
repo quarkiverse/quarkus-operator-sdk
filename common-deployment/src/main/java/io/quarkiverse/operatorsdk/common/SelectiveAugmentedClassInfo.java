@@ -62,7 +62,7 @@ public abstract class SelectiveAugmentedClassInfo {
     }
 
     private void initTypesIfNeeded(IndexView index) {
-        if (types == null && !OBJECT.equals(extendedOrImplementedClass)) {
+        if (expectedParameterTypesCardinality > 0 && types == null && !OBJECT.equals(extendedOrImplementedClass)) {
             final List<Type> typeParameters;
             try {
                 typeParameters = JandexUtil.resolveTypeParameters(classInfo.name(),
