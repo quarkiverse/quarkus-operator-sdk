@@ -134,6 +134,11 @@ public class OperatorSDKResource {
         public boolean apply() {
             return conf.getCRDGenerationInfo().isApplyCRDs();
         }
+
+        @JsonProperty("metrics")
+        public String metrics() {
+            return conf.getMetrics().getClass().getName();
+        }
     }
 
     static class JSONControllerConfiguration {
