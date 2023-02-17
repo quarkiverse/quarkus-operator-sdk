@@ -21,6 +21,7 @@ import io.quarkus.arc.Arc;
 import io.quarkus.jackson.ObjectMapperCustomizer;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.annotations.Recorder;
+import io.quarkus.runtime.configuration.ProfileManager;
 
 @Recorder
 public class ConfigurationServiceRecorder {
@@ -78,10 +79,12 @@ public class ConfigurationServiceRecorder {
                     .forEach(c -> c.customize(mapper));
 
             // deactivate leader election in dev mode
-            var leaderElectionConfiguration = container.instance(LeaderElectionConfiguration.class).get();
-            if (LaunchMode.DEVELOPMENT == launchMode && leaderElectionConfiguration != null) {
-                leaderElectionConfiguration = null;
-                log.info("Leader election configuration ignored in Dev mode");
+            LeaderElectionConfiguration leaderElectionConfiguration = null;
+            final var profile = ProfileManager.getActiveProfile();
+            if (buildTimeConfiguration.activateLeaderElectionForProfiles.contains(profile)) {
+                leaderElectionConfiguration = container.instance(LeaderElectionConfiguration.class).get();
+            } else {
+                log.info("Leader election deactivated for " + profile + " profile");
             }
 
             return new QuarkusConfigurationService(

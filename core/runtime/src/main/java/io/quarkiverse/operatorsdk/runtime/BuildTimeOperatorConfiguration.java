@@ -1,5 +1,6 @@
 package io.quarkiverse.operatorsdk.runtime;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -62,4 +63,11 @@ public class BuildTimeOperatorConfiguration {
      */
     @ConfigItem(defaultValue = "true")
     public Boolean failOnVersionCheck;
+
+    /**
+     * The list of profile names for which leader election should be activated. This is mostly useful for testing scenarios
+     * where leader election behavior might lead to issues.
+     */
+    @ConfigItem(defaultValue = "prod")
+    public List<String> activateLeaderElectionForProfiles;
 }

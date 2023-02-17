@@ -7,6 +7,7 @@ import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetrics;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
+import io.quarkus.arc.DefaultBean;
 
 @Singleton
 public class MicrometerMetricsProvider implements MeterBinder {
@@ -18,6 +19,7 @@ public class MicrometerMetricsProvider implements MeterBinder {
     }
 
     @Produces
+    @DefaultBean
     public Metrics getMetrics() {
         return metrics;
     }
