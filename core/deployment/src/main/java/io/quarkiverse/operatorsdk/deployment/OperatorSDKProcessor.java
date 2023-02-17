@@ -18,6 +18,7 @@ import org.jboss.logging.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
+import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
@@ -85,12 +86,14 @@ class OperatorSDKProcessor {
         // mark ObjectMapper as non-removable
         unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(ObjectMapper.class));
 
-        // mark Metrics implementations as unremovable
+        // mark Metrics implementations as non-removable
         unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(Metrics.class));
 
+        // mark LeaderElectionConfiguration as non-removable
+        unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(LeaderElectionConfiguration.class));
+
         // register CDI qualifier for customization of the fabric8 ObjectMapper
-        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(
-                KubernetesClientSerializationCustomizer.class));
+        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(KubernetesClientSerializationCustomizer.class));
 
         // add default bean based on whether or not micrometer is enabled
         if (metricsCapability.map(m -> m.metricsSupported(MetricsFactory.MICROMETER)).orElse(false)) {

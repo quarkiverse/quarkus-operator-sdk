@@ -145,6 +145,11 @@ public class OperatorSDKResource {
             final var metrics = conf.getMetrics();
             return metrics instanceof TestMetrics && ((TestMetrics) metrics).isRegistryBound();
         }
+
+        @JsonProperty("leaderConfig")
+        public String leaderConfig() {
+            return conf.getLeaderElectionConfiguration().map(lec -> lec.getClass().getName()).orElse(null);
+        }
     }
 
     static class JSONControllerConfiguration {

@@ -72,6 +72,12 @@ class OperatorSDKResourceTest {
     }
 
     @Test
+    void shouldOnlyHaveLeaderElectionActivatedInRequestedModes() {
+        given().when().get("/operator/config").then().statusCode(200).body(
+                "leaderConfig", equalTo(TestLeaderElectionConfiguration.class.getName()));
+    }
+
+    @Test
     void controllerShouldExist() {
         // first check that we're not always returning true for any controller name :)
         given().when().get("/operator/does_not_exist").then().statusCode(200).body(is("false"));
