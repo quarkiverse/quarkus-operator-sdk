@@ -46,7 +46,7 @@ jobs:
       - name: Build with Maven (Native)
         #        todo: currently need to pass env variables as args but should find a better way
         #        see also: https://github.com/quarkusio/quarkus/pull/28692
-        run: mvn -B formatter:validate install -Dnative --file pom.xml -Dquarkus.test.arg-line="-DNAMESPACE_FROM_ENV=fromEnvVarNS -DQUARKUS_OPERATOR_SDK_CONTROLLERS_EMPTY_NAMESPACES=fromEnv1,fromEnv2 -DVARIABLE_NS_ENV=variableNSFromEnv -DQUARKUS_OPERATOR_SDK_CONTROLLERS_KEYCLOAKCONTROLLER_NAMESPACES=keycloak-ns"
+        run: mvn -B formatter:validate install -Dnative --file pom.xml
 
       - name: Kubernetes KinD Cluster
         uses: container-tools/kind-action@v2
