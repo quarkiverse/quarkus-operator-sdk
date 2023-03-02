@@ -44,8 +44,6 @@ jobs:
         run: mvn -B formatter:validate install --file pom.xml
 
       - name: Build with Maven (Native)
-        #        todo: currently need to pass env variables as args but should find a better way
-        #        see also: https://github.com/quarkusio/quarkus/pull/28692
         run: mvn -B formatter:validate install -Dnative --file pom.xml
 
       - name: Kubernetes KinD Cluster
