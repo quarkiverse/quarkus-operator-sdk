@@ -1,14 +1,15 @@
 package io.quarkiverse.operatorsdk.runtime;
 
+import jakarta.annotation.Priority;
+import jakarta.enterprise.event.Observes;
+import jakarta.interceptor.Interceptor;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.javaoperatorsdk.operator.Operator;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
-import jakarta.annotation.Priority;
-import jakarta.enterprise.event.Observes;
-import jakarta.interceptor.Interceptor;
 
 public class AppEventListener {
     private static final Logger log = LoggerFactory.getLogger(AppEventListener.class);

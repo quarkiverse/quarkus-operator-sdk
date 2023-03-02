@@ -14,16 +14,17 @@
  */
 package io.quarkiverse.operatorsdk.samples.joke;
 
-import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
-import org.jboss.resteasy.reactive.RestPath;
-import org.jboss.resteasy.reactive.RestQuery;
-
-import io.quarkiverse.operatorsdk.samples.joke.JokeRequestSpec.Category;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+
+import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
+import org.jboss.resteasy.reactive.RestPath;
+import org.jboss.resteasy.reactive.RestQuery;
+
+import io.quarkiverse.operatorsdk.samples.joke.JokeRequestSpec.Category;
 
 @ApplicationScoped
 @RegisterRestClient(configKey = "joke-api")
