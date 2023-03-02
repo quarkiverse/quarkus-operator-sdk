@@ -2,6 +2,10 @@ package io.quarkiverse.operatorsdk.runtime;
 
 import static io.quarkiverse.operatorsdk.runtime.CRDUtils.applyCRD;
 
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Singleton;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,9 +14,6 @@ import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkus.arc.DefaultBean;
-import jakarta.enterprise.inject.Instance;
-import jakarta.enterprise.inject.Produces;
-import jakarta.inject.Singleton;
 
 @Singleton
 public class OperatorProducer {

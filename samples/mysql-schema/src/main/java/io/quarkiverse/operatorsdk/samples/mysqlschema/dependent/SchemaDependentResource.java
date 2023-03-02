@@ -10,6 +10,9 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,8 +26,6 @@ import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePoll
 import io.quarkiverse.operatorsdk.samples.mysqlschema.MySQLSchema;
 import io.quarkiverse.operatorsdk.samples.mysqlschema.schema.Schema;
 import io.quarkiverse.operatorsdk.samples.mysqlschema.schema.SchemaService;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class SchemaDependentResource

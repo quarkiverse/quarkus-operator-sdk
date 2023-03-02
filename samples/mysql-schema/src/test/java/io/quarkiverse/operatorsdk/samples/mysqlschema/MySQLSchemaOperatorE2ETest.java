@@ -13,6 +13,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import jakarta.inject.Inject;
+
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +24,6 @@ import io.javaoperatorsdk.operator.Operator;
 import io.quarkiverse.operatorsdk.samples.mysqlschema.schema.SchemaService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
-import jakarta.inject.Inject;
 
 @QuarkusTest
 class MySQLSchemaOperatorE2ETest {

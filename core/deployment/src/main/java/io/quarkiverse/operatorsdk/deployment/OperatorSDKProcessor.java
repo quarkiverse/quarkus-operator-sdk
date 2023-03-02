@@ -10,6 +10,8 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import jakarta.inject.Singleton;
+
 import org.jboss.jandex.DotName;
 import org.jboss.logging.Logger;
 
@@ -63,7 +65,6 @@ import io.quarkus.kubernetes.spi.DecoratorBuildItem;
 import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.metrics.MetricsFactory;
-import jakarta.inject.Singleton;
 
 @SuppressWarnings({ "unused" })
 class OperatorSDKProcessor {

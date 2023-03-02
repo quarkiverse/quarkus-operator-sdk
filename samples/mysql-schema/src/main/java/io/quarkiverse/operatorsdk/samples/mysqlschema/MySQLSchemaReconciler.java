@@ -3,6 +3,8 @@ package io.quarkiverse.operatorsdk.samples.mysqlschema;
 import static io.quarkiverse.operatorsdk.samples.mysqlschema.dependent.SchemaDependentResource.decode;
 import static io.quarkiverse.operatorsdk.samples.mysqlschema.dependent.SecretDependentResource.MYSQL_SECRET_USERNAME;
 
+import jakarta.inject.Inject;
+
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -16,7 +18,6 @@ import io.quarkiverse.operatorsdk.samples.mysqlschema.dependent.SecretDependentR
 import io.quarkiverse.operatorsdk.samples.mysqlschema.schema.Schema;
 import io.quarkiverse.operatorsdk.samples.mysqlschema.schema.SchemaService;
 import io.quarkus.logging.Log;
-import jakarta.inject.Inject;
 
 @ControllerConfiguration(dependents = {
         @Dependent(type = SecretDependentResource.class),

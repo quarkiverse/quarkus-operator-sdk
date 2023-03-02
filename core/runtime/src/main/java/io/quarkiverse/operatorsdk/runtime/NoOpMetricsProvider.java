@@ -1,9 +1,10 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import io.javaoperatorsdk.operator.api.monitoring.Metrics;
-import io.quarkus.arc.DefaultBean;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Singleton;
+
+import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.quarkus.arc.DefaultBean;
 
 @Singleton
 public class NoOpMetricsProvider {

@@ -1,9 +1,10 @@
 package io.quarkiverse.operatorsdk.it;
 
+import jakarta.inject.Singleton;
+
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
-import jakarta.inject.Singleton;
 
 @Singleton
 public class TestMetrics implements Metrics, MeterBinder {

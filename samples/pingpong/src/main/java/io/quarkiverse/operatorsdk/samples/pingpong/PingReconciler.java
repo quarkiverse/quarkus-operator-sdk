@@ -16,12 +16,13 @@ package io.quarkiverse.operatorsdk.samples.pingpong;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
+import jakarta.inject.Inject;
+
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import jakarta.inject.Inject;
 
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
 @SuppressWarnings("unused")
