@@ -5,36 +5,15 @@ import static io.quarkiverse.operatorsdk.bundle.deployment.BundleGenerator.MANIF
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 
 import org.jboss.logging.Logger;
 
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
-import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
-import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
-import io.fabric8.kubernetes.api.model.rbac.Role;
-import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.RoleRef;
-import io.fabric8.kubernetes.api.model.rbac.Subject;
-import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionBuilder;
-import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionFluent;
-import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionSpecFluent;
-import io.fabric8.openshift.api.model.operatorhub.v1alpha1.NamedInstallStrategyFluent;
-import io.fabric8.openshift.api.model.operatorhub.v1alpha1.StrategyDeploymentPermissionsBuilder;
-import io.fabric8.openshift.api.model.operatorhub.v1alpha1.StrategyDeploymentPermissionsFluent;
+import io.fabric8.kubernetes.api.model.rbac.*;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.*;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder.RequiredCRD;
 import io.quarkiverse.operatorsdk.common.ReconciledAugmentedClassInfo;
@@ -56,8 +35,8 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     private static final String IMAGE_PNG = "image/png";
 
     private final ClusterServiceVersionBuilder csvBuilder;
-    private final Set<String> ownedCRs = new HashSet<>();
-    private final Set<String> requiredCRs = new HashSet<>();
+    private final SortedSet<String> ownedCRs = new TreeSet<>();
+    private final SortedSet<String> requiredCRs = new TreeSet<>();
     private final Path kubernetesResources;
 
     public CsvManifestsBuilder(CSVMetadataHolder metadata, List<ReconcilerAugmentedClassInfo> controllers,
@@ -392,6 +371,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         return Collections.emptyList();
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private void appendRulesInPermission(StrategyDeploymentPermissionsFluent permission, List<PolicyRule> rules) {
         for (PolicyRule rule : rules) {
             if (!permission.hasMatchingRule(r -> r.equals(rule))) {
