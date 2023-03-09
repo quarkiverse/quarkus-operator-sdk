@@ -228,8 +228,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
 
     @Override
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public DependentResource createFrom(DependentResourceSpec spec,
-            QuarkusControllerConfiguration configuration) {
+    public DependentResource createFrom(DependentResourceSpec spec, QuarkusControllerConfiguration configuration) {
         final var dependentKey = getDependentKey(configuration, spec);
         var dependentResource = knownDependents.get(dependentKey);
         if (dependentResource == null) {
@@ -261,9 +260,15 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         return controllerName + "#" + dependentName;
     }
 
-    @SuppressWarnings("unchecked")
-    public <R, P extends HasMetadata> DependentResource<R, P> getDependentByName(String controllerName, String dependentName) {
-        return (DependentResource<R, P>) knownDependents.get(getDependentKeyFromNames(controllerName, dependentName));
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public DependentResourceSpecMetadata getDependentByName(String controllerName, String dependentName) {
+        return (DependentResourceSpecMetadata) controllerConfigurations()
+                .filter(cc -> controllerName.equals(cc.getName()))
+                .findFirst()
+                .flatMap(cc -> cc.getDependentResources().stream()
+                        .filter(drs -> dependentName.equals(((DependentResourceSpec) drs).getName()))
+                        .findFirst())
+                .orElse(null);
     }
 
     @SuppressWarnings("rawtypes")
