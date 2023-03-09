@@ -24,7 +24,6 @@ import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
@@ -90,12 +89,9 @@ public class OperatorSDKResource {
         if (dr == null) {
             return null;
         }
-        if (dr instanceof DependentResourceConfigurator) {
-            DependentResourceConfigurator<?> configurator = (DependentResourceConfigurator<?>) dr;
-            return configurator.configuration()
-                    .filter(c -> c instanceof KubernetesDependentResourceConfig)
-                    .map(c -> new JSONKubernetesResourceConfig((KubernetesDependentResourceConfig<?>) c))
-                    .orElse(null);
+        final var config = dr.getDependentResourceConfig();
+        if (config instanceof KubernetesDependentResourceConfig) {
+            return new JSONKubernetesResourceConfig((KubernetesDependentResourceConfig<?>) config);
         }
         return null;
     }

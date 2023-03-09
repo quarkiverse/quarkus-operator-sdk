@@ -2,6 +2,7 @@ package io.quarkiverse.operatorsdk.runtime;
 
 import static io.quarkiverse.operatorsdk.runtime.CRDUtils.applyCRD;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Singleton;
@@ -19,14 +20,20 @@ import io.quarkus.arc.DefaultBean;
 public class OperatorProducer {
     private static final Logger log = LoggerFactory.getLogger(OperatorProducer.class);
 
-    /*
-     * Note that using ApplicationScoped instead of Singleton will create a proxy, which instantiates the Operator using the
-     * default constructor resulting in the configuration service provider being initialized, thus leading to failure when it is
-     * set again.
+    /**
+     * Produces an application-scoped Operator, given the provided configuration and detected reconcilers. We previously
+     * produced the operator instance as singleton-scoped but this prevents being able to inject the operator instance in
+     * reconcilers (which we don't necessarily recommend but might be needed for corner cases) due to an infinite loop.
+     * ApplicationScoped being proxy-based allows for breaking the cycle, thus allowing the operator-reconciler parent-child
+     * relation to be handled by CDI.
+     *
+     * @param configuration the {@link QuarkusConfigurationService} providing the configuration for the operator and controllers
+     * @param reconcilers the detected {@link Reconciler} implementations
+     * @return a properly configured {@link Operator} instance
      */
     @Produces
     @DefaultBean
-    @Singleton
+    @ApplicationScoped
     Operator operator(QuarkusConfigurationService configuration, Instance<Reconciler<? extends HasMetadata>> reconcilers) {
         if (configuration.getVersion() instanceof Version) {
             final var version = ((Version) configuration.getVersion());
