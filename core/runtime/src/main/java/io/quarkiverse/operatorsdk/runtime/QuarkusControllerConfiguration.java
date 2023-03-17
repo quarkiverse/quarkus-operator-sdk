@@ -79,6 +79,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private Class<? extends RateLimiter> rateLimiterClass;
     private String finalizer;
     private Set<String> namespaces;
+    private boolean wereNamespacesSet;
     private RetryConfiguration retryConfiguration;
     private String labelSelector;
     private final Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata;
@@ -93,7 +94,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             String name,
             String resourceTypeName,
             String crVersion, boolean generationAware,
-            Class resourceClass, Set<String> namespaces, String finalizerName, String labelSelector,
+            Class resourceClass, Set<String> namespaces,
+            boolean wereNamespacesSet,
+            String finalizerName, String labelSelector,
             boolean statusPresentAndNotVoid, ResourceEventFilter eventFilter,
             Duration maxReconciliationInterval,
             OnAddFilter<R> onAddFilter, OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter,
@@ -111,6 +114,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.workflow = workflow;
         this.retryConfiguration = ControllerConfiguration.super.getRetryConfiguration();
         this.namespaces = Set.copyOf(namespaces);
+        this.wereNamespacesSet = wereNamespacesSet;
         setFinalizer(finalizerName);
         this.labelSelector = labelSelector;
         this.statusPresentAndNotVoid = statusPresentAndNotVoid;
@@ -176,9 +180,11 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return namespaces;
     }
 
+    @SuppressWarnings("unchecked")
     void setNamespaces(Set<String> namespaces) {
         if (!namespaces.equals(this.namespaces)) {
             this.namespaces = namespaces;
+            wereNamespacesSet = true;
             // propagate namespace changes to the dependents' config if needed
             this.dependentsMetadata.forEach((name, spec) -> {
                 final var config = spec.getDependentResourceConfig();
@@ -188,6 +194,10 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
                 }
             });
         }
+    }
+
+    public boolean isWereNamespacesSet() {
+        return wereNamespacesSet;
     }
 
     @Override

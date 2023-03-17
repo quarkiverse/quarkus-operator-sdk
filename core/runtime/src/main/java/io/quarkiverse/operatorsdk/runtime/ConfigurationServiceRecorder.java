@@ -1,7 +1,5 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
-
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -62,7 +60,7 @@ public class ConfigurationServiceRecorder {
             }
 
             // if despite all of this, we still haven't set the namespaces, use the operator-level default if it exists
-            if (DEFAULT_NAMESPACES_SET.equals(c.getNamespaces())) {
+            if (!c.isWereNamespacesSet()) {
                 runTimeConfiguration.namespaces.ifPresent(ns -> c.setNamespaces(new HashSet<>(ns)));
             }
         });
@@ -80,7 +78,7 @@ public class ConfigurationServiceRecorder {
 
             // deactivate leader election in dev mode
             LeaderElectionConfiguration leaderElectionConfiguration = null;
-            final var profile = ProfileManager.getActiveProfile();
+            final var profile = ProfileManager.getActiveProfile(); // todo: use ConfigUtils instead
             if (buildTimeConfiguration.activateLeaderElectionForProfiles.contains(profile)) {
                 leaderElectionConfiguration = container.instance(LeaderElectionConfiguration.class).get();
             } else {
