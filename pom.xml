@@ -12,7 +12,7 @@
   <packaging>pom</packaging>
   <name>Quarkus - Operator SDK - Parent</name>
   <properties>
-    <quarkus.version>3.0.0.Alpha5</quarkus.version>
+    <quarkus.version>3.0.0.Alpha6</quarkus.version>
     <java-operator-sdk.version>4.3.0-SNAPSHOT</java-operator-sdk.version>
   </properties>
 
