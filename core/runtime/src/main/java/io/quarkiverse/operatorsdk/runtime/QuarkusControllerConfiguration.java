@@ -2,11 +2,7 @@ package io.quarkiverse.operatorsdk.runtime;
 
 import java.lang.annotation.Annotation;
 import java.time.Duration;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -81,6 +77,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private Class<? extends RateLimiter> rateLimiterClass;
     private String finalizer;
     private Set<String> namespaces;
+    private boolean wereNamespacesSet;
     private RetryConfiguration retryConfiguration;
     private String labelSelector;
     private final Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata;
@@ -97,7 +94,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             String name,
             String resourceTypeName,
             String crVersion, boolean generationAware,
-            Class resourceClass, Set<String> namespaces, String finalizerName, String labelSelector,
+            Class resourceClass, Set<String> namespaces,
+            boolean wereNamespacesSet,
+            String finalizerName, String labelSelector,
             boolean statusPresentAndNotVoid, ResourceEventFilter eventFilter,
             Duration maxReconciliationInterval,
             OnAddFilter<R> onAddFilter, OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter,
@@ -115,6 +114,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.workflow = workflow;
         this.retryConfiguration = ControllerConfiguration.super.getRetryConfiguration();
         setNamespaces(namespaces);
+        this.wereNamespacesSet = wereNamespacesSet;
         setFinalizer(finalizerName);
         this.labelSelector = labelSelector;
         this.statusPresentAndNotVoid = statusPresentAndNotVoid;
@@ -184,6 +184,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         if (namespaces != null && !namespaces.isEmpty()) {
             this.namespaces = Set.copyOf(namespaces);
             namespaceExpansionRequired = namespaces.stream().anyMatch(ns -> ns.contains("${"));
+            wereNamespacesSet = true;
         } else {
             this.namespaces = Constants.DEFAULT_NAMESPACES_SET;
             namespaceExpansionRequired = false;
@@ -192,6 +193,10 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     public boolean isNamespaceExpansionRequired() {
         return namespaceExpansionRequired;
+    }
+
+    public boolean isWereNamespacesSet() {
+        return wereNamespacesSet;
     }
 
     @Override

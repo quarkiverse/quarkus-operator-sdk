@@ -2,12 +2,12 @@ package io.quarkiverse.operatorsdk.deployment;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.RuntimeConfigurationUtils;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeControllerConfiguration;
@@ -42,9 +42,11 @@ class BuildTimeHybridControllerConfiguration {
             return namespaces;
         }
 
-        return ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
-                "namespaces",
-                v -> new HashSet<>(Arrays.asList(v.asStringArray())),
-                () -> Constants.DEFAULT_NAMESPACES_SET);
+        if (controllerAnnotation != null) {
+            return Optional.ofNullable(controllerAnnotation.value("namespaces"))
+                    .map(v -> new HashSet<>(Arrays.asList(v.asStringArray())))
+                    .orElse(null);
+        }
+        return null;
     }
 }
