@@ -75,6 +75,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final Class<? extends Annotation> retryConfigurationClass;
     private final RateLimiter rateLimiter;
     private final Class<? extends Annotation> rateLimiterConfigurationClass;
+    private boolean wereNamespacesSet;
     private String finalizer;
     private Set<String> namespaces;
     private RetryConfiguration retryConfiguration;
@@ -89,7 +90,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             String name,
             String resourceTypeName,
             String crVersion, boolean generationAware,
-            Class<R> resourceClass, Set<String> namespaces, String finalizerName, String labelSelector,
+            Class<R> resourceClass, Set<String> namespaces,
+            boolean wereNamespacesSet,
+            String finalizerName, String labelSelector,
             boolean statusPresentAndNotVoid,
             List<DependentResourceSpec> dependentResources, ResourceEventFilter<R> eventFilter,
             Duration maxReconciliationInterval,
@@ -104,6 +107,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.resourceClass = resourceClass;
         this.retryConfiguration = ControllerConfiguration.super.getRetryConfiguration();
         setNamespaces(namespaces);
+        this.wereNamespacesSet = wereNamespacesSet;
         setFinalizer(finalizerName);
         this.labelSelector = labelSelector;
         this.statusPresentAndNotVoid = statusPresentAndNotVoid;
@@ -171,6 +175,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         if (namespaces != null && !namespaces.isEmpty()) {
             this.namespaces = Set.copyOf(namespaces);
             namespaceExpansionRequired = namespaces.stream().anyMatch(ns -> ns.contains("${"));
+            wereNamespacesSet = true;
         } else {
             this.namespaces = Constants.DEFAULT_NAMESPACES_SET;
             namespaceExpansionRequired = false;
@@ -179,6 +184,10 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     public boolean isNamespaceExpansionRequired() {
         return namespaceExpansionRequired;
+    }
+
+    public boolean isWereNamespacesSet() {
+        return wereNamespacesSet;
     }
 
     @Override
