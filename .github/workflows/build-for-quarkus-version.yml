@@ -63,9 +63,11 @@ jobs:
 
       - name: Run Joke sample using Quarkus DEV mode
         run: |
-          SCRIPTS=$(pwd)/.github/scripts
           K8S_NAMESPACE=dev
           CURRENT_PWD=$(pwd)
+
+          source .github/scripts/waitFor.sh
+          source .github/scripts/testJokeSample.sh
 
           # Create and set namespace
           kubectl create namespace $K8S_NAMESPACE
@@ -79,10 +81,10 @@ jobs:
           cd $CURRENT_PWD
           
           # Wait until the app installed the jokerequest custom resource definition
-          $SCRIPTS/waitFor.sh crd $K8S_NAMESPACE jokerequests.samples.javaoperatorsdk.io
+          waitFor crd $K8S_NAMESPACE jokerequests.samples.javaoperatorsdk.io
 
           # test joke sample
-          $SCRIPTS/testJokeSample.sh $K8S_NAMESPACE
+          testJokeSample $K8S_NAMESPACE
           
           # Kill running process
           kill -9 $PID
@@ -99,23 +101,25 @@ jobs:
 
       - name: Run Joke sample into Kubernetes using OLM
         run: |
-          SCRIPTS=$(pwd)/.github/scripts
+          source .github/scripts/installOperatorUsingOlm.sh
+          source .github/scripts/testJokeSample.sh
 
           # Install Joke operator
-          $SCRIPTS/installOperatorUsingOlm.sh joke $(pwd)/samples/joke $KIND_REGISTRY
+          installOperatorUsingOlm joke $(pwd)/samples/joke $KIND_REGISTRY
 
           # test joke sample
-          $SCRIPTS/testJokeSample.sh operators
+          testJokeSample operators
 
       - name: Run Ping Pong sample into Kubernetes using OLM
         run: |
-          SCRIPTS=$(pwd)/.github/scripts
+          source .github/scripts/installOperatorUsingOlm.sh
+          source .github/scripts/testPingPongSample.sh
 
           # Install Ping Pong operator
-          $SCRIPTS/installOperatorUsingOlm.sh pingpong $(pwd)/samples/pingpong $KIND_REGISTRY
+          installOperatorUsingOlm pingpong $(pwd)/samples/pingpong $KIND_REGISTRY
 
           # test joke sample
-          $SCRIPTS/testPingPongSample.sh operators
+          testPingPongSample operators
 
       - name: (Only if it failed) Log K8s status to troubleshoot issues
         if: failure()

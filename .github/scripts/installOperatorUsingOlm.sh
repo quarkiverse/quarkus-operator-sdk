@@ -7,6 +7,8 @@ BUNDLE_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/$NAME-manifest-bundle:latest
 CATALOG_IMAGE=$KIND_REGISTRY/$REGISTRY_NAMESPACE/$NAME-manifest-catalog:latest
 CURRENT_PWD=$(pwd)
 
+source $CURRENT_PWD/.github/scripts/waitFor.sh
+
 # Create and set namespace
 kubectl config set-context --current --namespace=$K8S_NAMESPACE
 
@@ -40,7 +42,7 @@ spec:
 EOF
 
 # Wait until the catalog source of our operator is up and running
-$CURRENT_PWD/.github/scripts/waitFor.sh pods $K8S_NAMESPACE Running "--selector=olm.catalogSource=$NAME-catalog -o jsonpath='{..status.phase}'"
+waitFor pods $K8S_NAMESPACE Running "--selector=olm.catalogSource=$NAME-catalog -o jsonpath='{..status.phase}'"
 
 # Create a Subscription which triggers the deployment of joke operator
 cat <<EOF | kubectl apply -f -
@@ -57,6 +59,6 @@ spec:
 EOF
 
 # Wait until the operator is up and running
-$CURRENT_PWD/.github/scripts/waitFor.sh csv $K8S_NAMESPACE Succeeded "$NAME-operator -o jsonpath='{.status.phase}'"
+waitFor csv $K8S_NAMESPACE Succeeded "$NAME-operator -o jsonpath='{.status.phase}'"
 
 cd $CURRENT_PWD
