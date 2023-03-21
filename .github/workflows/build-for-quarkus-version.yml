@@ -116,3 +116,15 @@ jobs:
 
           # test joke sample
           $SCRIPTS/testPingPongSample.sh operators
+
+      - name: (Only if it failed) Log K8s status to troubleshoot issues
+        if: failure()
+        run: |
+          echo "Pod statuses in olm namespace:"
+          kubectl get pod -n olm
+          echo "Subscriptions:"
+          kubectl get subs -n operators -o yaml
+          echo "Controllers:"
+          kubectl get pod -n operators
+          echo "Events:
+          kubectl get events
