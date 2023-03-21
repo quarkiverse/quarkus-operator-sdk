@@ -12,6 +12,7 @@ retries=30
 until [[ $retries == 0 ]]; do
   actual=$(kubectl get $RESOURCE -n $NAMESPACE $EXTRA 2>/dev/null || echo "Waiting for $RESOURCE -> $EXPECTED to appear")
   if [[ "$actual" =~ .*"$EXPECTED".* ]]; then
+    echo "Resource \"$RESOURCE\" found with: $actual" 2>&1
     break
   else
     echo "Waiting for resource \"$RESOURCE\" actual: $actual" 2>&1
