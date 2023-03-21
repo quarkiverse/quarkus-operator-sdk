@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # usage:
 # ./waitFor.sh joke operators Succeeded
 # ./waitFor.sh pod operators Running "name -o jsonpath='{.status.phase}'"

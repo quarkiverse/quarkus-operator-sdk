@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 NAME="${1}"
 OPERATOR_LOCATION="${2}"
 KIND_REGISTRY="${3-localhost:5000}"

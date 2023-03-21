@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 NAMESPACE="${1}"
 
 source .github/scripts/waitFor.sh

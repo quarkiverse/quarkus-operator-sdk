@@ -63,6 +63,7 @@ jobs:
 
       - name: Run Joke sample using Quarkus DEV mode
         run: |
+          set -x
           K8S_NAMESPACE=dev
           CURRENT_PWD=$(pwd)
 
@@ -91,6 +92,7 @@ jobs:
 
           # Delete namespace
           kubectl delete namespace $K8S_NAMESPACE
+          set +x
 
       - name: Archive Dev Mode application logs
         uses: actions/upload-artifact@v1
@@ -101,6 +103,7 @@ jobs:
 
       - name: Run Joke sample into Kubernetes using OLM
         run: |
+          set -x
           source .github/scripts/installOperatorUsingOlm.sh
           source .github/scripts/testJokeSample.sh
 
@@ -109,9 +112,11 @@ jobs:
 
           # test joke sample
           testJokeSample operators
+          set +x
 
       - name: Run Ping Pong sample into Kubernetes using OLM
         run: |
+          set -x
           source .github/scripts/installOperatorUsingOlm.sh
           source .github/scripts/testPingPongSample.sh
 
@@ -120,6 +125,7 @@ jobs:
 
           # test joke sample
           testPingPongSample operators
+          set +x
 
       - name: (Only if it failed) Log K8s status to troubleshoot issues
         if: failure()
