@@ -16,7 +16,6 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.quarkiverse.operatorsdk.common.RuntimeConfigurationUtils;
 import io.quarkus.arc.Arc;
 import io.quarkus.jackson.ObjectMapperCustomizer;
@@ -63,8 +62,7 @@ public class ConfigurationServiceRecorder {
 
             // replace already set namespaces if there is a configuration property overriding the value
             final var namespaces = RuntimeConfigurationUtils.namespacesFromConfigurationFor(name);
-            if (namespaces != null && !Constants.DEFAULT_NAMESPACES_SET.equals(namespaces)
-                    && !c.getNamespaces().equals(namespaces)) {
+            if (namespaces != null && !c.getNamespaces().equals(namespaces)) {
                 c.setNamespaces(namespaces);
             }
 
@@ -80,7 +78,7 @@ public class ConfigurationServiceRecorder {
             }
 
             // if despite all of this, we still haven't set the namespaces, use the operator-level default if it exists
-            if (Constants.DEFAULT_NAMESPACES_SET.equals(c.getNamespaces())) {
+            if (!c.isWereNamespacesSet()) {
                 runTimeConfiguration.namespaces.ifPresent(ns -> c.setNamespaces(new HashSet<>(ns)));
             }
         });

@@ -6,11 +6,7 @@ import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATI
 import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.jandex.AnnotationInstance;
@@ -39,20 +35,9 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
-import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInfo;
-import io.quarkiverse.operatorsdk.common.ClassLoadingUtils;
-import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
-import io.quarkiverse.operatorsdk.common.Constants;
-import io.quarkiverse.operatorsdk.common.DependentResourceAugmentedClassInfo;
-import io.quarkiverse.operatorsdk.common.ReconciledAugmentedClassInfo;
-import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
-import io.quarkiverse.operatorsdk.common.SelectiveAugmentedClassInfo;
-import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
-import io.quarkiverse.operatorsdk.runtime.DependentResourceSpecMetadata;
-import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
+import io.quarkiverse.operatorsdk.common.*;
+import io.quarkiverse.operatorsdk.runtime.*;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration.DefaultRateLimiter;
-import io.quarkiverse.operatorsdk.runtime.QuarkusKubernetesDependentResourceConfig;
-import io.quarkiverse.operatorsdk.runtime.QuarkusManagedWorkflow;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.builditem.LiveReloadBuildItem;
@@ -198,7 +183,14 @@ class QuarkusControllerConfigurationBuilder {
             }
 
             // extract the namespaces
-            final var namespaces = configExtractor.namespaces(name);
+            var namespaces = configExtractor.namespaces(name);
+            final boolean wereNamespacesSet;
+            if (namespaces == null) {
+                namespaces = io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
+                wereNamespacesSet = false;
+            } else {
+                wereNamespacesSet = true;
+            }
 
             // create the configuration
             final ReconciledAugmentedClassInfo<?> primaryInfo = reconcilerInfo.associatedResourceInfo();
@@ -222,6 +214,7 @@ class QuarkusControllerConfigurationBuilder {
                     configExtractor.generationAware(),
                     resourceClass,
                     namespaces,
+                    wereNamespacesSet,
                     getFinalizer(controllerAnnotation, resourceFullName),
                     getLabelSelector(controllerAnnotation),
                     primaryAsResource.hasNonVoidStatus(),
