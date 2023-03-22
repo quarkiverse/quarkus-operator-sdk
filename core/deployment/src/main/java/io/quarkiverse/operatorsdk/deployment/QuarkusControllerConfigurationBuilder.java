@@ -26,6 +26,7 @@ import org.jboss.logging.Logger;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -180,14 +181,22 @@ class QuarkusControllerConfigurationBuilder {
             }
 
             // extract the namespaces
-            final var namespaces = configExtractor.namespaces(name);
+            var namespaces = configExtractor.namespaces(name);
+            final boolean wereNamespacesSet;
+            if (namespaces == null) {
+                namespaces = Constants.DEFAULT_NAMESPACES_SET;
+                wereNamespacesSet = false;
+            } else {
+                wereNamespacesSet = true;
+            }
+            final var finalNamespaces = namespaces;
 
             final var dependentResourceInfos = reconcilerInfo.getDependentResourceInfos();
             final List<DependentResourceSpec> dependentResources;
             if (!dependentResourceInfos.isEmpty()) {
                 dependentResources = new ArrayList<>(dependentResourceInfos.size());
                 dependentResourceInfos.forEach(dependent -> {
-                    dependentResources.add(createDependentResourceSpec(dependent, index, namespaces));
+                    dependentResources.add(createDependentResourceSpec(dependent, index, finalNamespaces));
 
                     final var dependentTypeName = dependent.classInfo().name().toString();
                     additionalBeans.produce(
@@ -214,6 +223,7 @@ class QuarkusControllerConfigurationBuilder {
                     configExtractor.generationAware(),
                     resourceClass,
                     namespaces,
+                    wereNamespacesSet,
                     getFinalizer(controllerAnnotation, resourceFullName),
                     getLabelSelector(controllerAnnotation),
                     primaryAsResource.hasNonVoidStatus(),

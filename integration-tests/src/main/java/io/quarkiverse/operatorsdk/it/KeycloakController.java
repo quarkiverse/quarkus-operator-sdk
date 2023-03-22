@@ -9,7 +9,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 @ControllerConfiguration(namespaces = Constants.WATCH_CURRENT_NAMESPACE)
 public class KeycloakController implements Reconciler<Keycloak> {
 
-    public static final String FROM_ENV = "keycloak-ns";
+    public static final String FROM_ENV = Constants.WATCH_ALL_NAMESPACES;
 
     @Override
     public UpdateControl<Keycloak> reconcile(Keycloak keycloak, Context<Keycloak> context)
