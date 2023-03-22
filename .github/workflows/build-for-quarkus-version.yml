@@ -61,7 +61,7 @@ jobs:
           operator-sdk: "latest"
 
       - name: Install Operator Lifecycle Manager and Operator SDK into Kind
-        run: operator-sdk olm install
+        run: operator-sdk olm install --version v0.23.0
 
       - name: Run Joke sample using Quarkus DEV mode
         run: |
@@ -79,13 +79,17 @@ jobs:
           nohup mvn quarkus:dev -Dquarkus.kubernetes-client.devservices.override-kubeconfig=false> app.log 2>&1 &
           PID=$(echo $!)
           cd $CURRENT_PWD
-          
+
           # Wait until the app installed the jokerequest custom resource definition
-          $SCRIPTS/waitFor.sh crd $K8S_NAMESPACE jokerequests.samples.javaoperatorsdk.io
+          if ! $SCRIPTS/waitFor.sh crd $K8S_NAMESPACE jokerequests.samples.javaoperatorsdk.io; then
+            exit 1;
+          fi
 
           # test joke sample
-          $SCRIPTS/testJokeSample.sh $K8S_NAMESPACE
-          
+          if ! $SCRIPTS/testJokeSample.sh $K8S_NAMESPACE; then
+            exit 1;
+          fi;
+
           # Kill running process
           kill -9 $PID
 
@@ -104,17 +108,37 @@ jobs:
           SCRIPTS=$(pwd)/.github/scripts
 
           # Install Joke operator
-          $SCRIPTS/installOperatorUsingOlm.sh joke $(pwd)/samples/joke $KIND_REGISTRY
+          if ! $SCRIPTS/installOperatorUsingOlm.sh joke $(pwd)/samples/joke $KIND_REGISTRY; then
+            exit 1;
+          fi
 
           # test joke sample
-          $SCRIPTS/testJokeSample.sh operators
+          if ! $SCRIPTS/testJokeSample.sh operators; then
+            exit 1;
+          fi;
 
       - name: Run Ping Pong sample into Kubernetes using OLM
         run: |
           SCRIPTS=$(pwd)/.github/scripts
 
           # Install Ping Pong operator
-          $SCRIPTS/installOperatorUsingOlm.sh pingpong $(pwd)/samples/pingpong $KIND_REGISTRY
+          if ! $SCRIPTS/installOperatorUsingOlm.sh pingpong $(pwd)/samples/pingpong $KIND_REGISTRY; then
+            exit 1;
+          fi
 
           # test joke sample
-          $SCRIPTS/testPingPongSample.sh operators
+          if ! $SCRIPTS/testPingPongSample.sh operators; then
+            exit 1;
+          fi
+
+      - name: (Only if it failed) Log K8s status to troubleshoot issues
+        if: failure()
+        run: |
+          echo "Pod statuses in olm namespace:"
+          kubectl get pod -n olm
+          echo "Subscriptions:"
+          kubectl get subs -n operators -o yaml
+          echo "Controllers:"
+          kubectl get pod -n operators
+          echo "Events:
+          kubectl get events

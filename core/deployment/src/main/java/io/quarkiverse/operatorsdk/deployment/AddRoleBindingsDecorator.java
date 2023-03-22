@@ -10,13 +10,11 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 
-import io.dekorate.kubernetes.decorator.Decorator;
 import io.dekorate.kubernetes.decorator.ResourceProvidingDecorator;
 import io.fabric8.kubernetes.api.model.KubernetesListBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
-import io.quarkus.kubernetes.deployment.AddNamespaceDecorator;
 
 @SuppressWarnings("rawtypes")
 public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<KubernetesListBuilder> {
@@ -104,11 +102,5 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
                             + ", this requires a ClusterRoleBinding for which we MUST specify the namespace of the operator ServiceAccount. This can be specified by setting the ''quarkus.kubernetes.namespace'' property. However, as this property is not set, we are leaving the namespace blank to be provided by the user by editing the ''{1}'' ClusterRoleBinding to provide the namespace in which the operator will be deployed.",
                     controllerName, crBindingName);
         }
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public Class<? extends Decorator>[] after() {
-        return new Class[] { AddNamespaceDecorator.class };
     }
 }
