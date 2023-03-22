@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 NAME="${1}"
 OPERATOR_LOCATION="${2}"
 KIND_REGISTRY="${3-localhost:5000}"
@@ -40,7 +41,9 @@ spec:
 EOF
 
 # Wait until the catalog source of our operator is up and running
-$CURRENT_PWD/.github/scripts/waitFor.sh pods $K8S_NAMESPACE Running "--selector=olm.catalogSource=$NAME-catalog -o jsonpath='{..status.phase}'"
+if ! $CURRENT_PWD/.github/scripts/waitFor.sh pods $K8S_NAMESPACE Running "--selector=olm.catalogSource=$NAME-catalog -o jsonpath='{..status.phase}'"; then
+  exit 1;
+fi
 
 # Create a Subscription which triggers the deployment of joke operator
 cat <<EOF | kubectl apply -f -
@@ -57,6 +60,9 @@ spec:
 EOF
 
 # Wait until the operator is up and running
-$CURRENT_PWD/.github/scripts/waitFor.sh csv $K8S_NAMESPACE Succeeded "$NAME-operator -o jsonpath='{.status.phase}'"
+if ! $CURRENT_PWD/.github/scripts/waitFor.sh csv $K8S_NAMESPACE Succeeded "$NAME-operator -o jsonpath='{.status.phase}'"; then
+  exit 1;
+fi
 
 cd $CURRENT_PWD
+exit 0;
