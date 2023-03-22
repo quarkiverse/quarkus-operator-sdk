@@ -5,16 +5,7 @@ import static io.quarkiverse.operatorsdk.bundle.deployment.BundleGenerator.MANIF
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
@@ -57,8 +48,8 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     private static final String IMAGE_PNG = "image/png";
 
     private final ClusterServiceVersionBuilder csvBuilder;
-    private final Set<String> ownedCRs = new HashSet<>();
-    private final Set<String> requiredCRs = new HashSet<>();
+    private final SortedSet<String> ownedCRs = new TreeSet<>();
+    private final SortedSet<String> requiredCRs = new TreeSet<>();
     private final Path kubernetesResources;
 
     public CsvManifestsBuilder(CSVMetadataHolder metadata, List<ReconcilerAugmentedClassInfo> controllers,
