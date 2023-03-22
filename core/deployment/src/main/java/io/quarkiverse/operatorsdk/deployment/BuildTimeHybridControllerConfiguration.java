@@ -9,7 +9,6 @@ import java.util.Set;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 
-import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
@@ -38,10 +37,12 @@ class BuildTimeHybridControllerConfiguration {
     }
 
     Set<String> namespaces() {
-        var namespaces = ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
-                "namespaces",
-                v -> new HashSet<>(Arrays.asList(v.asStringArray())),
-                () -> Constants.DEFAULT_NAMESPACES_SET);
+        HashSet<String> namespaces = null;
+        if (controllerAnnotation != null) {
+            namespaces = Optional.ofNullable(controllerAnnotation.value("namespaces"))
+                    .map(v -> new HashSet<>(Arrays.asList(v.asStringArray())))
+                    .orElse(null);
+        }
 
         if (externalConfiguration != null) {
             Optional<List<String>> overrideNamespaces = externalConfiguration.namespaces;
