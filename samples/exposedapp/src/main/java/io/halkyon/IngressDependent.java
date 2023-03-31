@@ -5,7 +5,6 @@ import static io.halkyon.ExposedAppReconciler.createMetadata;
 
 import java.util.Map;
 
-import io.fabric8.kubernetes.api.model.LoadBalancerIngress;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -60,7 +59,7 @@ public class IngressDependent extends CRUDKubernetesDependentResource<Ingress, E
     static String getExposedURL(Ingress ingress) {
         final var status = ingress.getStatus();
         final var ingresses = status.getLoadBalancer().getIngress();
-        LoadBalancerIngress ing = ingresses.get(0);
+        var ing = ingresses.get(0);
         String hostname = ing.getHostname();
         return "https://" + (hostname != null ? hostname : ing.getIp());
     }
