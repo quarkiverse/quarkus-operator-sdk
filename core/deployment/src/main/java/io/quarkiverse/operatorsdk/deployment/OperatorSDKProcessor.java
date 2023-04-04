@@ -127,6 +127,7 @@ class OperatorSDKProcessor {
                 SyntheticBeanBuildItem.configure(QuarkusConfigurationService.class)
                         .scope(Singleton.class)
                         .addType(ConfigurationService.class)
+                        .defaultBean()
                         .setRuntimeInit()
                         .supplier(supplier)
                         .done());
