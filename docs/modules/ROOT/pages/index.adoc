@@ -1,5 +1,5 @@
 = Quarkiverse Java Operator SDK
-:extension-status: preview
+:extension-status: stable
 
 This extension integrates the https://javaoperatorsdk.io[Java Operator SDK] project (JOSDK) with Quarkus, making it even easier to use both.
 
