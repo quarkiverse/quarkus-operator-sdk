@@ -1,5 +1,6 @@
 = Quarkiverse Java Operator SDK
-:extension-status: preview
+
+include::./includes/attributes.adoc[]
 
 This extension integrates the https://javaoperatorsdk.io[Java Operator SDK] project (JOSDK) with Quarkus, making it even easier to use both.
 
@@ -29,25 +30,25 @@ If you want to use this extension, you need to add the `quarkus-operator-sdk` ex
 
 You need to add minimally, the following to your `pom.xml` file:
 
-[source,xml]
+[source,xml,subs=attributes+]
 ----
 <dependency>
     <groupId>io.quarkiverse.operatorsdk</groupId>
     <artifactId>quarkus-operator-sdk</artifactId>
-    <version>{extension version}</version>
+    <version>{project-version}</version>
 </dependency>
 ----
 
 However, it might be more convenient to use the `quarkus-operator-sdk-bom` dependency to ensure that all dependency versions are properly aligned:
 
-[source,xml]
+[source,xml,subs=attributes+]
 ----
 <dependencyManagement>
     <dependencies>
       <dependency>
         <groupId>io.quarkiverse.operatorsdk</groupId>
         <artifactId>quarkus-operator-sdk-bom</artifactId>
-        <version>{extension version}</version>
+        <version>{project-version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -69,12 +70,12 @@ Exception in thread "main" java.lang.RuntimeException: java.lang.RuntimeExceptio
 
 If you want to use the Bundle generator, you will first need to use Quarkus 2.3.0.Final or above and add the `quarkus-operator-sdk-bundle-generator` extension first:
 
-[source,xml]
+[source,xml,subs=attributes+]
 ----
 <dependency>
     <groupId>io.quarkiverse.operatorsdk</groupId>
     <artifactId>quarkus-operator-sdk-bundle-generator</artifactId>
-    <version>{extension version}</version>
+    <version>{project-version}</version>
 </dependency>
 ----
 
@@ -82,22 +83,23 @@ If you want to use the Bundle generator, you will first need to use Quarkus 2.3.
 
 This section explains how to deploy your operator using the https://olm.operatorframework.io/[Operator Lifecycle Manager (OLM)] by following the next steps:
 
-0. Requirements
+=== Requirements
 
 Make sure you have installed the https://github.com/operator-framework/operator-registry[opm] command tool and are connected to a Kubernetes cluster on which OLM is installed.
 
-1. Generate the Operator image and bundle manifests
+=== Generate the Operator image and bundle manifests
 
 Quarkus provides https://quarkus.io/guides/container-image[several extensions] to build the container image.
 For example, the https://github.com/quarkiverse/quarkus-operator-sdk/tree/main/samples/joke#deployment[Joke] sample uses the https://quarkus.io/guides/container-image#jib[Quarkus Jib container image extension] to build the image.
 So, you first need to configure one of these extensions as you prefer.
 Then, you need to add the `quarkus-operator-sdk-bundle-generator` extension:
 
-[source,xml]
+[source,xml,subs=attributes+]
 ----
 <dependency>
     <groupId>io.quarkiverse.operatorsdk</groupId>
     <artifactId>quarkus-operator-sdk-bundle-generator</artifactId>
+    <version>{project-version}</version>
 </dependency>
 ----
 
@@ -128,7 +130,7 @@ Find more information about channels and packages https://olm.operatorframework.
 If you're using an insecure container registry, you'll also need to append the next property to the Maven command `-Dquarkus.container-image.insecure=true`.
 ====
 
-2. Build the Operator Bundle image
+=== Build the Operator Bundle image
 
 An Operator Bundle is a container image that stores Kubernetes manifests and metadata associated with an operator.
 You can find more information about this https://olm.operatorframework.io/docs/tasks/creating-operator-bundle/[here].
@@ -143,7 +145,7 @@ docker push $MY_BUNDLE_IMAGE
 
 For example, if we want to name our bundle image as `my-manifest-bundle`, our container registry is `quay.io`, our Quay user is `myuser` and the tag we're releasing is `1.0`, the final `MY_BUNDLE_IMAGE` property would be `quay.io/myuser/my-manifest-bundle:1.0`.
 
-3. Make your operator available within a Catalog
+=== Make your operator available within a Catalog
 
 OLM uses catalogs to discover and install Operators and their dependencies.
 So, a catalog is similar to a repository of operators and their associated versions that can be installed on a cluster.
@@ -193,7 +195,7 @@ Once the catalog is installed, you should see the catalog pod up and running:
 kubectl get pods -n $OLM_NAMESPACE --selector=olm.catalogSource=my-catalog-source
 ----
 
-4. Install your operator via OLM
+=== Install your operator via OLM
 
 OLM deploys operators via https://olm.operatorframework.io/docs/tasks/install-operator-with-olm/#install-your-operator[subscriptions].
 Creating a  `Subscription` will trigger the operator deployment.
@@ -231,4 +233,6 @@ kubectl get csv -n $OLM_NAMESPACE my-operator-name
 [[extension-configuration-reference]]
 == Extension Configuration Reference
 
-include::config.adoc[leveloffset=+1,opts=optional]
+TIP: Remove this section if you don't have Quarkus configuration properties in your extension.
+
+include::includes/quarkus-operator-sdk.adoc[leveloffset=+1,opts=optional]
