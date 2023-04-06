@@ -55,6 +55,7 @@
         <module>core</module>
         <module>bundle-generator</module>
         <module>integration-tests</module>
+        <module>docs</module>
       </modules>
     </profile>
     <profile>

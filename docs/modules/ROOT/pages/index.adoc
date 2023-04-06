@@ -1,5 +1,6 @@
 = Quarkiverse Java Operator SDK
-:extension-status: stable
+
+include::./includes/attributes.adoc[]
 
 This extension integrates the https://javaoperatorsdk.io[Java Operator SDK] project (JOSDK) with Quarkus, making it even easier to use both.
 
@@ -29,25 +30,25 @@ If you want to use this extension, you need to add the `quarkus-operator-sdk` ex
 
 You need to add minimally, the following to your `pom.xml` file:
 
-[source,xml]
+[source,xml,subs=attributes+]
 ----
 <dependency>
     <groupId>io.quarkiverse.operatorsdk</groupId>
     <artifactId>quarkus-operator-sdk</artifactId>
-    <version>{extension version}</version>
+    <version>{project-version}</version>
 </dependency>
 ----
 
 However, it might be more convenient to use the `quarkus-operator-sdk-bom` dependency to ensure that all dependency versions are properly aligned:
 
-[source,xml]
+[source,xml,subs=attributes+]
 ----
 <dependencyManagement>
     <dependencies>
       <dependency>
         <groupId>io.quarkiverse.operatorsdk</groupId>
         <artifactId>quarkus-operator-sdk-bom</artifactId>
-        <version>{extension version}</version>
+        <version>{project-version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -69,12 +70,12 @@ Exception in thread "main" java.lang.RuntimeException: java.lang.RuntimeExceptio
 
 If you want to use the Bundle generator, you will first need to use Quarkus 2.3.0.Final or above and add the `quarkus-operator-sdk-bundle-generator` extension first:
 
-[source,xml]
+[source,xml,subs=attributes+]
 ----
 <dependency>
     <groupId>io.quarkiverse.operatorsdk</groupId>
     <artifactId>quarkus-operator-sdk-bundle-generator</artifactId>
-    <version>{extension version}</version>
+    <version>{project-version}</version>
 </dependency>
 ----
 
@@ -93,11 +94,12 @@ For example, the https://github.com/quarkiverse/quarkus-operator-sdk/tree/main/s
 So, you first need to configure one of these extensions as you prefer.
 Then, you need to add the `quarkus-operator-sdk-bundle-generator` extension:
 
-[source,xml]
+[source,xml,subs=attributes+]
 ----
 <dependency>
     <groupId>io.quarkiverse.operatorsdk</groupId>
     <artifactId>quarkus-operator-sdk-bundle-generator</artifactId>
+    <version>{project-version}</version>
 </dependency>
 ----
 
@@ -231,4 +233,6 @@ kubectl get csv -n $OLM_NAMESPACE my-operator-name
 [[extension-configuration-reference]]
 == Extension Configuration Reference
 
-include::config.adoc[leveloffset=+1,opts=optional]
+TIP: Remove this section if you don't have Quarkus configuration properties in your extension.
+
+include::includes/quarkus-operator-sdk.adoc[leveloffset=+1,opts=optional]
