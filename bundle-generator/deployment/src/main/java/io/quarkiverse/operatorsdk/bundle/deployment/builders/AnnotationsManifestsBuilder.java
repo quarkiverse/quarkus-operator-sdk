@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.SortedMap;
 
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -19,9 +19,9 @@ public class AnnotationsManifestsBuilder extends ManifestsBuilder {
     private static final String METADATA = "metadata";
     private static final String ANNOTATIONS = "annotations";
 
-    private final Map<String, String> bundleLabels;
+    private final SortedMap<String, String> bundleLabels;
 
-    public AnnotationsManifestsBuilder(CSVMetadataHolder metadata, Map<String, String> bundleLabels) {
+    public AnnotationsManifestsBuilder(CSVMetadataHolder metadata, SortedMap<String, String> bundleLabels) {
         super(metadata);
 
         this.bundleLabels = bundleLabels;
