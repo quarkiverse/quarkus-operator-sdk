@@ -1,12 +1,7 @@
 package io.quarkiverse.operatorsdk.bundle.deployment;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.jboss.logging.Logger;
 
@@ -86,10 +81,10 @@ public class BundleGenerator {
         return missing;
     }
 
-    private static Map<String, String> generateBundleLabels(CSVMetadataHolder csvMetadata,
+    private static SortedMap<String, String> generateBundleLabels(CSVMetadataHolder csvMetadata,
             BundleGenerationConfiguration bundleConfiguration,
             BuildTimeOperatorConfiguration operatorConfiguration) {
-        Map<String, String> values = new HashMap<>();
+        SortedMap<String, String> values = new TreeMap<>();
         for (String version : operatorConfiguration.crd.versions) {
             values.put(join(PREFIX_ANNOTATION, CHANNEL, DEFAULT, version),
                     bundleConfiguration.defaultChannel.orElse(bundleConfiguration.channels.get(0)));
