@@ -17,7 +17,7 @@ import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.runtime.LaunchMode;
 
 class CRDGeneration {
-    private final CRDGenerator generator = new CRDGenerator();
+    private final CRDGenerator generator;
     private final boolean generate;
     private final LaunchMode mode;
     private final CRDConfiguration crdConfiguration;
@@ -29,6 +29,8 @@ class CRDGeneration {
         this.crdConfiguration = crdConfig;
         this.mode = mode;
         this.generate = CRDGeneration.shouldGenerate(crdConfig.generate, crdConfig.apply, mode);
+        this.generator = new CRDGenerator()
+                .withParallelGenerationEnabled(crdConfig.generateInParallel);
     }
 
     static boolean shouldGenerate(Optional<Boolean> configuredGenerate, Optional<Boolean> configuredApply,
