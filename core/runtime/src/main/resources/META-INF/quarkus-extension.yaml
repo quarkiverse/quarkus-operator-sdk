@@ -1,5 +1,4 @@
----
-name: Quarkus - Operator SDK
+name: Operator SDK
 description: Quarkus extension for the Java Operator SDK (https://javaoperatorsdk.io)
 metadata:
   keywords:

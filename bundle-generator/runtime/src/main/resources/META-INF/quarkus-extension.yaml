@@ -1,4 +1,4 @@
-name: Quarkus - Operator SDK - Bundle Generator
+name: Operator SDK - Bundle Generator
 description: Bundle Generation for Java Operator SDK operators
 metadata:
 keywords:
