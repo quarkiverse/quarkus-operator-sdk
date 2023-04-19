@@ -106,6 +106,22 @@ endif::add-copy-button-to-env-var[]
 |`false`
 
 
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-sdk.crd.generate-in-parallel]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.crd.generate-in-parallel[quarkus.operator-sdk.crd.generate-in-parallel]`
+
+[.description]
+--
+Whether the CRDs should be generated in parallel. Please note that this feature is experimental and it may lead to unexpected results.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CRD_GENERATE_IN_PARALLEL+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_CRD_GENERATE_IN_PARALLEL+++`
+endif::add-copy-button-to-env-var[]
+--|boolean 
+|`false`
+
+
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-sdk.generation-aware]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.generation-aware[quarkus.operator-sdk.generation-aware]`
 
 [.description]
