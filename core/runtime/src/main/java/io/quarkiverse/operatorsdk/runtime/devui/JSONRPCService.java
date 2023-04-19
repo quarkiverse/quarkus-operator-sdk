@@ -9,8 +9,15 @@ import io.quarkiverse.operatorsdk.runtime.devconsole.ControllersSupplier;
 
 @ApplicationScoped
 public class JSONRPCService {
+    private final ControllersSupplier supplier = new ControllersSupplier();
 
+    @SuppressWarnings("rawtypes")
     public Collection<ControllerInfo> getControllers() {
-        return new ControllersSupplier().get();
+        return supplier.get();
+    }
+
+    @SuppressWarnings("unused")
+    public int controllersCount() {
+        return supplier.count();
     }
 }

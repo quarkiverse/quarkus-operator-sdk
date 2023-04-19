@@ -32,4 +32,16 @@ public class ControllersSupplier implements Supplier<Collection<ControllerInfo>>
             return Collections.emptyList();
         }
     }
+
+    public int count() {
+        try (final var operatorHandle = Arc.container().instance(Operator.class)) {
+            return operatorHandle.get()
+                    .getRegisteredControllersNumber();
+        } catch (Exception e) {
+            log.warn("Couldn't retrieve controllers information because "
+                    + QuarkusConfigurationService.class.getSimpleName()
+                    + " is not available", e);
+            return 0;
+        }
+    }
 }
