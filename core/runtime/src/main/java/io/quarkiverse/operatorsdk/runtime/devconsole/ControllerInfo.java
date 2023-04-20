@@ -1,5 +1,6 @@
 package io.quarkiverse.operatorsdk.runtime.devconsole;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -19,10 +20,12 @@ public class ControllerInfo<P extends HasMetadata> {
                 controller.getConfiguration(), controller.getClient());
         dependents = controller.getConfiguration().getDependentResources().stream()
                 .map(spec -> new DependentInfo(spec, context))
-                .collect(Collectors.toSet());
+                .sorted()
+                .collect(Collectors.toCollection(LinkedHashSet::new));
         eventSources = controller.getEventSourceManager().getNamedEventSourcesStream()
                 .map(EventSourceInfo::new)
-                .collect(Collectors.toSet());
+                .sorted()
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     public String getName() {

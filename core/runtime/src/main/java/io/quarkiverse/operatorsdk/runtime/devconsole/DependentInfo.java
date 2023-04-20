@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 import io.quarkus.arc.Arc;
 
 @SuppressWarnings({ "unused", "rawtypes" })
-public class DependentInfo<R, P extends HasMetadata> {
+public class DependentInfo<R, P extends HasMetadata> implements Comparable<DependentInfo> {
     private final DependentResourceSpec<R, P> spec;
     private final EventSourceContext<P> context;
 
@@ -97,5 +97,10 @@ public class DependentInfo<R, P extends HasMetadata> {
 
     public String getType() {
         return spec.getDependentResourceClass().getName();
+    }
+
+    @Override
+    public int compareTo(DependentInfo other) {
+        return getName().compareTo(other.getName());
     }
 }
