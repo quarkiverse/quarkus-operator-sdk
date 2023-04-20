@@ -4,6 +4,11 @@ import '@vaadin/details';
 import '@vaadin/list-box';
 import '@vaadin/item';
 import '@vaadin/horizontal-layout';
+import '@vaadin/vertical-layout';
+import '@vaadin/icon';
+import '@vaadin/icons';
+import '@vaadin/form-layout';
+import '@vaadin/text-field';
 import 'qui-badge';
 
 export class QWCQOSDKControllers extends LitElement {
@@ -37,8 +42,13 @@ export class QWCQOSDKControllers extends LitElement {
   _renderController(controller) {
     return html`
       <vaadin-item>
-        ${resourceClassRenderer(controller.resourceClass)}
-        <vaadin-details theme="filled" summary="${controller.name}">
+        <vaadin-details theme="filled">
+          <vaadin-details-summary slot="summary">
+            ${nameRenderer(controller.name)}
+            <vaadin-icon icon="vaadin:arrow-circle-right"></vaadin-icon>
+            ${controller.className}
+            ${resourceClassRenderer(controller.resourceClass)}
+          </vaadin-details-summary>
           <vaadin-horizontal-layout theme="spacing padding">
             ${this.childrenRenderer(controller.dependents, "Dependents",
                 this.dependentRenderer)}
@@ -51,7 +61,7 @@ export class QWCQOSDKControllers extends LitElement {
 
   eventSourceRenderer(eventSource) {
     return html`
-      <qui-badge>${eventSource.name}</qui-badge>
+      ${nameRenderer(eventSource.name)}
       ${resourceClassRenderer(eventSource.resourceClass)}
     `
   }
@@ -59,11 +69,21 @@ export class QWCQOSDKControllers extends LitElement {
   dependentRenderer(dependent) {
     let defaultName = dependent.name === dependent.type;
     return html`
-      <qui-badge>${dependent.name}</qui-badge>
-      ${defaultName ? '' : resourceClassRenderer(dependent.type)}`
+      <vaadin-details theme="filled">
+        <vaadin-details-summary slot="summary">
+          ${nameRenderer(dependent.name)}
+          ${defaultName ? '' : resourceClassRenderer(dependent.type)}
+          ${eventSourceLink(dependent)}
+        </vaadin-details-summary>
+        <vaadin-vertical-layout>
+          ${field(dependent.resourceClass, "Target resource")}
+          ${dependsOn(dependent)}
+          ${conditions(dependent)}
+        </vaadin-vertical-layout>
+      </vaadin-details>`
   }
 
-  childrenRenderer = (children, childrenName, childRenderer) => {
+  childrenRenderer(children, childrenName, childRenderer) {
     if (children) {
       let count = children.length;
       return html`
@@ -82,6 +102,11 @@ export class QWCQOSDKControllers extends LitElement {
 
 }
 
+function nameRenderer(name) {
+  return html`
+    <qui-badge>${name}</qui-badge>`
+}
+
 function resourceClassRenderer(resourceClass) {
   if (resourceClass) {
     const fabric8Prefix = 'io.fabric8.kubernetes.api.model.';
@@ -92,6 +117,51 @@ function resourceClassRenderer(resourceClass) {
     }
     return html`
       <qui-badge level="${level}" small>${resourceClass}</qui-badge>`
+  }
+}
+
+function conditions(dependent) {
+  let hasConditions = dependent.hasConditions;
+  if (hasConditions) {
+    return html`
+      <vaadin-details summary="Conditions">
+        <vaadin-vertical-layout>
+          ${field(dependent.readyCondition, "Ready")}
+          ${field(dependent.reconcileCondition, "Reconcile")}
+          ${field(dependent.deleteCondition, "Delete")}
+        </vaadin-vertical-layout>
+      </vaadin-details>
+    `
+  }
+}
+
+function dependsOn(dependent) {
+   if (dependent.dependsOn && dependent.dependsOn.length > 0) {
+     return html`
+       <vaadin-details summary="Depends on">
+         <vaading-list-box>
+           ${dependent.dependsOn.map(
+               dep => html`<vaadin-item>${nameRenderer(dep)}</vaadin-item>`)}
+         </vaading-list-box>
+       </vaadin-details>
+     `
+   }
+}
+
+function eventSourceLink(dependent) {
+  if (dependent.useEventSourceWithName) {
+    return html`
+      <vaadin-icon icon="vaadin:arrow-circle-right"></vaadin-icon>
+    ${nameRenderer(dependent.useEventSourceWithName)}`
+  }
+}
+
+function field(value, label) {
+  if (value) {
+    return html`
+      <vaadin-horizontal-layout>
+        <span>${label}</span>: ${resourceClassRenderer(value)}
+      </vaadin-horizontal-layout>`
   }
 }
 
