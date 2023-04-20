@@ -79,16 +79,24 @@ public class DependentInfo<R, P extends HasMetadata> implements Comparable<Depen
         return spec.getDependsOn();
     }
 
-    public Condition getReadyCondition() {
-        return spec.getReadyCondition();
+    public boolean getHasConditions() {
+        return getReadyCondition() != null || getReconcileCondition() != null || getDeletePostCondition() != null;
     }
 
-    public Condition getReconcileCondition() {
-        return spec.getReconcileCondition();
+    public String getReadyCondition() {
+        return getConditionClassName(spec.getReadyCondition());
     }
 
-    public Condition getDeletePostCondition() {
-        return spec.getDeletePostCondition();
+    public String getReconcileCondition() {
+        return getConditionClassName(spec.getReconcileCondition());
+    }
+
+    public String getDeletePostCondition() {
+        return getConditionClassName(spec.getDeletePostCondition());
+    }
+
+    private String getConditionClassName(Condition condition) {
+        return condition != null ? condition.getClass().getName() : null;
     }
 
     public Optional<String> getUseEventSourceWithName() {
