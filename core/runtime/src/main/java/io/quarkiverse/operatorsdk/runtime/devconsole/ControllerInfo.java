@@ -34,7 +34,7 @@ public class ControllerInfo<P extends HasMetadata> {
 
     @SuppressWarnings("unused")
     public String getClassName() {
-        return controller.getClass().getName();
+        return controller.getConfiguration().getAssociatedReconcilerClassName();
     }
 
     @SuppressWarnings("unused")
