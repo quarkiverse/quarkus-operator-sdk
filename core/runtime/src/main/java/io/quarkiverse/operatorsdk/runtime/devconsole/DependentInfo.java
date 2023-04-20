@@ -99,8 +99,8 @@ public class DependentInfo<R, P extends HasMetadata> implements Comparable<Depen
         return condition != null ? condition.getClass().getName() : null;
     }
 
-    public Optional<String> getUseEventSourceWithName() {
-        return spec.getUseEventSourceWithName();
+    public String getUseEventSourceWithName() {
+        return spec.getUseEventSourceWithName().orElse(null);
     }
 
     public String getType() {
