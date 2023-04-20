@@ -5,7 +5,7 @@ import '@vaadin/details';
 import '@vaadin/list-box';
 import '@vaadin/item';
 import {columnBodyRenderer} from '@vaadin/grid/lit.js';
-export class ControllersWebComponent extends LitElement {
+export class QWCQOSDKControllers extends LitElement {
 
     jsonRpc = new JsonRpc(this);
 
@@ -62,4 +62,4 @@ export class ControllersWebComponent extends LitElement {
     };
     
 }
-customElements.define('qwc-qosdk-controllers', ControllersWebComponent);
+customElements.define('qwc-qosdk-controllers', QWCQOSDKControllers);
