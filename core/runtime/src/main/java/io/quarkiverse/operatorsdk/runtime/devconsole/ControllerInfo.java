@@ -33,6 +33,11 @@ public class ControllerInfo<P extends HasMetadata> {
     }
 
     @SuppressWarnings("unused")
+    public String getClassName() {
+        return controller.getClass().getName();
+    }
+
+    @SuppressWarnings("unused")
     public Class<P> getResourceClass() {
         return controller.getConfiguration().getResourceClass();
     }
