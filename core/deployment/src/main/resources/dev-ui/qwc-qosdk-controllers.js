@@ -1,4 +1,4 @@
-import {QwcHotReloadElement, html} from 'qwc-hot-reload-element';
+import {QwcHotReloadElement, css, html} from 'qwc-hot-reload-element';
 import {JsonRpc} from 'jsonrpc';
 import '@vaadin/details';
 import '@vaadin/list-box';
@@ -6,7 +6,7 @@ import '@vaadin/item';
 import '@vaadin/horizontal-layout';
 import '@vaadin/vertical-layout';
 import '@vaadin/icon';
-import '@vaadin/icons';
+import '@vaadin/vaadin-lumo-styles/vaadin-iconset.js'
 import '@vaadin/form-layout';
 import '@vaadin/text-field';
 import 'qui-badge';
@@ -36,51 +36,55 @@ export class QWCQOSDKControllers extends QwcHotReloadElement {
   render() {
     if (this._controllers) {
       return html`
-        <vaadin-list-box>
-          ${this._controllers.map(this.controller, this)}
-        </vaadin-list-box>
+        <vaadin-vertical-layout>
+          <qui-badge level="contrast">${this._controllers.length} configured controllers</qui-badge>
+          <vaadin-vertical-layout style="align-items: stretch; theme="spacing-s padding-s">
+            ${this._controllers.map(this.controller, this)}
+          </vaadin-vertical-layout>
+        </vaadin-vertical-layout>
       `
     }
   }
 
   controller(controller) {
     return html`
-      <vaadin-item>
         <vaadin-details theme="filled">
           <vaadin-details-summary slot="summary">
-            ${name(controller.name)}
-            <vaadin-icon icon="vaadin:arrow-circle-right"></vaadin-icon>
-            ${controller.className}
-            ${resourceClass(controller.resourceClass)}
+            ${nameImplAndResource(controller.name, controller.className, controller.resourceClass)}
           </vaadin-details-summary>
-          <vaadin-horizontal-layout theme="spacing padding">
-            ${this.children(controller.dependents, "Dependents",
-                this.dependent)}
-            ${this.children(controller.eventSources, "Event Sources",
-                this.eventSource)}
-          </vaadin-horizontal-layout>
-        </vaadin-details>
-      </vaadin-item>`
+          <vaadin-vertical-layout theme="spacing-s">
+            <vaadin-details summary="Namespaces" theme="filled">
+              <vaadin-vertical-layout>
+                <span>Configured:</span> 
+                ${controller.configuredNamespaces.map(ns => html`${name(ns)}`)}
+                <span>Effective:</span> 
+                ${controller.effectiveNamespaces.map(ns => html`${name(ns)}`)}
+              </vaadin-vertical-layout>
+            </vaadin-details>
+            <vaadin-horizontal-layout theme="spacing-s">
+              ${this.children(controller.dependents, "Dependents",
+                  this.dependent)}
+              ${this.children(controller.eventSources, "Event Sources",
+                  this.eventSource)}
+            </vaadin-horizontal-layout>
+          </vaadin-vertical-layout>
+        </vaadin-details>`
   }
 
   eventSource(eventSource) {
     return html`
-      ${name(eventSource.name)}
-      ${resourceClass(eventSource.resourceClass)}
+      ${nameImplAndResource(eventSource.name, eventSource.type, eventSource.resourceClass)}
     `
   }
 
   dependent(dependent) {
-    let defaultName = dependent.name === dependent.type;
     return html`
       <vaadin-details theme="filled">
         <vaadin-details-summary slot="summary">
-          ${name(dependent.name)}
-          ${defaultName ? '' : resourceClass(dependent.type)}
-          ${eventSourceLink(dependent)}
+          ${nameImplAndResource(dependent.name, dependent.type,
+              dependent.resourceClass)}
         </vaadin-details-summary>
         <vaadin-vertical-layout>
-          ${field(dependent.resourceClass, "Target resource")}
           ${dependsOn(dependent)}
           ${conditions(dependent)}
         </vaadin-vertical-layout>
@@ -92,13 +96,9 @@ export class QWCQOSDKControllers extends QwcHotReloadElement {
       let count = children.length;
       return html`
         <vaadin-details theme="filled" summary="${count} ${childrenName}">
-          <vaadin-list-box>
-            ${children.map((child) => html`
-              <vaadin-item>
-                ${childRenderer(child)}
-              </vaadin-item>
-            `)}
-          </vaadin-list-box>
+          <vaadin-vertical-layout>
+            ${children.map((child) => html`${childRenderer(child)}`)}
+          </vaadin-vertical-layout>
         </vaadin-details>
       `
     }
@@ -111,16 +111,41 @@ function name(name) {
     <qui-badge>${name}</qui-badge>`
 }
 
+function nameImplAndResource(n, impl, resource) {
+  return html`
+    <vaadin-vertical-layout>
+      ${name(n)}
+      <vaadin-horizontal-layout theme="spacing-xs">
+        <vaadin-icon icon="lumo:arrow-right"></vaadin-icon>
+        ${clazz(impl)}
+        ${resourceClass(resource)}
+      </vaadin-horizontal-layout>
+    </vaadin-vertical-layout>`
+}
+
+const fabric8Prefix = 'io.fabric8.kubernetes.api.model.';
+const josdkProcessingPrefix = 'io.javaoperatorsdk.operator.processing.';
+const userProvided = 'success';
+const k8sProvided = 'warning';
+const josdkProvided = 'contrast';
+
 function resourceClass(resourceClass) {
-  if (resourceClass) {
-    const fabric8Prefix = 'io.fabric8.kubernetes.api.model.';
-    let level = 'success';
-    if (resourceClass.startsWith(fabric8Prefix)) {
-      level = 'warning';
-      resourceClass = resourceClass.substring(fabric8Prefix.length);
+  return clazz(resourceClass, true)
+}
+
+function clazz(impl, isPill) {
+  if (impl) {
+    let level = userProvided;
+    if (impl.startsWith(fabric8Prefix)) {
+      level = k8sProvided;
+      impl = impl.substring(fabric8Prefix.length);
+    } else if (impl.startsWith(josdkProcessingPrefix)) {
+       level = josdkProvided;
+       impl = impl.substring(josdkProcessingPrefix.length);
     }
-    return html`
-      <qui-badge level="${level}" small>${resourceClass}</qui-badge>`
+    return isPill ?
+        html`<qui-badge level="${level}" small pill>${impl}</qui-badge>` :
+        html`<qui-badge level="${level}" small>${impl}</qui-badge>`
   }
 }
 
@@ -143,28 +168,19 @@ function dependsOn(dependent) {
    if (dependent.dependsOn && dependent.dependsOn.length > 0) {
      return html`
        <vaadin-details summary="Depends on">
-         <vaading-list-box>
-           ${dependent.dependsOn.map(
-               dep => html`<vaadin-item>${name(dep)}</vaadin-item>`)}
-         </vaading-list-box>
+         <vaading-vertical-layout>
+           ${dependent.dependsOn.map(dep => html`${name(dep)}`)}
+         </vaading-vertical-layout>
        </vaadin-details>
      `
    }
-}
-
-function eventSourceLink(dependent) {
-  if (dependent.useEventSourceWithName) {
-    return html`
-      <vaadin-icon icon="vaadin:arrow-circle-right"></vaadin-icon>
-    ${name(dependent.useEventSourceWithName)}`
-  }
 }
 
 function field(value, label) {
   if (value) {
     return html`
       <vaadin-horizontal-layout>
-        <span>${label}</span>: ${resourceClass(value)}
+        <span>${label}</span>: ${clazz(value)}
       </vaadin-horizontal-layout>`
   }
 }
