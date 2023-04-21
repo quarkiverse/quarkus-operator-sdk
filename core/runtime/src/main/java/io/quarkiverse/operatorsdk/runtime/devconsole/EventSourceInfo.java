@@ -2,7 +2,7 @@ package io.quarkiverse.operatorsdk.runtime.devconsole;
 
 import io.javaoperatorsdk.operator.processing.event.EventSourceMetadata;
 
-public class EventSourceInfo {
+public class EventSourceInfo implements Comparable<EventSourceInfo> {
     private final EventSourceMetadata metadata;
 
     public EventSourceInfo(EventSourceMetadata metadata) {
@@ -20,5 +20,10 @@ public class EventSourceInfo {
 
     public String getType() {
         return metadata.type().getName();
+    }
+
+    @Override
+    public int compareTo(EventSourceInfo other) {
+        return getName().compareTo(other.getName());
     }
 }

@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 import io.quarkus.arc.Arc;
 
 @SuppressWarnings({ "unused", "rawtypes" })
-public class DependentInfo<R, P extends HasMetadata> {
+public class DependentInfo<R, P extends HasMetadata> implements Comparable<DependentInfo> {
     private final DependentResourceSpec<R, P> spec;
     private final EventSourceContext<P> context;
 
@@ -79,23 +79,36 @@ public class DependentInfo<R, P extends HasMetadata> {
         return spec.getDependsOn();
     }
 
-    public Condition getReadyCondition() {
-        return spec.getReadyCondition();
+    public boolean getHasConditions() {
+        return getReadyCondition() != null || getReconcileCondition() != null || getDeletePostCondition() != null;
     }
 
-    public Condition getReconcileCondition() {
-        return spec.getReconcileCondition();
+    public String getReadyCondition() {
+        return getConditionClassName(spec.getReadyCondition());
     }
 
-    public Condition getDeletePostCondition() {
-        return spec.getDeletePostCondition();
+    public String getReconcileCondition() {
+        return getConditionClassName(spec.getReconcileCondition());
     }
 
-    public Optional<String> getUseEventSourceWithName() {
-        return spec.getUseEventSourceWithName();
+    public String getDeletePostCondition() {
+        return getConditionClassName(spec.getDeletePostCondition());
+    }
+
+    private String getConditionClassName(Condition condition) {
+        return condition != null ? condition.getClass().getName() : null;
+    }
+
+    public String getUseEventSourceWithName() {
+        return spec.getUseEventSourceWithName().orElse(null);
     }
 
     public String getType() {
         return spec.getDependentResourceClass().getName();
+    }
+
+    @Override
+    public int compareTo(DependentInfo other) {
+        return getName().compareTo(other.getName());
     }
 }
