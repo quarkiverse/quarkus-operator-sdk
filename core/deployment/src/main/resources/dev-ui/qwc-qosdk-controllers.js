@@ -1,4 +1,4 @@
-import {LitElement, html, nothing} from 'lit';
+import {QwcHotReloadElement, html} from 'qwc-hot-reload-element';
 import {JsonRpc} from 'jsonrpc';
 import '@vaadin/details';
 import '@vaadin/list-box';
@@ -11,7 +11,7 @@ import '@vaadin/form-layout';
 import '@vaadin/text-field';
 import 'qui-badge';
 
-export class QWCQOSDKControllers extends LitElement {
+export class QWCQOSDKControllers extends QwcHotReloadElement {
 
   jsonRpc = new JsonRpc(this);
 
@@ -21,6 +21,10 @@ export class QWCQOSDKControllers extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
+    this.hotReload();
+  }
+
+  hotReload() {
     this.jsonRpc.getControllers().then(
         jsonRpcResponse => this._controllers = jsonRpcResponse.result);
   }
