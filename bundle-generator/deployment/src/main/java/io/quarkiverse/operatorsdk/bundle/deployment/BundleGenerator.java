@@ -13,11 +13,12 @@ import io.quarkiverse.operatorsdk.bundle.deployment.builders.ManifestsBuilder;
 import io.quarkiverse.operatorsdk.bundle.runtime.BundleGenerationConfiguration;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
-import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
+import io.quarkiverse.operatorsdk.runtime.Version;
 import io.quarkus.container.util.PathsUtil;
 
 public class BundleGenerator {
+
     private static final Logger log = Logger.getLogger(BundleGenerator.class);
 
     public static final String MANIFESTS = "manifests";
@@ -32,19 +33,25 @@ public class BundleGenerator {
     private static final String MEDIA_TYPE = "mediatype";
     private static final String CHANNEL = "channel";
     private static final String CHANNELS = "channels";
-    private static final String PREFIX_ANNOTATION = "operators.operatorframework.io.bundle";
+    private static final String BUNDLE_PREFIX = "operators.operatorframework.io.bundle";
+    private static final String METRICS_PREFIX = "operators.operatorframework.io.metrics";
+    private static final String ANNOTATIONS_VERSION = "v1";
+    private static final String BUILDER = "builder";
+    private static final String METRICS_V1 = "metrics+v1";
+    private static final String PROJECT_LAYOUT = "project_layout";
+    private static final String LAYOUT_V1_ALPHA = "quarkus.javaoperatorsdk.io/v1-alpha";
+    private static final String QOSDK = "qosdk-bundle-generator/";
 
     private BundleGenerator() {
     }
 
     public static List<ManifestsBuilder> prepareGeneration(BundleGenerationConfiguration bundleConfiguration,
-            BuildTimeOperatorConfiguration operatorConfiguration,
-            Map<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>> csvGroups, Map<String, CRDInfo> crds,
+            Version version, Map<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>> csvGroups, Map<String, CRDInfo> crds,
             Path outputDirectory) {
         List<ManifestsBuilder> builders = new ArrayList<>();
         for (Map.Entry<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>> entry : csvGroups.entrySet()) {
             final var csvMetadata = entry.getKey();
-            final var labels = generateBundleLabels(csvMetadata, bundleConfiguration, operatorConfiguration);
+            final var labels = generateBundleLabels(csvMetadata, bundleConfiguration, version);
 
             final var mainSourcesRoot = PathsUtil.findMainSourcesRoot(outputDirectory);
             final var csvBuilder = new CsvManifestsBuilder(csvMetadata, entry.getValue(),
@@ -82,18 +89,18 @@ public class BundleGenerator {
     }
 
     private static SortedMap<String, String> generateBundleLabels(CSVMetadataHolder csvMetadata,
-            BundleGenerationConfiguration bundleConfiguration,
-            BuildTimeOperatorConfiguration operatorConfiguration) {
+            BundleGenerationConfiguration bundleConfiguration, Version version) {
         SortedMap<String, String> values = new TreeMap<>();
-        for (String version : operatorConfiguration.crd.versions) {
-            values.put(join(PREFIX_ANNOTATION, CHANNEL, DEFAULT, version),
-                    bundleConfiguration.defaultChannel.orElse(bundleConfiguration.channels.get(0)));
-            values.put(join(PREFIX_ANNOTATION, CHANNELS, version), String.join(COMMA, bundleConfiguration.channels));
-            values.put(join(PREFIX_ANNOTATION, MANIFESTS, version), MANIFESTS + SLASH);
-            values.put(join(PREFIX_ANNOTATION, MEDIA_TYPE, version), REGISTRY_PLUS + version);
-            values.put(join(PREFIX_ANNOTATION, METADATA, version), METADATA + SLASH);
-            values.put(join(PREFIX_ANNOTATION, PACKAGE, version), csvMetadata.name);
-        }
+        values.put(join(BUNDLE_PREFIX, CHANNEL, DEFAULT, ANNOTATIONS_VERSION),
+                bundleConfiguration.defaultChannel.orElse(bundleConfiguration.channels.get(0)));
+        values.put(join(BUNDLE_PREFIX, CHANNELS, ANNOTATIONS_VERSION), String.join(COMMA, bundleConfiguration.channels));
+        values.put(join(BUNDLE_PREFIX, MANIFESTS, ANNOTATIONS_VERSION), MANIFESTS + SLASH);
+        values.put(join(BUNDLE_PREFIX, MEDIA_TYPE, ANNOTATIONS_VERSION), REGISTRY_PLUS + ANNOTATIONS_VERSION);
+        values.put(join(BUNDLE_PREFIX, METADATA, ANNOTATIONS_VERSION), METADATA + SLASH);
+        values.put(join(BUNDLE_PREFIX, PACKAGE, ANNOTATIONS_VERSION), csvMetadata.name);
+        values.put(join(METRICS_PREFIX, BUILDER), QOSDK + version.getExtensionVersion() + "+" + version.getExtensionCommit());
+        values.put(join(METRICS_PREFIX, MEDIA_TYPE, ANNOTATIONS_VERSION), METRICS_V1);
+        values.put(join(METRICS_PREFIX, PROJECT_LAYOUT), LAYOUT_V1_ALPHA);
 
         return values;
     }
