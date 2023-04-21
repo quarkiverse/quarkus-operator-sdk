@@ -33,46 +33,46 @@ export class QWCQOSDKControllers extends LitElement {
     if (this._controllers) {
       return html`
         <vaadin-list-box>
-          ${this._controllers.map(this._renderController, this)}
+          ${this._controllers.map(this.controller, this)}
         </vaadin-list-box>
       `
     }
   }
 
-  _renderController(controller) {
+  controller(controller) {
     return html`
       <vaadin-item>
         <vaadin-details theme="filled">
           <vaadin-details-summary slot="summary">
-            ${nameRenderer(controller.name)}
+            ${name(controller.name)}
             <vaadin-icon icon="vaadin:arrow-circle-right"></vaadin-icon>
             ${controller.className}
-            ${resourceClassRenderer(controller.resourceClass)}
+            ${resourceClass(controller.resourceClass)}
           </vaadin-details-summary>
           <vaadin-horizontal-layout theme="spacing padding">
-            ${this.childrenRenderer(controller.dependents, "Dependents",
-                this.dependentRenderer)}
-            ${this.childrenRenderer(controller.eventSources, "Event Sources",
-                this.eventSourceRenderer)}
+            ${this.children(controller.dependents, "Dependents",
+                this.dependent)}
+            ${this.children(controller.eventSources, "Event Sources",
+                this.eventSource)}
           </vaadin-horizontal-layout>
         </vaadin-details>
       </vaadin-item>`
   }
 
-  eventSourceRenderer(eventSource) {
+  eventSource(eventSource) {
     return html`
-      ${nameRenderer(eventSource.name)}
-      ${resourceClassRenderer(eventSource.resourceClass)}
+      ${name(eventSource.name)}
+      ${resourceClass(eventSource.resourceClass)}
     `
   }
 
-  dependentRenderer(dependent) {
+  dependent(dependent) {
     let defaultName = dependent.name === dependent.type;
     return html`
       <vaadin-details theme="filled">
         <vaadin-details-summary slot="summary">
-          ${nameRenderer(dependent.name)}
-          ${defaultName ? '' : resourceClassRenderer(dependent.type)}
+          ${name(dependent.name)}
+          ${defaultName ? '' : resourceClass(dependent.type)}
           ${eventSourceLink(dependent)}
         </vaadin-details-summary>
         <vaadin-vertical-layout>
@@ -83,7 +83,7 @@ export class QWCQOSDKControllers extends LitElement {
       </vaadin-details>`
   }
 
-  childrenRenderer(children, childrenName, childRenderer) {
+  children(children, childrenName, childRenderer) {
     if (children) {
       let count = children.length;
       return html`
@@ -102,12 +102,12 @@ export class QWCQOSDKControllers extends LitElement {
 
 }
 
-function nameRenderer(name) {
+function name(name) {
   return html`
     <qui-badge>${name}</qui-badge>`
 }
 
-function resourceClassRenderer(resourceClass) {
+function resourceClass(resourceClass) {
   if (resourceClass) {
     const fabric8Prefix = 'io.fabric8.kubernetes.api.model.';
     let level = 'success';
@@ -141,7 +141,7 @@ function dependsOn(dependent) {
        <vaadin-details summary="Depends on">
          <vaading-list-box>
            ${dependent.dependsOn.map(
-               dep => html`<vaadin-item>${nameRenderer(dep)}</vaadin-item>`)}
+               dep => html`<vaadin-item>${name(dep)}</vaadin-item>`)}
          </vaading-list-box>
        </vaadin-details>
      `
@@ -152,7 +152,7 @@ function eventSourceLink(dependent) {
   if (dependent.useEventSourceWithName) {
     return html`
       <vaadin-icon icon="vaadin:arrow-circle-right"></vaadin-icon>
-    ${nameRenderer(dependent.useEventSourceWithName)}`
+    ${name(dependent.useEventSourceWithName)}`
   }
 }
 
@@ -160,7 +160,7 @@ function field(value, label) {
   if (value) {
     return html`
       <vaadin-horizontal-layout>
-        <span>${label}</span>: ${resourceClassRenderer(value)}
+        <span>${label}</span>: ${resourceClass(value)}
       </vaadin-horizontal-layout>`
   }
 }
