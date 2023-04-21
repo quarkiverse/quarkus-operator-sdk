@@ -37,7 +37,7 @@ import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
-import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
+import io.quarkiverse.operatorsdk.deployment.VersionBuildItem;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -82,9 +82,9 @@ public class BundleProcessor {
     @BuildStep
     void generateBundle(ApplicationInfoBuildItem configuration,
             BundleGenerationConfiguration bundleConfiguration,
-            BuildTimeOperatorConfiguration operatorConfiguration,
             OutputTargetBuildItem outputTarget,
             CSVMetadataBuildItem csvMetadata,
+            VersionBuildItem versionBuildItem,
             BuildProducer<GeneratedBundleBuildItem> doneGeneratingCSV,
             GeneratedCRDInfoBuildItem generatedCustomResourcesDefinitions,
             List<GeneratedKubernetesResourceBuildItem> generatedKubernetesManifests,
@@ -141,8 +141,8 @@ public class BundleProcessor {
                                         }
                                     });
                                 });
-                final var generated = BundleGenerator.prepareGeneration(bundleConfiguration,
-                        operatorConfiguration, csvMetadata.getCsvGroups(), crds, outputTarget.getOutputDirectory());
+                final var generated = BundleGenerator.prepareGeneration(bundleConfiguration, versionBuildItem.getVersion(),
+                        csvMetadata.getCsvGroups(), crds, outputTarget.getOutputDirectory());
                 generated.forEach(manifestBuilder -> {
                     final var fileName = manifestBuilder.getFileName();
                     try {

@@ -153,11 +153,13 @@ class OperatorSDKProcessor {
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             BuildProducer<GeneratedCRDInfoBuildItem> generatedCRDInfo,
+            BuildProducer<VersionBuildItem> versionBuildItemBuildProducer,
             LiveReloadBuildItem liveReload, LaunchModeBuildItem launchMode,
             BuildProducer<RunTimeConfigurationDefaultBuildItem> runtimeConfig) {
 
         // check versions alignment
         final var version = Version.loadFromProperties();
+        versionBuildItemBuildProducer.produce(new VersionBuildItem(version));
         final var runtimeQuarkusVersion = Quarkus.class.getPackage().getImplementationVersion();
         checkVersionCompatibility(runtimeQuarkusVersion, version.getQuarkusVersion(), "Quarkus");
         final var runtimeFabric8Version = io.fabric8.kubernetes.client.Version.clientVersion();
