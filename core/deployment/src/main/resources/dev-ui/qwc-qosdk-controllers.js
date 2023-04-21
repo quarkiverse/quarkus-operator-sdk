@@ -36,39 +36,50 @@ export class QWCQOSDKControllers extends QwcHotReloadElement {
   render() {
     if (this._controllers) {
       return html`
-        <vaadin-vertical-layout>
-          <qui-badge level="contrast">${this._controllers.length} configured controllers</qui-badge>
-          <vaadin-vertical-layout style="align-items: stretch; theme="spacing-s padding-s">
+        <vaadin-details opened>
+          <vaadin-details-summary slot="summary">
+            <qui-badge level="contrast">Configured controllers (${this._controllers.length})</qui-badge>
+          </vaadin-details-summary>
+          <vaadin-vertical-layout style="align-items: stretch;" theme="spacing-s padding-s">
             ${this._controllers.map(this.controller, this)}
           </vaadin-vertical-layout>
-        </vaadin-vertical-layout>
+        </vaadin-details>
       `
     }
   }
 
   controller(controller) {
     return html`
-        <vaadin-details theme="filled">
-          <vaadin-details-summary slot="summary">
-            ${nameImplAndResource(controller.name, controller.className, controller.resourceClass)}
-          </vaadin-details-summary>
-          <vaadin-vertical-layout theme="spacing-s">
-            <vaadin-details summary="Namespaces" theme="filled">
-              <vaadin-vertical-layout>
-                <span>Configured:</span> 
-                ${controller.configuredNamespaces.map(ns => html`${name(ns)}`)}
-                <span>Effective:</span> 
-                ${controller.effectiveNamespaces.map(ns => html`${name(ns)}`)}
-              </vaadin-vertical-layout>
-            </vaadin-details>
-            <vaadin-horizontal-layout theme="spacing-s">
-              ${this.children(controller.dependents, "Dependents",
-                  this.dependent)}
-              ${this.children(controller.eventSources, "Event Sources",
-                  this.eventSource)}
-            </vaadin-horizontal-layout>
-          </vaadin-vertical-layout>
-        </vaadin-details>`
+      <vaadin-details theme="filled">
+        <vaadin-details-summary slot="summary">
+          ${nameImplAndResource(controller.name, controller.className,
+              controller.resourceClass)}
+        </vaadin-details-summary>
+        <vaadin-vertical-layout theme="spacing-s">
+          ${this.namespaces(controller)}
+          <vaadin-horizontal-layout theme="spacing-s">
+            ${this.children(controller.dependents, "Dependents",
+                this.dependent)}
+            ${this.children(controller.eventSources, "Event Sources",
+                this.eventSource)}
+          </vaadin-horizontal-layout>
+        </vaadin-vertical-layout>
+      </vaadin-details>`
+  }
+
+  namespaces(controller) {
+    return html`<vaadin-details summary="Namespaces" theme="filled">
+      <vaadin-vertical-layout>
+        <vaadin-horizontal-layout theme="spacing-xs">
+          <span>Configured:</span>
+          ${controller.configuredNamespaces.map(ns => html`${name(ns)}`)}
+        </vaadin-horizontal-layout>
+         <vaadin-horizontal-layout theme="spacing-xs">
+           <span>Effective:</span>
+           ${controller.effectiveNamespaces.map(ns => html`${name(ns)}`)}
+         </vaadin-horizontal-layout>
+      </vaadin-vertical-layout>
+    </vaadin-details>`
   }
 
   eventSource(eventSource) {
