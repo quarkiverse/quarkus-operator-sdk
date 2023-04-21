@@ -163,8 +163,8 @@ class OperatorSDKProcessor {
         final var runtimeFabric8Version = io.fabric8.kubernetes.client.Version.clientVersion();
         checkVersionCompatibility(runtimeFabric8Version, version.getKubernetesClientVersion(),
                 "JOSDK Fabric8 Kubernetes Client");
-        //        String quarkusFabric8Version = io.quarkus.kubernetes.client.deployment.Versions.KUBERNETES_CLIENT;
-        //        checkVersionCompatibility(runtimeFabric8Version, quarkusFabric8Version, "Fabric8 kubernetes-client");
+        String quarkusFabric8Version = io.quarkus.kubernetes.client.deployment.Versions.KUBERNETES_CLIENT;
+        checkVersionCompatibility(runtimeFabric8Version, quarkusFabric8Version, "Quarkus-provided Fabric8 Kubernetes Client");
 
         final CRDConfiguration crdConfig = buildTimeConfiguration.crd;
         final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(
