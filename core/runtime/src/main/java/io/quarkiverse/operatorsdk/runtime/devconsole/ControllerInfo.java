@@ -48,6 +48,11 @@ public class ControllerInfo<P extends HasMetadata> {
     }
 
     @SuppressWarnings("unused")
+    public Set<String> getConfiguredNamespaces() {
+        return controller.getConfiguration().getNamespaces();
+    }
+
+    @SuppressWarnings("unused")
     public Set<EventSourceInfo> getEventSources() {
         return eventSources;
     }
