@@ -61,7 +61,7 @@ public class BuildTimeOperatorConfiguration {
     /**
      * Whether to fail or only emit a warning on version validation at compile time.
      */
-    @ConfigItem(defaultValue = "true")
+    @ConfigItem(defaultValue = "false")
     public Boolean failOnVersionCheck;
 
     /**

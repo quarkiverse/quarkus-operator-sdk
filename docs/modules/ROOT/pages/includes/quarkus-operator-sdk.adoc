@@ -215,7 +215,7 @@ ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_FAIL_ON_VERSION_CHECK+++`
 endif::add-copy-button-to-env-var[]
 --|boolean 
-|`true`
+|`false`
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-sdk.activate-leader-election-for-profiles]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.activate-leader-election-for-profiles[quarkus.operator-sdk.activate-leader-election-for-profiles]`
