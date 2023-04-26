@@ -139,7 +139,7 @@ class OperatorSDKProcessor {
             if (buildTimeConfiguration.failOnVersionCheck) {
                 throw new RuntimeException(message);
             } else {
-                log.warn(message);
+                log.warn(message + ". Things might not work as expected, though they probably should in micro version updates.");
             }
         }
     }
