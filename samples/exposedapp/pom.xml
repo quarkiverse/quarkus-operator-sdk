@@ -22,6 +22,8 @@
         <groupId>io.quarkiverse.operatorsdk</groupId>
         <artifactId>quarkus-operator-sdk-bom</artifactId>
         <version>${project.version}</version>
+        <scope>import</scope>
+        <type>pom</type>
       </dependency>
     </dependencies>
   </dependencyManagement>

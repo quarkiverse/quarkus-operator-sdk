@@ -206,7 +206,11 @@ a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-s
 
 [.description]
 --
-Whether to fail or only emit a warning on version validation at compile time.
+Whether to fail or emit a debug-level (warning-level when misalignment is at the minor or above version level) log when the extension detects that there are misaligned versions. 
+The following versions are checked for alignment:  
+ - declared Quarkus version used to build the extension vs. actually used Quarkus version at runtime 
+ - Fabric8 client version used by JOSDK vs. actually used Fabric8 client version 
+ - Fabric8 client version used by Quarkus vs. actually used Fabric8 client version
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_FAIL_ON_VERSION_CHECK+++[]

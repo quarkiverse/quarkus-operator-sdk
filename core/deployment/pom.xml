@@ -47,6 +47,11 @@
       <artifactId>crd-generator-api</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.semver4j</groupId>
+      <artifactId>semver4j</artifactId>
+      <version>4.3.0</version>
+    </dependency>
+    <dependency>
       <groupId>io.dekorate</groupId>
       <artifactId>kubernetes-annotations</artifactId>
       <classifier>noapt</classifier>

@@ -59,7 +59,15 @@ public class BuildTimeOperatorConfiguration {
     public Boolean stopOnInformerErrorDuringStartup;
 
     /**
-     * Whether to fail or only emit a warning on version validation at compile time.
+     * Whether to fail or emit a debug-level (warning-level when misalignment is at the minor or above version level) log when
+     * the extension detects that there are misaligned versions.
+     * <p/>
+     * The following versions are checked for alignment:
+     * <ul>
+     * <li>declared Quarkus version used to build the extension vs. actually used Quarkus version at runtime</li>
+     * <li>Fabric8 client version used by JOSDK vs. actually used Fabric8 client version</li>
+     * <li>Fabric8 client version used by Quarkus vs. actually used Fabric8 client version</li>
+     * </ul>
      */
     @ConfigItem(defaultValue = "false")
     public Boolean failOnVersionCheck;
