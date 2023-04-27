@@ -14,6 +14,8 @@ import jakarta.inject.Singleton;
 
 import org.jboss.jandex.DotName;
 import org.jboss.logging.Logger;
+import org.semver4j.Semver;
+import org.semver4j.Semver.VersionDiff;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -134,12 +136,20 @@ class OperatorSDKProcessor {
     }
 
     private void checkVersionCompatibility(String found, String expected, String name) {
-        if (!found.equals(expected)) {
-            String message = "Incompatible " + name + " version found: \"" + found + "\", expected: \"" + expected + "\"";
+        final var foundVersion = Semver.coerce(found);
+        final var expectedVersion = Semver.coerce(expected);
+        if (!expectedVersion.equals(foundVersion)) {
+            String message = "Mismatched " + name + " version found: \"" + found + "\", expected: \"" + expected + "\"";
             if (buildTimeConfiguration.failOnVersionCheck) {
                 throw new RuntimeException(message);
             } else {
-                log.warn(message + ". Things might not work as expected, though they probably should in micro version updates.");
+                final var diff = expectedVersion.diff(foundVersion);
+                if (diff.compareTo(VersionDiff.MINOR) >= 0) {
+                    log.warn(message
+                            + " by at least a minor version and things might not work as expected.");
+                } else {
+                    log.debug(message);
+                }
             }
         }
     }
