@@ -27,14 +27,6 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <!-- Should eventually get picked up from Quarkus BOM  -->
-      <dependency>
-        <groupId>org.bouncycastle</groupId>
-        <artifactId>bcpkix-jdk18on</artifactId>
-        <version>1.73</version>
-        <optional>true</optional>
-        <scope>provided</scope>
-      </dependency>
     </dependencies>
   </dependencyManagement>
 
