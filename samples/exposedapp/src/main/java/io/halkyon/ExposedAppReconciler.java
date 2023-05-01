@@ -52,7 +52,7 @@ public class ExposedAppReconciler implements Reconciler<ExposedApp>,
                         exposedApp.setStatus(new ExposedAppStatus(url));
                         return UpdateControl.updateStatus(exposedApp);
                     } else {
-                        final var duration = Duration.ofSeconds(5);
+                        final var duration = Duration.ofSeconds(1);
                         log.info("App {} is not ready yet, rescheduling reconciliation after {}s", name, duration.toSeconds());
                         return UpdateControl.<ExposedApp> noUpdate().rescheduleAfter(duration);
                     }
