@@ -335,22 +335,6 @@ endif::add-copy-button-to-env-var[]
 |`true`
 
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.namespaces]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.namespaces[quarkus.operator-sdk.controllers."controllers".namespaces]`
-
-[.description]
---
-An optional list of comma-separated namespace names the controller should watch. If this property is left empty then the controller will watch all namespaces.
-
-ifdef::add-copy-button-to-env-var[]
-Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__NAMESPACES+++[]
-endif::add-copy-button-to-env-var[]
-ifndef::add-copy-button-to-env-var[]
-Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__NAMESPACES+++`
-endif::add-copy-button-to-env-var[]
---|list of string 
-|
-
-
 a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.namespaces]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.namespaces[quarkus.operator-sdk.controllers."controllers".namespaces]`
 
 [.description]
