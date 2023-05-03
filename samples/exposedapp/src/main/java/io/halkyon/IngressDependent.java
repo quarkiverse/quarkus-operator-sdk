@@ -3,6 +3,11 @@ package io.halkyon;
 import static io.halkyon.ExposedAppReconciler.LABELS_CONTEXT_KEY;
 import static io.halkyon.ExposedAppReconciler.createMetadata;
 
+import com.dajudge.kindcontainer.client.model.base.Metadata;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.javaoperatorsdk.operator.processing.dependent.Matcher;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesResourceMatcher;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.ResourceUpdatePreProcessor;
 import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
@@ -13,10 +18,16 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
 public class IngressDependent extends CRUDKubernetesDependentResource<Ingress, ExposedApp> implements
-        Condition<Ingress, ExposedApp> {
+        Condition<Ingress, ExposedApp>, Matcher<Ingress, ExposedApp>, ResourceUpdatePreProcessor<Ingress> {
 
     public IngressDependent() {
         super(Ingress.class);
+    }
+
+    @Override
+    public Result<Ingress> match(Ingress actualResource, ExposedApp primary,
+        Context<ExposedApp> context) {
+        return GenericKubernetesResourceMatcher.match(this, actualResource, primary, context, true);
     }
 
     @Override
@@ -25,10 +36,10 @@ public class IngressDependent extends CRUDKubernetesDependentResource<Ingress, E
         final var labels = (Map<String, String>) context.managedDependentResourceContext()
                 .getMandatory(LABELS_CONTEXT_KEY, Map.class);
         final var metadata = createMetadata(exposedApp, labels);
-        metadata.setAnnotations(Map.of(
+        /*metadata.setAnnotations(Map.of(
                 "nginx.ingress.kubernetes.io/rewrite-target", "/",
                 "kubernetes.io/ingress.class", "nginx"));
-
+*/
         return new IngressBuilder()
                 .withMetadata(metadata)
                 .withNewSpec()
@@ -76,5 +87,13 @@ public class IngressDependent extends CRUDKubernetesDependentResource<Ingress, E
             }
             return false;
         }).orElse(false);
+    }
+
+    @Override
+    public Ingress replaceSpecOnActual(Ingress actual, Ingress desired, Context<?> context) {
+        final var metadata = new ObjectMetaBuilder(desired.getMetadata()).build();
+        actual.setMetadata(metadata);
+        actual.setSpec(desired.getSpec());
+        return actual;
     }
 }
