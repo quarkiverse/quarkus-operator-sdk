@@ -44,7 +44,7 @@ jobs:
         run: mvn -B formatter:validate install --file pom.xml
 
       - name: Build with Maven (Native)
-        run: mvn -B formatter:validate install -Dnative --file pom.xml
+        run: mvn -B formatter:validate install -Dnative --file pom.xml -pl '!docs'
 
       - name: Kubernetes KinD Cluster
         uses: container-tools/kind-action@v2
