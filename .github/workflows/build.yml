@@ -37,8 +37,9 @@ jobs:
     #    needs: get-quarkus-versions
     strategy:
       matrix:
-        #        quarkus-version: ${{ fromJSON(needs.get-quarkus-versions.outputs.matrix) }}
-        quarkus-version: [ 3.0.1.Final ]
+        #        quarkus-version: ${{ curl https://registry.quarkus.io/client/platforms | jq '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current)
+        # | .releases[0].version' }}
+        quarkus-version: [ 3.0.2.Final ]
         java-version: [ 11, 17 ]
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
