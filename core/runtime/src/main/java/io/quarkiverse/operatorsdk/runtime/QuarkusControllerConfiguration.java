@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationProvider;
@@ -86,6 +87,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private Retry retry;
     private RateLimiter rateLimiter;
     private ManagedWorkflow<R> workflow;
+    private QuarkusConfigurationService parent;
 
     @RecordableConstructor
     @SuppressWarnings("unchecked")
@@ -132,6 +134,16 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.rateLimiterClass = rateLimiterClass;
         this.rateLimiter = DefaultRateLimiter.class.equals(rateLimiterClass) ? new DefaultRateLimiter() : null;
         this.rateLimiterConfigurationClass = rateLimiterConfigurationClass;
+    }
+
+    @Override
+    @IgnoreProperty
+    public ConfigurationService getConfigurationService() {
+        return parent;
+    }
+
+    public void setParent(QuarkusConfigurationService parent) {
+        this.parent = parent;
     }
 
     @Override

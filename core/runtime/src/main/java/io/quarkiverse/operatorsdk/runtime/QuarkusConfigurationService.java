@@ -77,7 +77,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
                 }
             }
         };
-        init(cloner, mapper);
+        init(cloner, mapper, null);
         this.startOperator = startOperator;
         this.client = client;
         this.metrics = metrics;
@@ -88,6 +88,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
                 final var name = c.getName();
                 reconcilerClassToName.put(c.getAssociatedReconcilerClassName(), name);
                 register(c);
+                c.setParent(this);
             });
         } else {
             reconcilerClassToName = Collections.emptyMap();
