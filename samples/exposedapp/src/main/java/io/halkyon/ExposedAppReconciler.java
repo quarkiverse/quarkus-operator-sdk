@@ -48,11 +48,11 @@ public class ExposedAppReconciler implements Reconciler<ExposedApp>,
                     if (wrs.allDependentResourcesReady()) {
                         final var url = IngressDependent.getExposedURL(
                                 context.getSecondaryResource(Ingress.class).orElseThrow());
-                        log.info("App {} is exposed and ready to be used at {}", name, url);
-                        exposedApp.setStatus(new ExposedAppStatus(url));
+                        exposedApp.setStatus(new ExposedAppStatus(url, exposedApp.getSpec().getEndpoint()));
+                        log.info("App {} is exposed and ready to be used at {}", name, exposedApp.getStatus().getHost());
                         return UpdateControl.updateStatus(exposedApp);
                     } else {
-                        final var duration = Duration.ofSeconds(5);
+                        final var duration = Duration.ofSeconds(1);
                         log.info("App {} is not ready yet, rescheduling reconciliation after {}s", name, duration.toSeconds());
                         return UpdateControl.<ExposedApp> noUpdate().rescheduleAfter(duration);
                     }

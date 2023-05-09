@@ -13,9 +13,9 @@ public class ExposedAppStatus {
         message = "processing";
     }
 
-    public ExposedAppStatus(String hostname) {
+    public ExposedAppStatus(String hostname, String endpoint) {
         this.message = "exposed";
-        this.host = hostname;
+        this.host = endpoint != null && !endpoint.isBlank() ? hostname + '/' + endpoint : hostname;
         ready = true;
         waitTime = System.currentTimeMillis() - waitTime;
     }

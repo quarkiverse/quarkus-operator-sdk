@@ -9,6 +9,16 @@ public class ExposedAppSpec {
     private String imageRef;
     private Map<String, String> env;
 
+    private String endpoint;
+
+    public String getEndpoint() {
+        return endpoint;
+    }
+
+    public void setEndpoint(String endpoint) {
+        this.endpoint = endpoint;
+    }
+
     public String getImageRef() {
         return imageRef;
     }
