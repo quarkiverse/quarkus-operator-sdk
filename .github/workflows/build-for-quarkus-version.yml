@@ -1,4 +1,4 @@
-name: Build
+name: Build with specific Quarkus version
 
 on:
   workflow_call:
@@ -9,6 +9,9 @@ on:
       java-version:
         type: string
         required: true
+      branch:
+        type: string
+        required: true
 
 jobs:
   build:
@@ -16,6 +19,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.branch }}
 
       - name: Set up Java
         uses: actions/setup-java@v3
