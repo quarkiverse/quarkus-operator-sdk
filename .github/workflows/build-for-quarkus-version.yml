@@ -30,19 +30,14 @@ jobs:
           cache: 'maven'
 
       - name: Quarkus version
-        run: |
-          echo ${{inputs.quarkus-version}}
-        shell: bash
+        run: echo ${{inputs.quarkus-version}}
 
       - name: Change Quarkus version
-        run: |
-          mvn versions:set-property -Dproperty=quarkus.version -DnewVersion=${{inputs.quarkus-version}}
-        shell: bash
+        run: mvn versions:set-property -Dproperty=quarkus.version -DnewVersion=${{inputs.quarkus-version}}
 
       - name: Get Date
         id: get-date
-        run: |
-          echo "{date}={$(/bin/date -u "+%Y-%m")}" >> $GITHUB_OUTPUT
+        run: echo "{date}={$(/bin/date -u "+%Y-%m")}" >> $GITHUB_OUTPUT
         shell: bash
 
       - name: Build with Maven (JVM)
@@ -56,6 +51,7 @@ jobs:
         with:
           version: v0.11.1
           registry: true
+
       - name: Install OPM and Operator SDK tool
         uses: redhat-actions/openshift-tools-installer@v1
         with:
