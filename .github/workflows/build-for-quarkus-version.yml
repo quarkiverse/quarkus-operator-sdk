@@ -49,7 +49,6 @@ jobs:
       - name: Kubernetes KinD Cluster
         uses: container-tools/kind-action@v2
         with:
-          version: v0.11.1
           registry: true
 
       - name: Install OPM and Operator SDK tool
@@ -60,7 +59,7 @@ jobs:
           operator-sdk: "latest"
 
       - name: Install Operator Lifecycle Manager and Operator SDK into Kind
-        run: operator-sdk olm install --version v0.23.0
+        run: operator-sdk olm install
 
       - name: Run Joke sample using Quarkus DEV mode
         run: |
