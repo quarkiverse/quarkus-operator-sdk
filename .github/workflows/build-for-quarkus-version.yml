@@ -12,6 +12,9 @@ on:
       branch:
         type: string
         required: true
+      native-modules:
+        type: string
+        required: true
 
 jobs:
   build:
@@ -44,7 +47,7 @@ jobs:
         run: mvn -B formatter:validate install --file pom.xml
 
       - name: Build with Maven (Native)
-        run: mvn -B formatter:validate install -Dnative --file pom.xml -pl '!docs'
+        run: mvn -B formatter:validate install -Dnative --file pom.xml -pl '${{inputs.native-modules}}' -amd
 
       - name: Kubernetes KinD Cluster
         uses: container-tools/kind-action@v2

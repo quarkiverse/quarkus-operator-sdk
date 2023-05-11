@@ -44,3 +44,4 @@ jobs:
       quarkus-version: ${{ needs.latest-quarkus-version.outputs.quarkus_version }}
       java-version: ${{ matrix.java-version }}
       branch: main
+      native-modules: "integration-tests"

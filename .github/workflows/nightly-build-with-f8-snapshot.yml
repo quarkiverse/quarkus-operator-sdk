@@ -23,6 +23,7 @@ jobs:
       quarkus-version: ${{ needs.latest-quarkus-version.outputs.quarkus_version }}
       java-version: 17
       branch: "next-fabric8-version"
+      native-modules: "integration-tests,samples"
 
   release-snapshot:
     runs-on: ubuntu-latest
