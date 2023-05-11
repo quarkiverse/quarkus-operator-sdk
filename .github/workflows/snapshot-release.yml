@@ -1,4 +1,4 @@
-name: Snapshot Release
+name: Release Snapshots of main and next on push
 
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
@@ -10,7 +10,6 @@ on:
 jobs:
   release-snapshot:
     runs-on: ubuntu-latest
-    name: snapshot-release
 
     steps:
       - uses: actions/checkout@v3
@@ -28,7 +27,7 @@ jobs:
           java-version: 11
           cache: 'maven'
 
-      - name: Maven release ${{steps.metadata.outputs.current-version}}
+      - name: Maven release
         run: |
           gpg --quiet --batch --yes --decrypt --passphrase="${{secrets.GPG_PASSPHRASE}}" --output maven-settings.xml .github/release/maven-settings.xml.gpg
           mvn -B deploy -DperformRelease -Dno-samples -Prelease -s maven-settings.xml

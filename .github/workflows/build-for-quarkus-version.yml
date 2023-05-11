@@ -1,4 +1,4 @@
-name: Build
+name: Build with specific Quarkus version
 
 on:
   workflow_call:
@@ -9,6 +9,12 @@ on:
       java-version:
         type: string
         required: true
+      branch:
+        type: string
+        required: true
+      native-modules:
+        type: string
+        required: true
 
 jobs:
   build:
@@ -16,6 +22,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.branch }}
 
       - name: Set up Java
         uses: actions/setup-java@v3
@@ -25,32 +33,27 @@ jobs:
           cache: 'maven'
 
       - name: Quarkus version
-        run: |
-          echo ${{inputs.quarkus-version}}
-        shell: bash
+        run: echo ${{inputs.quarkus-version}}
 
       - name: Change Quarkus version
-        run: |
-          mvn versions:set-property -Dproperty=quarkus.version -DnewVersion=${{inputs.quarkus-version}}
-        shell: bash
+        run: mvn versions:set-property -Dproperty=quarkus.version -DnewVersion=${{inputs.quarkus-version}}
 
       - name: Get Date
         id: get-date
-        run: |
-          echo "{date}={$(/bin/date -u "+%Y-%m")}" >> $GITHUB_OUTPUT
+        run: echo "{date}={$(/bin/date -u "+%Y-%m")}" >> $GITHUB_OUTPUT
         shell: bash
 
       - name: Build with Maven (JVM)
         run: mvn -B formatter:validate install --file pom.xml
 
       - name: Build with Maven (Native)
-        run: mvn -B formatter:validate install -Dnative --file pom.xml -pl '!docs'
+        run: mvn -B formatter:validate install -Dnative --file pom.xml -pl '${{inputs.native-modules}}' -amd
 
       - name: Kubernetes KinD Cluster
         uses: container-tools/kind-action@v2
         with:
-          version: v0.11.1
           registry: true
+
       - name: Install OPM and Operator SDK tool
         uses: redhat-actions/openshift-tools-installer@v1
         with:
