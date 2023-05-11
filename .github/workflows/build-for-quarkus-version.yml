@@ -59,7 +59,7 @@ jobs:
           operator-sdk: "latest"
 
       - name: Install Operator Lifecycle Manager and Operator SDK into Kind
-        run: operator-sdk olm install
+        run: operator-sdk olm install --version v0.23.0
 
       - name: Run Joke sample using Quarkus DEV mode
         run: |
