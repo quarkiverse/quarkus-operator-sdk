@@ -56,3 +56,21 @@ jobs:
 
       - name: Push tags
         run: git push && git push --tags
+
+      - uses: actions/checkout@v3
+        with:
+          repository: quarkusio/quarkus-platform
+          path: quarkus-platform
+
+      - name: Update QOSDK version to ${{steps.metadata.outputs.current-version}}
+        run: |
+          cd quarkus-platform
+          git checkout -b release-${{steps.metadata.outputs.current-version}}
+          mvn -B versions:set-property -Dproperty=quarkus-operator-sdk.version -DnewVersion=${{steps.metadata.outputs.current-version}}
+          ./mvnw -Dsync
+          git add -A
+          git commit -m "Update QOSDK to ${{steps.metadata.outputs.current-version}}"
+
+      - uses: peter-evans/create-pull-request@v5
+        with:
+          path: quarkus-platform
