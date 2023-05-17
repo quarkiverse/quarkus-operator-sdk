@@ -1,11 +1,5 @@
 package io.quarkiverse.operatorsdk.deployment;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 
@@ -34,23 +28,5 @@ class BuildTimeHybridControllerConfiguration {
                 "generationAwareEventProcessing",
                 AnnotationValue::asBoolean,
                 () -> operatorConfiguration.generationAware.orElse(true));
-    }
-
-    Set<String> namespaces() {
-        HashSet<String> namespaces = null;
-        if (controllerAnnotation != null) {
-            namespaces = Optional.ofNullable(controllerAnnotation.value("namespaces"))
-                    .map(v -> new HashSet<>(Arrays.asList(v.asStringArray())))
-                    .orElse(null);
-        }
-
-        if (externalConfiguration != null) {
-            Optional<List<String>> overrideNamespaces = externalConfiguration.namespaces;
-            if (overrideNamespaces.isPresent()) {
-                namespaces = new HashSet<>(overrideNamespaces.get());
-            }
-        }
-
-        return namespaces;
     }
 }

@@ -12,6 +12,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -57,8 +58,18 @@ public class BundleProcessor {
     public static final String CRD_DISPLAY_NAME = "CRD_DISPLAY_NAME";
     public static final String CRD_DESCRIPTION = "CRD_DESCRIPTION";
 
+    private static class IsGenerationEnabled implements BooleanSupplier {
+
+        private BundleGenerationConfiguration config;
+
+        @Override
+        public boolean getAsBoolean() {
+            return config.enabled;
+        }
+    }
+
     @SuppressWarnings({ "unused" })
-    @BuildStep
+    @BuildStep(onlyIf = IsGenerationEnabled.class)
     CSVMetadataBuildItem gatherCSVMetadata(ApplicationInfoBuildItem configuration,
             BundleGenerationConfiguration bundleConfiguration,
             CombinedIndexBuildItem combinedIndexBuildItem) {
@@ -156,7 +167,7 @@ public class BundleProcessor {
     }
 
     @SuppressWarnings("unused")
-    @BuildStep
+    @BuildStep(onlyIf = IsGenerationEnabled.class)
     void generateBundle(ApplicationInfoBuildItem configuration,
             BundleGenerationConfiguration bundleConfiguration,
             OutputTargetBuildItem outputTarget,

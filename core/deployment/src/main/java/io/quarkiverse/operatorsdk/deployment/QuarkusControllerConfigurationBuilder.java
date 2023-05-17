@@ -183,7 +183,8 @@ class QuarkusControllerConfigurationBuilder {
             }
 
             // extract the namespaces
-            var namespaces = configExtractor.namespaces();
+            Set<String> namespaces = ConfigurationUtils.annotationValueOrDefault(controllerAnnotation, "namespaces",
+                    v -> new HashSet<>(Arrays.asList(v.asStringArray())), () -> null);
             final boolean wereNamespacesSet;
             if (namespaces == null) {
                 namespaces = io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
