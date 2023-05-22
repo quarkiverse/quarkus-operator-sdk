@@ -3,7 +3,7 @@ name: Build with specific Quarkus version
 on:
   workflow_call:
     inputs:
-      quarkus-version:
+      quarkus-version-jq-cmd:
         type: string
         required: true
       java-version:
@@ -32,11 +32,16 @@ jobs:
           java-version: ${{ inputs.java-version }}
           cache: 'maven'
 
-      - name: Quarkus version
-        run: echo ${{inputs.quarkus-version}}
+      - name: Get Quarkus version
+        id: get-quarkus-version
+        uses: sergeysova/jq-action@v2
+        with:
+          cmd: curl https://registry.quarkus.io/client/platforms | jq "${{inputs.quarkus-version-jq-cmd}}"
 
       - name: Change Quarkus version
-        run: mvn versions:set-property -Dproperty=quarkus.version -DnewVersion=${{inputs.quarkus-version}}
+        run: |
+          echo "Using Quarkus ${{ steps.get-quarkus-version.outputs.value }}"
+          mvn versions:set-property -Dproperty=quarkus.version -DnewVersion=${{ steps.get-quarkus-version.outputs.value }}
 
       - name: Get Date
         id: get-date
