@@ -17,6 +17,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <surefire-plugin.version>3.1.0</surefire-plugin.version>
+    <jar-plugin.version>3.3.0</jar-plugin.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -81,6 +82,11 @@
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${surefire-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>${jar-plugin.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>
