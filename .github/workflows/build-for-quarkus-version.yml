@@ -36,7 +36,7 @@ jobs:
         id: get-quarkus-version
         uses: sergeysova/jq-action@v2
         with:
-          cmd: curl https://registry.quarkus.io/client/platforms | jq "${{inputs.quarkus-version-jq-cmd}}"
+          cmd: curl https://registry.quarkus.io/client/platforms | jq ${{inputs.quarkus-version-jq-cmd}}
 
       - name: Change Quarkus version
         run: |
