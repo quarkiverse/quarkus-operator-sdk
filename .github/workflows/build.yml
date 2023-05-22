@@ -31,7 +31,7 @@ jobs:
       - id: latest-quarkus-version
         uses: sergeysova/jq-action@v2
         with:
-          cmd: curl https://registry.quarkus.io/client/platforms | jq '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current) | .releases[0].version'
+          cmd: curl https://registry.quarkus.io/client/platforms | jq '.platforms[0].streams[] | select(.id == "3.1") | .releases[0].version'
 
   build-for-latest-quarkus-version:
     needs:
