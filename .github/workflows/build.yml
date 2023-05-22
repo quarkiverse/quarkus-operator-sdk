@@ -46,6 +46,7 @@ jobs:
   build-with-quarkus-version:
     needs:
       - latest-quarkus-stable-version
+      - latest-quarkus-next-version
     strategy:
       matrix:
         java-version: [ 11, 17 ]
