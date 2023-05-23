@@ -23,25 +23,16 @@ on:
       - '.all-contributorsrc'
 
 jobs:
-  latest-quarkus-version:
-    runs-on: ubuntu-latest
-    outputs:
-      quarkus_version: ${{ steps.latest-quarkus-version.outputs.value }}
-    steps:
-      - id: latest-quarkus-version
-        uses: sergeysova/jq-action@v2
-        with:
-          cmd: curl https://registry.quarkus.io/client/platforms | jq '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current) | .releases[0].version'
-
-  build-for-latest-quarkus-version:
-    needs:
-      - latest-quarkus-version
+  build-with-quarkus-version:
     strategy:
       matrix:
         java-version: [ 11, 17 ]
+        quarkus-version-jq-cmd:
+          - '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current) | .releases[0].version'
+          - '.platforms[0].streams[] | select(.id == "3.1") | .releases[0].version'
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
-      quarkus-version: ${{ needs.latest-quarkus-version.outputs.quarkus_version }}
+      quarkus-version-jq-cmd: ${{ matrix.quarkus-version-jq-cmd }}
       java-version: ${{ matrix.java-version }}
       branch: main
       native-modules: "integration-tests"
