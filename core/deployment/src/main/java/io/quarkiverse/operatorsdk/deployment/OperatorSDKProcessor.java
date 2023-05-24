@@ -136,8 +136,14 @@ class OperatorSDKProcessor {
     }
 
     private void checkVersionCompatibility(String found, String expected, String name) {
-        final var foundVersion = Semver.coerce(found);
-        final var expectedVersion = Semver.coerce(expected);
+        final var foundVersionOpt = getSemverFrom(found);
+        final var expectedVersionOpt = getSemverFrom(expected);
+        if (foundVersionOpt.isEmpty() || expectedVersionOpt.isEmpty()) {
+            // abort version check if we couldn't parse the version for some reason as a version check should not prevent the rest of the processing to proceed
+            return;
+        }
+        final var foundVersion = foundVersionOpt.get();
+        final var expectedVersion = expectedVersionOpt.get();
         if (!expectedVersion.equals(foundVersion)) {
             String message = "Mismatched " + name + " version found: \"" + found + "\", expected: \"" + expected + "\"";
             if (buildTimeConfiguration.failOnVersionCheck) {
@@ -152,6 +158,15 @@ class OperatorSDKProcessor {
                 }
             }
         }
+    }
+
+    private static Optional<Semver> getSemverFrom(String version) {
+        try {
+            return Optional.of(Semver.coerce(version));
+        } catch (Exception e) {
+            log.warn("Couldn't convert version " + version);
+        }
+        return Optional.empty();
     }
 
     @BuildStep
