@@ -65,6 +65,8 @@ jobs:
       - name: Update QOSDK version to ${{steps.metadata.outputs.current-version}}
         run: |
           cd quarkus-platform
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
           git checkout -b release-${{steps.metadata.outputs.current-version}}
           mvn -B versions:set-property -Dproperty=quarkus-operator-sdk.version -DnewVersion=${{steps.metadata.outputs.current-version}}
           ./mvnw -Dsync
