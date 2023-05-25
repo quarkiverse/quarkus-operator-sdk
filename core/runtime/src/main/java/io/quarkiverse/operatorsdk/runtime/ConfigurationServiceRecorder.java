@@ -19,7 +19,7 @@ import io.quarkus.arc.Arc;
 import io.quarkus.jackson.ObjectMapperCustomizer;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.annotations.Recorder;
-import io.quarkus.runtime.configuration.ProfileManager;
+import io.quarkus.runtime.configuration.ConfigUtils;
 
 @Recorder
 public class ConfigurationServiceRecorder {
@@ -78,11 +78,13 @@ public class ConfigurationServiceRecorder {
 
             // deactivate leader election in dev mode
             LeaderElectionConfiguration leaderElectionConfiguration = null;
-            final var profile = ProfileManager.getActiveProfile(); // todo: use ConfigUtils instead
-            if (buildTimeConfiguration.activateLeaderElectionForProfiles.contains(profile)) {
+            final var profiles = ConfigUtils.getProfiles();
+            if (profiles.stream().anyMatch(buildTimeConfiguration.activateLeaderElectionForProfiles::contains)) {
                 leaderElectionConfiguration = container.instance(LeaderElectionConfiguration.class).get();
             } else {
-                log.info("Leader election deactivated for " + profile + " profile");
+                log.info("Leader election deactivated because it is only activated for "
+                        + buildTimeConfiguration.activateLeaderElectionForProfiles
+                        + " profiles. Currently active profiles: " + profiles);
             }
 
             return new QuarkusConfigurationService(

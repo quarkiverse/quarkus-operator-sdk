@@ -53,7 +53,7 @@ public class Version extends io.javaoperatorsdk.operator.api.config.Version {
     }
 
     public static Version loadFromProperties() {
-        final var sdkVersion = Utils.loadFromProperties();
+        final var sdkVersion = Utils.VERSION;
         InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("extension-version.properties");
         Properties properties = new Properties();
         if (is != null) {

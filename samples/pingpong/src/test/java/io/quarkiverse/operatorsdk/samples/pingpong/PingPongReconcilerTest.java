@@ -44,7 +44,7 @@ class PingPongReconcilerTest {
 
         // assert ping reconciler
         await().ignoreException(NullPointerException.class).atMost(5, MINUTES).untilAsserted(() -> {
-            Ping updatedRequest = client.resource(testRequest).fromServer().get();
+            Ping updatedRequest = client.resource(testRequest).get();
             assertThat(updatedRequest.getStatus(), is(notNullValue()));
             assertThat(updatedRequest.getStatus().getState(), is(Status.State.PROCESSED));
         });

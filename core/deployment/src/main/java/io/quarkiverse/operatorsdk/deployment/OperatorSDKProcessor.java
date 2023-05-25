@@ -310,7 +310,7 @@ class OperatorSDKProcessor {
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             Set<String> classNamesToRegister) {
         classNamesToRegister.forEach(cn -> {
-            reflectionClasses.produce(new ReflectiveClassBuildItem(true, true, cn));
+            reflectionClasses.produce(ReflectiveClassBuildItem.builder(cn).methods().fields().build());
             forcedReflectionClasses.produce(
                     new ForceNonWeakReflectiveClassBuildItem(cn));
             log.infov("Registered ''{0}'' for reflection", cn);
