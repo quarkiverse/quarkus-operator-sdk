@@ -15,7 +15,7 @@ public class MicrometerMetricsProvider implements MeterBinder {
 
     @Override
     public void bindTo(MeterRegistry registry) {
-        metrics = new MicrometerMetrics(registry);
+        metrics = MicrometerMetrics.newPerResourceCollectingMicrometerMetricsBuilder(registry).build();
     }
 
     @Produces

@@ -52,7 +52,7 @@ class MySQLSchemaOperatorE2ETest {
         testSchema.getSpec().setEncoding("utf8");
 
         log.infof("Creating test MySQLSchema object: %s", testSchema);
-        client.resource(testSchema).createOrReplace();
+        client.resource(testSchema).serverSideApply();
 
         log.info("Waiting 10 seconds for expected resources to be created and updated");
         await().atMost(10, SECONDS).untilAsserted(() -> {

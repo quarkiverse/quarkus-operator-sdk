@@ -10,7 +10,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
@@ -60,7 +59,7 @@ public class OperatorSDKTest {
         final var kubeIS = new FileInputStream(kubeManifest.toFile());
         // use unmarshall version with parameters map to ensure code goes through the proper processing wrt multiple documents
         @SuppressWarnings("unchecked")
-        final var kubeResources = (List<HasMetadata>) Serialization.unmarshal(kubeIS, Collections.emptyMap());
+        final var kubeResources = (List<HasMetadata>) Serialization.unmarshal(kubeIS);
 
         // check cluster role for TestReconciler
         final var testReconcilerRoleName = AddClusterRolesDecorator.getClusterRoleName(TestReconciler.NAME);
