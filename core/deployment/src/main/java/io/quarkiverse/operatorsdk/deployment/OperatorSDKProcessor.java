@@ -137,7 +137,7 @@ class OperatorSDKProcessor {
 
     private void checkVersionCompatibility(String found, String expected, String name) {
         // optimize most common case
-        if(Objects.equals(found, expected)) {
+        if (Objects.equals(found, expected)) {
             return;
         }
         final var foundVersionOpt = getSemverFrom(found);
