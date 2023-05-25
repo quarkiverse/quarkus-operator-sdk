@@ -4,6 +4,7 @@ import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
@@ -64,7 +65,6 @@ import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
 import io.quarkus.kubernetes.client.spi.KubernetesClientBuildItem;
 import io.quarkus.kubernetes.spi.DecoratorBuildItem;
-import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.metrics.MetricsFactory;
 
@@ -136,6 +136,10 @@ class OperatorSDKProcessor {
     }
 
     private void checkVersionCompatibility(String found, String expected, String name) {
+        // optimize most common case
+        if(Objects.equals(found, expected)) {
+            return;
+        }
         final var foundVersionOpt = getSemverFrom(found);
         final var expectedVersionOpt = getSemverFrom(expected);
         if (foundVersionOpt.isEmpty() || expectedVersionOpt.isEmpty()) {
@@ -185,7 +189,7 @@ class OperatorSDKProcessor {
         // check versions alignment
         final var version = Version.loadFromProperties();
         versionBuildItemBuildProducer.produce(new VersionBuildItem(version));
-        final var runtimeQuarkusVersion = Quarkus.class.getPackage().getImplementationVersion();
+        final var runtimeQuarkusVersion = io.quarkus.builder.Version.getVersion();
         checkVersionCompatibility(runtimeQuarkusVersion, version.getQuarkusVersion(), "Quarkus");
         final var runtimeFabric8Version = io.fabric8.kubernetes.client.Version.clientVersion();
         checkVersionCompatibility(runtimeFabric8Version, version.getKubernetesClientVersion(),
