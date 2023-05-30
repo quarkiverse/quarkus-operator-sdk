@@ -13,9 +13,6 @@ on:
       - '*.txt'
       - '.all-contributorsrc'
   pull_request:
-    branches:
-      - "main"
-      - "4.0.x"
     paths-ignore:
       - '.gitignore'
       - 'CODEOWNERS'
