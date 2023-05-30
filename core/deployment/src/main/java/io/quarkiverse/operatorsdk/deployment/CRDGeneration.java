@@ -1,5 +1,9 @@
 package io.quarkiverse.operatorsdk.deployment;
 
+import static io.quarkus.kubernetes.deployment.Constants.KUBERNETES;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -72,8 +76,10 @@ class CRDGeneration {
         final var generated = new HashSet<String>();
 
         if (needGeneration) {
-            final String outputDirName = crdConfiguration.outputDirectory;
-            final var outputDir = outputTarget.getOutputDirectory().resolve(outputDirName).toFile();
+            Path targetDirectory = crdConfiguration.outputDirectory.map(
+                    d -> Paths.get("").toAbsolutePath().resolve(d))
+                    .orElse(outputTarget.getOutputDirectory().resolve(KUBERNETES));
+            final var outputDir = targetDirectory.toFile();
             if (!outputDir.exists()) {
                 if (!outputDir.mkdirs()) {
                     throw new IllegalArgumentException("Couldn't create " + outputDir.getAbsolutePath());
