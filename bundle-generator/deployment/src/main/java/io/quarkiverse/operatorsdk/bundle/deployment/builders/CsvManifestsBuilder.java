@@ -34,7 +34,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
 
     private static final String IMAGE_PNG = "image/png";
 
-    private final ClusterServiceVersionBuilder csvBuilder;
+    private ClusterServiceVersionBuilder csvBuilder;
     private final SortedSet<String> ownedCRs = new TreeSet<>();
     private final SortedSet<String> requiredCRs = new TreeSet<>();
     private final Path kubernetesResources;
@@ -44,8 +44,14 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         super(metadata);
         this.kubernetesResources = mainSourcesRoot != null ? mainSourcesRoot.resolve("kubernetes") : null;
 
-        csvBuilder = new ClusterServiceVersionBuilder()
-                .withNewMetadata().withName(getName()).endMetadata();
+        csvBuilder = new ClusterServiceVersionBuilder();
+
+        final var metadataBuilder = csvBuilder.withNewMetadata().withName(getName());
+        if (metadata.skipRange != null) {
+            metadataBuilder.addToAnnotations("olm.skipRange", metadata.skipRange);
+        }
+        csvBuilder = metadataBuilder.endMetadata();
+
         final var csvSpecBuilder = csvBuilder
                 .editOrNewSpec()
                 .withDescription(metadata.description)
@@ -216,8 +222,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     public byte[] getManifestData(List<ServiceAccount> serviceAccounts, List<ClusterRoleBinding> clusterRoleBindings,
             List<ClusterRole> clusterRoles, List<RoleBinding> roleBindings, List<Role> roles,
             List<Deployment> deployments) throws IOException {
-        final var csvSpecBuilder = csvBuilder
-                .editOrNewSpec();
+        final var csvSpecBuilder = csvBuilder.editOrNewSpec();
 
         String defaultServiceAccountName = NO_SERVICE_ACCOUNT;
         if (!serviceAccounts.isEmpty()) {

@@ -9,7 +9,7 @@ import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata.RequiredCRD;
 
 @CSVMetadata(name = "third-operator", requiredCRDs = @RequiredCRD(kind = SecondExternal.KIND, name = "externalagains."
-        + SecondExternal.GROUP, version = SecondExternal.VERSION))
+        + SecondExternal.GROUP, version = SecondExternal.VERSION), replaces = "1.0.0", skipRange = ">=1.0.0 <1.0.3")
 @ControllerConfiguration(dependents = @Dependent(type = ExternalDependentResource.class))
 public class ThirdReconciler implements Reconciler<Third> {
 

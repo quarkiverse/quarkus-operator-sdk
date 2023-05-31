@@ -27,6 +27,8 @@ public @interface CSVMetadata {
 
     String replaces() default "";
 
+    String skipRange() default "";
+
     Maintainer[] maintainers() default {};
 
     Provider provider() default @Provider;

@@ -11,6 +11,7 @@ public class CSVMetadataHolder {
     public final String providerName;
     public final String providerURL;
     public final String replaces;
+    public final String[] skips;
     public final String version;
     public final String maturity;
     public final String minKubeVersion;
@@ -20,6 +21,7 @@ public class CSVMetadataHolder {
     public final InstallMode[] installModes;
     public final PermissionRule[] permissionRules;
     public final RequiredCRD[] requiredCRDs;
+    public final String skipRange;
 
     public static class Icon {
         public final String fileName;
@@ -112,17 +114,20 @@ public class CSVMetadataHolder {
     public CSVMetadataHolder(CSVMetadataHolder other) {
         this(other.name, other.description, other.displayName, other.annotations, other.keywords, other.providerName,
                 other.providerURL,
-                other.replaces, other.version, other.maturity, other.minKubeVersion, other.maintainers, other.links, other.icon,
+                other.replaces, other.skips, other.skipRange, other.version, other.maturity, other.minKubeVersion,
+                other.maintainers,
+                other.links, other.icon,
                 other.installModes, other.permissionRules, other.requiredCRDs);
     }
 
     public CSVMetadataHolder(String name) {
-        this(name, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        this(name, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     public CSVMetadataHolder(String name, String description, String displayName, Annotations annotations, String[] keywords,
             String providerName,
-            String providerURL, String replaces, String version, String maturity, String minKubeVersion,
+            String providerURL, String replaces, String[] skips, String skipRange, String version, String maturity,
+            String minKubeVersion,
             Maintainer[] maintainers, Link[] links, Icon[] icon,
             InstallMode[] installModes, PermissionRule[] permissionRules, RequiredCRD[] requiredCRDs) {
         this.name = name;
@@ -133,6 +138,8 @@ public class CSVMetadataHolder {
         this.providerName = providerName;
         this.providerURL = providerURL;
         this.replaces = replaces;
+        this.skips = skips;
+        this.skipRange = skipRange;
         this.version = version;
         this.maturity = maturity;
         this.minKubeVersion = minKubeVersion;

@@ -51,6 +51,8 @@ public class MultipleOperatorsBundleTest {
         // CRDs should be alphabetically ordered
         assertEquals(HasMetadata.getFullResourceName(External.class), crds.getRequired().get(0).getName());
         assertEquals(HasMetadata.getFullResourceName(SecondExternal.class), crds.getRequired().get(1).getName());
+        assertEquals("1.0.0", csv.getSpec().getReplaces());
+        assertEquals(">=1.0.0 <1.0.3", csv.getMetadata().getAnnotations().get("olm.skipRange"));
     }
 
     private void checkBundleFor(Path bundle, String operatorName, Class<? extends HasMetadata> resourceClass) {
