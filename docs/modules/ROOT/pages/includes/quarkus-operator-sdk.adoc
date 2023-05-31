@@ -78,7 +78,7 @@ a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-s
 
 [.description]
 --
-The directory where the CRDs will be generated, relative to the project's output directory.
+The directory where the CRDs will be generated, defaults to the `kubernetes` directory of the project's output directory.
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CRD_OUTPUT_DIRECTORY+++[]
@@ -87,7 +87,7 @@ ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CRD_OUTPUT_DIRECTORY+++`
 endif::add-copy-button-to-env-var[]
 --|string 
-|`kubernetes`
+|
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-sdk.crd.generate-all]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.crd.generate-all[quarkus.operator-sdk.crd.generate-all]`

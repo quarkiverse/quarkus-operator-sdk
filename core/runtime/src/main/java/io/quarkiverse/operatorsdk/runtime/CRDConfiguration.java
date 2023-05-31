@@ -42,10 +42,11 @@ public class CRDConfiguration {
     public List<String> versions;
 
     /**
-     * The directory where the CRDs will be generated, relative to the project's output directory.
+     * The directory where the CRDs will be generated, defaults to the {@code kubernetes}
+     * directory of the project's output directory.
      */
-    @ConfigItem(defaultValue = DEFAULT_OUTPUT_DIRECTORY)
-    public String outputDirectory;
+    @ConfigItem
+    public Optional<String> outputDirectory;
 
     /**
      * Whether the extension should generate all CRDs even if some are not tied to a Reconciler.
