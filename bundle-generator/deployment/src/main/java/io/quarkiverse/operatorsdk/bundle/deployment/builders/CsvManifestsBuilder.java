@@ -47,8 +47,18 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         csvBuilder = new ClusterServiceVersionBuilder();
 
         final var metadataBuilder = csvBuilder.withNewMetadata().withName(getName());
-        if (metadata.skipRange != null) {
-            metadataBuilder.addToAnnotations("olm.skipRange", metadata.skipRange);
+        if (metadata.annotations != null) {
+            metadataBuilder.addToAnnotations("olm.skipRange", metadata.annotations.skipRange);
+            metadataBuilder.addToAnnotations("containerImage", metadata.annotations.containerImage);
+            metadataBuilder.addToAnnotations("repository", metadata.annotations.repository);
+            metadataBuilder.addToAnnotations("capabilities", metadata.annotations.capabilities);
+            metadataBuilder.addToAnnotations("categories", metadata.annotations.categories);
+            metadataBuilder.addToAnnotations("certified",
+                    String.valueOf(metadata.annotations.certified));
+            metadataBuilder.addToAnnotations("alm-examples", metadata.annotations.almExamples);
+            if (metadata.annotations.others != null) {
+                metadata.annotations.others.forEach(metadataBuilder::addToAnnotations);
+            }
         }
         csvBuilder = metadataBuilder.endMetadata();
 
@@ -67,15 +77,6 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                     .withName(metadata.providerName)
                     .withUrl(metadata.providerURL)
                     .endProvider();
-        }
-
-        if (metadata.annotations != null) {
-            csvSpecBuilder.addToAnnotations("containerImage", metadata.annotations.containerImage);
-            csvSpecBuilder.addToAnnotations("repository", metadata.annotations.repository);
-            csvSpecBuilder.addToAnnotations("capabilities", metadata.annotations.capabilities);
-            csvSpecBuilder.addToAnnotations("categories", metadata.annotations.categories);
-            csvSpecBuilder.addToAnnotations("certified", String.valueOf(metadata.annotations.certified));
-            csvSpecBuilder.addToAnnotations("alm-examples", metadata.annotations.almExamples);
         }
 
         if (metadata.maintainers != null) {

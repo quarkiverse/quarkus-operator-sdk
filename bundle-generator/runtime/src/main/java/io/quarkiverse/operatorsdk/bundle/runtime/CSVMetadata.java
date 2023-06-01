@@ -27,8 +27,6 @@ public @interface CSVMetadata {
 
     String replaces() default "";
 
-    String skipRange() default "";
-
     Maintainer[] maintainers() default {};
 
     Provider provider() default @Provider;
@@ -55,6 +53,16 @@ public @interface CSVMetadata {
         boolean certified() default false;
 
         String almExamples() default "";
+
+        String skipRange() default "";
+
+        Annotation[] others() default {};
+
+        @interface Annotation {
+            String name();
+
+            String value();
+        }
     }
 
     @interface Icon {

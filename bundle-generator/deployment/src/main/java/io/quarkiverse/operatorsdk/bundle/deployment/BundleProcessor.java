@@ -6,9 +6,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -203,6 +205,16 @@ public class BundleProcessor {
         CSVMetadataHolder.Annotations annotations;
         if (annotationsField != null) {
             final var annotationsAnn = annotationsField.asNested();
+
+            final var othersAnn = annotationsAnn.value("others");
+            Map<String, String> others = Collections.emptyMap();
+            if (othersAnn != null) {
+                final var othersArray = othersAnn.asNestedArray();
+                others = new HashMap<>(othersArray.length);
+                for (AnnotationInstance other : othersArray) {
+                    others.put(other.value("name").asString(), other.value("value").asString());
+                }
+            }
             annotations = new CSVMetadataHolder.Annotations(
                     ConfigurationUtils.annotationValueOrDefault(annotationsAnn, "containerImage",
                             AnnotationValue::asString, () -> null),
@@ -215,7 +227,10 @@ public class BundleProcessor {
                     ConfigurationUtils.annotationValueOrDefault(annotationsAnn, "certified",
                             AnnotationValue::asBoolean, () -> false),
                     ConfigurationUtils.annotationValueOrDefault(annotationsAnn, "almExamples",
-                            AnnotationValue::asString, () -> null));
+                            AnnotationValue::asString, () -> null),
+                    ConfigurationUtils.annotationValueOrDefault(annotationsAnn, "skipRange",
+                            AnnotationValue::asString, () -> null),
+                    others);
         } else {
             annotations = mh.annotations;
         }
@@ -337,8 +352,6 @@ public class BundleProcessor {
                         AnnotationValue::asString, () -> mh.replaces),
                 ConfigurationUtils.annotationValueOrDefault(csvMetadata, "skips",
                         AnnotationValue::asStringArray, () -> mh.skips),
-                ConfigurationUtils.annotationValueOrDefault(csvMetadata, "skipRange",
-                        AnnotationValue::asString, () -> mh.skipRange),
                 ConfigurationUtils.annotationValueOrDefault(csvMetadata, "version",
                         AnnotationValue::asString, () -> mh.version),
                 ConfigurationUtils.annotationValueOrDefault(csvMetadata, "maturity",
