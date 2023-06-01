@@ -53,6 +53,16 @@ public @interface CSVMetadata {
         boolean certified() default false;
 
         String almExamples() default "";
+
+        String skipRange() default "";
+
+        Annotation[] others() default {};
+
+        @interface Annotation {
+            String name();
+
+            String value();
+        }
     }
 
     @interface Icon {
