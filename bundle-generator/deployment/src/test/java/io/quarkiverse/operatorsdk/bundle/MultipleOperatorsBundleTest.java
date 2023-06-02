@@ -21,8 +21,6 @@ import io.quarkus.test.QuarkusProdModeTest;
 
 public class MultipleOperatorsBundleTest {
 
-    private static final String BUNDLE = "bundle";
-
     @RegisterExtension
     static final QuarkusProdModeTest config = new QuarkusProdModeTest()
             .withApplicationRoot((jar) -> jar
@@ -38,7 +36,7 @@ public class MultipleOperatorsBundleTest {
 
     @Test
     public void shouldWriteBundleForTheOperators() throws IOException {
-        final var bundle = prodModeTestResults.getBuildDir().resolve(BUNDLE);
+        final var bundle = prodModeTestResults.getBuildDir().resolve(Utils.BUNDLE);
         checkBundleFor(bundle, "first-operator", First.class);
         checkBundleFor(bundle, "second-operator", Second.class);
 

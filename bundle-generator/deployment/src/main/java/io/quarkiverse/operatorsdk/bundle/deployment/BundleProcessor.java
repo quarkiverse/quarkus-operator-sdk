@@ -11,14 +11,12 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
-import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
@@ -61,8 +59,8 @@ public class BundleProcessor {
             BundleGenerationConfiguration bundleConfiguration,
             CombinedIndexBuildItem combinedIndexBuildItem) {
         final var index = combinedIndexBuildItem.getIndex();
-        final var operatorCsvMetadata = getCSVMetadataForOperator(
-                bundleConfiguration.packageName.orElse(configuration.getName()), index);
+        final var defaultName = bundleConfiguration.packageName.orElse(configuration.getName());
+        final var sharedMetadataHolders = getSharedMetadataHolders(defaultName, index);
         final var csvGroups = new HashMap<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>>();
 
         ClassUtils.getKnownReconcilers(index, log)
@@ -72,12 +70,50 @@ public class BundleProcessor {
                     log.debugv("Processing reconciler: {0}", name);
 
                     // Check whether the reconciler must be shipped using a custom bundle
-                    CSVMetadataHolder csvMetadata = getCsvMetadataFromAnnotation(operatorCsvMetadata,
-                            reconcilerInfo.classInfo()).orElse(operatorCsvMetadata);
+                    final var csvMetadataAnnotation = reconcilerInfo.classInfo()
+                            .declaredAnnotation(CSV_METADATA);
+                    final var maybeCSVMetadataName = getCSVMetadataName(csvMetadataAnnotation);
+                    final var csvMetadataName = maybeCSVMetadataName.orElse(defaultName);
+
+                    var csvMetadata = sharedMetadataHolders.get(csvMetadataName);
+                    if (csvMetadata == null) {
+                        final var origin = reconcilerInfo.classInfo().name().toString();
+
+                        if (!csvMetadataName.equals(defaultName)) {
+                            final var maybeExistingOrigin = csvGroups.keySet().stream()
+                                    .filter(mh -> mh.name.equals(csvMetadataName))
+                                    .map(CSVMetadataHolder::getOrigin)
+                                    .findFirst();
+                            if (maybeExistingOrigin.isPresent()) {
+                                throw new IllegalStateException("Reconcilers '" + maybeExistingOrigin.get()
+                                        + "' and '" + origin
+                                        + "' are using the same bundle name '" + csvMetadataName
+                                        + "' but no SharedCSVMetadata implementation with that name exists. Please create a SharedCSVMetadata with that name to have one single source of truth and reference it via CSVMetadata annotations using that name on your reconcilers.");
+                            }
+                        }
+                        csvMetadata = createMetadataHolder(csvMetadataAnnotation,
+                                new CSVMetadataHolder(csvMetadataName, origin));
+                    }
+                    log.infov("Assigning ''{0}'' reconciler to {1}",
+                            reconcilerInfo.nameOrFailIfUnset(),
+                            getMetadataOriginInformation(csvMetadataAnnotation, maybeCSVMetadataName, csvMetadata));
+
                     csvGroups.computeIfAbsent(csvMetadata, m -> new ArrayList<>()).add(reconcilerInfo);
                 });
 
         return new CSVMetadataBuildItem(csvGroups);
+    }
+
+    private String getMetadataOriginInformation(AnnotationInstance csvMetadataAnnotation, Optional<String> csvMetadataName,
+            CSVMetadataHolder metadataHolder) {
+        final var isDefault = csvMetadataAnnotation == null;
+        final var actualName = metadataHolder.name;
+        if (isDefault) {
+            return "default bundle automatically named '" + actualName + "'";
+        } else {
+            return "bundle " + (csvMetadataName.isEmpty() ? "automatically " : "") + "named '"
+                    + actualName + "' defined by '" + metadataHolder.getOrigin() + "'";
+        }
     }
 
     @SuppressWarnings("unused")
@@ -169,27 +205,44 @@ public class BundleProcessor {
         }
     }
 
-    private CSVMetadataHolder getCSVMetadataForOperator(String name, IndexView index) {
-        CSVMetadataHolder csvMetadata = new CSVMetadataHolder(name);
-        csvMetadata = aggregateMetadataFromSharedCsvMetadata(csvMetadata, index);
-        return csvMetadata;
+    private Map<String, CSVMetadataHolder> getSharedMetadataHolders(String name, IndexView index) {
+        CSVMetadataHolder csvMetadata = new CSVMetadataHolder(name, "default");
+        final var sharedMetadataImpls = index.getAllKnownImplementors(SHARED_CSV_METADATA);
+        final var result = new HashMap<String, CSVMetadataHolder>(sharedMetadataImpls.size() + 1);
+        sharedMetadataImpls.forEach(sharedMetadataImpl -> {
+            final var csvMetadataAnn = sharedMetadataImpl.declaredAnnotation(CSV_METADATA);
+            if (csvMetadataAnn != null) {
+                final var origin = sharedMetadataImpl.name().toString();
+                final var metadataHolder = createMetadataHolder(csvMetadataAnn, csvMetadata, origin);
+                final var existing = result.get(metadataHolder.name);
+                if (existing != null) {
+                    throw new IllegalStateException(
+                            "Only one SharedCSVMetadata named " + metadataHolder.name
+                                    + " can be defined. Was defined on (at least): " + existing.getOrigin() + " and " + origin);
+                }
+                result.put(metadataHolder.name, metadataHolder);
+            }
+        });
+        return result;
     }
 
-    private Optional<CSVMetadataHolder> getCsvMetadataFromAnnotation(CSVMetadataHolder holder, ClassInfo info) {
-        return Optional.ofNullable(info.declaredAnnotation(CSV_METADATA))
-                .map(annotationInstance -> createMetadataHolder(annotationInstance, holder));
+    private Optional<String> getCSVMetadataName(AnnotationInstance csvMetadataAnnotation) {
+        return Optional.ofNullable(csvMetadataAnnotation)
+                .map(annotation -> annotation.value("name"))
+                .map(AnnotationValue::asString);
     }
 
-    private CSVMetadataHolder aggregateMetadataFromSharedCsvMetadata(CSVMetadataHolder holder, IndexView index) {
-        return index.getAllKnownImplementors(SHARED_CSV_METADATA).stream()
-                .map(t -> t.declaredAnnotation(CSV_METADATA))
-                .filter(Objects::nonNull)
-                .map(annotation -> createMetadataHolder(annotation, holder))
-                .findFirst()
-                .orElse(holder);
+    private CSVMetadataHolder createMetadataHolder(AnnotationInstance csvMetadata,
+            CSVMetadataHolder mh) {
+        return createMetadataHolder(csvMetadata, mh, mh.getOrigin());
     }
 
-    private CSVMetadataHolder createMetadataHolder(AnnotationInstance csvMetadata, CSVMetadataHolder mh) {
+    private CSVMetadataHolder createMetadataHolder(AnnotationInstance csvMetadata, CSVMetadataHolder mh,
+            String origin) {
+        if (csvMetadata == null) {
+            return mh;
+        }
+
         final var providerField = csvMetadata.value("provider");
         String providerName = null;
         String providerURL = null;
@@ -363,6 +416,7 @@ public class BundleProcessor {
                 icon,
                 installModes,
                 permissionRules,
-                requiredCRDs);
+                requiredCRDs,
+                origin);
     }
 }
