@@ -78,6 +78,19 @@ public class BundleProcessor {
                     var csvMetadata = sharedMetadataHolders.get(csvMetadataName);
                     if (csvMetadata == null) {
                         final var origin = reconcilerInfo.classInfo().name().toString();
+
+                        if (!csvMetadataName.equals(defaultName)) {
+                            final var maybeExistingOrigin = csvGroups.keySet().stream()
+                                    .filter(mh -> mh.name.equals(csvMetadataName))
+                                    .map(CSVMetadataHolder::getOrigin)
+                                    .findFirst();
+                            if (maybeExistingOrigin.isPresent()) {
+                                throw new IllegalStateException("Reconcilers '" + maybeExistingOrigin.get()
+                                        + "' and '" + origin
+                                        + "' are using the same bundle name '" + csvMetadataName
+                                        + "' but no SharedCSVMetadata implementation with that name exists. Please create a SharedCSVMetadata with that name to have one single source of truth and reference it via CSVMetadata annotations using that name on your reconcilers.");
+                            }
+                        }
                         csvMetadata = createMetadataHolder(csvMetadataAnnotation,
                                 new CSVMetadataHolder(csvMetadataName, origin));
                     }

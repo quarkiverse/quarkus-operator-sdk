@@ -10,6 +10,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 
 public class Utils {
 
+    static final String BUNDLE = "bundle";
+
     static void checkBundleFor(Path bundle, String operatorName,
             Class<? extends HasMetadata> resourceClass) {
         final var operatorManifests = bundle.resolve(operatorName);

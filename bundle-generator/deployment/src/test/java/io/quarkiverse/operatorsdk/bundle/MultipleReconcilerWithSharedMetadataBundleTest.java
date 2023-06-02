@@ -14,9 +14,7 @@ import io.quarkus.test.ProdBuildResults;
 import io.quarkus.test.ProdModeTestResults;
 import io.quarkus.test.QuarkusProdModeTest;
 
-public class MultipleReconcilerWithSharedMetadataGroupBundleTest {
-
-    private static final String BUNDLE = "bundle";
+public class MultipleReconcilerWithSharedMetadataBundleTest {
 
     public static final String APPLICATION_NAME = "application-name";
     @RegisterExtension
@@ -30,7 +28,7 @@ public class MultipleReconcilerWithSharedMetadataGroupBundleTest {
 
     @Test
     public void shouldWriteBundleForTheOperators() throws IOException {
-        final var bundle = prodModeTestResults.getBuildDir().resolve(BUNDLE);
+        final var bundle = prodModeTestResults.getBuildDir().resolve(Utils.BUNDLE);
         checkBundleFor(bundle, "shared", null);
         // reconcilers with no csv metadata should use the application name
         checkBundleFor(bundle, APPLICATION_NAME, null);
