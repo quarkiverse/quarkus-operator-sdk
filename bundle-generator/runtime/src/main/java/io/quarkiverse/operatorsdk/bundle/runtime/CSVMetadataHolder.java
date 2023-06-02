@@ -6,6 +6,7 @@ import java.util.Objects;
 
 public class CSVMetadataHolder {
     public final String name;
+    private final String origin;
     public final String description;
     public final String displayName;
     public final Annotations annotations;
@@ -116,18 +117,9 @@ public class CSVMetadataHolder {
 
     }
 
-    @SuppressWarnings("unused")
-    public CSVMetadataHolder(CSVMetadataHolder other) {
-        this(other.name, other.description, other.displayName, other.annotations, other.keywords, other.providerName,
-                other.providerURL,
-                other.replaces, other.skips, other.version, other.maturity, other.minKubeVersion,
-                other.maintainers,
-                other.links, other.icon,
-                other.installModes, other.permissionRules, other.requiredCRDs);
-    }
-
-    public CSVMetadataHolder(String name) {
-        this(name, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+    public CSVMetadataHolder(String name, String origin) {
+        this(name, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+                origin);
     }
 
     public CSVMetadataHolder(String name, String description, String displayName, Annotations annotations, String[] keywords,
@@ -135,7 +127,7 @@ public class CSVMetadataHolder {
             String providerURL, String replaces, String[] skips, String version, String maturity,
             String minKubeVersion,
             Maintainer[] maintainers, Link[] links, Icon[] icon,
-            InstallMode[] installModes, PermissionRule[] permissionRules, RequiredCRD[] requiredCRDs) {
+            InstallMode[] installModes, PermissionRule[] permissionRules, RequiredCRD[] requiredCRDs, String origin) {
         this.name = name;
         this.description = description;
         this.displayName = displayName;
@@ -154,6 +146,7 @@ public class CSVMetadataHolder {
         this.installModes = installModes;
         this.permissionRules = permissionRules;
         this.requiredCRDs = requiredCRDs;
+        this.origin = origin;
     }
 
     @Override
@@ -169,5 +162,9 @@ public class CSVMetadataHolder {
     @Override
     public int hashCode() {
         return Objects.hash(name);
+    }
+
+    public String getOrigin() {
+        return origin;
     }
 }
