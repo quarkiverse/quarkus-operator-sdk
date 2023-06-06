@@ -15,7 +15,11 @@
     <quarkus.version>3.1.0.Final</quarkus.version>
     <java-operator-sdk.version>4.3.5</java-operator-sdk.version>
   </properties>
-
+  <scm>
+    <connection>:git:git@github.com:quarkiverse/quarkus-operator-sdk.git</connection>
+    <developerConnection>scm:git:git@github.com:quarkiverse/quarkus-operator-sdk.git</developerConnection>
+    <url>https://github.com/quarkiverse/quarkus-operator-sdk</url>
+  </scm>
   <repositories>
     <repository>
       <id>central</id>
@@ -35,7 +39,6 @@
       </snapshots>
     </repository>
   </repositories>
-
   <pluginRepositories>
     <pluginRepository>
       <id>central</id>
@@ -58,7 +61,6 @@
       </snapshots>
     </pluginRepository>
   </pluginRepositories>
-
   <profiles>
     <profile>
       <id>default</id>
@@ -120,8 +122,7 @@
             <configuration>
               <skipTests>${native.surefire.skip}</skipTests>
               <systemPropertyVariables>
-                <java.util.logging.manager>org.jboss.logmanager.LogManager
-                </java.util.logging.manager>
+                <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                 <maven.home>${maven.home}</maven.home>
               </systemPropertyVariables>
             </configuration>
@@ -136,11 +137,8 @@
                 </goals>
                 <configuration>
                   <systemPropertyVariables>
-                    <native.image.path>
-                      ${project.build.directory}/${project.build.finalName}-runner
-                    </native.image.path>
-                    <java.util.logging.manager>org.jboss.logmanager.LogManager
-                    </java.util.logging.manager>
+                    <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
+                    <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                     <maven.home>${maven.home}</maven.home>
                   </systemPropertyVariables>
                 </configuration>
@@ -156,3 +154,4 @@
     </profile>
   </profiles>
 </project>
+
