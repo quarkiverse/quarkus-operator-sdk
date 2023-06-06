@@ -12,6 +12,8 @@ public class RunTimeControllerConfiguration {
     /**
      * An optional list of comma-separated namespace names the controller should watch. If this
      * property is left empty then the controller will watch all namespaces.
+     * The value can be set to "JOSDK_WATCH_CURRENT" to watch the current (default) namespace from kube config.
+     * Constant(s) can be found in at {@link io.javaoperatorsdk.operator.api.reconciler.Constants}".
      */
     @ConfigItem
     public Optional<List<String>> namespaces;

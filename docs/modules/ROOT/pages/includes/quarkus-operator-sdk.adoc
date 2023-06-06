@@ -274,7 +274,7 @@ a| [[quarkus-operator-sdk_quarkus.operator-sdk.namespaces]]`link:#quarkus-operat
 
 [.description]
 --
-An optional list of comma-separated namespace names all controllers will watch if not specified. If this property is left empty then controllers will watch all namespaces by default. Sets the default value for all controllers.
+An optional list of comma-separated namespace names all controllers will watch if not specified. If this property is left empty then controllers will watch all namespaces by default. Sets the default value for all controllers. The value can be set to "JOSDK_WATCH_CURRENT" to watch the current (default) namespace from kube config. Constant(s) can be found in at `io.javaoperatorsdk.operator.api.reconciler.Constants`".
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_NAMESPACES+++[]
@@ -355,7 +355,7 @@ a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.namespa
 
 [.description]
 --
-An optional list of comma-separated namespace names the controller should watch. If this property is left empty then the controller will watch all namespaces.
+An optional list of comma-separated namespace names the controller should watch. If this property is left empty then the controller will watch all namespaces. The value can be set to "JOSDK_WATCH_CURRENT" to watch the current (default) namespace from kube config. Constant(s) can be found in at `io.javaoperatorsdk.operator.api.reconciler.Constants`".
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__NAMESPACES+++[]
