@@ -2,6 +2,7 @@ package io.quarkiverse.operatorsdk.deployment;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 
 import io.dekorate.kubernetes.decorator.ResourceProvidingDecorator;
@@ -35,20 +36,19 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
 
     static final String JOSDK_CRD_VALIDATING_CLUSTER_ROLE = "josdk-crd-validating-cluster-role";
     @SuppressWarnings("rawtypes")
-    private final Map<String, QuarkusControllerConfiguration> configs;
+    private final Collection<QuarkusControllerConfiguration> configs;
 
     private final boolean validateCRDs;
 
     @SuppressWarnings("rawtypes")
-    public AddClusterRolesDecorator(
-            Map<String, QuarkusControllerConfiguration> configs, boolean validateCRDs) {
+    public AddClusterRolesDecorator(Collection<QuarkusControllerConfiguration> configs, boolean validateCRDs) {
         this.configs = configs;
         this.validateCRDs = validateCRDs;
     }
 
     @Override
     public void visit(KubernetesListBuilder list) {
-        configs.forEach((controller, cri) -> {
+        configs.forEach(cri -> {
             final var rule = new PolicyRuleBuilder();
             final var resourceClass = cri.getResourceClass();
             final var plural = HasMetadata.getPlural(resourceClass);
@@ -69,7 +69,7 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
 
             final var clusterRoleBuilder = new ClusterRoleBuilder()
                     .withNewMetadata()
-                    .withName(getClusterRoleName(controller))
+                    .withName(getClusterRoleName(cri.getName()))
                     .endMetadata()
                     .addToRules(rule.build());
 

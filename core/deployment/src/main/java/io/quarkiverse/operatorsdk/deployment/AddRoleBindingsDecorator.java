@@ -2,8 +2,7 @@ package io.quarkiverse.operatorsdk.deployment;
 
 import static io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator.getClusterRoleName;
 
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -22,13 +21,13 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
     protected static final String RBAC_AUTHORIZATION_GROUP = "rbac.authorization.k8s.io";
     protected static final String CLUSTER_ROLE = "ClusterRole";
     protected static final String SERVICE_ACCOUNT = "ServiceAccount";
-    private final Map<String, QuarkusControllerConfiguration> configs;
+    private final Collection<QuarkusControllerConfiguration> configs;
     private final boolean validateCRDs;
     private static final ConcurrentMap<String, Object> alreadyLogged = new ConcurrentHashMap<>();
     private static final Optional<String> deployNamespace = ConfigProvider.getConfig()
             .getOptionalValue("quarkus.kubernetes.namespace", String.class);
 
-    public AddRoleBindingsDecorator(Map<String, QuarkusControllerConfiguration> configs,
+    public AddRoleBindingsDecorator(Collection<QuarkusControllerConfiguration> configs,
             boolean validateCRDs) {
         this.configs = configs;
         this.validateCRDs = validateCRDs;
@@ -37,9 +36,9 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
     @Override
     public void visit(KubernetesListBuilder list) {
         final var serviceAccountName = getMandatoryDeploymentMetadata(list).getName();
-        for (Entry<String, QuarkusControllerConfiguration> entry : configs.entrySet()) {
-            String controllerName = entry.getKey();
-            QuarkusControllerConfiguration<?> config = entry.getValue();
+        configs.forEach(controllerConfiguration -> {
+            QuarkusControllerConfiguration<?> config = (QuarkusControllerConfiguration<?>) controllerConfiguration;
+            String controllerName = config.getName();
             if (config.watchCurrentNamespace()) {
                 // create a RoleBinding that will be applied in the current namespace if watching only the current NS
                 list.addToItems(new RoleBindingBuilder()
@@ -74,7 +73,7 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
                 handleClusterRoleBinding(list, serviceAccountName, controllerName, crBindingName, "validate CRDs",
                         AddClusterRolesDecorator.JOSDK_CRD_VALIDATING_CLUSTER_ROLE);
             }
-        }
+        });
     }
 
     private void handleClusterRoleBinding(KubernetesListBuilder list, String serviceAccountName,
