@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -60,7 +59,6 @@ import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
 import io.quarkus.kubernetes.client.spi.KubernetesClientBuildItem;
-import io.quarkus.kubernetes.spi.DecoratorBuildItem;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.metrics.MetricsFactory;
 
@@ -266,27 +264,6 @@ class OperatorSDKProcessor {
                     new ForceNonWeakReflectiveClassBuildItem(cn));
             log.infov("Registered ''{0}'' for reflection", cn);
         });
-    }
-
-    private static class IsRBACEnabled implements BooleanSupplier {
-
-        private BuildTimeOperatorConfiguration config;
-
-        @Override
-        public boolean getAsBoolean() {
-            return !config.disableRbacGeneration;
-        }
-    }
-
-    @BuildStep(onlyIf = IsRBACEnabled.class)
-    public void addRBACForResources(BuildProducer<DecoratorBuildItem> decorators,
-            ControllerConfigurationsBuildItem configurations) {
-
-        final var configs = configurations.getControllerConfigs();
-        decorators.produce(new DecoratorBuildItem(
-                new AddClusterRolesDecorator(configs, buildTimeConfiguration.crd.validate)));
-        decorators.produce(new DecoratorBuildItem(
-                new AddRoleBindingsDecorator(configs, buildTimeConfiguration.crd.validate)));
     }
 
     private ResultHandle getHandleFromCDI(MethodCreator mc, MethodDescriptor selectMethod,

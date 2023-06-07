@@ -12,7 +12,7 @@ public class BundleGenerationConfiguration {
     /**
      * Whether the extension should generate the Operator bundle.
      */
-    @ConfigItem(defaultValue = "false")
+    @ConfigItem(defaultValue = "true")
     public Boolean enabled;
 
     /**
