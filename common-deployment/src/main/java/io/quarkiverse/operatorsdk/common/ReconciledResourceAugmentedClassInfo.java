@@ -26,6 +26,10 @@ public class ReconciledResourceAugmentedClassInfo<T extends HasMetadata> extends
         return HasMetadataUtils.getVersion(classInfo());
     }
 
+    public String group() {
+        return HasMetadataUtils.getGroup(classInfo());
+    }
+
     @Override
     public boolean isResource() {
         return true;

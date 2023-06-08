@@ -16,7 +16,7 @@ import io.quarkus.test.QuarkusProdModeTest;
 
 public class DefaultBundleWhenNoCsvMetadataTest {
 
-   @RegisterExtension
+    @RegisterExtension
     static final QuarkusProdModeTest config = new QuarkusProdModeTest()
             .setApplicationName("reconciler-with-no-csv-metadata")
             .withApplicationRoot((jar) -> jar
