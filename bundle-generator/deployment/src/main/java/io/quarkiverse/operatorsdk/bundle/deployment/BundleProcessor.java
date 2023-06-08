@@ -189,12 +189,12 @@ public class BundleProcessor {
                                         Path.of(BUNDLE).resolve(manifestBuilder.getName()).resolve(fileName).toString(),
                                         manifestBuilder.getManifestData(serviceAccounts, clusterRoleBindings, clusterRoles,
                                                 roleBindings, roles, deployments)));
-                        log.infov("Generating {0} for {1} controller -> {2}",
+                        log.infov("Generating {0} for ''{1}'' controller -> {2}",
                                 manifestBuilder.getManifestType(),
                                 manifestBuilder.getName(),
                                 outputDir.resolve(manifestBuilder.getName()).resolve(fileName));
                     } catch (IOException e) {
-                        log.errorv("Cannot generate {0} for {1}: {2}",
+                        log.errorv("Cannot generate {0} for ''{1}'' controller: {2}",
                                 manifestBuilder.getManifestType(), manifestBuilder.getName(), e.getMessage());
                     }
                 });
