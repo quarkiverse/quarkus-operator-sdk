@@ -1,5 +1,7 @@
 package io.quarkiverse.operatorsdk.bundle;
 
+import static io.quarkiverse.operatorsdk.bundle.Utils.BUNDLE;
+
 import java.nio.file.Files;
 
 import org.junit.jupiter.api.Assertions;
@@ -13,8 +15,6 @@ import io.quarkus.test.ProdModeTestResults;
 import io.quarkus.test.QuarkusProdModeTest;
 
 public class DefaultBundleWhenNoCsvMetadataTest {
-
-    private static final String BUNDLE = "bundle";
 
     @RegisterExtension
     static final QuarkusProdModeTest config = new QuarkusProdModeTest()

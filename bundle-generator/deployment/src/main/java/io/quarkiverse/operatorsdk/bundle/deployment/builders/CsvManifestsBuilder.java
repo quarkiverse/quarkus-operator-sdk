@@ -7,9 +7,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 
+import io.fabric8.kubernetes.api.model.GroupVersionKind;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.*;
@@ -31,12 +33,10 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     private static final String ROLE_KIND = "Role";
     private static final String NO_SERVICE_ACCOUNT = "";
     private static final Logger LOGGER = Logger.getLogger(CsvManifestsBuilder.class.getName());
-
     private static final String IMAGE_PNG = "image/png";
-
     private ClusterServiceVersionBuilder csvBuilder;
-    private final SortedSet<String> ownedCRs = new TreeSet<>();
-    private final SortedSet<String> requiredCRs = new TreeSet<>();
+    private final Set<CRDDescription> ownedCRs = new HashSet<>();
+    private final Set<CRDDescription> requiredCRs = new HashSet<>();
     private final Path kubernetesResources;
 
     public CsvManifestsBuilder(CSVMetadataHolder metadata, List<ReconcilerAugmentedClassInfo> controllers,
@@ -137,20 +137,18 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         }
 
         // add owned and required CRD, also collect them
-        final var crdsBuilder = csvSpecBuilder.editOrNewCustomresourcedefinitions();
+        final var nativeApis = new ArrayList<GroupVersionKind>();
         controllers.forEach(raci -> {
             // add owned CRD
             final var resourceInfo = raci.associatedResourceInfo();
             if (resourceInfo.isCR()) {
                 final var asResource = resourceInfo.asResourceTargeting();
                 final var fullResourceName = asResource.fullResourceName();
-                ownedCRs.add(fullResourceName);
-                crdsBuilder
-                        .addNewOwned()
+                ownedCRs.add(new CRDDescriptionBuilder()
                         .withName(fullResourceName)
                         .withVersion(asResource.version())
                         .withKind(asResource.kind())
-                        .endOwned();
+                        .build());
             }
 
             // add required CRD for each dependent that targets a CR
@@ -158,41 +156,62 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             if (dependents != null && !dependents.isEmpty()) {
                 dependents.stream()
                         .map(ResourceAssociatedAugmentedClassInfo::associatedResourceInfo)
-                        .filter(ReconciledAugmentedClassInfo::isCR)
                         .map(ReconciledAugmentedClassInfo::asResourceTargeting)
                         .forEach(secondaryResource -> {
-                            final var fullResourceName = secondaryResource.fullResourceName();
-                            requiredCRs.add(fullResourceName);
-                            crdsBuilder.addNewRequired()
-                                    .withName(fullResourceName)
-                                    .withVersion(secondaryResource.version())
-                                    .withKind(secondaryResource.kind())
-                                    .endRequired();
+                            if (secondaryResource.isCR()) {
+                                final var fullResourceName = secondaryResource.fullResourceName();
+                                requiredCRs.add(new CRDDescriptionBuilder()
+                                        .withName(fullResourceName)
+                                        .withVersion(secondaryResource.version())
+                                        .withKind(secondaryResource.kind())
+                                        .build());
+                            } else {
+                                nativeApis.add(new GroupVersionKind(secondaryResource.group(), secondaryResource.kind(),
+                                        secondaryResource.version()));
+                            }
                         });
             }
-
-            // add required CRDs from CSV metadata
-            if (metadata.requiredCRDs != null) {
-                for (RequiredCRD requiredCRD : metadata.requiredCRDs) {
-                    requiredCRs.add(requiredCRD.name);
-                    crdsBuilder.addNewRequired()
-                            .withKind(requiredCRD.kind)
-                            .withName(requiredCRD.name)
-                            .withVersion(requiredCRD.version)
-                            .endRequired();
-                }
-            }
-
         });
-        crdsBuilder.endCustomresourcedefinitions().endSpec();
+
+        // add required CRDs from CSV metadata
+        if (metadata.requiredCRDs != null) {
+            for (RequiredCRD requiredCRD : metadata.requiredCRDs) {
+                requiredCRs.add(new CRDDescriptionBuilder()
+                        .withKind(requiredCRD.kind)
+                        .withName(requiredCRD.name)
+                        .withVersion(requiredCRD.version)
+                        .build());
+            }
+        }
+
+        // add sorted native APIs
+        csvSpecBuilder.addAllToNativeAPIs(nativeApis.stream()
+                .sorted(Comparator.comparing(CsvManifestsBuilder::asString))
+                .collect(Collectors.toList()));
+
+        csvSpecBuilder.editOrNewCustomresourcedefinitions()
+                .addAllToOwned(ownedCRs)
+                .addAllToRequired(requiredCRs)
+                .endCustomresourcedefinitions()
+                .endSpec();
+    }
+
+    private static String asString(GroupVersionKind gvk) {
+        return gvk.getGroup() + " " + gvk.getKind() + gvk.getVersion();
     }
 
     public Set<String> getOwnedCRs() {
-        return Collections.unmodifiableSet(ownedCRs);
+        return ownedCRs.stream()
+                .map(CRDDescription::getName)
+                .sorted()
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     public Set<String> getRequiredCRs() {
-        return Collections.unmodifiableSet(requiredCRs);
+        return requiredCRs.stream()
+                .map(CRDDescription::getName)
+                .sorted()
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     @Override
