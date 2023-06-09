@@ -4,7 +4,6 @@ import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
@@ -15,8 +14,6 @@ import jakarta.inject.Singleton;
 
 import org.jboss.jandex.DotName;
 import org.jboss.logging.Logger;
-import org.semver4j.Semver;
-import org.semver4j.Semver.VersionDiff;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -40,7 +37,6 @@ import io.quarkiverse.operatorsdk.runtime.OperatorHealthCheck;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
-import io.quarkiverse.operatorsdk.runtime.Version;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
@@ -118,10 +114,11 @@ class OperatorSDKProcessor {
             RunTimeOperatorConfiguration runTimeConfiguration,
             BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
             GeneratedCRDInfoBuildItem generatedCRDs,
-            ConfigurationServiceBuildItem serviceBuildItem,
+            ControllerConfigurationsBuildItem serviceBuildItem,
+            VersionBuildItem versionBuildItem,
             LaunchModeBuildItem launchMode) {
         final var supplier = recorder
-                .configurationServiceSupplier(serviceBuildItem.getVersion(),
+                .configurationServiceSupplier(versionBuildItem.getVersion(),
                         serviceBuildItem.getControllerConfigs(),
                         generatedCRDs.getCRDGenerationInfo(),
                         runTimeConfiguration, buildTimeConfiguration, launchMode.getLaunchMode());
@@ -135,46 +132,8 @@ class OperatorSDKProcessor {
                         .done());
     }
 
-    private void checkVersionCompatibility(String found, String expected, String name) {
-        // optimize most common case
-        if (Objects.equals(found, expected)) {
-            return;
-        }
-        final var foundVersionOpt = getSemverFrom(found);
-        final var expectedVersionOpt = getSemverFrom(expected);
-        if (foundVersionOpt.isEmpty() || expectedVersionOpt.isEmpty()) {
-            // abort version check if we couldn't parse the version for some reason as a version check should not prevent the rest of the processing to proceed
-            return;
-        }
-        final var foundVersion = foundVersionOpt.get();
-        final var expectedVersion = expectedVersionOpt.get();
-        if (!expectedVersion.equals(foundVersion)) {
-            String message = "Mismatched " + name + " version found: \"" + found + "\", expected: \"" + expected + "\"";
-            if (buildTimeConfiguration.failOnVersionCheck) {
-                throw new RuntimeException(message);
-            } else {
-                final var diff = expectedVersion.diff(foundVersion);
-                if (diff.compareTo(VersionDiff.MINOR) >= 0) {
-                    log.warn(message
-                            + " by at least a minor version and things might not work as expected.");
-                } else {
-                    log.debug(message);
-                }
-            }
-        }
-    }
-
-    private static Optional<Semver> getSemverFrom(String version) {
-        try {
-            return Optional.of(Semver.coerce(version));
-        } catch (Exception e) {
-            log.warn("Couldn't convert version " + version);
-        }
-        return Optional.empty();
-    }
-
     @BuildStep
-    ConfigurationServiceBuildItem createConfigurationServiceAndOperator(
+    ControllerConfigurationsBuildItem createConfigurationServiceAndOperator(
             OutputTargetBuildItem outputTarget,
             CombinedIndexBuildItem combinedIndexBuildItem,
             KubernetesClientBuildItem kubernetesClientBuildItem,
@@ -182,20 +141,8 @@ class OperatorSDKProcessor {
             BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             BuildProducer<GeneratedCRDInfoBuildItem> generatedCRDInfo,
-            BuildProducer<VersionBuildItem> versionBuildItemBuildProducer,
             LiveReloadBuildItem liveReload, LaunchModeBuildItem launchMode,
             BuildProducer<RunTimeConfigurationDefaultBuildItem> runtimeConfig) {
-
-        // check versions alignment
-        final var version = Version.loadFromProperties();
-        versionBuildItemBuildProducer.produce(new VersionBuildItem(version));
-        final var runtimeQuarkusVersion = io.quarkus.builder.Version.getVersion();
-        checkVersionCompatibility(runtimeQuarkusVersion, version.getQuarkusVersion(), "Quarkus");
-        final var runtimeFabric8Version = io.fabric8.kubernetes.client.Version.clientVersion();
-        checkVersionCompatibility(runtimeFabric8Version, version.getKubernetesClientVersion(),
-                "JOSDK Fabric8 Kubernetes Client");
-        String quarkusFabric8Version = io.quarkus.kubernetes.client.deployment.Versions.KUBERNETES_CLIENT;
-        checkVersionCompatibility(runtimeFabric8Version, quarkusFabric8Version, "Quarkus-provided Fabric8 Kubernetes Client");
 
         final CRDConfiguration crdConfig = buildTimeConfiguration.crd;
         final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(
@@ -307,7 +254,7 @@ class OperatorSDKProcessor {
 
         generatedCRDInfo.produce(new GeneratedCRDInfoBuildItem(crdInfo));
 
-        return new ConfigurationServiceBuildItem(version, controllerConfigs);
+        return new ControllerConfigurationsBuildItem(controllerConfigs);
     }
 
     private void registerAssociatedClassesForReflection(BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
@@ -333,7 +280,7 @@ class OperatorSDKProcessor {
 
     @BuildStep(onlyIf = IsRBACEnabled.class)
     public void addRBACForResources(BuildProducer<DecoratorBuildItem> decorators,
-            ConfigurationServiceBuildItem configurations) {
+            ControllerConfigurationsBuildItem configurations) {
 
         final var configs = configurations.getControllerConfigs();
         decorators.produce(new DecoratorBuildItem(
