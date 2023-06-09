@@ -1,7 +1,10 @@
 package io.quarkiverse.operatorsdk.bundle.deployment.builders;
 
 import static io.quarkiverse.operatorsdk.bundle.deployment.BundleGenerator.MANIFESTS;
+import static io.quarkiverse.operatorsdk.bundle.deployment.BundleProcessor.CRD_DESCRIPTION;
+import static io.quarkiverse.operatorsdk.bundle.deployment.BundleProcessor.CRD_DISPLAY_NAME;
 
+import io.quarkiverse.operatorsdk.common.ReconciledResourceAugmentedClassInfo;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -143,12 +146,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             final var resourceInfo = raci.associatedResourceInfo();
             if (resourceInfo.isCR()) {
                 final var asResource = resourceInfo.asResourceTargeting();
-                final var fullResourceName = asResource.fullResourceName();
-                ownedCRs.add(new CRDDescriptionBuilder()
-                        .withName(fullResourceName)
-                        .withVersion(asResource.version())
-                        .withKind(asResource.kind())
-                        .build());
+                ownedCRs.add(createCRDDescription(asResource));
             }
 
             // add required CRD for each dependent that targets a CR
@@ -159,12 +157,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                         .map(ReconciledAugmentedClassInfo::asResourceTargeting)
                         .forEach(secondaryResource -> {
                             if (secondaryResource.isCR()) {
-                                final var fullResourceName = secondaryResource.fullResourceName();
-                                requiredCRs.add(new CRDDescriptionBuilder()
-                                        .withName(fullResourceName)
-                                        .withVersion(secondaryResource.version())
-                                        .withKind(secondaryResource.kind())
-                                        .build());
+                                requiredCRs.add(createCRDDescription(secondaryResource));
                             } else {
                                 nativeApis.add(new GroupVersionKind(secondaryResource.group(), secondaryResource.kind(),
                                         secondaryResource.version()));
@@ -194,6 +187,17 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                 .addAllToRequired(requiredCRs)
                 .endCustomresourcedefinitions()
                 .endSpec();
+    }
+
+    private CRDDescription createCRDDescription(ReconciledResourceAugmentedClassInfo<?> secondaryResource) {
+        final var fullResourceName = secondaryResource.fullResourceName();
+        return new CRDDescriptionBuilder()
+            .withName(fullResourceName)
+            .withDisplayName(secondaryResource.getExtendedInfo(CRD_DISPLAY_NAME, String.class))
+            .withDescription(secondaryResource.getExtendedInfo(CRD_DESCRIPTION, String.class))
+            .withVersion(secondaryResource.version())
+            .withKind(secondaryResource.kind())
+            .build();
     }
 
     private static String asString(GroupVersionKind gvk) {
