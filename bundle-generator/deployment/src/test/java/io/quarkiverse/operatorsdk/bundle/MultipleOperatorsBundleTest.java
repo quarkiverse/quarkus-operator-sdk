@@ -5,6 +5,7 @@ import static io.quarkiverse.operatorsdk.bundle.Utils.checkBundleFor;
 import static io.quarkiverse.operatorsdk.bundle.Utils.getCRDNameFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.CRDDescription;
 import java.io.IOException;
 import java.nio.file.Files;
 
@@ -19,6 +20,7 @@ import io.quarkiverse.operatorsdk.bundle.sources.*;
 import io.quarkus.test.ProdBuildResults;
 import io.quarkus.test.ProdModeTestResults;
 import io.quarkus.test.QuarkusProdModeTest;
+import org.testcontainers.shaded.org.apache.commons.lang3.ThreadUtils.ThreadIdPredicate;
 
 public class MultipleOperatorsBundleTest {
 
@@ -47,9 +49,15 @@ public class MultipleOperatorsBundleTest {
         final var csvAsString = Files.readString(thirdManifests.resolve("third-operator.clusterserviceversion.yaml"));
         final var csv = Serialization.unmarshal(csvAsString, ClusterServiceVersion.class);
         final var crds = csv.getSpec().getCustomresourcedefinitions();
-        assertEquals(HasMetadata.getFullResourceName(Third.class), crds.getOwned().get(0).getName());
+        final var thirdCRD = crds.getOwned().get(0);
+        assertEquals(HasMetadata.getFullResourceName(Third.class), thirdCRD.getName());
+        assertEquals(Third.DISPLAY, thirdCRD.getDisplayName());
+        assertEquals(Third.DESCRIPTION, thirdCRD.getDescription());
         // CRDs should be alphabetically ordered
-        assertEquals(HasMetadata.getFullResourceName(External.class), crds.getRequired().get(0).getName());
+        final var externalCRD = crds.getRequired().get(0);
+        assertEquals(HasMetadata.getFullResourceName(External.class), externalCRD.getName());
+        assertEquals(External.DISPLAY_NAME, externalCRD.getDisplayName());
+        assertEquals(External.DESCRIPTION, externalCRD.getDescription());
         assertEquals(HasMetadata.getFullResourceName(SecondExternal.class), crds.getRequired().get(1).getName());
         // should list native APIs as well
         final var podGVK = csv.getSpec().getNativeAPIs().get(0);

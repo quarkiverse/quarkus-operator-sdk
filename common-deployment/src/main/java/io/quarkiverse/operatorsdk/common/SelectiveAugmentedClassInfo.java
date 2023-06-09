@@ -7,6 +7,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
@@ -22,6 +23,7 @@ public abstract class SelectiveAugmentedClassInfo {
     private Type[] types;
     private final DotName extendedOrImplementedClass;
     private final int expectedParameterTypesCardinality;
+    private final Map<Object, Object> extendedInfos = new ConcurrentHashMap<>();
 
     private final List<String> classNamesToRegisterForReflection = new ArrayList<>();
 
@@ -105,4 +107,13 @@ public abstract class SelectiveAugmentedClassInfo {
     }
 
     protected abstract void doAugment(IndexView index, Logger log, Map<String, Object> context);
+
+    @SuppressWarnings({ "unchecked", "unused" })
+    public <T> T getExtendedInfo(Object key, Class<T> expectedValueType) {
+        return (T) extendedInfos.get(key);
+    }
+
+    public void setExtendedInfo(Object key, Object value) {
+        extendedInfos.put(key, value);
+    }
 }

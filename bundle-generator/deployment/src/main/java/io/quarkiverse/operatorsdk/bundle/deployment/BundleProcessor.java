@@ -2,6 +2,7 @@ package io.quarkiverse.operatorsdk.bundle.deployment;
 
 import static io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator.ALL_VERBS;
 
+import io.quarkiverse.operatorsdk.common.DependentResourceAugmentedClassInfo;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -35,6 +36,7 @@ import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.bundle.runtime.SharedCSVMetadata;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
+import io.quarkiverse.operatorsdk.common.ReconciledAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.deployment.VersionBuildItem;
@@ -48,10 +50,13 @@ import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 
 public class BundleProcessor {
+
     private static final Logger log = Logger.getLogger(BundleProcessor.class);
     private static final DotName SHARED_CSV_METADATA = DotName.createSimple(SharedCSVMetadata.class.getName());
     private static final DotName CSV_METADATA = DotName.createSimple(CSVMetadata.class.getName());
     private static final String BUNDLE = "bundle";
+    public static final String CRD_DISPLAY_NAME = "CRD_DISPLAY_NAME";
+    public static final String CRD_DESCRIPTION = "CRD_DESCRIPTION";
 
     @SuppressWarnings({ "unused" })
     @BuildStep
@@ -98,10 +103,45 @@ public class BundleProcessor {
                             reconcilerInfo.nameOrFailIfUnset(),
                             getMetadataOriginInformation(csvMetadataAnnotation, maybeCSVMetadataName, csvMetadata));
 
-                    csvGroups.computeIfAbsent(csvMetadata, m -> new ArrayList<>()).add(reconcilerInfo);
+                    csvGroups.computeIfAbsent(csvMetadata, m -> new ArrayList<>()).add(
+                            augmentReconcilerInfo(reconcilerInfo));
                 });
 
         return new CSVMetadataBuildItem(csvGroups);
+    }
+
+    private static ReconcilerAugmentedClassInfo augmentReconcilerInfo(
+            ReconcilerAugmentedClassInfo reconcilerInfo) {
+        // if primary resource is a CR, check if it is annotated with CSVMetadata and augment it if it is
+        final ReconciledAugmentedClassInfo<?> primaryCI = reconcilerInfo.associatedResourceInfo();
+        augmentResourceInfoIfCR(primaryCI);
+
+        reconcilerInfo.getDependentResourceInfos().forEach(draci -> {
+            // if the dependent is a CR, check if it is annotated with CSVMetadata and augment it if it is
+            final ReconciledAugmentedClassInfo<?> reconciledAugmentedClassInfo = draci.associatedResourceInfo();
+            augmentResourceInfoIfCR(reconciledAugmentedClassInfo);
+        });
+        return reconcilerInfo;
+    }
+
+    private static void augmentResourceInfoIfCR(ReconciledAugmentedClassInfo<?> reconciledAugmentedClassInfo) {
+        if (reconciledAugmentedClassInfo.isCR()) {
+            final var csvMetadata = reconciledAugmentedClassInfo.classInfo().annotation(CSV_METADATA);
+            if (csvMetadata != null) {
+                // extract display name and description
+                final var displayName = ConfigurationUtils.annotationValueOrDefault(csvMetadata,
+                        "displayName", AnnotationValue::asString,
+                        () -> reconciledAugmentedClassInfo.asResourceTargeting().kind());
+                reconciledAugmentedClassInfo.setExtendedInfo(CRD_DISPLAY_NAME, displayName);
+                final var description = ConfigurationUtils.annotationValueOrDefault(
+                        csvMetadata,
+                        "description", AnnotationValue::asString,
+                        () -> null);
+                if (description != null) {
+                    reconciledAugmentedClassInfo.setExtendedInfo(CRD_DESCRIPTION, description);
+                }
+            }
+        }
     }
 
     private String getMetadataOriginInformation(AnnotationInstance csvMetadataAnnotation, Optional<String> csvMetadataName,
