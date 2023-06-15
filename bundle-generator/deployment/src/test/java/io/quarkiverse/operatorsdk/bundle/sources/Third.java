@@ -11,6 +11,6 @@ import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata;
 @CSVMetadata(displayName = Third.DISPLAY, description = Third.DESCRIPTION)
 public class Third extends CustomResource<Void, Void> implements Namespaced {
 
-  public static final String DESCRIPTION = "Third description";
-  public static final String DISPLAY = "Third display";
+    public static final String DESCRIPTION = "Third description";
+    public static final String DISPLAY = "Third display";
 }

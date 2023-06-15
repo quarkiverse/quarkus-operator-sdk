@@ -5,7 +5,6 @@ import static io.quarkiverse.operatorsdk.bundle.Utils.checkBundleFor;
 import static io.quarkiverse.operatorsdk.bundle.Utils.getCRDNameFor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import io.fabric8.openshift.api.model.operatorhub.v1alpha1.CRDDescription;
 import java.io.IOException;
 import java.nio.file.Files;
 
@@ -20,7 +19,6 @@ import io.quarkiverse.operatorsdk.bundle.sources.*;
 import io.quarkus.test.ProdBuildResults;
 import io.quarkus.test.ProdModeTestResults;
 import io.quarkus.test.QuarkusProdModeTest;
-import org.testcontainers.shaded.org.apache.commons.lang3.ThreadUtils.ThreadIdPredicate;
 
 public class MultipleOperatorsBundleTest {
 
