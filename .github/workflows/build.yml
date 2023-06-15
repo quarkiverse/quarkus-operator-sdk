@@ -23,7 +23,18 @@ on:
       - '.all-contributorsrc'
 
 jobs:
+  extract-branch-name:
+    runs-on: ubuntu-latest
+    outputs:
+      branch_name: ${{ steps.extract_branch.outputs.branch }}
+    steps:
+      - name: Extract branch name
+        shell: bash
+        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+        id: extract_branch
   build-with-quarkus-version:
+    needs:
+      - extract-branch-name
     strategy:
       matrix:
         java-version: [ 11, 17 ]
@@ -34,5 +45,5 @@ jobs:
     with:
       quarkus-version-jq-cmd: ${{ matrix.quarkus-version-jq-cmd }}
       java-version: ${{ matrix.java-version }}
-      branch: main
+      branch: ${{ needs.extract-branch-name.outputs.branch_name }}
       native-modules: "integration-tests"
