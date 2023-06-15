@@ -2,7 +2,6 @@ package io.quarkiverse.operatorsdk.bundle.deployment;
 
 import static io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator.ALL_VERBS;
 
-import io.quarkiverse.operatorsdk.common.DependentResourceAugmentedClassInfo;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Path;

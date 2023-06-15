@@ -10,14 +10,11 @@
   <packaging>pom</packaging>
   <name>Quarkus - Operator SDK - Build Parent</name>
   <properties>
-    <compiler-plugin.version>3.11.0</compiler-plugin.version>
     <maven.compiler.parameters>true</maven.compiler.parameters>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <surefire-plugin.version>3.1.2</surefire-plugin.version>
-    <jar-plugin.version>3.3.0</jar-plugin.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -73,20 +70,6 @@
           <groupId>io.quarkus</groupId>
           <artifactId>quarkus-maven-plugin</artifactId>
           <version>${quarkus.version}</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <version>${compiler-plugin.version}</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <version>${surefire-plugin.version}</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-jar-plugin</artifactId>
-          <version>${jar-plugin.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>
