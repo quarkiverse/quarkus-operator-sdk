@@ -4,7 +4,6 @@ import static io.quarkiverse.operatorsdk.bundle.deployment.BundleGenerator.MANIF
 import static io.quarkiverse.operatorsdk.bundle.deployment.BundleProcessor.CRD_DESCRIPTION;
 import static io.quarkiverse.operatorsdk.bundle.deployment.BundleProcessor.CRD_DISPLAY_NAME;
 
-import io.quarkiverse.operatorsdk.common.ReconciledResourceAugmentedClassInfo;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -22,6 +21,7 @@ import io.fabric8.openshift.api.model.operatorhub.v1alpha1.*;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder.RequiredCRD;
 import io.quarkiverse.operatorsdk.common.ReconciledAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.common.ReconciledResourceAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ResourceAssociatedAugmentedClassInfo;
 
@@ -192,12 +192,12 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     private CRDDescription createCRDDescription(ReconciledResourceAugmentedClassInfo<?> secondaryResource) {
         final var fullResourceName = secondaryResource.fullResourceName();
         return new CRDDescriptionBuilder()
-            .withName(fullResourceName)
-            .withDisplayName(secondaryResource.getExtendedInfo(CRD_DISPLAY_NAME, String.class))
-            .withDescription(secondaryResource.getExtendedInfo(CRD_DESCRIPTION, String.class))
-            .withVersion(secondaryResource.version())
-            .withKind(secondaryResource.kind())
-            .build();
+                .withName(fullResourceName)
+                .withDisplayName(secondaryResource.getExtendedInfo(CRD_DISPLAY_NAME, String.class))
+                .withDescription(secondaryResource.getExtendedInfo(CRD_DESCRIPTION, String.class))
+                .withVersion(secondaryResource.version())
+                .withKind(secondaryResource.kind())
+                .build();
     }
 
     private static String asString(GroupVersionKind gvk) {
