@@ -3,7 +3,9 @@ package io.quarkiverse.operatorsdk.deployment;
 import static io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator.getClusterRoleName;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -13,6 +15,7 @@ import io.dekorate.kubernetes.decorator.ResourceProvidingDecorator;
 import io.fabric8.kubernetes.api.model.KubernetesListBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
+import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 
 @SuppressWarnings("rawtypes")
@@ -22,15 +25,15 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
     protected static final String CLUSTER_ROLE = "ClusterRole";
     protected static final String SERVICE_ACCOUNT = "ServiceAccount";
     private final Collection<QuarkusControllerConfiguration> configs;
-    private final boolean validateCRDs;
+    private final BuildTimeOperatorConfiguration operatorConfiguration;
     private static final ConcurrentMap<String, Object> alreadyLogged = new ConcurrentHashMap<>();
     private static final Optional<String> deployNamespace = ConfigProvider.getConfig()
             .getOptionalValue("quarkus.kubernetes.namespace", String.class);
 
     public AddRoleBindingsDecorator(Collection<QuarkusControllerConfiguration> configs,
-            boolean validateCRDs) {
+            BuildTimeOperatorConfiguration operatorConfiguration) {
         this.configs = configs;
-        this.validateCRDs = validateCRDs;
+        this.operatorConfiguration = operatorConfiguration;
     }
 
     @Override
@@ -54,8 +57,17 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
                         controllerName + "-cluster-role-binding", "watch all namespaces",
                         getClusterRoleName(controllerName));
             } else {
+                // retrieve which namespaces should be used to generate either from annotation or from the build time configuration
+                var desiredWatchedNamespaces = config.getNamespaces();
+                final var buildTimeConfig = operatorConfiguration.controllers.get(controllerName);
+                if (buildTimeConfig != null) {
+                    desiredWatchedNamespaces = buildTimeConfig.generateWithWatchedNamespaces
+                            .<Set<String>> map(HashSet::new)
+                            .orElse(desiredWatchedNamespaces);
+                }
+
                 // create a RoleBinding using either the provided deployment namespace or the desired watched namespace name
-                config.getEffectiveNamespaces().forEach(ns -> list.addToItems(
+                desiredWatchedNamespaces.forEach(ns -> list.addToItems(
                         new RoleBindingBuilder()
                                 .withNewMetadata()
                                 .withName(controllerName + "-role-binding")
@@ -68,7 +80,7 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
             }
 
             // if we validate the CRDs, also create a binding for the CRD validating role
-            if (validateCRDs) {
+            if (operatorConfiguration.crd.validate) {
                 final var crBindingName = controllerName + "-crd-validating-role-binding";
                 handleClusterRoleBinding(list, serviceAccountName, controllerName, crBindingName, "validate CRDs",
                         AddClusterRolesDecorator.JOSDK_CRD_VALIDATING_CLUSTER_ROLE);
