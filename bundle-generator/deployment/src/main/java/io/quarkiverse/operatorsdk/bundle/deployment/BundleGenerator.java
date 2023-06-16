@@ -63,12 +63,13 @@ public class BundleGenerator {
             // output owned CRDs in the manifest, fail if we're missing some
             var missing = addCRDManifestBuilder(crds, builders, csvMetadata, csvBuilder.getOwnedCRs());
             if (!missing.isEmpty()) {
-                throw new IllegalStateException("Missing owned CRD data for resources: " + missing);
+                throw new IllegalStateException(
+                        "Missing owned CRD data for resources: " + missing + " for bundle: " + csvMetadata.name);
             }
             // output required CRDs in the manifest, output a warning in case we're missing some
             missing = addCRDManifestBuilder(crds, builders, csvMetadata, csvBuilder.getRequiredCRs());
             if (!missing.isEmpty()) {
-                log.warnv("Missing required CRD data for resources: {0}", missing);
+                log.warnv("Missing required CRD data for resources: {0} for bundle: {1}", missing, csvMetadata.name);
             }
         }
 

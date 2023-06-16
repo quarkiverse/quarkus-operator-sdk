@@ -58,7 +58,10 @@ public class ReconciledAugmentedClassInfo<T> extends SelectiveAugmentedClassInfo
 
     @SuppressWarnings("rawtypes")
     public ReconciledResourceAugmentedClassInfo asResourceTargeting() {
-        return (ReconciledResourceAugmentedClassInfo) this;
+        if (this instanceof ReconciledResourceAugmentedClassInfo) {
+            return (ReconciledResourceAugmentedClassInfo) this;
+        }
+        throw new IllegalStateException("Cannot convert " + classInfo().name() + " to ReconciledResourceAugmentedClassInfo");
     }
 
     @SuppressWarnings("rawtypes")
