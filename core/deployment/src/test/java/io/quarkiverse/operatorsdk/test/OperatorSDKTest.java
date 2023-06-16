@@ -30,6 +30,8 @@ import io.quarkiverse.operatorsdk.test.sources.NonKubeResource;
 import io.quarkiverse.operatorsdk.test.sources.ReadOnlySecret;
 import io.quarkiverse.operatorsdk.test.sources.SimpleCR;
 import io.quarkiverse.operatorsdk.test.sources.SimpleReconciler;
+import io.quarkiverse.operatorsdk.test.sources.SimpleSpec;
+import io.quarkiverse.operatorsdk.test.sources.SimpleStatus;
 import io.quarkiverse.operatorsdk.test.sources.TestCR;
 import io.quarkiverse.operatorsdk.test.sources.TestReconciler;
 import io.quarkus.test.ProdBuildResults;
@@ -44,7 +46,8 @@ public class OperatorSDKTest {
             .setApplicationName("test")
             .withApplicationRoot((jar) -> jar
                     .addClasses(TestReconciler.class, TestCR.class, CRUDConfigMap.class, ReadOnlySecret.class,
-                            CreateOnlyService.class, NonKubeResource.class, Foo.class));
+                            CreateOnlyService.class, NonKubeResource.class, Foo.class,
+                            SimpleReconciler.class, SimpleCR.class, SimpleSpec.class, SimpleStatus.class));
 
     @ProdBuildResults
     private ProdModeTestResults prodModeTestResults;
