@@ -61,6 +61,10 @@ public class OperatorSDKTest {
 
         // check cluster role for TestReconciler
         final var testReconcilerRoleName = AddClusterRolesDecorator.getClusterRoleName(TestReconciler.NAME);
+
+        // make sure the target role exists because otherwise the test will succeed without actually checking anything
+        assertTrue(kubeResources.stream().anyMatch(i -> testReconcilerRoleName.equals(i.getMetadata().getName())));
+
         kubeResources.stream()
                 .filter(i -> testReconcilerRoleName.equals(i.getMetadata().getName()))
                 .map(ClusterRole.class::cast)
@@ -94,6 +98,11 @@ public class OperatorSDKTest {
 
         // check cluster role for SimpleReconciler
         final var simpleReconcilerRoleName = AddClusterRolesDecorator.getClusterRoleName(SimpleReconciler.NAME);
+
+        //make sure the target role exists because otherwise the test will succeed without actually checking anything
+        assertTrue(kubeResources.stream()
+                .anyMatch(i -> simpleReconcilerRoleName.equals(i.getMetadata().getName())));
+
         kubeResources.stream()
                 .filter(i -> simpleReconcilerRoleName.equals(i.getMetadata().getName()))
                 .map(ClusterRole.class::cast)
