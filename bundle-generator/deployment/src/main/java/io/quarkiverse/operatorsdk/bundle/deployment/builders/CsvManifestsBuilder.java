@@ -154,6 +154,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             if (dependents != null && !dependents.isEmpty()) {
                 dependents.stream()
                         .map(ResourceAssociatedAugmentedClassInfo::associatedResourceInfo)
+                        .filter(ReconciledAugmentedClassInfo::isResource)
                         .map(ReconciledAugmentedClassInfo::asResourceTargeting)
                         .forEach(secondaryResource -> {
                             if (secondaryResource.isCR()) {
