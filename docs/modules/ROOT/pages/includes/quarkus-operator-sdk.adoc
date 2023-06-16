@@ -150,7 +150,7 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_DISABLE_RBAC_GENERATION+++`
 endif::add-copy-button-to-env-var[]
---|boolean
+--|boolean 
 |`false`
 
 
@@ -339,10 +339,10 @@ a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-s
 
 [.description]
 --
-An optional list of comma-separated watched namespace names that will be used to generate manifests at build time.
-Note that this is provided as a means to quickly deploy a specific controller to test it by applying the generated manifests to the target cluster. If empty, no manifests will be generated. The namespace in which the controller will be deployed will be the currently configured namespace as specified by your `.kube/config` file, unless you specify the target deployment namespace using the `quarkus.kubernetes.namespace` property.
+An optional list of comma-separated watched namespace names that will be used to generate manifests at build time. 
+Note that this is provided as a means to quickly deploy a specific controller to test it by applying the generated manifests to the target cluster. If empty, no manifests will be generated. The namespace in which the controller will be deployed will be the currently configured namespace as specified by your `.kube/config` file, unless you specify the target deployment namespace using the `quarkus.kubernetes.namespace` property. 
 
-As this functionality cannot handle namespaces that are not know until runtime (because the generation happens during build time), we recommend that you use a different mechanism such as OLM or Helm charts to deploy your operator in production.
+As this functionality cannot handle namespaces that are not know until runtime (because the generation happens during build time), we recommend that you use a different mechanism such as OLM or Helm charts to deploy your operator in production.  
 This replaces the previous `namespaces` property which was confusing and against Quarkus best practices since it existed both at build time and runtime. That property wasn't also adequately capturing the fact that namespaces that wouldn't be known until runtime would render whatever got generated at build time invalid as far as generated manifests were concerned.
 
 ifdef::add-copy-button-to-env-var[]
@@ -351,7 +351,7 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__GENERATE_WITH_WATCHED_NAMESPACES+++`
 endif::add-copy-button-to-env-var[]
---|list of string
+--|list of string 
 |
 
 
