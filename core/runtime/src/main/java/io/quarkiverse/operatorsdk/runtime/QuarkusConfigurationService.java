@@ -16,7 +16,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.AbstractConfigurationService;
 import io.javaoperatorsdk.operator.api.config.Cloner;
@@ -59,7 +58,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     public QuarkusConfigurationService(
             Version version,
             Collection<QuarkusControllerConfiguration> configurations,
-            KubernetesClient client,
+            KubernetesClient kubernetesClient,
             CRDGenerationInfo crdInfo, int maxThreads, int maxWorflowThreads,
             int timeout, Duration cacheSyncTimeout, Metrics metrics, boolean startOperator, ObjectMapper mapper,
             LeaderElectionConfiguration leaderElectionConfiguration, InformerStoppedHandler informerStoppedHandler,
@@ -77,9 +76,9 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
                 }
             }
         };
-        init(cloner, mapper, null);
+        init(cloner, null);
         this.startOperator = startOperator;
-        this.client = client;
+        this.client = kubernetesClient;
         this.metrics = metrics;
         if (configurations != null && !configurations.isEmpty()) {
             final var size = configurations.size();
@@ -100,11 +99,6 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         this.cacheSyncTimeout = cacheSyncTimeout;
         this.informerStoppedHandler = informerStoppedHandler;
         this.leaderElectionConfiguration = leaderElectionConfiguration;
-    }
-
-    @Override
-    public Config getClientConfiguration() {
-        return client.getConfiguration();
     }
 
     @Override
@@ -168,7 +162,8 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         return metrics;
     }
 
-    KubernetesClient getClient() {
+    @Override
+    public KubernetesClient getKubernetesClient() {
         return client;
     }
 
