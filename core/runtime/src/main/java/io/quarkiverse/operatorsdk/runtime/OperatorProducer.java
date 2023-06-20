@@ -48,11 +48,11 @@ public class OperatorProducer {
         final var crdInfo = configuration.getCRDGenerationInfo();
         if (crdInfo.isApplyCRDs()) {
             for (String generatedCrdName : crdInfo.getGenerated()) {
-                applyCRD(configuration.getClient(), crdInfo, generatedCrdName);
+                applyCRD(configuration.getKubernetesClient(), crdInfo, generatedCrdName);
             }
         }
 
-        Operator operator = new Operator(configuration.getClient(), configuration);
+        Operator operator = new Operator(configuration);
         for (Reconciler<? extends HasMetadata> reconciler : reconcilers) {
             operator.register(reconciler);
         }
