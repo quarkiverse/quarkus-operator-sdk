@@ -71,9 +71,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final Class<R> resourceClass;
     private final ResourceEventFilter<R> eventFilter;
     private final Optional<Duration> maxReconciliationInterval;
-    private final Optional<OnAddFilter<R>> onAddFilter;
-    private final Optional<OnUpdateFilter<R>> onUpdateFilter;
-    private final Optional<GenericFilter<R>> genericFilter;
+    private final Optional<OnAddFilter<? super R>> onAddFilter;
+    private final Optional<OnUpdateFilter<? super R>> onUpdateFilter;
+    private final Optional<GenericFilter<? super R>> genericFilter;
     private Class<? extends Annotation> retryConfigurationClass;
     private Class<? extends Retry> retryClass;
     private Class<? extends Annotation> rateLimiterConfigurationClass;
@@ -298,34 +298,34 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     // for Quarkus' RecordableConstructor
     @SuppressWarnings("unused")
-    public OnAddFilter<R> getOnAddFilter() {
+    public OnAddFilter<? super R> getOnAddFilter() {
         return onAddFilter.orElse(null);
     }
 
     @Override
-    public Optional<OnAddFilter<R>> onAddFilter() {
+    public Optional<OnAddFilter<? super R>> onAddFilter() {
         return onAddFilter;
     }
 
     // for Quarkus' RecordableConstructor
     @SuppressWarnings("unused")
-    public OnUpdateFilter<R> getOnUpdateFilter() {
+    public OnUpdateFilter<? super R> getOnUpdateFilter() {
         return onUpdateFilter.orElse(null);
     }
 
     @Override
-    public Optional<OnUpdateFilter<R>> onUpdateFilter() {
+    public Optional<OnUpdateFilter<? super R>> onUpdateFilter() {
         return onUpdateFilter;
     }
 
     // for Quarkus' RecordableConstructor
     @SuppressWarnings("unused")
-    public GenericFilter<R> getGenericFilter() {
+    public GenericFilter<? super R> getGenericFilter() {
         return genericFilter.orElse(null);
     }
 
     @Override
-    public Optional<GenericFilter<R>> genericFilter() {
+    public Optional<GenericFilter<? super R>> genericFilter() {
         return genericFilter;
     }
 
