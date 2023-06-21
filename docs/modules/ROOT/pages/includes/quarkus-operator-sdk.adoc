@@ -238,6 +238,38 @@ endif::add-copy-button-to-env-var[]
 |`prod`
 
 
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-sdk.enable-ssa.create-update]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.enable-ssa.create-update[quarkus.operator-sdk.enable-ssa.create-update]`
+
+[.description]
+--
+Whether to use Server-Side Apply (SSA) to create or update DependentResources.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_ENABLE_SSA_CREATE_UPDATE+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_ENABLE_SSA_CREATE_UPDATE+++`
+endif::add-copy-button-to-env-var[]
+--|boolean 
+|`true`
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-sdk.enable-ssa.default-matching]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.enable-ssa.default-matching[quarkus.operator-sdk.enable-ssa.default-matching]`
+
+[.description]
+--
+Whether to use the default matching algorithm relying on Server-Side Apply (SSA) metadata.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_ENABLE_SSA_DEFAULT_MATCHING+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_ENABLE_SSA_DEFAULT_MATCHING+++`
+endif::add-copy-button-to-env-var[]
+--|boolean 
+|`true`
+
+
 a| [[quarkus-operator-sdk_quarkus.operator-sdk.concurrent-reconciliation-threads]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.concurrent-reconciliation-threads[quarkus.operator-sdk.concurrent-reconciliation-threads]`
 
 [.description]
