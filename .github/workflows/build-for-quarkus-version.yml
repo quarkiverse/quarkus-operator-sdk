@@ -35,16 +35,24 @@ jobs:
           java-version: ${{ inputs.java-version }}
           cache: 'maven'
 
-      - name: Get Quarkus version
+      - name: Retrieve Quarkus version from platform
         if: "${{ inputs.quarkus-version != '' }}"
         id: get-quarkus-version
         uses: sergeysova/jq-action@v2
         with:
           cmd: curl https://registry.quarkus.io/client/platforms | jq '${{inputs.quarkus-version-jq-cmd}}'
 
-      - name: Quarkus version
+      - name: Select Quarkus version
         id: quarkus-version
-        run: echo "quarkus-version=$(${{ steps.get-quarkus-version.outputs.value }} || ${{ inputs.quarkus-version }})" >> $GITHUB_OUTPUT
+        run: |
+          echo ${{ inputs.quarkus-version}}
+          if [[ -n "${{ steps.get-quarkus-version.outputs.value }}" ]]; then
+            quarkus-version="${{ steps.get-quarkus-version.outputs.value }}" 
+          fi
+          if [[ -n "${{ inputs.quarkus-version }}" ]]; then
+            quarkus-version="${{ inputs.quarkus-version }}" 
+          fi
+          echo 'quarkus-version="${quarkus-version}"' >> $GITHUB_OUTPUT
 
       - name: Change Quarkus version
         run: |
