@@ -38,7 +38,6 @@ jobs:
     strategy:
       matrix:
         java-version: [ 11, 17 ]
-        quarkus-version: [3.2.0.CR1]
 #        quarkus-version-jq-cmd:
 #          - '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current) | .releases[0].version'
 #          - '.platforms[0].streams[] | select(.id == "3.1") | .releases[0].version'
@@ -48,3 +47,4 @@ jobs:
       java-version: ${{ matrix.java-version }}
       branch: ${{ needs.extract-branch-name.outputs.branch_name }}
       native-modules: "integration-tests"
+      quarkus-version: "3.2.0.CR1"
