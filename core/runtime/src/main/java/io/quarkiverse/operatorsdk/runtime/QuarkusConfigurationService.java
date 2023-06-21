@@ -76,7 +76,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
                 }
             }
         };
-        init(cloner, null);
+        init(cloner, null, kubernetesClient);
         this.startOperator = startOperator;
         this.client = kubernetesClient;
         this.metrics = metrics;
