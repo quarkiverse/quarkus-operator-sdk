@@ -6,6 +6,9 @@ on:
       quarkus-version-jq-cmd:
         type: string
         required: true
+      quarkus-version:
+        type: string
+        required: false
       java-version:
         type: string
         required: true
@@ -33,15 +36,20 @@ jobs:
           cache: 'maven'
 
       - name: Get Quarkus version
+        if: "${{ inputs.quarkus-version != '' }}"
         id: get-quarkus-version
         uses: sergeysova/jq-action@v2
         with:
           cmd: curl https://registry.quarkus.io/client/platforms | jq '${{inputs.quarkus-version-jq-cmd}}'
 
+      - name: Quarkus version
+        id: quarkus-version
+        run: echo "quarkus-version=$(${{ steps.get-quarkus-version.outputs.value }} || ${{ inputs.quarkus-version }})" >> $GITHUB_OUTPUT
+
       - name: Change Quarkus version
         run: |
-          echo "Using Quarkus ${{ steps.get-quarkus-version.outputs.value }}"
-          mvn versions:set-property -Dproperty=quarkus.version -DnewVersion=${{ steps.get-quarkus-version.outputs.value }}
+          echo "Using Quarkus ${{ steps.quarkus-version.outputs.quarkus-version }}"
+          mvn versions:set-property -Dproperty=quarkus.version -DnewVersion=${{ steps.quarkus-version.outputs.quarkus-version }}
 
       - name: Get Date
         id: get-date
