@@ -102,7 +102,9 @@ public class ConfigurationServiceRecorder {
                     leaderElectionConfiguration,
                     container.instance(InformerStoppedHandler.class).orElse(null),
                     buildTimeConfiguration.closeClientOnStop,
-                    buildTimeConfiguration.stopOnInformerErrorDuringStartup);
+                    buildTimeConfiguration.stopOnInformerErrorDuringStartup,
+                    buildTimeConfiguration.enableSSA.createUpdate,
+                    buildTimeConfiguration.enableSSA.defaultMatching);
         };
     }
 

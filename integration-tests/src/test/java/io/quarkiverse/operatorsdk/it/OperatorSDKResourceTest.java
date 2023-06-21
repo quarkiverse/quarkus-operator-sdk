@@ -78,6 +78,13 @@ class OperatorSDKResourceTest {
     }
 
     @Test
+    void shouldBeAbleToConfigureSSASupportFromProperties() {
+        given().when().get("/operator/config").then().statusCode(200).body(
+                "ssaCreateUpdate", equalTo(false),
+                "ssaDefaultMatching", equalTo(true));
+    }
+
+    @Test
     void controllerShouldExist() {
         // first check that we're not always returning true for any controller name :)
         given().when().get("/operator/does_not_exist").then().statusCode(200).body(is("false"));
@@ -270,4 +277,5 @@ class OperatorSDKResourceTest {
                         "dependents[0].dependentClass", equalTo(AnnotatedDependentResource.class.getCanonicalName()),
                         "dependents[0].dependentConfig.value", equalTo(AnnotatedDependentResource.VALUE));
     }
+
 }

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.quarkus.runtime.annotations.ConfigGroup;
 import io.quarkus.runtime.annotations.ConfigItem;
 import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.runtime.annotations.ConfigRoot;
@@ -78,4 +79,25 @@ public class BuildTimeOperatorConfiguration {
      */
     @ConfigItem(defaultValue = "prod")
     public List<String> activateLeaderElectionForProfiles;
+
+    @ConfigGroup
+    public static class EnableSSA {
+
+        /**
+         * Whether to use Server-Side Apply (SSA) to create or update DependentResources.
+         */
+        @ConfigItem(defaultValue = "true")
+        public boolean createUpdate;
+        /**
+         * Whether to use the default matching algorithm relying on Server-Side Apply (SSA) metadata.
+         */
+        @ConfigItem(defaultValue = "true")
+        public boolean defaultMatching;
+    }
+
+    /**
+     * The optional Server-Side Apply (SSA) related configuration.
+     */
+    @ConfigItem(name = "enable-ssa")
+    public EnableSSA enableSSA;
 }

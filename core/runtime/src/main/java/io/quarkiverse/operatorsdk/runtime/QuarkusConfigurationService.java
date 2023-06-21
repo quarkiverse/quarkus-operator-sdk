@@ -52,6 +52,8 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     private final Duration cacheSyncTimeout;
     @SuppressWarnings("rawtypes")
     private final Map<String, DependentResource> knownDependents = new ConcurrentHashMap<>();
+    private final boolean ssaCreateUpdate;
+    private final boolean ssaDefaultMatching;
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public QuarkusConfigurationService(
@@ -61,7 +63,8 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
             CRDGenerationInfo crdInfo, int maxThreads, int maxWorflowThreads,
             int timeout, Duration cacheSyncTimeout, Metrics metrics, boolean startOperator, ObjectMapper mapper,
             LeaderElectionConfiguration leaderElectionConfiguration, InformerStoppedHandler informerStoppedHandler,
-            boolean closeClientOnStop, boolean stopOnInformerErrorDuringStartup) {
+            boolean closeClientOnStop, boolean stopOnInformerErrorDuringStartup,
+            boolean ssaCreateUpdate, boolean ssaDefaultMatching) {
         super(version);
         this.closeClientOnStop = closeClientOnStop;
         this.stopOnInformerErrorDuringStartup = stopOnInformerErrorDuringStartup;
@@ -97,6 +100,8 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         this.cacheSyncTimeout = cacheSyncTimeout;
         this.informerStoppedHandler = informerStoppedHandler;
         this.leaderElectionConfiguration = leaderElectionConfiguration;
+        this.ssaCreateUpdate = ssaCreateUpdate;
+        this.ssaDefaultMatching = ssaDefaultMatching;
     }
 
     @Override
@@ -268,6 +273,16 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     @SuppressWarnings("rawtypes")
     public ManagedWorkflow workflowByName(String name) {
         return ((QuarkusControllerConfiguration) getFor(name)).getWorkflow();
+    }
+
+    @Override
+    public boolean ssaBasedCreateUpdateForDependentResources() {
+        return ssaCreateUpdate;
+    }
+
+    @Override
+    public boolean ssaBasedDefaultMatchingForDependentResources() {
+        return ssaDefaultMatching;
     }
 
 }
