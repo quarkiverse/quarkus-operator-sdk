@@ -38,8 +38,9 @@ jobs:
     strategy:
       matrix:
         java-version: [ 11, 17 ]
-        quarkus-version-jq-cmd:
-          - '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current) | .releases[0].version'
+        quarkus-version: [3.2.0.CR1]
+#        quarkus-version-jq-cmd:
+#          - '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current) | .releases[0].version'
 #          - '.platforms[0].streams[] | select(.id == "3.1") | .releases[0].version'
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
