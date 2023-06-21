@@ -1,31 +1,28 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.jboss.logging.Logger;
-
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 
 public final class CRDUtils {
 
-    private static final YAMLMapper MAPPER = new YAMLMapper();
     private static final Logger LOGGER = Logger.getLogger(CRDUtils.class.getName());
 
     private CRDUtils() {
-
     }
 
     public static void applyCRD(KubernetesClient client, CRDGenerationInfo crdInfo, String crdName) {
         try {
             crdInfo.getCRDInfosFor(crdName).forEach((crdVersion, info) -> {
-                final var filePath = info.getFilePath();
-                final var crdFile = new File(filePath);
+                final var filePath = Path.of(info.getFilePath());
                 try {
-                    final var crd = MAPPER.readValue(crdFile, getCRDClassFor(crdVersion));
+                    final var crd = client.getKubernetesSerialization()
+                            .unmarshal(Files.newInputStream(filePath), getCRDClassFor(crdVersion));
                     apply(client, crdVersion, crd);
                     LOGGER.infov("Applied {0} CRD named ''{1}'' from {2}", crdVersion, crdName, filePath);
                 } catch (IOException ex) {
