@@ -5,7 +5,7 @@ on:
     inputs:
       quarkus-version-jq-cmd:
         type: string
-        required: true
+        required: false
       quarkus-version:
         type: string
         required: false
@@ -36,7 +36,7 @@ jobs:
           cache: 'maven'
 
       - name: Retrieve Quarkus version from platform
-        if: "${{ inputs.quarkus-version != '' }}"
+        if: "${{ inputs.quarkus-version == '' }}"
         id: get-quarkus-version
         uses: sergeysova/jq-action@v2
         with:
@@ -45,19 +45,19 @@ jobs:
       - name: Select Quarkus version
         id: quarkus-version
         run: |
-          echo ${{ inputs.quarkus-version}}
+          echo ${{ inputs.quarkus-version }}
           if [[ -n "${{ steps.get-quarkus-version.outputs.value }}" ]]; then
-            quarkus-version="${{ steps.get-quarkus-version.outputs.value }}" 
+            quarkus_version="${{ steps.get-quarkus-version.outputs.value }}"
           fi
           if [[ -n "${{ inputs.quarkus-version }}" ]]; then
-            quarkus-version="${{ inputs.quarkus-version }}" 
+            quarkus_version="${{ inputs.quarkus-version }}" 
           fi
-          echo 'quarkus-version="${quarkus-version}"' >> $GITHUB_OUTPUT
+          echo "quarkus_version=${quarkus_version}" >> $GITHUB_OUTPUT
 
       - name: Change Quarkus version
         run: |
-          echo "Using Quarkus ${{ steps.quarkus-version.outputs.quarkus-version }}"
-          mvn versions:set-property -Dproperty=quarkus.version -DnewVersion=${{ steps.quarkus-version.outputs.quarkus-version }}
+          echo "Using Quarkus ${{ steps.quarkus-version.outputs.quarkus_version }}"
+          mvn versions:set-property -Dproperty=quarkus.version -DnewVersion=${{ steps.quarkus-version.outputs.quarkus_version }}
 
       - name: Get Date
         id: get-date
