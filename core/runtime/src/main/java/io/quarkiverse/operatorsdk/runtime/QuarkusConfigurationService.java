@@ -38,7 +38,6 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         DependentResourceFactory<QuarkusControllerConfiguration<?>>,
         ManagedWorkflowFactory<QuarkusControllerConfiguration<?>> {
     private static final Logger log = LoggerFactory.getLogger(QuarkusConfigurationService.class);
-    private final KubernetesClient client;
     private final CRDGenerationInfo crdInfo;
     private final int concurrentReconciliationThreads;
     private final int terminationTimeout;
@@ -78,7 +77,6 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         };
         init(cloner, null, kubernetesClient);
         this.startOperator = startOperator;
-        this.client = kubernetesClient;
         this.metrics = metrics;
         if (configurations != null && !configurations.isEmpty()) {
             final var size = configurations.size();
@@ -164,7 +162,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
 
     @Override
     public KubernetesClient getKubernetesClient() {
-        return client;
+        return super.getKubernetesClient();
     }
 
     boolean shouldStartOperator() {
