@@ -12,13 +12,9 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.AbstractConfigurationService;
-import io.javaoperatorsdk.operator.api.config.Cloner;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
@@ -52,8 +48,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     private final Duration cacheSyncTimeout;
     @SuppressWarnings("rawtypes")
     private final Map<String, DependentResource> knownDependents = new ConcurrentHashMap<>();
-    private final boolean ssaCreateUpdate;
-    private final boolean ssaDefaultMatching;
+    private final boolean useSSA;
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public QuarkusConfigurationService(
@@ -61,24 +56,14 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
             Collection<QuarkusControllerConfiguration> configurations,
             KubernetesClient kubernetesClient,
             CRDGenerationInfo crdInfo, int maxThreads, int maxWorflowThreads,
-            int timeout, Duration cacheSyncTimeout, Metrics metrics, boolean startOperator, ObjectMapper mapper,
+            int timeout, Duration cacheSyncTimeout, Metrics metrics, boolean startOperator,
             LeaderElectionConfiguration leaderElectionConfiguration, InformerStoppedHandler informerStoppedHandler,
             boolean closeClientOnStop, boolean stopOnInformerErrorDuringStartup,
-            boolean ssaCreateUpdate, boolean ssaDefaultMatching) {
+            boolean useSSA) {
         super(version);
         this.closeClientOnStop = closeClientOnStop;
         this.stopOnInformerErrorDuringStartup = stopOnInformerErrorDuringStartup;
-        final var cloner = new Cloner() {
-            @Override
-            public <R extends HasMetadata> R clone(R r) {
-                try {
-                    return (R) mapper.readValue(mapper.writeValueAsString(r), r.getClass());
-                } catch (JsonProcessingException e) {
-                    throw new IllegalStateException(e);
-                }
-            }
-        };
-        init(cloner, null, kubernetesClient);
+        init(null, null, kubernetesClient);
         this.startOperator = startOperator;
         this.metrics = metrics;
         if (configurations != null && !configurations.isEmpty()) {
@@ -100,8 +85,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         this.cacheSyncTimeout = cacheSyncTimeout;
         this.informerStoppedHandler = informerStoppedHandler;
         this.leaderElectionConfiguration = leaderElectionConfiguration;
-        this.ssaCreateUpdate = ssaCreateUpdate;
-        this.ssaDefaultMatching = ssaDefaultMatching;
+        this.useSSA = useSSA;
     }
 
     @Override
@@ -276,13 +260,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     }
 
     @Override
-    public boolean ssaBasedCreateUpdateForDependentResources() {
-        return ssaCreateUpdate;
+    public boolean ssaBasedCreateUpdateMatchForDependentResources() {
+        return useSSA;
     }
-
-    @Override
-    public boolean ssaBasedDefaultMatchingForDependentResources() {
-        return ssaDefaultMatching;
-    }
-
 }

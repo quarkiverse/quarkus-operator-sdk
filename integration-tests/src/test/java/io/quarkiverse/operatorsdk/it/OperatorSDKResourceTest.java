@@ -80,8 +80,7 @@ class OperatorSDKResourceTest {
     @Test
     void shouldBeAbleToConfigureSSASupportFromProperties() {
         given().when().get("/operator/config").then().statusCode(200).body(
-                "ssaCreateUpdate", equalTo(false),
-                "ssaDefaultMatching", equalTo(true));
+                "useSSA", equalTo(false));
     }
 
     @Test

@@ -147,14 +147,9 @@ public class OperatorSDKResource {
             return conf.getLeaderElectionConfiguration().map(lec -> lec.getClass().getName()).orElse(null);
         }
 
-        @JsonProperty("ssaCreateUpdate")
-        public boolean ssaCreateUpdate() {
-            return conf.ssaBasedCreateUpdateForDependentResources();
-        }
-
-        @JsonProperty("ssaDefaultMatching")
-        public boolean ssaDefaultMatching() {
-            return conf.ssaBasedDefaultMatchingForDependentResources();
+        @JsonProperty("useSSA")
+        public boolean useSSA() {
+            return conf.ssaBasedCreateUpdateMatchForDependentResources();
         }
     }
 
