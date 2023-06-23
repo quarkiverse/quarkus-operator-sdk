@@ -14,8 +14,6 @@ import jakarta.inject.Singleton;
 import org.jboss.jandex.DotName;
 import org.jboss.logging.Logger;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
@@ -30,6 +28,7 @@ import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
 import io.quarkiverse.operatorsdk.runtime.ConfigurationServiceRecorder;
+import io.quarkiverse.operatorsdk.runtime.KubernetesClientObjectMapperCustomizer;
 import io.quarkiverse.operatorsdk.runtime.KubernetesClientSerializationCustomizer;
 import io.quarkiverse.operatorsdk.runtime.NoOpMetricsProvider;
 import io.quarkiverse.operatorsdk.runtime.OperatorHealthCheck;
@@ -81,14 +80,15 @@ class OperatorSDKProcessor {
         features.produce(new FeatureBuildItem(FEATURE));
         indexDependency.produce(
                 new IndexDependencyBuildItem("io.javaoperatorsdk", "operator-framework-core"));
-        // mark ObjectMapper as non-removable
-        unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(ObjectMapper.class));
 
         // mark Metrics implementations as non-removable
         unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(Metrics.class));
 
         // mark LeaderElectionConfiguration as non-removable
         unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(LeaderElectionConfiguration.class));
+
+        // register our Kubernetes client mapper customizer
+        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(KubernetesClientObjectMapperCustomizer.class));
 
         // register CDI qualifier for customization of the fabric8 ObjectMapper
         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(KubernetesClientSerializationCustomizer.class));

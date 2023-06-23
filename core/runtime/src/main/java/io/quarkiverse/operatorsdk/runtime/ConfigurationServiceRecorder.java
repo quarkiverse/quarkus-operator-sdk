@@ -7,16 +7,12 @@ import java.util.function.Supplier;
 
 import org.jboss.logging.Logger;
 
-import com.fasterxml.jackson.databind.SerializationFeature;
-
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.quarkus.arc.Arc;
-import io.quarkus.jackson.ObjectMapperCustomizer;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.annotations.Recorder;
 import io.quarkus.runtime.configuration.ConfigUtils;
@@ -66,15 +62,7 @@ public class ConfigurationServiceRecorder {
         });
 
         return () -> {
-            // customize fabric8 mapper
-            final var mapper = Serialization.jsonMapper();
-            mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
             final var container = Arc.container();
-            container.select(ObjectMapperCustomizer.class,
-                    KubernetesClientSerializationCustomizer.Literal.INSTANCE)
-                    .stream()
-                    .sorted()
-                    .forEach(c -> c.customize(mapper));
 
             // deactivate leader election in dev mode
             LeaderElectionConfiguration leaderElectionConfiguration = null;
@@ -98,7 +86,6 @@ public class ConfigurationServiceRecorder {
                     cacheSyncTimeout,
                     container.instance(Metrics.class).get(),
                     shouldStartOperator(buildTimeConfiguration.startOperator, launchMode),
-                    mapper,
                     leaderElectionConfiguration,
                     container.instance(InformerStoppedHandler.class).orElse(null),
                     buildTimeConfiguration.closeClientOnStop,
