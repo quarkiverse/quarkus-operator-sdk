@@ -206,10 +206,12 @@ a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-s
 
 [.description]
 --
-Whether to fail or emit a debug-level (warning-level when misalignment is at the minor or above version level) log when the extension detects that there are misaligned versions. 
-The following versions are checked for alignment:  
- - declared Quarkus version used to build the extension vs. actually used Quarkus version at runtime 
- - Fabric8 client version used by JOSDK vs. actually used Fabric8 client version 
+Whether to fail or emit a debug-level (warning-level when misalignment is at the minor or above version level) log when the extension detects that there are misaligned versions.
+
+The following versions are checked for alignment:
+
+ - declared Quarkus version used to build the extension vs. actually used Quarkus version at runtime
+ - Fabric8 client version used by JOSDK vs. actually used Fabric8 client version
  - Fabric8 client version used by Quarkus vs. actually used Fabric8 client version
 
 ifdef::add-copy-button-to-env-var[]
@@ -238,33 +240,17 @@ endif::add-copy-button-to-env-var[]
 |`prod`
 
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-sdk.enable-ssa.create-update]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.enable-ssa.create-update[quarkus.operator-sdk.enable-ssa.create-update]`
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-sdk.enable-ssa]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.enable-ssa[quarkus.operator-sdk.enable-ssa]`
 
 [.description]
 --
-Whether to use Server-Side Apply (SSA) to create or update DependentResources.
+The optional Server-Side Apply (SSA) related configuration.
 
 ifdef::add-copy-button-to-env-var[]
-Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_ENABLE_SSA_CREATE_UPDATE+++[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_ENABLE_SSA+++[]
 endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
-Environment variable: `+++QUARKUS_OPERATOR_SDK_ENABLE_SSA_CREATE_UPDATE+++`
-endif::add-copy-button-to-env-var[]
---|boolean 
-|`true`
-
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-sdk.enable-ssa.default-matching]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.enable-ssa.default-matching[quarkus.operator-sdk.enable-ssa.default-matching]`
-
-[.description]
---
-Whether to use the default matching algorithm relying on Server-Side Apply (SSA) metadata.
-
-ifdef::add-copy-button-to-env-var[]
-Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_ENABLE_SSA_DEFAULT_MATCHING+++[]
-endif::add-copy-button-to-env-var[]
-ifndef::add-copy-button-to-env-var[]
-Environment variable: `+++QUARKUS_OPERATOR_SDK_ENABLE_SSA_DEFAULT_MATCHING+++`
+Environment variable: `+++QUARKUS_OPERATOR_SDK_ENABLE_SSA+++`
 endif::add-copy-button-to-env-var[]
 --|boolean 
 |`true`
@@ -371,10 +357,14 @@ a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-s
 
 [.description]
 --
-An optional list of comma-separated watched namespace names that will be used to generate manifests at build time. 
-Note that this is provided as a means to quickly deploy a specific controller to test it by applying the generated manifests to the target cluster. If empty, no manifests will be generated. The namespace in which the controller will be deployed will be the currently configured namespace as specified by your `.kube/config` file, unless you specify the target deployment namespace using the `quarkus.kubernetes.namespace` property. 
+An optional list of comma-separated watched namespace names that will be used to generate manifests at build time.
 
-As this functionality cannot handle namespaces that are not know until runtime (because the generation happens during build time), we recommend that you use a different mechanism such as OLM or Helm charts to deploy your operator in production.  
+Note that this is provided as a means to quickly deploy a specific controller to test it by applying the generated manifests to the target cluster. If empty, no manifests will be generated. The namespace in which the controller will be deployed will be the currently configured namespace as specified by your `.kube/config` file, unless you specify the target deployment namespace using the `quarkus.kubernetes.namespace` property.
+
+
+
+As this functionality cannot handle namespaces that are not know until runtime (because the generation happens during build time), we recommend that you use a different mechanism such as OLM or Helm charts to deploy your operator in production.
+
 This replaces the previous `namespaces` property which was confusing and against Quarkus best practices since it existed both at build time and runtime. That property wasn't also adequately capturing the fact that namespaces that wouldn't be known until runtime would render whatever got generated at build time invalid as far as generated manifests were concerned.
 
 ifdef::add-copy-button-to-env-var[]

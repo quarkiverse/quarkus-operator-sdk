@@ -103,8 +103,7 @@ public class ConfigurationServiceRecorder {
                     container.instance(InformerStoppedHandler.class).orElse(null),
                     buildTimeConfiguration.closeClientOnStop,
                     buildTimeConfiguration.stopOnInformerErrorDuringStartup,
-                    buildTimeConfiguration.enableSSA.createUpdate,
-                    buildTimeConfiguration.enableSSA.defaultMatching);
+                    buildTimeConfiguration.enableSSA);
         };
     }
 
