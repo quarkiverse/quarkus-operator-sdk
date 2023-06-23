@@ -9,10 +9,14 @@ import java.lang.annotation.Target;
 import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Qualifier;
 
+/**
+ * @deprecated Use {@link io.quarkus.kubernetes.client.KubernetesClientObjectMapperCustomizer} instead
+ */
 @Qualifier
 @Documented
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
+@Deprecated(since = "6.2.0", forRemoval = true)
 public @interface KubernetesClientSerializationCustomizer {
 
     final class Literal extends AnnotationLiteral<KubernetesClientSerializationCustomizer>
