@@ -21,7 +21,7 @@ import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.runtime.LaunchMode;
 
 class CRDGeneration {
-    private final CRDGenerator generator;
+    private CRDGenerator generator;
     private final boolean generate;
     private final LaunchMode mode;
     private final CRDConfiguration crdConfiguration;
@@ -33,8 +33,6 @@ class CRDGeneration {
         this.crdConfiguration = crdConfig;
         this.mode = mode;
         this.generate = CRDGeneration.shouldGenerate(crdConfig.generate, crdConfig.apply, mode);
-        this.generator = new CRDGenerator()
-                .withParallelGenerationEnabled(crdConfig.generateInParallel);
     }
 
     static boolean shouldGenerate(Optional<Boolean> configuredGenerate, Optional<Boolean> configuredApply,
@@ -76,8 +74,8 @@ class CRDGeneration {
         final var generated = new HashSet<String>();
 
         if (needGeneration) {
-            Path targetDirectory = crdConfiguration.outputDirectory.map(
-                    d -> Paths.get("").toAbsolutePath().resolve(d))
+            Path targetDirectory = crdConfiguration.outputDirectory
+                    .map(d -> Paths.get("").toAbsolutePath().resolve(d))
                     .orElse(outputTarget.getOutputDirectory().resolve(KUBERNETES));
             final var outputDir = targetDirectory.toFile();
             if (!outputDir.exists()) {
@@ -154,6 +152,11 @@ class CRDGeneration {
     @SuppressWarnings("rawtypes")
     public void withCustomResource(Class<? extends CustomResource> crClass, String crdName, String associatedControllerName) {
         try {
+            // generator MUST be initialized before we start processing classes as initializing it
+            // will reset the types information held by the generator
+            if (generator == null) {
+                generator = new CRDGenerator().withParallelGenerationEnabled(crdConfiguration.generateInParallel);
+            }
             final var info = CustomResourceInfo.fromClass(crClass);
             crMappings.add(info, crdName, associatedControllerName);
             generator.customResources(info);
