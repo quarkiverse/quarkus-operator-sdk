@@ -65,14 +65,16 @@ jobs:
       - name: Update QOSDK version to ${{steps.metadata.outputs.current-version}}
         run: |
           cd quarkus-platform
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git checkout -b release-${{steps.metadata.outputs.current-version}}
           mvn -B versions:set-property -Dproperty=quarkus-operator-sdk.version -DnewVersion=${{steps.metadata.outputs.current-version}}
           ./mvnw -Dsync
-          git add -A
-          git commit -m "Update QOSDK to ${{steps.metadata.outputs.current-version}}"
 
       - uses: peter-evans/create-pull-request@v5
         with:
           path: quarkus-platform
+          title: "Update QOSDK to ${{steps.metadata.outputs.current-version}}"
+          commit-message: "Update QOSDK to ${{steps.metadata.outputs.current-version}}"
+          committer: metacosm <metacosm@users.noreply.github.com>
+          author: metacosm <metacosm@users.noreply.github.com>
+          branch: qosdk-release-${{steps.metadata.outputs.current-version}}
+          token: ${{ secrets.QOSDK_BOT_TOKEN }}
+          push-to-fork: qosdk-bot/quarkus-platform
