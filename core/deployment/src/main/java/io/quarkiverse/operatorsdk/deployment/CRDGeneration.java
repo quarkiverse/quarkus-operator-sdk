@@ -22,17 +22,14 @@ import io.quarkus.runtime.LaunchMode;
 
 class CRDGeneration {
     private CRDGenerator generator;
-    private final boolean generate;
     private final LaunchMode mode;
     private final CRDConfiguration crdConfiguration;
-
     private boolean needGeneration;
     private final ResourceControllerMapping crMappings = new ResourceControllerMapping();
 
     public CRDGeneration(CRDConfiguration crdConfig, LaunchMode mode) {
         this.crdConfiguration = crdConfig;
         this.mode = mode;
-        this.generate = CRDGeneration.shouldGenerate(crdConfig.generate, crdConfig.apply, mode);
     }
 
     static boolean shouldGenerate(Optional<Boolean> configuredGenerate, Optional<Boolean> configuredApply,
@@ -49,10 +46,6 @@ class CRDGeneration {
 
     boolean shouldApply() {
         return shouldApply(crdConfiguration.apply, mode);
-    }
-
-    public boolean wantCRDGenerated() {
-        return generate;
     }
 
     /**
