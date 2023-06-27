@@ -38,7 +38,6 @@ import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
-import io.quarkus.bootstrap.app.ClassChangeInformation;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
@@ -93,6 +92,9 @@ class OperatorSDKProcessor {
         // register CDI qualifier for customization of the fabric8 ObjectMapper
         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(KubernetesClientSerializationCustomizer.class));
 
+        // register CDI Operator producer
+        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorProducer.class));
+
         // add default bean based on whether or not micrometer is enabled
         if (metricsCapability.map(m -> m.metricsSupported(MetricsFactory.MICROMETER)).orElse(false)) {
             // we use the class name to not import any micrometer-related dependencies to prevent activation
@@ -103,6 +105,21 @@ class OperatorSDKProcessor {
 
         // register health check
         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorHealthCheck.class));
+    }
+
+    @BuildStep
+    void addOperatorBoostrapIfNoApplicationClassExists(
+            BuildProducer<AdditionalBeanBuildItem> additionalBeans,
+            CombinedIndexBuildItem combinedIndex) {
+        // if the app doesn't provide a main class, add the AppEventListener
+        if (combinedIndex.getIndex().getAllKnownImplementors(DotName.createSimple(QuarkusApplication.class.getName()))
+                .isEmpty()) {
+            additionalBeans.produce(AdditionalBeanBuildItem.builder()
+                    .addBeanClass(AppEventListener.class)
+                    .setDefaultScope(DotName.createSimple(Singleton.class.getName()))
+                    .setUnremovable()
+                    .build());
+        }
     }
 
     @BuildStep
@@ -232,18 +249,6 @@ class OperatorSDKProcessor {
         storedCRDInfos.putAll(generatedCRDs);
         liveReload.setContextObject(ContextStoredCRDInfos.class,
                 storedCRDInfos); // record CRD generation info in context for future use
-
-        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorProducer.class));
-
-        // if the app doesn't provide a main class, add the AppEventListener
-        if (index.getAllKnownImplementors(DotName.createSimple(QuarkusApplication.class.getName()))
-                .isEmpty()) {
-            additionalBeans.produce(AdditionalBeanBuildItem.builder()
-                    .addBeanClass(AppEventListener.class)
-                    .setDefaultScope(DotName.createSimple(Singleton.class.getName()))
-                    .setUnremovable()
-                    .build());
-        }
 
         // register classes for reflection
         registerAssociatedClassesForReflection(reflectionClasses, forcedReflectionClasses, registerForReflection);
