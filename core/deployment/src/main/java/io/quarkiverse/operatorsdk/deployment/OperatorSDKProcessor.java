@@ -170,9 +170,7 @@ class OperatorSDKProcessor {
         }
         final var storedCRDInfos = stored;
 
-        final Set<String> changedClasses = liveReload.isLiveReload() ? Optional.ofNullable(liveReload.getChangeInformation())
-                .map(ClassChangeInformation::getChangedClasses)
-                .orElse(Collections.emptySet()) : Collections.emptySet();
+        final var changedClasses = ConfigurationUtils.getChangedClasses(liveReload);
 
         final var wantCRDGenerated = crdGeneration.wantCRDGenerated();
         final var scheduledForGeneration = new HashSet<String>(7);
