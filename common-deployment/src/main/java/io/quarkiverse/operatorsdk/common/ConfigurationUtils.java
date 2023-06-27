@@ -2,10 +2,14 @@ package io.quarkiverse.operatorsdk.common;
 
 import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATION;
 
+import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.quarkus.bootstrap.app.ClassChangeInformation;
+import io.quarkus.deployment.builditem.LiveReloadBuildItem;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
@@ -136,5 +140,11 @@ public class ConfigurationUtils {
         final var defaultControllerName = ReconcilerUtils.getDefaultReconcilerName(reconcilerClassName);
         return ConfigurationUtils.annotationValueOrDefault(
                 configuration, "name", AnnotationValue::asString, () -> defaultControllerName);
+    }
+
+    public static Set<String> getChangedClasses(LiveReloadBuildItem liveReload) {
+       return liveReload.isLiveReload() ? Optional.ofNullable(liveReload.getChangeInformation())
+                .map(ClassChangeInformation::getChangedClasses)
+                .orElse(Collections.emptySet()) : Collections.emptySet();
     }
 }
