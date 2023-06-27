@@ -3,15 +3,16 @@ package io.quarkiverse.operatorsdk.deployment;
 import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.instantiate;
 import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.loadClass;
 import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATION;
-import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
@@ -53,15 +54,15 @@ import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration.DefaultRateLimiter;
 import io.quarkiverse.operatorsdk.runtime.QuarkusKubernetesDependentResourceConfig;
 import io.quarkiverse.operatorsdk.runtime.QuarkusManagedWorkflow;
-import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
-import io.quarkus.deployment.annotations.BuildProducer;
+import io.quarkus.deployment.annotations.BuildStep;
+import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.LiveReloadBuildItem;
 import io.quarkus.deployment.util.JandexUtil;
 
 @SuppressWarnings("rawtypes")
-class QuarkusControllerConfigurationBuilder {
+class QuarkusControllerConfigurationBuildStep {
 
-    static final Logger log = Logger.getLogger(QuarkusControllerConfigurationBuilder.class.getName());
+    static final Logger log = Logger.getLogger(QuarkusControllerConfigurationBuildStep.class.getName());
 
     private static final KubernetesDependentConverter KUBERNETES_DEPENDENT_CONVERTER = new KubernetesDependentConverter() {
         @Override
@@ -84,91 +85,69 @@ class QuarkusControllerConfigurationBuilder {
                 KUBERNETES_DEPENDENT_CONVERTER);
     }
 
-    private final BuildProducer<AdditionalBeanBuildItem> additionalBeans;
-    private final IndexView index;
-    private final LiveReloadBuildItem liveReload;
+    @BuildStep
+    ControllerConfigurationsBuildItem createControllerConfigurations(
+            ReconcilerInfosBuildItem reconcilers,
+            AnnotationConfigurablesBuildItem annotationConfigurables,
+            BuildTimeOperatorConfiguration buildTimeConfiguration,
+            CombinedIndexBuildItem combinedIndexBuildItem,
+            LiveReloadBuildItem liveReload) {
 
-    private final BuildTimeOperatorConfiguration buildTimeConfiguration;
+        final var maybeStoredConfigurations = liveReload.getContextObject(ContextStoredControllerConfigurations.class);
+        var storedConfigurations = maybeStoredConfigurations != null ? maybeStoredConfigurations
+                : new ContextStoredControllerConfigurations();
 
-    public QuarkusControllerConfigurationBuilder(
-            BuildProducer<AdditionalBeanBuildItem> additionalBeans,
-            IndexView index, LiveReloadBuildItem liveReload,
-            BuildTimeOperatorConfiguration buildTimeConfiguration) {
-        this.additionalBeans = additionalBeans;
-        this.index = index;
-        this.liveReload = liveReload;
-        this.buildTimeConfiguration = buildTimeConfiguration;
-    }
+        liveReload.setContextObject(ContextStoredControllerConfigurations.class, storedConfigurations);
+        final var changedClasses = ConfigurationUtils.getChangedClasses(liveReload);
+        final var changedResources = liveReload.getChangedResources();
 
-    QuarkusControllerConfiguration build(ReconcilerAugmentedClassInfo reconcilerInfo,
-            Map<String, AnnotationConfigurableAugmentedClassInfo> configurableInfos) {
+        final List<QuarkusControllerConfiguration> collect = reconcilers.getReconcilers()
+                .values()
+                .stream()
+                .map(reconcilerInfo -> {
+                    // retrieve the reconciler's name
+                    final var info = reconcilerInfo.classInfo();
+                    final var reconcilerClassName = info.toString();
 
-        // retrieve the reconciler's name
-        final var info = reconcilerInfo.classInfo();
-        final var reconcilerClassName = info.toString();
-        final String name = reconcilerInfo.nameOrFailIfUnset();
+                    QuarkusControllerConfiguration<?> configuration = null;
+                    if (liveReload.isLiveReload()) {
+                        // check if we need to regenerate the configuration for this controller
+                        configuration = storedConfigurations.configurationOrNullIfNeedGeneration(
+                                reconcilerClassName,
+                                changedClasses,
+                                changedResources);
+                    }
 
-        // create Reconciler bean
-        additionalBeans.produce(
-                AdditionalBeanBuildItem.builder()
-                        .addBeanClass(reconcilerClassName)
-                        .setUnremovable()
-                        .setDefaultScope(APPLICATION_SCOPED)
-                        .build());
+                    if (configuration == null) {
+                        configuration = createConfiguration(reconcilerInfo,
+                                annotationConfigurables.getConfigurableInfos(),
+                                buildTimeConfiguration,
+                                combinedIndexBuildItem.getIndex());
+                    }
 
-        // check if we need to regenerate the configuration for this controller
-        final var changeInformation = liveReload.getChangeInformation();
-        QuarkusControllerConfiguration configuration = null;
-        var storedConfigurations = liveReload.getContextObject(
-                ContextStoredControllerConfigurations.class);
-        if (liveReload.isLiveReload() && storedConfigurations != null) {
-            // check if we need to regenerate the configuration for this controller
-            final var changedClasses = changeInformation == null ? Collections.<String> emptySet()
-                    : changeInformation.getChangedClasses();
-            final var changedResources = liveReload.getChangedResources();
-            configuration = storedConfigurations.configurationOrNullIfNeedGeneration(reconcilerClassName,
-                    changedClasses,
-                    changedResources);
-        }
+                    // store the configuration in the live reload context
+                    storedConfigurations.recordConfiguration(configuration);
 
-        if (configuration == null) {
-            configuration = createConfiguration(reconcilerInfo, configurableInfos);
-        } else {
-            log.infov("Skipped configuration reload for ''{0}'' reconciler as no changes were detected",
-                    reconcilerClassName);
+                    return configuration;
+                }).collect(Collectors.toList());
 
-            // register the dependent beans so that they can be found during dev mode after a restart
-            // where the dependents might not have been resolved yet
-            if (configuration.needsDependentBeansCreation()) {
-                log.debugv("Created dependent beans for ''{0}'' reconciler", reconcilerClassName);
-                reconcilerInfo.getDependentResourceInfos().forEach(dependent -> additionalBeans.produce(
-                        AdditionalBeanBuildItem.builder()
-                                .addBeanClass(dependent.classInfo().name().toString())
-                                .setUnremovable()
-                                .setDefaultScope(APPLICATION_SCOPED)
-                                .build()));
-            }
-        }
-
-        // store the configuration in the live reload context
-        if (storedConfigurations == null) {
-            storedConfigurations = new ContextStoredControllerConfigurations();
-        }
-        storedConfigurations.recordConfiguration(configuration);
+        // store configurations in the live reload context
         liveReload.setContextObject(ContextStoredControllerConfigurations.class, storedConfigurations);
 
-        return configuration;
+        return new ControllerConfigurationsBuildItem(collect);
     }
 
     @SuppressWarnings("unchecked")
-    private QuarkusControllerConfiguration createConfiguration(
+    static QuarkusControllerConfiguration createConfiguration(
             ReconcilerAugmentedClassInfo reconcilerInfo,
-            Map<String, AnnotationConfigurableAugmentedClassInfo> configurableInfos) {
+            Map<String, AnnotationConfigurableAugmentedClassInfo> configurableInfos,
+            BuildTimeOperatorConfiguration buildTimeConfiguration,
+            IndexView index) {
 
         final var info = reconcilerInfo.classInfo();
         final var reconcilerClassName = info.toString();
         final String name = reconcilerInfo.nameOrFailIfUnset();
-        QuarkusControllerConfiguration configuration;
+        QuarkusControllerConfiguration<?> configuration;
         // extract the configuration from annotation and/or external configuration
         final var controllerAnnotation = info.declaredAnnotation(CONTROLLER_CONFIGURATION);
 
@@ -182,8 +161,7 @@ class QuarkusControllerConfigurationBuilder {
                 controllerAnnotation, "eventFilters",
                 AnnotationValue::asClassArray, () -> new Type[0]);
         for (Type filterType : eventFilterTypes) {
-            final var filterClass = loadClass(filterType.name().toString(),
-                    ResourceEventFilter.class);
+            final var filterClass = loadClass(filterType.name().toString(), ResourceEventFilter.class);
             final var filter = instantiate(filterClass);
             finalFilter = finalFilter == null ? filter : finalFilter.and(filter);
         }
@@ -281,13 +259,13 @@ class QuarkusControllerConfigurationBuilder {
                 final var dependentName = dependent.classInfo().name();
                 dependentResources.put(dependentName.toString(), spec);
 
-                final var dependentTypeName = dependentName.toString();
-                additionalBeans.produce(
-                        AdditionalBeanBuildItem.builder()
-                                .addBeanClass(dependentTypeName)
-                                .setUnremovable()
-                                .setDefaultScope(APPLICATION_SCOPED)
-                                .build());
+                //                final var dependentTypeName = dependentName.toString();
+                //                additionalBeans.produce(
+                //                        AdditionalBeanBuildItem.builder()
+                //                                .addBeanClass(dependentTypeName)
+                //                                .setUnremovable()
+                //                                .setDefaultScope(APPLICATION_SCOPED)
+                //                                .build());
             });
         }
 
@@ -322,7 +300,7 @@ class QuarkusControllerConfigurationBuilder {
     }
 
     @SuppressWarnings("unchecked")
-    private DependentResourceSpecMetadata createDependentResourceSpec(
+    private static DependentResourceSpecMetadata createDependentResourceSpec(
             DependentResourceAugmentedClassInfo dependent,
             IndexView index,
             QuarkusControllerConfiguration configuration) {
@@ -372,14 +350,14 @@ class QuarkusControllerConfigurationBuilder {
 
     }
 
-    private String getFinalizer(AnnotationInstance controllerAnnotation, String crdName) {
+    private static String getFinalizer(AnnotationInstance controllerAnnotation, String crdName) {
         return ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
                 "finalizerName",
                 AnnotationValue::asString,
                 () -> ReconcilerUtils.getDefaultFinalizerName(crdName));
     }
 
-    private String getLabelSelector(AnnotationInstance controllerAnnotation) {
+    private static String getLabelSelector(AnnotationInstance controllerAnnotation) {
         return ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
                 "labelSelector",
                 AnnotationValue::asString,

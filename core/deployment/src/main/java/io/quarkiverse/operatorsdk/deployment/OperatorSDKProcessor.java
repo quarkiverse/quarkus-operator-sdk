@@ -1,9 +1,10 @@
 package io.quarkiverse.operatorsdk.deployment;
 
+import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
+
 import java.lang.annotation.Annotation;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -19,22 +20,9 @@ import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
-import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.Constants;
-import io.quarkiverse.operatorsdk.common.CustomResourceAugmentedClassInfo;
-import io.quarkiverse.operatorsdk.runtime.AppEventListener;
-import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
-import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
-import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
-import io.quarkiverse.operatorsdk.runtime.CRDInfo;
-import io.quarkiverse.operatorsdk.runtime.ConfigurationServiceRecorder;
-import io.quarkiverse.operatorsdk.runtime.KubernetesClientObjectMapperCustomizer;
-import io.quarkiverse.operatorsdk.runtime.KubernetesClientSerializationCustomizer;
-import io.quarkiverse.operatorsdk.runtime.NoOpMetricsProvider;
-import io.quarkiverse.operatorsdk.runtime.OperatorHealthCheck;
-import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
-import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
-import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
+import io.quarkiverse.operatorsdk.common.ResourceAssociatedAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.runtime.*;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
@@ -42,21 +30,14 @@ import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
-import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
-import io.quarkus.deployment.builditem.FeatureBuildItem;
-import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
-import io.quarkus.deployment.builditem.LaunchModeBuildItem;
-import io.quarkus.deployment.builditem.LiveReloadBuildItem;
-import io.quarkus.deployment.builditem.RunTimeConfigurationDefaultBuildItem;
+import io.quarkus.deployment.builditem.*;
 import io.quarkus.deployment.builditem.nativeimage.ForceNonWeakReflectiveClassBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.deployment.metrics.MetricsCapabilityBuildItem;
-import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.gizmo.AssignableResultHandle;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
-import io.quarkus.kubernetes.client.spi.KubernetesClientBuildItem;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.metrics.MetricsFactory;
 
@@ -148,114 +129,99 @@ class OperatorSDKProcessor {
     }
 
     @BuildStep
-    ControllerConfigurationsBuildItem createConfigurationServiceAndOperator(
-            OutputTargetBuildItem outputTarget,
+    ReconcilerInfosBuildItem buildReconcilerInfos(CombinedIndexBuildItem combinedIndexBuildItem,
+            BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
+        final var reconcilers = ClassUtils.getKnownReconcilers(combinedIndexBuildItem.getIndex(), log)
+                .peek(reconcilerInfo ->
+                // create Reconciler bean
+                additionalBeans.produce(AdditionalBeanBuildItem.builder()
+                        .addBeanClass(reconcilerInfo.classInfo().toString())
+                        .setUnremovable()
+                        .setDefaultScope(APPLICATION_SCOPED)
+                        .build()))
+                .collect(
+                        Collectors.toMap(ResourceAssociatedAugmentedClassInfo::nameOrFailIfUnset, Function.identity()));
+        return new ReconcilerInfosBuildItem(reconcilers);
+    }
+
+    @BuildStep
+    AnnotationConfigurablesBuildItem gatherAnnotationConfigurables(
             CombinedIndexBuildItem combinedIndexBuildItem,
-            KubernetesClientBuildItem kubernetesClientBuildItem,
-            BuildProducer<AdditionalBeanBuildItem> additionalBeans,
-            BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
-            BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
-            BuildProducer<GeneratedCRDInfoBuildItem> generatedCRDInfo,
-            LiveReloadBuildItem liveReload, LaunchModeBuildItem launchMode,
-            BuildProducer<RunTimeConfigurationDefaultBuildItem> runtimeConfig) {
-
-        final CRDConfiguration crdConfig = buildTimeConfiguration.crd;
-        final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(
-                buildTimeConfiguration.crd.validate);
-
-        // apply should imply generate: we cannot apply if we're not generating!
-        final var mode = launchMode.getLaunchMode();
-        final var crdGeneration = new CRDGeneration(crdConfig, mode);
+            BuildProducer<QOSDKReflectiveClassBuildItem> reflectiveClassProducer) {
         final var index = combinedIndexBuildItem.getIndex();
-
-        final var registerForReflection = new HashSet<String>();
-
-        final var configurableInfos = ClassUtils.getProcessableImplementationsOf(Constants.ANNOTATION_CONFIGURABLE,
-                index, log, Collections.emptyMap())
+        final var configurableInfos = ClassUtils.getProcessableImplementationsOf(
+                Constants.ANNOTATION_CONFIGURABLE,
+                index,
+                log,
+                Collections.emptyMap())
                 .map(AnnotationConfigurableAugmentedClassInfo.class::cast)
-                .peek(ci -> registerForReflection.addAll(ci.getClassNamesToRegisterForReflection()))
+                .peek(ci -> reflectiveClassProducer
+                        .produce(new QOSDKReflectiveClassBuildItem(ci.getClassNamesToRegisterForReflection())))
                 .collect(Collectors.toMap(ac -> ac.classInfo().name().toString(), Function.identity()));
 
         // register configuration targets (i.e. value of the `with` field) of Configured-annotated classes
         index.getAnnotations(Constants.CONFIGURED)
-                .forEach(ai -> registerForReflection.add(ai.value("with").asClass().name().toString()));
+                .stream()
+                .map(ai -> ai.value("with").asClass().name().toString())
+                .forEach(className -> reflectiveClassProducer.produce(new QOSDKReflectiveClassBuildItem(className)));
 
-        // retrieve the known CRD information to make sure we always have a full view
-        var stored = liveReload.getContextObject(ContextStoredCRDInfos.class);
-        if (stored == null) {
-            stored = new ContextStoredCRDInfos();
-        }
-        final var storedCRDInfos = stored;
+        return new AnnotationConfigurablesBuildItem(configurableInfos);
+    }
 
-        final var changedClasses = ConfigurationUtils.getChangedClasses(liveReload);
+    @BuildStep
+    void registerClassesForReflection(
+            List<QOSDKReflectiveClassBuildItem> toRegister,
+            BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
+            BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses) {
+        final var toRegisterSet = toRegister.stream()
+                .flatMap(QOSDKReflectiveClassBuildItem::classNamesToRegisterForReflectionStream)
+                .collect(Collectors.toSet());
+        registerAssociatedClassesForReflection(reflectionClasses, forcedReflectionClasses, toRegisterSet);
+    }
 
-        final var wantCRDGenerated = crdGeneration.wantCRDGenerated();
-        final var scheduledForGeneration = new HashSet<String>(7);
-        final var builder = new QuarkusControllerConfigurationBuilder(additionalBeans,
-                index, liveReload, buildTimeConfiguration);
-        final var controllerConfigs = ClassUtils.getKnownReconcilers(index, log)
-                .map(raci -> {
-                    // register strongly reconciler-associated classes that need reflective access
-                    registerForReflection.addAll(raci.getClassNamesToRegisterForReflection());
+    @BuildStep
+    void registerDependentBeans(
+            ReconcilerInfosBuildItem reconcilers,
+            ControllerConfigurationsBuildItem configurations,
+            BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
 
-                    // add associated primary resource for CRD generation if needed
-                    final var changeInformation = liveReload.getChangeInformation();
-                    if (wantCRDGenerated) {
-                        if (raci.associatedResourceInfo().isCR()) {
-                            final var crInfo = raci.associatedResourceInfo().asResourceTargeting();
-                            // When we have a live reload, check if we need to regenerate the associated CRD
-                            Map<String, CRDInfo> crdInfos = Collections.emptyMap();
+        configurations.getControllerConfigs().values().stream()
+                .filter(QuarkusControllerConfiguration::needsDependentBeansCreation)
+                .forEach(config -> {
+                    final var raci = reconcilers.getReconcilers().get(config.getName());
+                    // register the dependent beans so that they can be found during dev mode after a restart
+                    // where the dependents might not have been resolved yet
+                    final var info = raci.classInfo();
+                    final var reconcilerClassName = info.toString();
 
-                            final String targetCRName = crInfo.fullResourceName();
-                            if (liveReload.isLiveReload()) {
-                                crdInfos = storedCRDInfos.getCRDInfosFor(targetCRName);
-                            }
+                    log.debugv("Created dependent beans for ''{0}'' reconciler",
+                            reconcilerClassName);
+                    raci.getDependentResourceInfos().forEach(dependent -> additionalBeans.produce(
+                            AdditionalBeanBuildItem.builder()
+                                    .addBeanClass(dependent.classInfo().name().toString())
+                                    .setUnremovable()
+                                    .setDefaultScope(APPLICATION_SCOPED)
+                                    .build()));
+                });
+    }
 
-                            if (crdGeneration.scheduleForGenerationIfNeeded((CustomResourceAugmentedClassInfo) crInfo, crdInfos,
-                                    changedClasses)) {
-                                scheduledForGeneration.add(targetCRName);
-                            }
-                        }
-                    }
+    /**
+     * create default configuration entry to ensure that env variable names will be properly mapped to what we expect. This is
+     * needed because the conversion function is not a bijection i.e. there's no way to tell that OPERATOR_SDK should be mapped
+     * to operator-sdk instead of operator.sdk for example.
+     */
+    @BuildStep
+    void initializeRuntimeNamespacesFromBuildTimeValues(
+            ControllerConfigurationsBuildItem configurations,
+            BuildProducer<RunTimeConfigurationDefaultBuildItem> runtimeConfig) {
+        configurations.getControllerConfigs().forEach((name, configuration) -> {
+            @SuppressWarnings("unchecked")
+            final var namespaces = String.join(",", configuration.getNamespaces());
+            runtimeConfig.produce(new RunTimeConfigurationDefaultBuildItem(
+                    "quarkus.operator-sdk.controllers." + configuration.getName() + ".namespaces",
+                    namespaces));
+        });
 
-                    // create default configuration entry to ensure that env variable names will be properly mapped to what we expect. This is needed because the conversion function is not a bijection i.e. there's no way to tell that OPERATOR_SDK should be mapped to operator-sdk instead of operator.sdk for example.
-                    final var configuration = builder.build(raci, configurableInfos);
-                    @SuppressWarnings("unchecked")
-                    final var namespaces = String.join(",", configuration.getNamespaces());
-                    runtimeConfig.produce(new RunTimeConfigurationDefaultBuildItem(
-                            "quarkus.operator-sdk.controllers." + configuration.getName() + ".namespaces",
-                            namespaces));
-
-                    return configuration;
-                })
-                .collect(Collectors.toList());
-
-        // generate non-reconciler associated CRDs if requested
-        if (wantCRDGenerated && crdConfig.generateAll) {
-            ClassUtils.getProcessableSubClassesOf(Constants.CUSTOM_RESOURCE, index, log,
-                    // pass already generated CRD names so that we can only keep the unhandled ones
-                    Map.of(CustomResourceAugmentedClassInfo.EXISTING_CRDS_KEY, scheduledForGeneration))
-                    .map(CustomResourceAugmentedClassInfo.class::cast)
-                    .forEach(cr -> {
-                        final var targetCRName = cr.fullResourceName();
-                        crdGeneration.withCustomResource(cr.loadAssociatedClass(), targetCRName, null);
-                        log.infov("Will generate CRD for non-reconciler bound resource: {0}", targetCRName);
-                    });
-        }
-
-        CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, validateCustomResources,
-                storedCRDInfos.getExisting());
-        Map<String, Map<String, CRDInfo>> generatedCRDs = crdInfo.getCrds();
-        storedCRDInfos.putAll(generatedCRDs);
-        liveReload.setContextObject(ContextStoredCRDInfos.class,
-                storedCRDInfos); // record CRD generation info in context for future use
-
-        // register classes for reflection
-        registerAssociatedClassesForReflection(reflectionClasses, forcedReflectionClasses, registerForReflection);
-
-        generatedCRDInfo.produce(new GeneratedCRDInfoBuildItem(crdInfo));
-
-        return new ControllerConfigurationsBuildItem(controllerConfigs);
     }
 
     private void registerAssociatedClassesForReflection(BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
