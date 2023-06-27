@@ -8,8 +8,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import io.quarkus.bootstrap.app.ClassChangeInformation;
-import io.quarkus.deployment.builditem.LiveReloadBuildItem;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
@@ -17,6 +15,8 @@ import org.jboss.jandex.IndexView;
 
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Utils;
+import io.quarkus.bootstrap.app.ClassChangeInformation;
+import io.quarkus.deployment.builditem.LiveReloadBuildItem;
 
 public class ConfigurationUtils {
 
@@ -143,7 +143,7 @@ public class ConfigurationUtils {
     }
 
     public static Set<String> getChangedClasses(LiveReloadBuildItem liveReload) {
-       return liveReload.isLiveReload() ? Optional.ofNullable(liveReload.getChangeInformation())
+        return liveReload.isLiveReload() ? Optional.ofNullable(liveReload.getChangeInformation())
                 .map(ClassChangeInformation::getChangedClasses)
                 .orElse(Collections.emptySet()) : Collections.emptySet();
     }
