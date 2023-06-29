@@ -39,6 +39,7 @@ public class CRDGenerationBuildStep {
     }
 
     @BuildStep(onlyIf = WantCRDGenerated.class)
+    @SuppressWarnings("unused")
     GeneratedCRDInfoBuildItem generateCRDs(
             ReconcilerInfosBuildItem reconcilers,
             BuildTimeOperatorConfiguration buildTimeConfiguration,
@@ -49,7 +50,7 @@ public class CRDGenerationBuildStep {
         final var crdConfig = buildTimeConfiguration.crd;
         final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(crdConfig.validate);
 
-        //apply should imply generate:we cannot apply if we 're not generating!
+        //apply should imply generate: we cannot apply if we 're not generating!
         final var crdGeneration = new CRDGeneration(crdConfig, launchMode.getLaunchMode());
 
         // retrieve the known CRD information to make sure we always have a full view
@@ -61,7 +62,7 @@ public class CRDGenerationBuildStep {
         final var changedClasses = ConfigurationUtils.getChangedClasses(liveReload);
         final var scheduledForGeneration = new HashSet<String>(7);
 
-        reconcilers.getReconcilers().values().stream().forEach(raci -> {
+        reconcilers.getReconcilers().values().forEach(raci -> {
             // add associated primary resource for CRD generation if needed
             if (raci.associatedResourceInfo().isCR()) {
                 final var crInfo = raci.associatedResourceInfo().asResourceTargeting();
