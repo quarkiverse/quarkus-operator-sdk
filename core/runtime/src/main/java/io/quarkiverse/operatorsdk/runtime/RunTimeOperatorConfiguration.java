@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.quarkus.runtime.annotations.ConfigItem;
 import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.runtime.annotations.ConfigRoot;
@@ -45,10 +46,18 @@ public class RunTimeOperatorConfiguration {
     public Optional<Integer> terminationTimeoutSeconds;
 
     /**
-     * An optional list of comma-separated namespace names all controllers will watch if not specified. If this
-     * property is left empty then controllers will watch all namespaces by default. Sets the default value for all controllers.
-     * The value can be set to "JOSDK_WATCH_CURRENT" to watch the current (default) namespace from kube config.
-     * Constant(s) can be found in at {@link io.javaoperatorsdk.operator.api.reconciler.Constants}".
+     * An optional list of comma-separated namespace names all controllers will watch if they do not specify their own list. If
+     * a controller specifies its own list either via the
+     * {@link io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration} annotation or via the associated
+     * {@code application.properties} property, that value will be used instead of the operator-level default value that this
+     * configuration option provides.
+     *
+     * <p>
+     * If this property is left empty then controllers will watch all namespaces by default (which is equivalent to setting this
+     * property to {@link Constants#WATCH_ALL_NAMESPACES}, assuming they do not provide their own list of namespaces to watch. .
+     * The value can be set to {@link Constants#WATCH_CURRENT_NAMESPACE} to make all controllers watch the current namespace as
+     * specified by the kube config file the operator uses.
+     * </p>
      */
     @ConfigItem
     public Optional<List<String>> namespaces;
