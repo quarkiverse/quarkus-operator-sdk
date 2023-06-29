@@ -18,7 +18,6 @@ import io.quarkiverse.operatorsdk.runtime.KubernetesClientSerializationCustomize
 import io.quarkus.jackson.ObjectMapperCustomizer;
 import io.quarkus.test.QuarkusUnitTest;
 
-@Disabled("Until https://github.com/quarkusio/quarkus/pull/34259 is backported to 3.2")
 public class KubernetesClientSerializationCustomizerTest {
 
     @Inject
