@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.jboss.logging.Logger;
+
 import io.fabric8.crd.generator.CRDGenerator;
 import io.fabric8.crd.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -21,6 +23,7 @@ import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.runtime.LaunchMode;
 
 class CRDGeneration {
+    private static final Logger log = Logger.getLogger(CRDGeneration.class.getName());
     private CRDGenerator generator;
     private final LaunchMode mode;
     private final CRDConfiguration crdConfiguration;
@@ -82,7 +85,7 @@ class CRDGeneration {
             final var crdDetailsPerNameAndVersion = info.getCRDDetailsPerNameAndVersion();
 
             crdDetailsPerNameAndVersion.forEach((crdName, initialVersionToCRDInfoMap) -> {
-                OperatorSDKProcessor.log.infov("Generated {0} CRD:", crdName);
+                log.infov("Generated {0} CRD:", crdName);
                 generated.add(crdName);
 
                 final var versions = crMappings.getResourceInfos(crdName);
@@ -90,7 +93,7 @@ class CRDGeneration {
                 initialVersionToCRDInfoMap
                         .forEach((version, crdInfo) -> {
                             final var filePath = crdInfo.getFilePath();
-                            OperatorSDKProcessor.log.infov("  - {0} -> {1}", version, filePath);
+                            log.infov("  - {0} -> {1}", version, filePath);
                             versionToCRDInfo.put(version, new CRDInfo(crdInfo.getCrdName(),
                                     version, filePath, crdInfo.getDependentClassNames(), versions));
                         });
@@ -118,7 +121,7 @@ class CRDGeneration {
             }
 
             // we've looked at all the changed classes and none have been changed for this CR/version: do not regenerate CRD
-            OperatorSDKProcessor.log.infov(
+            log.infov(
                     "''{0}'' CRD generation was skipped for ''{1}'' because no changes impacting the CRD were detected",
                     v, targetCRName);
             generateCurrent[0] = false;

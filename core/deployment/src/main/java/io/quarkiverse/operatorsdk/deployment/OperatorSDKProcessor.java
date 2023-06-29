@@ -44,7 +44,7 @@ import io.quarkus.runtime.metrics.MetricsFactory;
 @SuppressWarnings({ "unused" })
 class OperatorSDKProcessor {
 
-    static final Logger log = Logger.getLogger(OperatorSDKProcessor.class.getName());
+    private static final Logger log = Logger.getLogger(OperatorSDKProcessor.class.getName());
 
     private static final String FEATURE = "operator-sdk";
     private static final String DEFAULT_METRIC_BINDER_CLASS_NAME = "io.quarkiverse.operatorsdk.runtime.MicrometerMetricsProvider";
