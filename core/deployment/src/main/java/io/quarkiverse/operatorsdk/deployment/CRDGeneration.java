@@ -53,7 +53,9 @@ class CRDGeneration {
 
     /**
      * Generates the CRD in the location specified by the output target, using the specified CRD
-     * generation configuration
+     * generation configuration only if generation has been requested by call
+     * {@link #scheduleForGenerationIfNeeded(CustomResourceAugmentedClassInfo, Map, Set)} or
+     * {@link #withCustomResource(Class, String, String)}
      *
      * @param outputTarget the {@link OutputTargetBuildItem} specifying where the CRDs
      *        should be generated

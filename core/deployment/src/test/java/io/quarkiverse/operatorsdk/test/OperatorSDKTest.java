@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
 import io.quarkiverse.operatorsdk.test.sources.CRUDConfigMap;
@@ -54,8 +55,8 @@ public class OperatorSDKTest {
 
     @Test
     public void shouldCreateRolesAndRoleBindings() throws IOException {
-        final var kubeManifest = prodModeTestResults.getBuildDir().resolve("kubernetes")
-                .resolve("kubernetes.yml");
+        final var kubernetesDir = prodModeTestResults.getBuildDir().resolve("kubernetes");
+        final var kubeManifest = kubernetesDir.resolve("kubernetes.yml");
         Assertions.assertTrue(Files.exists(kubeManifest));
         final var kubeIS = new FileInputStream(kubeManifest.toFile());
         // use unmarshall version with parameters map to ensure code goes through the proper processing wrt multiple documents
@@ -120,5 +121,9 @@ public class OperatorSDKTest {
                     assertEquals(List.of(plural, plural + "/status", plural + "/finalizers"), resources);
                     assertEquals(Arrays.asList(ALL_VERBS), rule.getVerbs());
                 });
+
+        // checks that CRDs are generated
+        Assertions.assertTrue(Files.exists(kubernetesDir.resolve(CustomResource.getCRDName(TestCR.class) + "-v1.yml")));
+        Assertions.assertTrue(Files.exists(kubernetesDir.resolve(CustomResource.getCRDName(SimpleCR.class) + "-v1.yml")));
     }
 }

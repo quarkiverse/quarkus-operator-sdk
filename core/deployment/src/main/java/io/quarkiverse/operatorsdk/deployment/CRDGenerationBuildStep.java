@@ -3,7 +3,6 @@ package io.quarkiverse.operatorsdk.deployment;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.function.BooleanSupplier;
 
 import org.jboss.logging.Logger;
 
@@ -19,81 +18,71 @@ import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.LaunchModeBuildItem;
 import io.quarkus.deployment.builditem.LiveReloadBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
-import io.quarkus.runtime.LaunchMode;
 
 public class CRDGenerationBuildStep {
     static final Logger log = Logger.getLogger(CRDGenerationBuildStep.class.getName());
 
-    private static class WantCRDGenerated implements BooleanSupplier {
-
-        private final boolean generate;
-
-        private WantCRDGenerated(BuildTimeOperatorConfiguration config, LaunchMode launchMode) {
-            generate = CRDGeneration.shouldGenerate(config.crd.generate, config.crd.apply, launchMode);
-        }
-
-        @Override
-        public boolean getAsBoolean() {
-            return generate;
-        }
-    }
-
-    @BuildStep(onlyIf = WantCRDGenerated.class)
-    @SuppressWarnings("unused")
+    @BuildStep
     GeneratedCRDInfoBuildItem generateCRDs(
             ReconcilerInfosBuildItem reconcilers,
             BuildTimeOperatorConfiguration buildTimeConfiguration,
-            LaunchModeBuildItem launchMode,
+            LaunchModeBuildItem launchModeBuildItem,
             LiveReloadBuildItem liveReload,
             OutputTargetBuildItem outputTarget,
             CombinedIndexBuildItem combinedIndexBuildItem) {
         final var crdConfig = buildTimeConfiguration.crd;
         final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(crdConfig.validate);
 
-        //apply should imply generate: we cannot apply if we 're not generating!
-        final var crdGeneration = new CRDGeneration(crdConfig, launchMode.getLaunchMode());
+        //apply should imply generate: we cannot apply if we're not generating!
+        final var launchMode = launchModeBuildItem.getLaunchMode();
+        final var crdGeneration = new CRDGeneration(crdConfig, launchMode);
 
         // retrieve the known CRD information to make sure we always have a full view
         var stored = liveReload.getContextObject(ContextStoredCRDInfos.class);
         if (stored == null) {
             stored = new ContextStoredCRDInfos();
         }
+
+        final var generate = CRDGeneration.shouldGenerate(crdConfig.generate, crdConfig.apply, launchMode);
         final var storedCRDInfos = stored;
         final var changedClasses = ConfigurationUtils.getChangedClasses(liveReload);
         final var scheduledForGeneration = new HashSet<String>(7);
 
-        reconcilers.getReconcilers().values().forEach(raci -> {
-            // add associated primary resource for CRD generation if needed
-            if (raci.associatedResourceInfo().isCR()) {
-                final var crInfo = raci.associatedResourceInfo().asResourceTargeting();
-                // When we have a live reload, check if we need to regenerate the associated CRD
-                Map<String, CRDInfo> crdInfos = Collections.emptyMap();
+        if (generate) {
+            reconcilers.getReconcilers().values().forEach(raci -> {
+                // add associated primary resource for CRD generation if needed
+                if (raci.associatedResourceInfo().isCR()) {
+                    final var crInfo = raci.associatedResourceInfo().asResourceTargeting();
+                    // When we have a live reload, check if we need to regenerate the associated CRD
+                    Map<String, CRDInfo> crdInfos = Collections.emptyMap();
 
-                final String targetCRName = crInfo.fullResourceName();
-                if (liveReload.isLiveReload()) {
-                    crdInfos = storedCRDInfos.getCRDInfosFor(targetCRName);
-                }
+                    final String targetCRName = crInfo.fullResourceName();
+                    if (liveReload.isLiveReload()) {
+                        crdInfos = storedCRDInfos.getCRDInfosFor(targetCRName);
+                    }
 
-                if (crdGeneration.scheduleForGenerationIfNeeded((CustomResourceAugmentedClassInfo) crInfo, crdInfos,
-                        changedClasses)) {
-                    scheduledForGeneration.add(targetCRName);
+                    if (crdGeneration.scheduleForGenerationIfNeeded((CustomResourceAugmentedClassInfo) crInfo, crdInfos,
+                            changedClasses)) {
+                        scheduledForGeneration.add(targetCRName);
+                    }
                 }
+            });
+
+            // generate non-reconciler associated CRDs if requested
+            if (crdConfig.generateAll) {
+                ClassUtils.getProcessableSubClassesOf(Constants.CUSTOM_RESOURCE, combinedIndexBuildItem.getIndex(), log,
+                        // pass already generated CRD names so that we can only keep the unhandled ones
+                        Map.of(CustomResourceAugmentedClassInfo.EXISTING_CRDS_KEY, scheduledForGeneration))
+                        .map(CustomResourceAugmentedClassInfo.class::cast)
+                        .forEach(cr -> {
+                            final var targetCRName = cr.fullResourceName();
+                            crdGeneration.withCustomResource(cr.loadAssociatedClass(), targetCRName, null);
+                            log.infov("Will generate CRD for non-reconciler bound resource: {0}", targetCRName);
+                        });
             }
-        });
-
-        // generate non-reconciler associated CRDs if requested
-        if (crdConfig.generateAll) {
-            ClassUtils.getProcessableSubClassesOf(Constants.CUSTOM_RESOURCE, combinedIndexBuildItem.getIndex(), log,
-                    // pass already generated CRD names so that we can only keep the unhandled ones
-                    Map.of(CustomResourceAugmentedClassInfo.EXISTING_CRDS_KEY, scheduledForGeneration))
-                    .map(CustomResourceAugmentedClassInfo.class::cast)
-                    .forEach(cr -> {
-                        final var targetCRName = cr.fullResourceName();
-                        crdGeneration.withCustomResource(cr.loadAssociatedClass(), targetCRName, null);
-                        log.infov("Will generate CRD for non-reconciler bound resource: {0}", targetCRName);
-                    });
         }
 
+        // perform "generation" even if not requested to ensure we always produce the needed build item for other steps
         CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, validateCustomResources, storedCRDInfos.getExisting());
 
         // record CRD generation info in context for future use
