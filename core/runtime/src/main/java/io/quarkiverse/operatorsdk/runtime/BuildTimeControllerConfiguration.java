@@ -22,9 +22,8 @@ public class BuildTimeControllerConfiguration {
      * <p>
      * Note that this is provided as a means to quickly deploy a specific controller to test it by applying the generated
      * manifests to the target cluster. If empty, no manifests will be generated. The namespace in which the controller will be
-     * deployed will
-     * be the currently configured namespace as specified by your {@code .kube/config} file, unless you specify the target
-     * deployment namespace using the {@code quarkus.kubernetes.namespace} property.
+     * deployed will be the currently configured namespace as specified by your {@code .kube/config} file, unless you specify
+     * the target deployment namespace using the {@code quarkus.kubernetes.namespace} property.
      * </p>
      *
      * <p>
