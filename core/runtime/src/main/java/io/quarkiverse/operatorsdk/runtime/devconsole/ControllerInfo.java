@@ -12,8 +12,10 @@ import io.javaoperatorsdk.operator.processing.Controller;
 public class ControllerInfo<P extends HasMetadata> {
     private final Controller<P> controller;
     private final Set<EventSourceInfo> eventSources;
+    @SuppressWarnings("rawtypes")
     private final Set<DependentInfo> dependents;
 
+    @SuppressWarnings("rawtypes")
     public ControllerInfo(Controller<P> controller) {
         this.controller = controller;
         final var context = new EventSourceContext<>(controller.getEventSourceManager().getControllerResourceEventSource(),
@@ -63,7 +65,7 @@ public class ControllerInfo<P extends HasMetadata> {
 
     @SuppressWarnings("unused")
     public List<P> getKnownResources() {
-        return controller.getEventSourceManager().getControllerResourceEventSource().list().collect(
-                Collectors.toList());
+        return controller.getEventSourceManager().getControllerResourceEventSource().list()
+                .collect(Collectors.toList());
     }
 }

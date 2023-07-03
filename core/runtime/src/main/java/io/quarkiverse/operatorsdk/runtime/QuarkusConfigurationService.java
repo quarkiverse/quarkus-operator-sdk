@@ -91,8 +91,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     @Override
     public <R extends HasMetadata> QuarkusControllerConfiguration<R> getConfigurationFor(Reconciler<R> reconciler) {
         final var unwrapped = unwrap(reconciler);
-        final var configuration = (QuarkusControllerConfiguration<R>) super.getConfigurationFor(
-                unwrapped);
+        final var configuration = (QuarkusControllerConfiguration<R>) super.getConfigurationFor(unwrapped);
         configuration.initAnnotationConfigurables(unwrapped);
         return configuration;
     }
