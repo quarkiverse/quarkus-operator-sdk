@@ -215,7 +215,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         var dependentResource = knownDependents.get(dependentKey);
         if (dependentResource == null) {
             final Class<? extends DependentResource<?, ?>> dependentResourceClass = spec.getDependentResourceClass();
-            try(final var dependentInstance = Arc.container().instance(dependentResourceClass)) {
+            try (final var dependentInstance = Arc.container().instance(dependentResourceClass)) {
                 final var dependent = dependentInstance.get();
 
                 if (dependent == null) {
