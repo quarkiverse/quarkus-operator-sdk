@@ -6,20 +6,19 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.processing.Controller;
 
 public class ControllerInfo<P extends HasMetadata> {
     private final Controller<P> controller;
     private final Set<EventSourceInfo> eventSources;
+    @SuppressWarnings("rawtypes")
     private final Set<DependentInfo> dependents;
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public ControllerInfo(Controller<P> controller) {
         this.controller = controller;
-        final var context = new EventSourceContext<>(controller.getEventSourceManager().getControllerResourceEventSource(),
-                controller.getConfiguration(), controller.getClient());
         dependents = controller.getConfiguration().getDependentResources().stream()
-                .map(spec -> new DependentInfo(spec, context))
+                .map(spec -> new DependentInfo(spec))
                 .sorted()
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         eventSources = controller.getEventSourceManager().getNamedEventSourcesStream()
@@ -57,13 +56,14 @@ public class ControllerInfo<P extends HasMetadata> {
         return eventSources;
     }
 
+    @SuppressWarnings("rawtypes")
     public Set<DependentInfo> getDependents() {
         return dependents;
     }
 
     @SuppressWarnings("unused")
     public List<P> getKnownResources() {
-        return controller.getEventSourceManager().getControllerResourceEventSource().list().collect(
-                Collectors.toList());
+        return controller.getEventSourceManager().getControllerResourceEventSource().list()
+                .collect(Collectors.toList());
     }
 }

@@ -113,11 +113,13 @@ class OperatorSDKProcessor {
             ControllerConfigurationsBuildItem serviceBuildItem,
             VersionBuildItem versionBuildItem,
             LaunchModeBuildItem launchMode) {
-        final var supplier = recorder
-                .configurationServiceSupplier(versionBuildItem.getVersion(),
-                        serviceBuildItem.getControllerConfigs(),
-                        generatedCRDs.getCRDGenerationInfo(),
-                        runTimeConfiguration, buildTimeConfiguration, launchMode.getLaunchMode());
+        final var supplier = recorder.configurationServiceSupplier(
+                versionBuildItem.getVersion(),
+                serviceBuildItem.getControllerConfigs(),
+                generatedCRDs.getCRDGenerationInfo(),
+                runTimeConfiguration,
+                buildTimeConfiguration,
+                launchMode.getLaunchMode());
         syntheticBeanBuildItemBuildProducer.produce(
                 SyntheticBeanBuildItem.configure(QuarkusConfigurationService.class)
                         .scope(Singleton.class)

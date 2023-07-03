@@ -1,23 +1,30 @@
 package io.quarkiverse.operatorsdk.runtime.devui;
 
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
+import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.processing.Controller;
 import io.quarkiverse.operatorsdk.runtime.devconsole.ControllerInfo;
-import io.quarkiverse.operatorsdk.runtime.devconsole.ControllersSupplier;
 
 @ApplicationScoped
 public class JSONRPCService {
-    private final ControllersSupplier supplier = new ControllersSupplier();
+    @Inject
+    Operator operator;
 
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public Collection<ControllerInfo> getControllers() {
-        return supplier.get();
+        return operator.getRegisteredControllers().stream()
+                .map(Controller.class::cast)
+                .map(registeredController -> new ControllerInfo(registeredController))
+                .collect(Collectors.toList());
     }
 
     @SuppressWarnings("unused")
     public int controllersCount() {
-        return supplier.count();
+        return operator.getRegisteredControllersNumber();
     }
 }

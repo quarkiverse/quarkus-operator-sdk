@@ -1,74 +1,24 @@
 package io.quarkiverse.operatorsdk.runtime.devconsole;
 
-import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
-import io.javaoperatorsdk.operator.processing.event.EventSourceMetadata;
-import io.javaoperatorsdk.operator.processing.event.source.Configurable;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
-import io.javaoperatorsdk.operator.processing.event.source.ResourceEventSource;
 import io.quarkus.arc.Arc;
 
 @SuppressWarnings({ "unused", "rawtypes" })
 public class DependentInfo<R, P extends HasMetadata> implements Comparable<DependentInfo> {
     private final DependentResourceSpec<R, P> spec;
-    private final EventSourceContext<P> context;
 
-    public DependentInfo(DependentResourceSpec<R, P> spec, EventSourceContext<P> context) {
+    public DependentInfo(DependentResourceSpec<R, P> spec) {
         this.spec = spec;
-        this.context = context;
-    }
-
-    EventSource eventSource() {
-        // todo: fix-me
-        final DependentResource<R, P> dependent = Arc.container()
-                .instance(spec.getDependentResourceClass()).get();
-        return dependent.eventSource(context).orElse(null);
-    }
-
-    public EventSourceInfo getEventSource() {
-        return Optional.ofNullable(eventSource()).map(es -> new EventSourceMetadata() {
-            @Override
-            public String name() {
-                return DependentInfo.this.getName();
-            }
-
-            @Override
-            public Class<?> type() {
-                return es.getClass();
-            }
-
-            @Override
-            public Optional<Class<?>> resourceType() {
-                return es instanceof ResourceEventSource
-                        ? Optional.of(((ResourceEventSource<?, ?>) es).resourceType())
-                        : Optional.empty();
-            }
-
-            @Override
-            public Optional<?> configuration() {
-                return es instanceof Configurable
-                        ? Optional.of(((Configurable<?>) es).configuration())
-                        : Optional.empty();
-            }
-
-        }).map(EventSourceInfo::new).orElse(null);
     }
 
     public String getResourceClass() {
-        // todo: fix-me
-        final DependentResource<R, P> dependent = Arc.container()
-                .instance(spec.getDependentResourceClass()).get();
-        return dependent.resourceType().getName();
-    }
-
-    public Optional<?> getDependentResourceConfiguration() {
-        return null; // todo
+        try (final var dependent = Arc.container().instance(spec.getDependentResourceClass())) {
+            return dependent.get().resourceType().getName();
+        }
     }
 
     public String getName() {

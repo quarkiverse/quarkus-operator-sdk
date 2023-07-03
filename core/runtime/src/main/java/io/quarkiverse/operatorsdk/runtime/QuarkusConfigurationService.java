@@ -91,8 +91,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     @Override
     public <R extends HasMetadata> QuarkusControllerConfiguration<R> getConfigurationFor(Reconciler<R> reconciler) {
         final var unwrapped = unwrap(reconciler);
-        final var configuration = (QuarkusControllerConfiguration<R>) super.getConfigurationFor(
-                unwrapped);
+        final var configuration = (QuarkusControllerConfiguration<R>) super.getConfigurationFor(unwrapped);
         configuration.initAnnotationConfigurables(unwrapped);
         return configuration;
     }
@@ -215,20 +214,22 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         final var dependentKey = getDependentKey(configuration, spec);
         var dependentResource = knownDependents.get(dependentKey);
         if (dependentResource == null) {
-            final Class<? extends DependentResource<?, ?>> dependentResourceClass = spec
-                    .getDependentResourceClass();
-            final var dependent = Arc.container().instance(dependentResourceClass).get();
-            if (dependent == null) {
-                throw new IllegalStateException(
-                        "Couldn't find bean associated with DependentResource "
-                                + dependentResourceClass.getName());
-            }
+            final Class<? extends DependentResource<?, ?>> dependentResourceClass = spec.getDependentResourceClass();
+            try (final var dependentInstance = Arc.container().instance(dependentResourceClass)) {
+                final var dependent = dependentInstance.get();
 
-            dependentResource = ClientProxy.unwrap(dependent);
-            // configure the bean
-            DependentResourceConfigurationResolver.configure(dependentResource, spec, configuration);
-            // record the configured dependent for later retrieval if needed
-            knownDependents.put(dependentKey, dependentResource);
+                if (dependent == null) {
+                    throw new IllegalStateException(
+                            "Couldn't find bean associated with DependentResource "
+                                    + dependentResourceClass.getName());
+                }
+
+                dependentResource = ClientProxy.unwrap(dependent);
+                // configure the bean
+                DependentResourceConfigurationResolver.configure(dependentResource, spec, configuration);
+                // record the configured dependent for later retrieval if needed
+                knownDependents.put(dependentKey, dependentResource);
+            }
         }
         return dependentResource;
     }
