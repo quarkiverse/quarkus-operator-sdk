@@ -1,0 +1,57 @@
+on: workflow_dispatch
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: test
+    steps:
+      - uses: radcortez/project-metadata-action@main
+        name: Retrieve project metadata
+        id: metadata
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          metadata-file-path: '.github/project.yml'
+
+      - uses: actions/checkout@v3
+        with:
+          repository: quarkusio/quarkus-platform
+          path: quarkus-platform
+
+      - name: Update QOSDK version to ${{steps.metadata.outputs.current-version}} in quarkus-platform
+        run: |
+          cd quarkus-platform
+          mvn -B versions:set-property -Dproperty=quarkus-operator-sdk.version -DnewVersion=${{steps.metadata.outputs.current-version}}
+          ./mvnw -Dsync
+
+      - uses: actions/checkout@v3
+        with:
+          repository: operator-framework/java-operator-plugins
+          path: sdk-plugins
+
+      - name: Update QOSDK version to ${{steps.metadata.outputs.current-version}} in java-operator-plugins
+        run: |
+          cd sdk-plugins
+          sed -i '' -e 's|<quarkus-sdk.version>.*</quarkus-sdk.version>|<quarkus-sdk.version>${{steps.metadata.outputs.current-version}}</quarkus-sdk.version>|' pkg/quarkus/v1alpha/scaffolds/internal/templates/pomxml.go
+
+      - name: Create java-operator-plugins pull request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          path: sdk-plugins
+          title: "feat: update QOSDK to ${{steps.metadata.outputs.current-version}}"
+          commit-message: "feat: update QOSDK to ${{steps.metadata.outputs.current-version}}"
+          committer: metacosm <metacosm@users.noreply.github.com>
+          author: metacosm <metacosm@users.noreply.github.com>
+          branch: qosdk-release-${{steps.metadata.outputs.current-version}}
+          token: ${{ secrets.QOSDK_BOT_TOKEN }}
+          push-to-fork: qosdk-bot/java-operator-plugins
+
+      - name: Create quarkus-platform pull request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          path: quarkus-platform
+          title: "Update QOSDK to ${{steps.metadata.outputs.current-version}}"
+          commit-message: "Update QOSDK to ${{steps.metadata.outputs.current-version}}"
+          committer: metacosm <metacosm@users.noreply.github.com>
+          author: metacosm <metacosm@users.noreply.github.com>
+          branch: qosdk-release-${{steps.metadata.outputs.current-version}}
+          token: ${{ secrets.QOSDK_BOT_TOKEN }}
+          push-to-fork: qosdk-bot/quarkus-platform
