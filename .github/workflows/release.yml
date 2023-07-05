@@ -76,10 +76,11 @@ jobs:
       - name: Update QOSDK version to ${{steps.metadata.outputs.current-version}} in java-operator-plugins
         run: |
           cd sdk-plugins
-          sed -i '' -e 's|<quarkus-sdk.version>.*</quarkus-sdk.version>|<quarkus-sdk.version>${{steps.metadata.outputs.current-version}}</quarkus-sdk.version>|' pkg/quarkus/v1alpha/scaffolds/internal/templates/pomxml.go
+          sed -i -e 's|<quarkus-sdk.version>.*</quarkus-sdk.version>|<quarkus-sdk.version>${{steps.metadata.outputs.current-version}}</quarkus-sdk.version>|' $(pwd)/pkg/quarkus/v1alpha/scaffolds/internal/templates/pomxml.go
 
       - name: Create java-operator-plugins pull request
         uses: peter-evans/create-pull-request@v5
+        id: jop-pr
         with:
           path: sdk-plugins
           title: "feat: update QOSDK to ${{steps.metadata.outputs.current-version}}"
@@ -89,9 +90,17 @@ jobs:
           branch: qosdk-release-${{steps.metadata.outputs.current-version}}
           token: ${{ secrets.QOSDK_BOT_TOKEN }}
           push-to-fork: qosdk-bot/java-operator-plugins
+          delete-branch: true
+
+      - name: Check java-operator-plugins PR
+        if: ${{ steps.jop-pr.outputs.pull-request-number }}
+        run: |
+          echo "Pull Request Number - ${{ steps.jop-pr.outputs.pull-request-number }}"
+          echo "Pull Request URL - ${{ steps.jop-pr.outputs.pull-request-url }}"
 
       - name: Create quarkus-platform pull request
         uses: peter-evans/create-pull-request@v5
+        id: qp-pr
         with:
           path: quarkus-platform
           title: "Update QOSDK to ${{steps.metadata.outputs.current-version}}"
@@ -101,3 +110,10 @@ jobs:
           branch: qosdk-release-${{steps.metadata.outputs.current-version}}
           token: ${{ secrets.QOSDK_BOT_TOKEN }}
           push-to-fork: qosdk-bot/quarkus-platform
+          delete-branch: true
+
+      - name: Check quarkus-platform PR
+        if: ${{ steps.qp-pr.outputs.pull-request-number }}
+        run: |
+          echo "Pull Request Number - ${{ steps.qp-pr.outputs.pull-request-number }}"
+          echo "Pull Request URL - ${{ steps.qp-pr.outputs.pull-request-url }}"
