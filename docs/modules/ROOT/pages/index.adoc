@@ -25,7 +25,8 @@ Please also refer to the https://javaoperatorsdk.io/docs/getting-started[JOSDK d
 - Supports micrometer registry extensions (adding a Quarkus-supported micrometer registry extension will automatically inject said registry into the operator)
 - Automatically adds a SmallRye health check
 - Sets up reflection for native binary generation
-- Customize the JSON serialization that the Fabric8 client relies on by providing an `ObjectMapperCustomizer` implementation, qualified with the `@KubernetesClientSerializationCustomizer` annotation
+- [Deprecated] Customize the JSON serialization that the Fabric8 client relies on by providing an `ObjectMapperCustomizer` implementation, qualified with the `@KubernetesClientSerializationCustomizer` annotation
+* The Quarkus kubernetes client extension now provides an official mechanism to do so by implementing the `io.quarkus.kubernetes.client.KubernetesClientObjectMapperCustomizer` interface instead so this mechanism should be used moving forward.
 
 == Installation
 
