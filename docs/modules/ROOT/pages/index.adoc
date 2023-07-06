@@ -16,7 +16,7 @@ Please also refer to the https://javaoperatorsdk.io/docs/getting-started[JOSDK d
 - Automatically registers reconcilers with the `Operator` and start them
 - Automatically generates CRDs for all `CustomResource` implementations used by reconcilers
 - Automatically generates Kubernetes descriptors
-- Automatically generates the bundle manifests for all reconcilers (using the `quarkus-operator-sdk-bundle-generator` extension) [Preview]
+- Automatically generates the bundle manifests for all reconcilers (using the `quarkus-operator-sdk-bundle-generator` extension)
 - Integrates with the Dev mode:
 * Watches your code for changes and reload automatically your operator if needed without having to hit an endpoint
 * Only re-generates the CRDs if a change impacting its generation is detected
