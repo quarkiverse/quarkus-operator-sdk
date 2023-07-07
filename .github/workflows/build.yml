@@ -1,9 +1,12 @@
 name: Build PRs and main when updated
 
 on:
+  schedule:
+    # daily run
+    - cron: '0 0 * * *'
   push:
     branches:
-      - "main"
+      - "next-fabric8-version"
     paths-ignore:
       - '.gitignore'
       - 'CODEOWNERS'
