@@ -1,5 +1,5 @@
 name: quarkus-operator-sdk
-title: Quarkus Operator SDK
+title: Operator SDK
 version: dev
 nav:
   - modules/ROOT/nav.adoc
