@@ -1,11 +1,15 @@
 package io.quarkiverse.operatorsdk.deployment;
 
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE_SET;
 import static io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator.getClusterRoleName;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -54,8 +58,15 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
             String serviceAccountName) {
         final var controllerName = controllerConfiguration.getName();
 
-        // retrieve which namespaces should be used to generate either from annotation or from the build time configuration
-        final var desiredWatchedNamespaces = controllerConfiguration.getNamespaces();
+        // retrieve which namespaces should be used to generate:
+        // - If namespaces were set in the controller configuration, use those because the manifests need to match the build time configuration
+        // - If namespaces weren't set in the configuration, use the manifest configuration
+        // - If the manifest configuration wasn't set, use the java operator SDK default
+        final var desiredWatchedNamespaces = controllerConfiguration.isWereNamespacesSet()
+                ? new HashSet<String>(controllerConfiguration.getNamespaces())
+                : operatorConfiguration.manifest.generateWithWatchedNamespaces.isPresent()
+                        ? new HashSet<String>(operatorConfiguration.manifest.generateWithWatchedNamespaces.get())
+                        : DEFAULT_NAMESPACES_SET;
 
         // if we validate the CRDs, also create a binding for the CRD validating role
         List<HasMetadata> itemsToAdd;
@@ -71,10 +82,10 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
         }
 
         final var roleBindingName = controllerName + "-role-binding";
-        if (controllerConfiguration.watchCurrentNamespace()) {
+        if (currentNamespaceWatched(desiredWatchedNamespaces)) {
             // create a RoleBinding that will be applied in the current namespace if watching only the current NS
             itemsToAdd.add(createRoleBinding(roleBindingName, controllerName, serviceAccountName, null));
-        } else if (controllerConfiguration.watchAllNamespaces()) {
+        } else if (allNamespacesWatched(desiredWatchedNamespaces)) {
             itemsToAdd.add(createClusterRoleBinding(serviceAccountName, controllerName,
                     controllerName + "-cluster-role-binding", "watch all namespaces",
                     getClusterRoleName(controllerName)));
@@ -127,5 +138,13 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
                             + ", this requires a ClusterRoleBinding for which we MUST specify the namespace of the operator ServiceAccount. This can be specified by setting the ''quarkus.kubernetes.namespace'' property. However, as this property is not set, we are leaving the namespace blank to be provided by the user by editing the ''{1}'' ClusterRoleBinding to provide the namespace in which the operator will be deployed.",
                     controllerName, crBindingName);
         }
+    }
+
+    static boolean allNamespacesWatched(Set<String> namespaces) {
+        return DEFAULT_NAMESPACES_SET.equals(namespaces);
+    }
+
+    static boolean currentNamespaceWatched(Set<String> namespaces) {
+        return WATCH_CURRENT_NAMESPACE_SET.equals(namespaces);
     }
 }

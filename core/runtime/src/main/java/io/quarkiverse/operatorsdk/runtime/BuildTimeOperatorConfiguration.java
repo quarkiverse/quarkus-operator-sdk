@@ -24,6 +24,12 @@ public class BuildTimeOperatorConfiguration {
     public CRDConfiguration crd;
 
     /**
+     * The optional manifest-related configuration options
+     */
+    @ConfigItem
+    public ManifestConfiguration manifest;
+
+    /**
      * Whether controllers should only process events if the associated resource generation has
      * increased since last reconciliation, otherwise will process all events. Sets the default value
      * for all controllers.

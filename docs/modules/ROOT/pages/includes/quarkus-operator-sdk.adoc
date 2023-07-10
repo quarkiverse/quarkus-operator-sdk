@@ -122,6 +122,22 @@ endif::add-copy-button-to-env-var[]
 |`false`
 
 
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-sdk.manifest.generate-with-watched-namespaces]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.manifest.generate-with-watched-namespaces[quarkus.operator-sdk.manifest.generate-with-watched-namespaces]`
+
+[.description]
+--
+The namespaces that the generated manifests should watch
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_MANIFEST_GENERATE_WITH_WATCHED_NAMESPACES+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_MANIFEST_GENERATE_WITH_WATCHED_NAMESPACES+++`
+endif::add-copy-button-to-env-var[]
+--|list of string 
+|
+
+
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-sdk.generation-aware]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.generation-aware[quarkus.operator-sdk.generation-aware]`
 
 [.description]
