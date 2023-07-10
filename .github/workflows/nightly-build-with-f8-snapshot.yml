@@ -36,7 +36,8 @@ jobs:
           java-version: 17
           cache: 'maven'
 
-      - name: Maven release
+      - name: Set version to 999.F8-SNAPSHOT and release snapshot
         run: |
+          mvn versions:set -DnewVersion=999.F8-SNAPSHOT versions:commit
           gpg --quiet --batch --yes --decrypt --passphrase="${{secrets.GPG_PASSPHRASE}}" --output maven-settings.xml .github/release/maven-settings.xml.gpg
           mvn -B deploy -DperformRelease -Dno-samples -Prelease -s maven-settings.xml
