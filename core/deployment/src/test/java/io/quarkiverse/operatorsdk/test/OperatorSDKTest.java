@@ -21,9 +21,11 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
+import io.quarkiverse.operatorsdk.deployment.AddRoleBindingsDecorator;
 import io.quarkiverse.operatorsdk.test.sources.CRUDConfigMap;
 import io.quarkiverse.operatorsdk.test.sources.CreateOnlyService;
 import io.quarkiverse.operatorsdk.test.sources.Foo;
@@ -100,6 +102,18 @@ public class OperatorSDKTest {
                             }));
                 });
 
+        // check that we have a role binding for TestReconciler using the operator-level specified namespace
+        final var testReconcilerBindingName = AddRoleBindingsDecorator.getRoleBindingName(TestReconciler.NAME);
+        assertTrue(kubeResources.stream().anyMatch(i -> testReconcilerBindingName.equals(i.getMetadata().getName())));
+
+        kubeResources.stream()
+                .filter(i -> testReconcilerBindingName.equals(i.getMetadata().getName()))
+                .map(RoleBinding.class::cast)
+                .forEach(rb -> {
+                    assertEquals("operator-level-buildtime-ns", rb.getMetadata().getNamespace());
+                    assertEquals(testReconcilerRoleName, rb.getRoleRef().getName());
+                });
+
         // check cluster role for SimpleReconciler
         final var simpleReconcilerRoleName = AddClusterRolesDecorator.getClusterRoleName(SimpleReconciler.NAME);
 
@@ -120,6 +134,18 @@ public class OperatorSDKTest {
                     // status is void so shouldn't be present in resources
                     assertEquals(List.of(plural, plural + "/status", plural + "/finalizers"), resources);
                     assertEquals(Arrays.asList(ALL_VERBS), rule.getVerbs());
+                });
+
+        // check that we have a role binding for TestReconciler using the operator-level specified namespace
+        final var simpleReconcilerBindingName = AddRoleBindingsDecorator.getRoleBindingName(SimpleReconciler.NAME);
+        assertTrue(kubeResources.stream().anyMatch(i -> simpleReconcilerBindingName.equals(i.getMetadata().getName())));
+
+        kubeResources.stream()
+                .filter(i -> simpleReconcilerBindingName.equals(i.getMetadata().getName()))
+                .map(RoleBinding.class::cast)
+                .forEach(rb -> {
+                    assertEquals("simple-ns", rb.getMetadata().getNamespace());
+                    assertEquals(simpleReconcilerRoleName, rb.getRoleRef().getName());
                 });
 
         // checks that CRDs are generated

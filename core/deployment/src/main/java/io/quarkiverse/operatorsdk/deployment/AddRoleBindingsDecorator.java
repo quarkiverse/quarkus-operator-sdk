@@ -70,7 +70,7 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
             itemsToAdd = new ArrayList<>(desiredWatchedNamespaces.size());
         }
 
-        final var roleBindingName = controllerName + "-role-binding";
+        final var roleBindingName = getRoleBindingName(controllerName);
         if (controllerConfiguration.watchCurrentNamespace()) {
             // create a RoleBinding that will be applied in the current namespace if watching only the current NS
             itemsToAdd.add(createRoleBinding(roleBindingName, controllerName, serviceAccountName, null));
@@ -85,6 +85,10 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
         }
 
         return itemsToAdd;
+    }
+
+    public static String getRoleBindingName(String controllerName) {
+        return controllerName + "-role-binding";
     }
 
     private static RoleBinding createRoleBinding(String roleBindingName, String controllerName,

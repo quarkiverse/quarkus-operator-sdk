@@ -223,11 +223,9 @@ class QuarkusControllerConfigurationBuildStep {
 
         // check if we're asking to generate manifests with a specific set of namespaces
         // note that this should *NOT* be considered as explicitly setting the namespaces for the purpose of runtime overriding
-        if (externalConfiguration != null) {
-            Optional<List<String>> overrideNamespaces = externalConfiguration.generateWithWatchedNamespaces;
-            if (overrideNamespaces.isPresent()) {
-                namespaces = new HashSet<>(overrideNamespaces.get());
-            }
+        final var buildTimeNamespaces = configExtractor.generateWithWatchedNamespaces(wereNamespacesSet);
+        if (buildTimeNamespaces != null) {
+            namespaces = buildTimeNamespaces;
         }
 
         // create the configuration

@@ -256,6 +256,22 @@ endif::add-copy-button-to-env-var[]
 |`true`
 
 
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-sdk.generate-with-watched-namespaces]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.generate-with-watched-namespaces[quarkus.operator-sdk.generate-with-watched-namespaces]`
+
+[.description]
+--
+An optional list of comma-separated watched namespace names that will be used to generate manifests at build time if controllers do *NOT* specify a value individually. See `BuildTimeControllerConfiguration++#++generateWithWatchedNamespaces` for more information.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_GENERATE_WITH_WATCHED_NAMESPACES+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_GENERATE_WITH_WATCHED_NAMESPACES+++`
+endif::add-copy-button-to-env-var[]
+--|list of string 
+|
+
+
 a| [[quarkus-operator-sdk_quarkus.operator-sdk.concurrent-reconciliation-threads]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.concurrent-reconciliation-threads[quarkus.operator-sdk.concurrent-reconciliation-threads]`
 
 [.description]
