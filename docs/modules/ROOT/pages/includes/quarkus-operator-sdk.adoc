@@ -352,7 +352,7 @@ ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__GENERATION_AWARE+++`
 endif::add-copy-button-to-env-var[]
 --|boolean 
-|`true`
+|
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.generate-with-watched-namespaces]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.generate-with-watched-namespaces[quarkus.operator-sdk.controllers."controllers".generate-with-watched-namespaces]`

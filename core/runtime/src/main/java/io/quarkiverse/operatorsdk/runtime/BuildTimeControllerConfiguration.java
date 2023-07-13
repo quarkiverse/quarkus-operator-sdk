@@ -13,7 +13,7 @@ public class BuildTimeControllerConfiguration {
      * Whether the controller should only process events if the associated resource generation has
      * increased since last reconciliation, otherwise will process all events.
      */
-    @ConfigItem(defaultValue = "true")
+    @ConfigItem
     public Optional<Boolean> generationAware;
 
     /**
