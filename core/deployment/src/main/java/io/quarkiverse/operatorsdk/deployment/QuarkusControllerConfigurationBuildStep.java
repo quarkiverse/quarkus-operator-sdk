@@ -5,12 +5,7 @@ import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.loadClass;
 import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATION;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -48,12 +43,8 @@ import io.quarkiverse.operatorsdk.common.DependentResourceAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ReconciledAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.SelectiveAugmentedClassInfo;
-import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
-import io.quarkiverse.operatorsdk.runtime.DependentResourceSpecMetadata;
-import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
+import io.quarkiverse.operatorsdk.runtime.*;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration.DefaultRateLimiter;
-import io.quarkiverse.operatorsdk.runtime.QuarkusKubernetesDependentResourceConfig;
-import io.quarkiverse.operatorsdk.runtime.QuarkusManagedWorkflow;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.LiveReloadBuildItem;
@@ -86,6 +77,7 @@ class QuarkusControllerConfigurationBuildStep {
     }
 
     @BuildStep
+    @SuppressWarnings("unused")
     ControllerConfigurationsBuildItem createControllerConfigurations(
             ReconcilerInfosBuildItem reconcilers,
             AnnotationConfigurablesBuildItem annotationConfigurables,
@@ -151,8 +143,9 @@ class QuarkusControllerConfigurationBuildStep {
         // extract the configuration from annotation and/or external configuration
         final var controllerAnnotation = info.declaredAnnotation(CONTROLLER_CONFIGURATION);
 
+        final var externalConfiguration = buildTimeConfiguration.controllers.get(name);
         final var configExtractor = new BuildTimeHybridControllerConfiguration(buildTimeConfiguration,
-                buildTimeConfiguration.controllers.get(name),
+                externalConfiguration,
                 controllerAnnotation);
 
         // deal with event filters
@@ -212,13 +205,29 @@ class QuarkusControllerConfigurationBuildStep {
         }
 
         // extract the namespaces
-        Set<String> namespaces = configExtractor.namespaces();
+        // first check if we explicitly set the namespaces via the annotations
+        Set<String> namespaces = null;
+        if (controllerAnnotation != null) {
+            namespaces = Optional.ofNullable(controllerAnnotation.value("namespaces"))
+                    .map(v -> new HashSet<>(Arrays.asList(v.asStringArray())))
+                    .orElse(null);
+        }
+        // remember whether or not we explicitly set the namespaces
         final boolean wereNamespacesSet;
         if (namespaces == null) {
             namespaces = io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
             wereNamespacesSet = false;
         } else {
             wereNamespacesSet = true;
+        }
+
+        // check if we're asking to generate manifests with a specific set of namespaces
+        // note that this should *NOT* be considered as explicitly setting the namespaces for the purpose of runtime overriding
+        if (externalConfiguration != null) {
+            Optional<List<String>> overrideNamespaces = externalConfiguration.generateWithWatchedNamespaces;
+            if (overrideNamespaces.isPresent()) {
+                namespaces = new HashSet<>(overrideNamespaces.get());
+            }
         }
 
         // create the configuration
@@ -258,14 +267,6 @@ class QuarkusControllerConfigurationBuildStep {
                 final var spec = createDependentResourceSpec(dependent, index, configuration);
                 final var dependentName = dependent.classInfo().name();
                 dependentResources.put(dependentName.toString(), spec);
-
-                //                final var dependentTypeName = dependentName.toString();
-                //                additionalBeans.produce(
-                //                        AdditionalBeanBuildItem.builder()
-                //                                .addBeanClass(dependentTypeName)
-                //                                .setUnremovable()
-                //                                .setDefaultScope(APPLICATION_SCOPED)
-                //                                .build());
             });
         }
 
