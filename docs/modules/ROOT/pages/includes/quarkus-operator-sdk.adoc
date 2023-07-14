@@ -303,7 +303,7 @@ ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_NAMESPACES+++`
 endif::add-copy-button-to-env-var[]
 --|list of string 
-|
+|`QOSDK_USE_BUILDTIME_NAMESPACES`
 
 
 a| [[quarkus-operator-sdk_quarkus.operator-sdk.concurrent-workflow-threads]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.concurrent-workflow-threads[quarkus.operator-sdk.concurrent-workflow-threads]`
