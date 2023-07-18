@@ -47,3 +47,4 @@ jobs:
       java-version: ${{ matrix.java-version }}
       branch: ${{ needs.extract-branch-name.outputs.branch_name }}
       native-modules: "integration-tests"
+      repository: ${{ github.event.pull_request.head.repo.full_name }}
