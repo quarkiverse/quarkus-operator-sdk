@@ -38,14 +38,22 @@ public final class CRDUtils {
     private static void apply(KubernetesClient client, String v, Object crd) {
         switch (v) {
             case "v1":
-                client.apiextensions().v1().customResourceDefinitions()
-                        .resource((CustomResourceDefinition) crd)
-                        .serverSideApply();
+                final var resource = client.apiextensions().v1().customResourceDefinitions()
+                        .resource((CustomResourceDefinition) crd);
+                if (resource.get() != null) {
+                    resource.update();
+                } else {
+                    resource.create();
+                }
                 break;
             case "v1beta1":
-                client.apiextensions().v1beta1().customResourceDefinitions()
-                        .resource((io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition) crd)
-                        .serverSideApply();
+                final var legacyResource = client.apiextensions().v1beta1().customResourceDefinitions()
+                        .resource((io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition) crd);
+                if (legacyResource.get() != null) {
+                    legacyResource.update();
+                } else {
+                    legacyResource.create();
+                }
                 break;
             default:
                 throw new IllegalArgumentException("Unknown CRD version: " + v);
