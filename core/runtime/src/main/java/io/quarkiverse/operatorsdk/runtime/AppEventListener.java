@@ -16,6 +16,7 @@ public class AppEventListener {
     private final Operator operator;
     private final QuarkusConfigurationService configurationService;
 
+    
     public AppEventListener(Operator operator, QuarkusConfigurationService configurationService) {
         this.operator = operator;
         this.configurationService = configurationService;
