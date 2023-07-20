@@ -1,0 +1,4 @@
+---
+name: josdk-generic-helm-chart
+version: 1.0.10-SNAPSHOT
+apiVersion: v2

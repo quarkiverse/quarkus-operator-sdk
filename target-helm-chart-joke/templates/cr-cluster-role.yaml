@@ -1,0 +1,19 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: jokerequestreconciler-cluster-role
+rules:
+  - apiGroups:
+      - samples.javaoperatorsdk.io
+    resources:
+      - jokerequests
+      - jokerequests/status
+      - jokerequests/finalizers
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - create
+      - delete
