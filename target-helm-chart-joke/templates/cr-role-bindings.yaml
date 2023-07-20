@@ -8,4 +8,4 @@ roleRef:
   name: jokerequestreconciler-cluster-role
 subjects:
   - kind: ServiceAccount
-    name: quarkus-operator-sdk-samples-joke
+    name: {{ .Chart.Name }}

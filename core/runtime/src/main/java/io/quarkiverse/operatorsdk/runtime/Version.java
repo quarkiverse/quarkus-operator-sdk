@@ -2,9 +2,6 @@ package io.quarkiverse.operatorsdk.runtime;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.Date;
 import java.util.Properties;
 
@@ -68,11 +65,11 @@ public class Version extends io.javaoperatorsdk.operator.api.config.Version {
 
         Date builtTime = new Date();
         // todo check how to run this from intellij
-//        try {
-//            builtTime = (new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")).parse(properties.getProperty("git.build.time"));
-//        } catch (ParseException var4) {
-//            builtTime = Date.from(Instant.EPOCH);
-//        }
+        //        try {
+        //            builtTime = (new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")).parse(properties.getProperty("git.build.time"));
+        //        } catch (ParseException var4) {
+        //            builtTime = Date.from(Instant.EPOCH);
+        //        }
 
         return new Version(sdkVersion.getCommit(), sdkVersion.getBuiltTime(),
                 properties.getProperty("git.build.version", UNKNOWN),

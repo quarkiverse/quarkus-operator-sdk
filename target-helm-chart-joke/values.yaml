@@ -1,3 +1,4 @@
-
 qosdk:
   version: 6.2.2-SNAPSHOT
+
+image: csviri/quarkus-operator-sdk-samples-joke:6.2.2-SNAPSHOT

@@ -1,12 +1,13 @@
 package io.quarkiverse.operatorsdk.test;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+
 import io.quarkiverse.operatorsdk.test.sources.SimpleCR;
 import io.quarkiverse.operatorsdk.test.sources.SimpleReconciler;
 import io.quarkiverse.operatorsdk.test.sources.SimpleSpec;
 import io.quarkiverse.operatorsdk.test.sources.SimpleStatus;
 import io.quarkus.test.QuarkusProdModeTest;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class HelmChartGeneratorTest {
 
@@ -16,7 +17,6 @@ public class HelmChartGeneratorTest {
             .withApplicationRoot(
                     (jar) -> jar.addClasses(SimpleReconciler.class, SimpleCR.class, SimpleSpec.class, SimpleStatus.class))
             .overrideConfigKey("quarkus.operator-sdk.crd.generate", "false");
-
 
     @Test
     void generatesHelmChart() {
