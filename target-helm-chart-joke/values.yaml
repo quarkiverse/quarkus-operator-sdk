@@ -1,4 +1,20 @@
+
+# can be a one of:
+#  - "all-namespaces"
+#  - "current-namespace"
+#  - comma separated list of namespaces
+watch-namespaces: all-namespaces
+
+# values that can be directly generated into templates
 qosdk:
   version: 6.2.2-SNAPSHOT
 
 image: csviri/quarkus-operator-sdk-samples-joke:6.2.2-SNAPSHOT
+
+reconcilers:
+  - name: jokerequestreconciler
+    resource: jokerequests
+    apiGroup: samples.javaoperatorsdk.io
+  - name: reconciler2
+    resource: sampleresource2
+    apiGroup: samples.javaoperatorsdk.io

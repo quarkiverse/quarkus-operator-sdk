@@ -1,14 +1,15 @@
+{{- range $.Values.reconcilers }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: jokerequestreconciler-cluster-role
+  name: {{ .name }}-cluster-role
 rules:
   - apiGroups:
-      - samples.javaoperatorsdk.io
+      - {{ .apiGroup }}
     resources:
-      - jokerequests
-      - jokerequests/status
-      - jokerequests/finalizers
+      - {{ .resource }}
+      - {{ .resource }}/status
+      - {{ .resource }}/finalizers
     verbs:
       - get
       - list
@@ -17,3 +18,5 @@ rules:
       - update
       - create
       - delete
+---
+{{- end }}

@@ -1,3 +1,4 @@
+{{- range $.Values.reconcilers }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -5,7 +6,9 @@ metadata:
 roleRef:
   kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
-  name: jokerequestreconciler-cluster-role
+  name: {{ .name }}-cluster-role
 subjects:
   - kind: ServiceAccount
-    name: {{ .Chart.Name }}
+    name: {{ $.Chart.Name }}
+---
+{{- end }}
