@@ -5,7 +5,7 @@ metadata:
 roleRef:
   kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
-  name: josdk-crd-validating-cluster-role
+  name: {{ .Chart.Name }}-crd-validating-cluster-role
 subjects:
   - kind: ServiceAccount
     name: {{ .Chart.Name }}
