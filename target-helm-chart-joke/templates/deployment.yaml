@@ -26,7 +26,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
           image: {{ .Values.image }}
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
             httpGet:

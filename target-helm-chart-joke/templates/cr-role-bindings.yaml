@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: jokerequestreconciler-role-binding
+  name: {{ .name }}-role-binding
 roleRef:
   kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
