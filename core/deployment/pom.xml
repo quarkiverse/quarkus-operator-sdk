@@ -51,6 +51,21 @@
       <artifactId>semver4j</artifactId>
       <version>5.0.0</version>
     </dependency>
+<!--    <dependency>-->
+<!--      <groupId>io.dekorate</groupId>-->
+<!--      <artifactId>helm-annotations</artifactId>-->
+<!--      <classifier>noapt</classifier>-->
+<!--      <exclusions>-->
+<!--        <exclusion>-->
+<!--          <groupId>io.sundr</groupId>-->
+<!--          <artifactId>*</artifactId>-->
+<!--        </exclusion>-->
+<!--        <exclusion>-->
+<!--          <groupId>com.sun</groupId>-->
+<!--          <artifactId>tools</artifactId>-->
+<!--        </exclusion>-->
+<!--      </exclusions>-->
+<!--    </dependency>-->
     <dependency>
       <groupId>io.dekorate</groupId>
       <artifactId>kubernetes-annotations</artifactId>

@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    app.quarkus.io/commit-id: 77d1e2545ac9dd0e6599bffdec4f892cd148984b
+    app.quarkus.io/build-timestamp: 2023-07-20 - 11:57:20 +0000
+  labels:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/version: {{ .Values.qosdk.version }}
+    app.kubernetes.io/managed-by: quarkus
+  name: {{ .Chart.Name }}
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/version: {{ .Values.qosdk.version }}
+  type: ClusterIP
