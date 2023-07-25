@@ -4,6 +4,7 @@ public class ReconcilerValues {
 
     private String name;
     private String resource;
+    private String apiGroup;
 
     public String getName() {
         return name;
@@ -20,6 +21,15 @@ public class ReconcilerValues {
 
     public ReconcilerValues setResource(String resource) {
         this.resource = resource;
+        return this;
+    }
+
+    public String getApiGroup() {
+        return apiGroup;
+    }
+
+    public ReconcilerValues setApiGroup(String apiGroup) {
+        this.apiGroup = apiGroup;
         return this;
     }
 }

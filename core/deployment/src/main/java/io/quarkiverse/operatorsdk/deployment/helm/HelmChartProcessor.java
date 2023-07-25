@@ -5,20 +5,24 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
 import org.jboss.logging.Logger;
 
 import io.dekorate.helm.model.Chart;
 import io.dekorate.utils.Serialization;
+import io.quarkus.container.spi.ContainerImageInfoBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
 import io.quarkus.deployment.pkg.builditem.ArtifactResultBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.kubernetes.spi.ConfiguratorBuildItem;
-import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 
+// TODO
+// - add crd-s
+// - generate readme with values
+// - add various customization options
+// - generate the reconciler parts directly into templates
 public class HelmChartProcessor {
 
     private static final Logger log = Logger.getLogger(HelmChartProcessor.class);
@@ -34,13 +38,14 @@ public class HelmChartProcessor {
             "serviceaccount.yaml"
     };
     public static final String CHART_YAML_FILENAME = "Chart.yaml";
+    public static final String VALUES_YAML_FILENAME = "values.yaml";
 
     @BuildStep
     public void handleHelmCharts(BuildProducer<ArtifactResultBuildItem> dummy,
             OutputTargetBuildItem outputTarget,
             ApplicationInfoBuildItem appInfo,
-            List<GeneratedKubernetesResourceBuildItem> generatedResources) {
-        //todo make configurable
+            ContainerImageInfoBuildItem containerImageInfoBuildItem) {
+
         var helmDir = outputTarget.getOutputDirectory().resolve("helm").toFile();
         log.infov("Generating helm chart to dir");
 
@@ -48,16 +53,20 @@ public class HelmChartProcessor {
         createDirIfNotExists(new File(helmDir, TEMPLATES_DIR));
         copyTemplatesFolder(helmDir);
         addChartYaml(helmDir, appInfo.getName(), appInfo.getVersion());
-        addValuesYaml(helmDir);
+        addValuesYaml(helmDir, containerImageInfoBuildItem.getImage(), containerImageInfoBuildItem.getTag());
     }
 
-    @BuildStep
-    void disableDefaultHelmListener(BuildProducer<ConfiguratorBuildItem> helmConfiguration) {
-        helmConfiguration.produce(new ConfiguratorBuildItem(new DisableDefaultHelmListener()));
-    }
-
-    private void addValuesYaml(File helmDir) {
-
+    private void addValuesYaml(File helmDir, String image, String tag) {
+        try {
+            var values = new HelmValues();
+            values.setVersion(tag);
+            var imageWithoutTage = image.replace(":"+tag, "");
+            values.setImage(imageWithoutTage);
+            var valuesYaml = Serialization.asYaml(values);
+            Files.writeString(Path.of(helmDir.getPath(), VALUES_YAML_FILENAME), valuesYaml);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private void addChartYaml(File helmDir, String name, String version) {
@@ -92,4 +101,8 @@ public class HelmChartProcessor {
         }
     }
 
+    @BuildStep
+    void disableDefaultHelmListener(BuildProducer<ConfiguratorBuildItem> helmConfiguration) {
+        helmConfiguration.produce(new ConfiguratorBuildItem(new DisableDefaultHelmListener()));
+    }
 }

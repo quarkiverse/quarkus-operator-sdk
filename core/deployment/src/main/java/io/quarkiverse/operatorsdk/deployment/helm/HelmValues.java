@@ -4,7 +4,9 @@ import java.util.List;
 
 public class HelmValues {
 
-    private String watchNamespaces;
+    public static final String WATCH_ALL_NAMESPACES = "all-namespaces";
+
+    private String watchNamespaces = WATCH_ALL_NAMESPACES;
     private String version;
     private String image;
     private List<ReconcilerValues> reconcilers;
