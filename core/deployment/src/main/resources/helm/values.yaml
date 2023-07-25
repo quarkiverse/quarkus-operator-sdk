@@ -5,13 +5,12 @@
 #  - comma separated list of namespaces, sample: "ns1, ns2, ns3"
 
 #watchnamespaces: "ns1, ns2"
-watchnamespaces: all-namespaces
+watchNamespaces: all-namespaces
 
 # values that can be directly generated into templates
-qosdk:
-  version: 6.2.2-SNAPSHOT
 
-image: csviri/quarkus-operator-sdk-samples-joke:6.2.2-SNAPSHOT
+version: 6.2.2-SNAPSHOT
+image: csviri/quarkus-operator-sdk-samples-joke
 
 reconcilers:
   - name: jokerequestreconciler

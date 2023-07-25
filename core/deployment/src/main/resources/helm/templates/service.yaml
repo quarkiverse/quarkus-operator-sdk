@@ -6,7 +6,7 @@ metadata:
     app.quarkus.io/build-timestamp: 2023-07-20 - 11:57:20 +0000
   labels:
     app.kubernetes.io/name: {{ .Chart.Name }}
-    app.kubernetes.io/version: {{ .Values.qosdk.version }}
+    app.kubernetes.io/version: {{ .Values.version }}
     app.kubernetes.io/managed-by: quarkus
   name: {{ .Chart.Name }}
 spec:
@@ -17,5 +17,5 @@ spec:
       targetPort: 8080
   selector:
     app.kubernetes.io/name: {{ .Chart.Name }}
-    app.kubernetes.io/version: {{ .Values.qosdk.version }}
+    app.kubernetes.io/version: {{ .Values.version }}
   type: ClusterIP
