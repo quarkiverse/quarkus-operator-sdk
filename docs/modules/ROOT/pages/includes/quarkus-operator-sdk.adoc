@@ -268,8 +268,24 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_GENERATE_WITH_WATCHED_NAMESPACES+++`
 endif::add-copy-button-to-env-var[]
---|list of string 
+--|list of string
 |
+
+
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-sdk.helm.enabled]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.helm.enabled[quarkus.operator-sdk.helm.enabled]`
+
+[.description]
+--
+Can be used to disable helm chart generation.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_HELM_ENABLED+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_HELM_ENABLED+++`
+endif::add-copy-button-to-env-var[]
+--|boolean
+|`true`
 
 
 a| [[quarkus-operator-sdk_quarkus.operator-sdk.concurrent-reconciliation-threads]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.concurrent-reconciliation-threads[quarkus.operator-sdk.concurrent-reconciliation-threads]`

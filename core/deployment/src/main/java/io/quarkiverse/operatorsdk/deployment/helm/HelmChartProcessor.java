@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.deployment.ReconcilerInfosBuildItem;
+import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkus.container.spi.ContainerImageInfoBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -28,7 +29,6 @@ import io.quarkus.kubernetes.spi.ConfiguratorBuildItem;
 // - configure:
 //    - to generate additional crds?
 //
-// - add crd-s
 // - generate readme with values
 // - add various customization options
 // - generate the reconciler parts directly into templates
@@ -53,21 +53,26 @@ public class HelmChartProcessor {
     @BuildStep
     public void handleHelmCharts(
             BuildProducer<ArtifactResultBuildItem> dummy,
+            BuildTimeOperatorConfiguration buildTimeConfiguration,
             GeneratedCRDInfoBuildItem generatedCRDInfoBuildItem,
             OutputTargetBuildItem outputTarget,
             ApplicationInfoBuildItem appInfo,
             ContainerImageInfoBuildItem containerImageInfoBuildItem,
             ReconcilerInfosBuildItem reconcilerInfosBuildItem) {
 
-        var helmDir = outputTarget.getOutputDirectory().resolve("helm").toFile();
-        log.infov("Generating helm chart to dir");
+        if (buildTimeConfiguration.helm.enabled) {
+            log.infov("Generating helm chart");
+            var helmDir = outputTarget.getOutputDirectory().resolve("helm").toFile();
 
-        createRelatedDirectories(helmDir);
-        copyTemplates(helmDir);
-        addChartYaml(helmDir, appInfo.getName(), appInfo.getVersion());
-        addValuesYaml(helmDir, reconcilerInfosBuildItem, containerImageInfoBuildItem.getImage(),
-                containerImageInfoBuildItem.getTag());
-        addCRDs(new File(helmDir, CRD_DIR), generatedCRDInfoBuildItem);
+            createRelatedDirectories(helmDir);
+            copyTemplates(helmDir);
+            addChartYaml(helmDir, appInfo.getName(), appInfo.getVersion());
+            addValuesYaml(helmDir, reconcilerInfosBuildItem, containerImageInfoBuildItem.getImage(),
+                    containerImageInfoBuildItem.getTag());
+            addCRDs(new File(helmDir, CRD_DIR), generatedCRDInfoBuildItem);
+        } else {
+            log.infov("Generating helm chart is disabled");
+        }
     }
 
     private void addCRDs(File crdDir, GeneratedCRDInfoBuildItem generatedCRDInfoBuildItem) {

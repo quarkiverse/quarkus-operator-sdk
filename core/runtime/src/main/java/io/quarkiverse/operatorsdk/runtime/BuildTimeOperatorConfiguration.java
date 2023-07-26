@@ -92,4 +92,10 @@ public class BuildTimeOperatorConfiguration {
      */
     @ConfigItem
     public Optional<List<String>> generateWithWatchedNamespaces;
+
+    /**
+     * Helm Chart related configurations.
+     */
+    @ConfigItem
+    public HelmConfiguration helm;
 }
