@@ -1,5 +1,7 @@
 package io.quarkiverse.operatorsdk.deployment.helm;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,7 +30,7 @@ import io.quarkus.kubernetes.spi.ConfiguratorBuildItem;
 // TODO
 // - configure:
 //    - to generate additional crds?
-//
+//  - tests: IT, e2e
 // - generate readme with values
 // - add various customization options
 // - generate the reconciler parts directly into templates
@@ -83,7 +85,9 @@ public class HelmChartProcessor {
         crdInfos.forEach(crdInfo -> {
             try {
                 var generateCrdPath = Path.of(crdInfo.getFilePath());
-                Files.copy(generateCrdPath, new File(crdDir, generateCrdPath.getFileName().toString()).toPath());
+                // replace needed since tests might generate files multiple times
+                Files.copy(generateCrdPath, new File(crdDir, generateCrdPath.getFileName().toString()).toPath(),
+                        REPLACE_EXISTING);
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
@@ -137,7 +141,7 @@ public class HelmChartProcessor {
         for (String template : TEMPLATE_FILES) {
             try (InputStream file = Thread.currentThread().getContextClassLoader()
                     .getResourceAsStream("/helm/templates/" + template)) {
-                Files.copy(file, new File(new File(helmDir, TEMPLATES_DIR), template).toPath());
+                Files.copy(file, new File(new File(helmDir, TEMPLATES_DIR), template).toPath(), REPLACE_EXISTING);
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
