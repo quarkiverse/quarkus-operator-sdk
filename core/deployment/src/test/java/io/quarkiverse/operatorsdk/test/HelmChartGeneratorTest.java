@@ -15,12 +15,10 @@ public class HelmChartGeneratorTest {
     static final QuarkusProdModeTest config = new QuarkusProdModeTest()
             .setApplicationName("helm-chart-test")
             .withApplicationRoot(
-                    (jar) -> jar.addClasses(SimpleReconciler.class, SimpleCR.class, SimpleSpec.class, SimpleStatus.class))
-            .overrideConfigKey("quarkus.operator-sdk.crd.generate", "false");
+                    (jar) -> jar.addClasses(SimpleReconciler.class, SimpleCR.class, SimpleSpec.class, SimpleStatus.class));
 
     @Test
     void generatesHelmChart() {
-
     }
 
 }

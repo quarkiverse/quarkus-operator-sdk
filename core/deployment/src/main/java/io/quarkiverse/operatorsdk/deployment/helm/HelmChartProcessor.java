@@ -14,6 +14,7 @@ import io.dekorate.helm.model.Chart;
 import io.dekorate.utils.Serialization;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.model.annotation.Group;
+import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.deployment.ReconcilerInfosBuildItem;
 import io.quarkus.container.spi.ContainerImageInfoBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -47,9 +48,12 @@ public class HelmChartProcessor {
     };
     public static final String CHART_YAML_FILENAME = "Chart.yaml";
     public static final String VALUES_YAML_FILENAME = "values.yaml";
+    public static final String CRD_DIR = "crds";
 
     @BuildStep
-    public void handleHelmCharts(BuildProducer<ArtifactResultBuildItem> dummy,
+    public void handleHelmCharts(
+            BuildProducer<ArtifactResultBuildItem> dummy,
+            GeneratedCRDInfoBuildItem generatedCRDInfoBuildItem,
             OutputTargetBuildItem outputTarget,
             ApplicationInfoBuildItem appInfo,
             ContainerImageInfoBuildItem containerImageInfoBuildItem,
@@ -58,12 +62,27 @@ public class HelmChartProcessor {
         var helmDir = outputTarget.getOutputDirectory().resolve("helm").toFile();
         log.infov("Generating helm chart to dir");
 
-        createDirIfNotExists(helmDir);
-        createDirIfNotExists(new File(helmDir, TEMPLATES_DIR));
-        copyTemplatesFolder(helmDir);
+        createRelatedDirectories(helmDir);
+        copyTemplates(helmDir);
         addChartYaml(helmDir, appInfo.getName(), appInfo.getVersion());
         addValuesYaml(helmDir, reconcilerInfosBuildItem, containerImageInfoBuildItem.getImage(),
                 containerImageInfoBuildItem.getTag());
+        addCRDs(new File(helmDir, CRD_DIR), generatedCRDInfoBuildItem);
+    }
+
+    private void addCRDs(File crdDir, GeneratedCRDInfoBuildItem generatedCRDInfoBuildItem) {
+        var crdInfos = generatedCRDInfoBuildItem.getCRDGenerationInfo().getCrds().values().stream()
+                .flatMap(m -> m.values().stream())
+                .collect(Collectors.toList());
+
+        crdInfos.forEach(crdInfo -> {
+            try {
+                var generateCrdPath = Path.of(crdInfo.getFilePath());
+                Files.copy(generateCrdPath, new File(crdDir, generateCrdPath.getFileName().toString()).toPath());
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+        });
     }
 
     private void addValuesYaml(File helmDir,
@@ -90,7 +109,6 @@ public class HelmChartProcessor {
             ReconcilerValues val = new ReconcilerValues();
             val.setApiGroup(e.getValue().associatedResourceInfo()
                     .classInfo().annotation(Group.class).value().value().toString());
-            // todo is this correct
             val.setResource(HasMetadata.getPlural(e.getValue().associatedResourceInfo().loadAssociatedClass()));
             val.setName(e.getKey());
             return val;
@@ -110,7 +128,7 @@ public class HelmChartProcessor {
         }
     }
 
-    private void copyTemplatesFolder(File helmDir) {
+    private void copyTemplates(File helmDir) {
         for (String template : TEMPLATE_FILES) {
             try (InputStream file = Thread.currentThread().getContextClassLoader()
                     .getResourceAsStream("/helm/templates/" + template)) {
@@ -119,6 +137,12 @@ public class HelmChartProcessor {
                 throw new IllegalStateException(e);
             }
         }
+    }
+
+    private void createRelatedDirectories(File helmDir) {
+        createDirIfNotExists(helmDir);
+        createDirIfNotExists(new File(helmDir, TEMPLATES_DIR));
+        createDirIfNotExists(new File(helmDir, CRD_DIR));
     }
 
     private void createDirIfNotExists(File dir) {
