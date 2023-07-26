@@ -5,11 +5,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 
 import io.dekorate.helm.model.Chart;
 import io.dekorate.utils.Serialization;
+import io.quarkiverse.operatorsdk.deployment.ReconcilerInfosBuildItem;
 import io.quarkus.container.spi.ContainerImageInfoBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -44,7 +47,8 @@ public class HelmChartProcessor {
     public void handleHelmCharts(BuildProducer<ArtifactResultBuildItem> dummy,
             OutputTargetBuildItem outputTarget,
             ApplicationInfoBuildItem appInfo,
-            ContainerImageInfoBuildItem containerImageInfoBuildItem) {
+            ContainerImageInfoBuildItem containerImageInfoBuildItem,
+            ReconcilerInfosBuildItem reconcilerInfosBuildItem) {
 
         var helmDir = outputTarget.getOutputDirectory().resolve("helm").toFile();
         log.infov("Generating helm chart to dir");
@@ -53,20 +57,35 @@ public class HelmChartProcessor {
         createDirIfNotExists(new File(helmDir, TEMPLATES_DIR));
         copyTemplatesFolder(helmDir);
         addChartYaml(helmDir, appInfo.getName(), appInfo.getVersion());
-        addValuesYaml(helmDir, containerImageInfoBuildItem.getImage(), containerImageInfoBuildItem.getTag());
+        addValuesYaml(helmDir, reconcilerInfosBuildItem, containerImageInfoBuildItem.getImage(),
+                containerImageInfoBuildItem.getTag());
     }
 
-    private void addValuesYaml(File helmDir, String image, String tag) {
+    private void addValuesYaml(File helmDir,
+            ReconcilerInfosBuildItem reconcilerInfosBuildItem,
+            String image,
+            String tag) {
         try {
             var values = new HelmValues();
             values.setVersion(tag);
-            var imageWithoutTage = image.replace(":"+tag, "");
+            var imageWithoutTage = image.replace(":" + tag, "");
             values.setImage(imageWithoutTage);
+            var reconcilerValues = createReconcilerValues(reconcilerInfosBuildItem);
+            values.setReconcilers(reconcilerValues);
+
             var valuesYaml = Serialization.asYaml(values);
             Files.writeString(Path.of(helmDir.getPath(), VALUES_YAML_FILENAME), valuesYaml);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    private List<ReconcilerValues> createReconcilerValues(ReconcilerInfosBuildItem reconcilerInfosBuildItem) {
+        return reconcilerInfosBuildItem.getReconcilers().entrySet().stream().map(e -> {
+            ReconcilerValues val = new ReconcilerValues();
+            val.setName(e.getKey());
+            return val;
+        }).collect(Collectors.toList());
     }
 
     private void addChartYaml(File helmDir, String name, String version) {
