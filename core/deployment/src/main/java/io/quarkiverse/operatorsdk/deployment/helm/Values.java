@@ -2,7 +2,7 @@ package io.quarkiverse.operatorsdk.deployment.helm;
 
 import java.util.List;
 
-public class HelmValues {
+public class Values {
 
     public static final String WATCH_ALL_NAMESPACES = "all-namespaces";
 
@@ -15,7 +15,7 @@ public class HelmValues {
         return reconcilers;
     }
 
-    public HelmValues setReconcilers(List<ReconcilerValues> reconcilers) {
+    public Values setReconcilers(List<ReconcilerValues> reconcilers) {
         this.reconcilers = reconcilers;
         return this;
     }
@@ -24,7 +24,7 @@ public class HelmValues {
         return watchNamespaces;
     }
 
-    public HelmValues setWatchNamespaces(String watchNamespaces) {
+    public Values setWatchNamespaces(String watchNamespaces) {
         this.watchNamespaces = watchNamespaces;
         return this;
     }
@@ -33,7 +33,7 @@ public class HelmValues {
         return version;
     }
 
-    public HelmValues setVersion(String version) {
+    public Values setVersion(String version) {
         this.version = version;
         return this;
     }
@@ -42,7 +42,7 @@ public class HelmValues {
         return image;
     }
 
-    public HelmValues setImage(String image) {
+    public Values setImage(String image) {
         this.image = image;
         return this;
     }

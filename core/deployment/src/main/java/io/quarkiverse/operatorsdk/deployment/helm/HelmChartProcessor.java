@@ -12,6 +12,8 @@ import org.jboss.logging.Logger;
 
 import io.dekorate.helm.model.Chart;
 import io.dekorate.utils.Serialization;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.model.annotation.Group;
 import io.quarkiverse.operatorsdk.deployment.ReconcilerInfosBuildItem;
 import io.quarkus.container.spi.ContainerImageInfoBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -22,6 +24,9 @@ import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.kubernetes.spi.ConfiguratorBuildItem;
 
 // TODO
+// - configure:
+//    - to generate additional crds?
+//
 // - add crd-s
 // - generate readme with values
 // - add various customization options
@@ -66,7 +71,7 @@ public class HelmChartProcessor {
             String image,
             String tag) {
         try {
-            var values = new HelmValues();
+            var values = new Values();
             values.setVersion(tag);
             var imageWithoutTage = image.replace(":" + tag, "");
             values.setImage(imageWithoutTage);
@@ -83,6 +88,10 @@ public class HelmChartProcessor {
     private List<ReconcilerValues> createReconcilerValues(ReconcilerInfosBuildItem reconcilerInfosBuildItem) {
         return reconcilerInfosBuildItem.getReconcilers().entrySet().stream().map(e -> {
             ReconcilerValues val = new ReconcilerValues();
+            val.setApiGroup(e.getValue().associatedResourceInfo()
+                    .classInfo().annotation(Group.class).value().value().toString());
+            // todo is this correct
+            val.setResource(HasMetadata.getPlural(e.getValue().associatedResourceInfo().loadAssociatedClass()));
             val.setName(e.getKey());
             return val;
         }).collect(Collectors.toList());
