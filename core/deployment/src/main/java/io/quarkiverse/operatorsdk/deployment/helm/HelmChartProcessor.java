@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -15,6 +16,9 @@ import org.jboss.logging.Logger;
 import io.dekorate.helm.model.Chart;
 import io.dekorate.utils.Serialization;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.deployment.ReconcilerInfosBuildItem;
@@ -28,6 +32,7 @@ import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.kubernetes.spi.ConfiguratorBuildItem;
 
 // TODO
+// -- support dependent resources
 // - configure:
 //    - to generate additional crds?
 //  - tests: IT, e2e
@@ -40,7 +45,8 @@ public class HelmChartProcessor {
 
     private static final String TEMPLATES_DIR = "templates";
     private static final String[] TEMPLATE_FILES = new String[] {
-            "crd-cluster-role.yaml",
+            // todo completely remove
+            //            "crd-cluster-role.yaml",
             "crd-role-bindings.yaml",
             "deployment.yaml",
             "generic-crd-cluster-role.yaml",
@@ -51,6 +57,9 @@ public class HelmChartProcessor {
     public static final String CHART_YAML_FILENAME = "Chart.yaml";
     public static final String VALUES_YAML_FILENAME = "values.yaml";
     public static final String CRD_DIR = "crds";
+    public static final String CLUSTER_ROLE_NAME_SUFFIX = "-cluster-role";
+    public static final List<String> CRD_ROLE_VERBS = List.of("get", "list", "watch", "patch",
+            "update", "create", "delete");
 
     @BuildStep
     public void handleHelmCharts(
@@ -68,6 +77,7 @@ public class HelmChartProcessor {
 
             createRelatedDirectories(helmDir);
             copyTemplates(helmDir);
+            addGeneratedTemplates(helmDir, reconcilerInfosBuildItem);
             addChartYaml(helmDir, appInfo.getName(), appInfo.getVersion());
             addValuesYaml(helmDir, reconcilerInfosBuildItem, containerImageInfoBuildItem.getImage(),
                     containerImageInfoBuildItem.getTag());
@@ -75,6 +85,31 @@ public class HelmChartProcessor {
         } else {
             log.infov("Generating helm chart is disabled");
         }
+    }
+
+    private void addGeneratedTemplates(File helmDir, ReconcilerInfosBuildItem reconcilerInfosBuildItem) {
+        var reconcilerValues = createReconcilerValues(reconcilerInfosBuildItem);
+        reconcilerValues.forEach(val -> {
+            try {
+                ClusterRole role = new ClusterRole();
+                role.setMetadata(new ObjectMetaBuilder()
+                        .withName(val.getResource() + CLUSTER_ROLE_NAME_SUFFIX)
+                        .build());
+                PolicyRule rule = new PolicyRule();
+                rule.setApiGroups(List.of(val.getApiGroup()));
+                rule.setResources(List.of(
+                        val.getResource(),
+                        val.getResource() + "/status",
+                        val.getResource() + "/finalizers"));
+                rule.setVerbs(CRD_ROLE_VERBS);
+                role.setRules(List.of(rule));
+                var yaml = io.fabric8.kubernetes.client.utils.Serialization.asYaml(role);
+                Files.writeString(Paths.get(helmDir.getPath(), TEMPLATES_DIR, val.getResource() + "-crd-cluster-role.yaml"),
+                        yaml);
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+        });
     }
 
     private void addCRDs(File crdDir, GeneratedCRDInfoBuildItem generatedCRDInfoBuildItem) {
@@ -140,7 +175,7 @@ public class HelmChartProcessor {
     private void copyTemplates(File helmDir) {
         for (String template : TEMPLATE_FILES) {
             try (InputStream file = Thread.currentThread().getContextClassLoader()
-                    .getResourceAsStream("/helm/templates/" + template)) {
+                    .getResourceAsStream("/helm/static/" + template)) {
                 Files.copy(file, new File(new File(helmDir, TEMPLATES_DIR), template).toPath(), REPLACE_EXISTING);
             } catch (IOException e) {
                 throw new IllegalStateException(e);
