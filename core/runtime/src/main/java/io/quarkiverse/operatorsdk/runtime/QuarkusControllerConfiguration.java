@@ -66,6 +66,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final boolean generationAware;
     private final boolean statusPresentAndNotVoid;
     private final Class<R> resourceClass;
+    private final Optional<Long> informerListLimit;
     private final ResourceEventFilter<R> eventFilter;
     private final Optional<Duration> maxReconciliationInterval;
     private final Optional<OnAddFilter<? super R>> onAddFilter;
@@ -93,7 +94,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             String name,
             String resourceTypeName,
             String crVersion, boolean generationAware,
-            Class resourceClass, Set<String> namespaces,
+            Class resourceClass,
+            Long informerListLimit,
+            Set<String> namespaces,
             boolean wereNamespacesSet,
             String finalizerName, String labelSelector,
             boolean statusPresentAndNotVoid, ResourceEventFilter eventFilter,
@@ -109,6 +112,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.crVersion = crVersion;
         this.generationAware = generationAware;
         this.resourceClass = resourceClass;
+        this.informerListLimit = Optional.ofNullable(informerListLimit);
         this.dependentsMetadata = dependentsMetadata;
         this.workflow = workflow;
         this.retryConfiguration = ControllerConfiguration.super.getRetryConfiguration();
@@ -146,6 +150,11 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     @Override
     public Class<R> getResourceClass() {
         return resourceClass;
+    }
+
+    @Override
+    public Optional<Long> getInformerListLimit() {
+        return informerListLimit;
     }
 
     @Override
