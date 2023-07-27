@@ -2,9 +2,8 @@ package io.quarkiverse.operatorsdk.deployment.helm;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -31,23 +30,12 @@ import io.quarkus.deployment.pkg.builditem.ArtifactResultBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.kubernetes.spi.ConfiguratorBuildItem;
 
-// TODO
-// -- support dependent resources
-// - configure:
-//    - to generate additional crds?
-//  - tests: IT, e2e
-// - generate readme with values
-// - add various customization options
-// - generate the reconciler parts directly into templates
 public class HelmChartProcessor {
 
     private static final Logger log = Logger.getLogger(HelmChartProcessor.class);
 
     private static final String TEMPLATES_DIR = "templates";
     private static final String[] TEMPLATE_FILES = new String[] {
-            // todo completely remove
-            //            "crd-cluster-role.yaml",
-            "crd-role-bindings.yaml",
             "deployment.yaml",
             "generic-crd-cluster-role.yaml",
             "generic-crd-cluster-role-binding.yaml",
@@ -74,10 +62,12 @@ public class HelmChartProcessor {
         if (buildTimeConfiguration.helm.enabled) {
             log.infov("Generating helm chart");
             var helmDir = outputTarget.getOutputDirectory().resolve("helm").toFile();
+            var reconcilerValues = createReconcilerValues(reconcilerInfosBuildItem);
 
             createRelatedDirectories(helmDir);
             copyTemplates(helmDir);
-            addGeneratedTemplates(helmDir, reconcilerInfosBuildItem);
+            addClusterRolesForReconcilerPrimaries(helmDir, reconcilerValues);
+            addPrimaryClusterRoleBindings(helmDir, reconcilerValues);
             addChartYaml(helmDir, appInfo.getName(), appInfo.getVersion());
             addValuesYaml(helmDir, reconcilerInfosBuildItem, containerImageInfoBuildItem.getImage(),
                     containerImageInfoBuildItem.getTag());
@@ -87,8 +77,27 @@ public class HelmChartProcessor {
         }
     }
 
-    private void addGeneratedTemplates(File helmDir, ReconcilerInfosBuildItem reconcilerInfosBuildItem) {
-        var reconcilerValues = createReconcilerValues(reconcilerInfosBuildItem);
+    // replace this with proper qute templating after clarified how to use it in extension
+    private void addPrimaryClusterRoleBindings(File helmDir, List<ReconcilerValues> reconcilerValues) {
+        try (InputStream file = Thread.currentThread().getContextClassLoader()
+                .getResourceAsStream("/helm/crd-role-binding-template.yaml")) {
+            String template = new String(file.readAllBytes(), StandardCharsets.UTF_8);
+            reconcilerValues.forEach(r -> {
+                try {
+                    var res = template.replace("[reconciler-name]", r.getName());
+                    res = res.replace("[resource-name]", r.getResource());
+                    Files.writeString(new File(new File(helmDir, TEMPLATES_DIR),
+                            r.getResource() + "-crd-role-binding.yaml").toPath(), res);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private void addClusterRolesForReconcilerPrimaries(File helmDir, List<ReconcilerValues> reconcilerValues) {
         reconcilerValues.forEach(val -> {
             try {
                 ClusterRole role = new ClusterRole();
@@ -138,9 +147,6 @@ public class HelmChartProcessor {
             values.setVersion(tag);
             var imageWithoutTage = image.replace(":" + tag, "");
             values.setImage(imageWithoutTage);
-            var reconcilerValues = createReconcilerValues(reconcilerInfosBuildItem);
-            values.setReconcilers(reconcilerValues);
-
             var valuesYaml = Serialization.asYaml(values);
             Files.writeString(Path.of(helmDir.getPath(), VALUES_YAML_FILENAME), valuesYaml);
         } catch (IOException e) {
