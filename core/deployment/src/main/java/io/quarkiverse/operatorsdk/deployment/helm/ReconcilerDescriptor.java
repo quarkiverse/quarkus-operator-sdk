@@ -1,6 +1,6 @@
 package io.quarkiverse.operatorsdk.deployment.helm;
 
-public class ReconcilerValues {
+public class ReconcilerDescriptor {
 
     private String name;
     private String resource;
@@ -10,7 +10,7 @@ public class ReconcilerValues {
         return name;
     }
 
-    public ReconcilerValues setName(String name) {
+    public ReconcilerDescriptor setName(String name) {
         this.name = name;
         return this;
     }
@@ -19,7 +19,7 @@ public class ReconcilerValues {
         return resource;
     }
 
-    public ReconcilerValues setResource(String resource) {
+    public ReconcilerDescriptor setResource(String resource) {
         this.resource = resource;
         return this;
     }
@@ -28,7 +28,7 @@ public class ReconcilerValues {
         return apiGroup;
     }
 
-    public ReconcilerValues setApiGroup(String apiGroup) {
+    public ReconcilerDescriptor setApiGroup(String apiGroup) {
         this.apiGroup = apiGroup;
         return this;
     }

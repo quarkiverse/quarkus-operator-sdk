@@ -79,7 +79,7 @@ public class HelmChartProcessor {
         }
     }
 
-    private void addPrimaryClusterRoleBindings(File helmDir, List<ReconcilerValues> reconcilerValues) {
+    private void addPrimaryClusterRoleBindings(File helmDir, List<ReconcilerDescriptor> reconcilerValues) {
         try (InputStream file = Thread.currentThread().getContextClassLoader()
                 .getResourceAsStream("/helm/crd-role-binding-template.yaml")) {
             String template = new String(file.readAllBytes(), StandardCharsets.UTF_8);
@@ -97,7 +97,7 @@ public class HelmChartProcessor {
         }
     }
 
-    private void addClusterRolesForReconcilerPrimaries(File helmDir, List<ReconcilerValues> reconcilerValues) {
+    private void addClusterRolesForReconcilerPrimaries(File helmDir, List<ReconcilerDescriptor> reconcilerValues) {
         reconcilerValues.forEach(val -> {
             try {
                 ClusterRole role = new ClusterRole();
@@ -153,9 +153,9 @@ public class HelmChartProcessor {
         }
     }
 
-    private List<ReconcilerValues> createReconcilerValues(ReconcilerInfosBuildItem reconcilerInfosBuildItem) {
+    private List<ReconcilerDescriptor> createReconcilerValues(ReconcilerInfosBuildItem reconcilerInfosBuildItem) {
         return reconcilerInfosBuildItem.getReconcilers().entrySet().stream().map(e -> {
-            ReconcilerValues val = new ReconcilerValues();
+            ReconcilerDescriptor val = new ReconcilerDescriptor();
             val.setApiGroup(e.getValue().associatedResourceInfo()
                     .classInfo().annotation(Group.class).value().value().toString());
             val.setResource(HasMetadata.getPlural(e.getValue().associatedResourceInfo().loadAssociatedClass()));

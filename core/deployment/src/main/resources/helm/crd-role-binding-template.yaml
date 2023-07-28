@@ -1,4 +1,4 @@
-{{ if eq $.Values.watchNamespaces "current-namespace" }}
+{{ if eq $.Values.watchNamespaces "JOSDK_WATCH_CURRENT" }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -10,7 +10,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ $.Chart.Name }}
-{{ else if eq $.Values.watchNamespaces "all-namespaces" }}
+{{ else if eq $.Values.watchNamespaces "JOSDK_ALL_NAMESPACES" }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:

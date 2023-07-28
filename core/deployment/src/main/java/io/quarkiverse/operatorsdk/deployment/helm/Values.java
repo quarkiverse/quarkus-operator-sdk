@@ -1,24 +1,12 @@
 package io.quarkiverse.operatorsdk.deployment.helm;
 
-import java.util.List;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_ALL_NAMESPACES;
 
 public class Values {
-
-    public static final String WATCH_ALL_NAMESPACES = "all-namespaces";
 
     private String watchNamespaces = WATCH_ALL_NAMESPACES;
     private String version;
     private String image;
-    private List<ReconcilerValues> reconcilers;
-
-    public List<ReconcilerValues> getReconcilers() {
-        return reconcilers;
-    }
-
-    public Values setReconcilers(List<ReconcilerValues> reconcilers) {
-        this.reconcilers = reconcilers;
-        return this;
-    }
 
     public String getWatchNamespaces() {
         return watchNamespaces;

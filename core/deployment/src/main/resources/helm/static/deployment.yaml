@@ -25,6 +25,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: QUARKUS_OPERATOR_SDK_NAMESPACES
+              value: {{ .Values.watchNamespaces }}
           image: {{ .Values.image }}:{{ .Values.version }}
           imagePullPolicy: IfNotPresent
           livenessProbe:
