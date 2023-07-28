@@ -2,11 +2,11 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: [reconciler-name]-role-binding
+  name: {reconciler-name}-role-binding
 roleRef:
   kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
-  name: [resource-name]-cluster-role
+  name: {resource-name}-cluster-role
 subjects:
   - kind: ServiceAccount
     name: {{ $.Chart.Name }}
@@ -14,11 +14,11 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: [reconciler-name]-role-binding
+  name: {reconciler-name}-role-binding
 roleRef:
   kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
-  name: [resource-name]-cluster-role
+  name: {resource-name}-cluster-role
 subjects:
   - kind: ServiceAccount
     name: {{ $.Chart.Name }}
@@ -28,12 +28,12 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: [reconciler-name]-role-binding
+  name: {reconciler-name}-role-binding
   namespace: {{ $anamespace }}
 roleRef:
   kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
-  name: [resource-name]-cluster-role
+  name: {resource-name}-cluster-role
 subjects:
   - kind: ServiceAccount
     name: {{ $.Chart.Name }}

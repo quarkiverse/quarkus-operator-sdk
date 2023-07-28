@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
@@ -29,6 +30,7 @@ import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
 import io.quarkus.deployment.pkg.builditem.ArtifactResultBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.kubernetes.spi.ConfiguratorBuildItem;
+import io.quarkus.qute.*;
 
 public class HelmChartProcessor {
 
@@ -69,7 +71,7 @@ public class HelmChartProcessor {
             addClusterRolesForReconcilerPrimaries(helmDir, reconcilerValues);
             addPrimaryClusterRoleBindings(helmDir, reconcilerValues);
             addChartYaml(helmDir, appInfo.getName(), appInfo.getVersion());
-            addValuesYaml(helmDir, reconcilerInfosBuildItem, containerImageInfoBuildItem.getImage(),
+            addValuesYaml(helmDir, containerImageInfoBuildItem.getImage(),
                     containerImageInfoBuildItem.getTag());
             addCRDs(new File(helmDir, CRD_DIR), generatedCRDInfoBuildItem);
         } else {
@@ -77,19 +79,17 @@ public class HelmChartProcessor {
         }
     }
 
-    // replace this with proper qute templating after clarified how to use it in extension
     private void addPrimaryClusterRoleBindings(File helmDir, List<ReconcilerValues> reconcilerValues) {
         try (InputStream file = Thread.currentThread().getContextClassLoader()
                 .getResourceAsStream("/helm/crd-role-binding-template.yaml")) {
             String template = new String(file.readAllBytes(), StandardCharsets.UTF_8);
             reconcilerValues.forEach(r -> {
                 try {
-                    var res = template.replace("[reconciler-name]", r.getName());
-                    res = res.replace("[resource-name]", r.getResource());
+                    String res = Qute.fmt(template, Map.of("reconciler-name", r.getName(), "resource-name", r.getResource()));
                     Files.writeString(new File(new File(helmDir, TEMPLATES_DIR),
                             r.getResource() + "-crd-role-binding.yaml").toPath(), res);
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    throw new IllegalStateException(e);
                 }
             });
         } catch (IOException e) {
@@ -139,7 +139,6 @@ public class HelmChartProcessor {
     }
 
     private void addValuesYaml(File helmDir,
-            ReconcilerInfosBuildItem reconcilerInfosBuildItem,
             String image,
             String tag) {
         try {
