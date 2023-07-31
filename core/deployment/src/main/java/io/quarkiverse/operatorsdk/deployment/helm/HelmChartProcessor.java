@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -16,13 +17,13 @@ import org.jboss.logging.Logger;
 import io.dekorate.helm.model.Chart;
 import io.dekorate.utils.Serialization;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
-import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.model.annotation.Group;
+import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
+import io.quarkiverse.operatorsdk.deployment.ControllerConfigurationsBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.deployment.ReconcilerInfosBuildItem;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
+import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkus.container.spi.ContainerImageInfoBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -54,22 +55,22 @@ public class HelmChartProcessor {
     @BuildStep
     public void handleHelmCharts(
             BuildProducer<ArtifactResultBuildItem> dummy,
+            ControllerConfigurationsBuildItem controllerConfigurations,
             BuildTimeOperatorConfiguration buildTimeConfiguration,
             GeneratedCRDInfoBuildItem generatedCRDInfoBuildItem,
             OutputTargetBuildItem outputTarget,
             ApplicationInfoBuildItem appInfo,
-            ContainerImageInfoBuildItem containerImageInfoBuildItem,
-            ReconcilerInfosBuildItem reconcilerInfosBuildItem) {
+            ContainerImageInfoBuildItem containerImageInfoBuildItem) {
 
         if (buildTimeConfiguration.helm.enabled) {
             log.infov("Generating helm chart");
             var helmDir = outputTarget.getOutputDirectory().resolve("helm").toFile();
-            var reconcilerValues = createReconcilerValues(reconcilerInfosBuildItem);
+            var controllerConfigs = controllerConfigurations.getControllerConfigs().values();
 
             createRelatedDirectories(helmDir);
             copyTemplates(helmDir);
-            addClusterRolesForReconcilerPrimaries(helmDir, reconcilerValues);
-            addPrimaryClusterRoleBindings(helmDir, reconcilerValues);
+            addClusterRolesForReconcilers(helmDir, controllerConfigs);
+            addPrimaryClusterRoleBindings(helmDir, controllerConfigs);
             addChartYaml(helmDir, appInfo.getName(), appInfo.getVersion());
             addValuesYaml(helmDir, containerImageInfoBuildItem.getImage(),
                     containerImageInfoBuildItem.getTag());
@@ -79,15 +80,15 @@ public class HelmChartProcessor {
         }
     }
 
-    private void addPrimaryClusterRoleBindings(File helmDir, List<ReconcilerDescriptor> reconcilerValues) {
+    private void addPrimaryClusterRoleBindings(File helmDir, Collection<QuarkusControllerConfiguration> reconcilerValues) {
         try (InputStream file = Thread.currentThread().getContextClassLoader()
                 .getResourceAsStream("/helm/crd-role-binding-template.yaml")) {
             String template = new String(file.readAllBytes(), StandardCharsets.UTF_8);
             reconcilerValues.forEach(r -> {
                 try {
-                    String res = Qute.fmt(template, Map.of("reconciler-name", r.getName(), "resource-name", r.getResource()));
+                    String res = Qute.fmt(template, Map.of("reconciler-name", r.getName()));
                     Files.writeString(new File(new File(helmDir, TEMPLATES_DIR),
-                            r.getResource() + "-crd-role-binding.yaml").toPath(), res);
+                            r.getName() + "-crd-role-binding.yaml").toPath(), res);
                 } catch (IOException e) {
                     throw new IllegalStateException(e);
                 }
@@ -97,23 +98,14 @@ public class HelmChartProcessor {
         }
     }
 
-    private void addClusterRolesForReconcilerPrimaries(File helmDir, List<ReconcilerDescriptor> reconcilerValues) {
-        reconcilerValues.forEach(val -> {
+    @SuppressWarnings("rawtypes")
+    private void addClusterRolesForReconcilers(File helmDir,
+            Collection<QuarkusControllerConfiguration> controllerConfigurations) {
+        controllerConfigurations.forEach(cc -> {
             try {
-                ClusterRole role = new ClusterRole();
-                role.setMetadata(new ObjectMetaBuilder()
-                        .withName(val.getResource() + CLUSTER_ROLE_NAME_SUFFIX)
-                        .build());
-                PolicyRule rule = new PolicyRule();
-                rule.setApiGroups(List.of(val.getApiGroup()));
-                rule.setResources(List.of(
-                        val.getResource(),
-                        val.getResource() + "/status",
-                        val.getResource() + "/finalizers"));
-                rule.setVerbs(CRD_ROLE_VERBS);
-                role.setRules(List.of(rule));
-                var yaml = io.fabric8.kubernetes.client.utils.Serialization.asYaml(role);
-                Files.writeString(Paths.get(helmDir.getPath(), TEMPLATES_DIR, val.getResource() + "-crd-cluster-role.yaml"),
+                var clusterRole = AddClusterRolesDecorator.createClusterRole(cc);
+                var yaml = io.fabric8.kubernetes.client.utils.Serialization.asYaml(clusterRole);
+                Files.writeString(Paths.get(helmDir.getPath(), TEMPLATES_DIR, cc.getName() + "-crd-cluster-role.yaml"),
                         yaml);
             } catch (IOException e) {
                 throw new IllegalStateException(e);

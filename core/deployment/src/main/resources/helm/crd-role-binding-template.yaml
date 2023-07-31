@@ -6,7 +6,7 @@ metadata:
 roleRef:
   kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
-  name: {resource-name}-cluster-role
+  name: {reconciler-name}-cluster-role
 subjects:
   - kind: ServiceAccount
     name: {{ $.Chart.Name }}
@@ -18,7 +18,7 @@ metadata:
 roleRef:
   kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
-  name: {resource-name}-cluster-role
+  name: {reconciler-name}-cluster-role
 subjects:
   - kind: ServiceAccount
     name: {{ $.Chart.Name }}
@@ -33,7 +33,7 @@ metadata:
 roleRef:
   kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
-  name: {resource-name}-cluster-role
+  name: {reconciler-name}-cluster-role
 subjects:
   - kind: ServiceAccount
     name: {{ $.Chart.Name }}
