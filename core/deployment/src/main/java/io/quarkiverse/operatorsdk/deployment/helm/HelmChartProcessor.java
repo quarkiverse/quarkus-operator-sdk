@@ -2,11 +2,15 @@ package io.quarkiverse.operatorsdk.deployment.helm;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +20,10 @@ import org.jboss.logging.Logger;
 
 import io.dekorate.helm.model.Chart;
 import io.dekorate.utils.Serialization;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
 import io.quarkiverse.operatorsdk.deployment.ControllerConfigurationsBuildItem;
@@ -31,7 +38,8 @@ import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
 import io.quarkus.deployment.pkg.builditem.ArtifactResultBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.kubernetes.spi.ConfiguratorBuildItem;
-import io.quarkus.qute.*;
+import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
+import io.quarkus.qute.Qute;
 
 public class HelmChartProcessor {
 
@@ -39,7 +47,6 @@ public class HelmChartProcessor {
 
     private static final String TEMPLATES_DIR = "templates";
     private static final String[] TEMPLATE_FILES = new String[] {
-            "deployment.yaml",
             "generic-crd-cluster-role.yaml",
             "generic-crd-cluster-role-binding.yaml",
             "service.yaml",
@@ -48,13 +55,11 @@ public class HelmChartProcessor {
     public static final String CHART_YAML_FILENAME = "Chart.yaml";
     public static final String VALUES_YAML_FILENAME = "values.yaml";
     public static final String CRD_DIR = "crds";
-    public static final String CLUSTER_ROLE_NAME_SUFFIX = "-cluster-role";
-    public static final List<String> CRD_ROLE_VERBS = List.of("get", "list", "watch", "patch",
-            "update", "create", "delete");
 
     @BuildStep
     public void handleHelmCharts(
             BuildProducer<ArtifactResultBuildItem> dummy,
+            List<GeneratedKubernetesResourceBuildItem> generatedResources,
             ControllerConfigurationsBuildItem controllerConfigurations,
             BuildTimeOperatorConfiguration buildTimeConfiguration,
             GeneratedCRDInfoBuildItem generatedCRDInfoBuildItem,
@@ -71,6 +76,7 @@ public class HelmChartProcessor {
             copyTemplates(helmDir);
             addClusterRolesForReconcilers(helmDir, controllerConfigs);
             addPrimaryClusterRoleBindings(helmDir, controllerConfigs);
+            addGeneratedDeployment(helmDir, generatedResources);
             addChartYaml(helmDir, appInfo.getName(), appInfo.getVersion());
             addValuesYaml(helmDir, containerImageInfoBuildItem.getImage(),
                     containerImageInfoBuildItem.getTag());
@@ -78,6 +84,34 @@ public class HelmChartProcessor {
         } else {
             log.infov("Generating helm chart is disabled");
         }
+    }
+
+    // In this way the deployment is customizable with standard properties
+
+    private void addGeneratedDeployment(File helmDir, List<GeneratedKubernetesResourceBuildItem> generatedResources) {
+        var kubernetesYaml = generatedResources.stream().filter(r -> "kubernetes.yml".equals(r.getName())).findAny();
+        kubernetesYaml.ifPresent(yaml -> {
+            try {
+                KubernetesSerialization serialization = new KubernetesSerialization();
+                // is there a better way than to deserialize this?
+                ArrayList<HasMetadata> resources = serialization.unmarshal(new ByteArrayInputStream(yaml.getContent()));
+                Deployment deployment = (Deployment) resources.stream().filter(r -> r instanceof Deployment).findFirst()
+                        .orElseThrow();
+                addActualNamespaceConfigPlaceholderToDeployment(deployment);
+                var template = serialization.asYaml(deployment);
+                // this is a hacky solution to get the exact placeholder without brackets
+                String res = template.replace("\"{watchNamespaces}\"", "{{ .Values.watchNamespaces }}");
+                Files.writeString(Paths.get(helmDir.getPath(), TEMPLATES_DIR, "deployment.yaml"),
+                        res);
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+        });
+    }
+
+    private void addActualNamespaceConfigPlaceholderToDeployment(Deployment deployment) {
+        var envs = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        envs.add(new EnvVar("QUARKUS_OPERATOR_SDK_NAMESPACES", "{watchNamespaces}", null));
     }
 
     private void addPrimaryClusterRoleBindings(File helmDir, Collection<QuarkusControllerConfiguration> reconcilerValues) {
