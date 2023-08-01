@@ -87,7 +87,7 @@ public class HelmChartProcessor {
     }
 
     // In this way the deployment is customizable with standard properties
-
+    // handle cases if the generated resource is not a deployment?
     private void addGeneratedDeployment(File helmDir, List<GeneratedKubernetesResourceBuildItem> generatedResources) {
         var kubernetesYaml = generatedResources.stream().filter(r -> "kubernetes.yml".equals(r.getName())).findAny();
         kubernetesYaml.ifPresent(yaml -> {
