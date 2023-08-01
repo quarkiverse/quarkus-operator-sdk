@@ -19,11 +19,13 @@ import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 
 public class AddClusterRolesDecorator extends ResourceProvidingDecorator<KubernetesListBuilder> {
 
-    public static final String[] READ_VERBS = new String[] { "get", "list", "watch" };
-    public static final String[] UPDATE_VERBS = new String[] { "patch", "update" };
-
     public static final String CREATE_VERB = "create";
+    public static final String PATCH_VERB = "patch";
     public static final String DELETE_VERB = "delete";
+
+    public static final String[] READ_VERBS = new String[] { "get", "list", "watch" };
+    public static final String[] UPDATE_VERBS = new String[] { PATCH_VERB, "update" };
+
     public static final String[] ALL_VERBS;
     static {
         final var verbs = new ArrayList<String>(READ_VERBS.length + UPDATE_VERBS.length + 2);
@@ -85,18 +87,20 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                             .addToApiGroups(HasMetadata.getGroup(associatedResourceClass))
                             .addToResources(HasMetadata.getPlural(associatedResourceClass))
                             .addToVerbs(READ_VERBS);
-                    if (Creator.class.isAssignableFrom(dependentResourceClass)) {
-                        dependentRule.addToVerbs(CREATE_VERB);
-                    }
                     if (Updater.class.isAssignableFrom(dependentResourceClass)) {
                         dependentRule.addToVerbs(UPDATE_VERBS);
                     }
                     if (Deleter.class.isAssignableFrom(dependentResourceClass)) {
                         dependentRule.addToVerbs(DELETE_VERB);
                     }
+                    if (Creator.class.isAssignableFrom(dependentResourceClass)) {
+                        dependentRule.addToVerbs(CREATE_VERB);
+                        if (!dependentRule.getVerbs().contains(PATCH_VERB)) {
+                            dependentRule.addToVerbs(PATCH_VERB);
+                        }
+                    }
                     clusterRoleBuilder.addToRules(dependentRule.build());
                 }
-
             });
 
             list.addToItems(clusterRoleBuilder.build());
