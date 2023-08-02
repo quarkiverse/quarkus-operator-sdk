@@ -21,7 +21,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE, name = "exposedapp", dependents = {
         @Dependent(type = DeploymentDependent.class),
         @Dependent(name = "service", type = ServiceDependent.class),
-        @Dependent(type = IngressDependent.class, dependsOn = "service", readyPostcondition = IngressDependent.class)
+        @Dependent(type = IngressDependent.class, readyPostcondition = IngressDependent.class)
 })
 public class ExposedAppReconciler implements Reconciler<ExposedApp>,
         ContextInitializer<ExposedApp> {
