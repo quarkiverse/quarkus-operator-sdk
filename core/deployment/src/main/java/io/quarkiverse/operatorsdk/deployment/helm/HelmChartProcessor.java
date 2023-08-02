@@ -76,7 +76,7 @@ public class HelmChartProcessor {
             copyTemplates(helmDir);
             addClusterRolesForReconcilers(helmDir, controllerConfigs);
             addPrimaryClusterRoleBindings(helmDir, controllerConfigs);
-            addGeneratedDeployment(helmDir, generatedResources);
+            addGeneratedDeployment(helmDir, generatedResources, controllerConfigurations);
             addChartYaml(helmDir, appInfo.getName(), appInfo.getVersion());
             addValuesYaml(helmDir, containerImageInfoBuildItem.getImage(),
                     containerImageInfoBuildItem.getTag());
@@ -88,7 +88,8 @@ public class HelmChartProcessor {
 
     // In this way the deployment is customizable with standard properties
     // handle cases if the generated resource is not a deployment?
-    private void addGeneratedDeployment(File helmDir, List<GeneratedKubernetesResourceBuildItem> generatedResources) {
+    private void addGeneratedDeployment(File helmDir, List<GeneratedKubernetesResourceBuildItem> generatedResources,
+            ControllerConfigurationsBuildItem controllerConfigurations) {
         var kubernetesYaml = generatedResources.stream().filter(r -> "kubernetes.yml".equals(r.getName())).findAny();
         kubernetesYaml.ifPresent(yaml -> {
             try {
@@ -97,7 +98,7 @@ public class HelmChartProcessor {
                 ArrayList<HasMetadata> resources = serialization.unmarshal(new ByteArrayInputStream(yaml.getContent()));
                 Deployment deployment = (Deployment) resources.stream().filter(r -> r instanceof Deployment).findFirst()
                         .orElseThrow();
-                addActualNamespaceConfigPlaceholderToDeployment(deployment);
+                addActualNamespaceConfigPlaceholderToDeployment(deployment, controllerConfigurations);
                 var template = serialization.asYaml(deployment);
                 // this is a hacky solution to get the exact placeholder without brackets
                 String res = template.replace("\"{watchNamespaces}\"", "{{ .Values.watchNamespaces }}");
@@ -109,9 +110,16 @@ public class HelmChartProcessor {
         });
     }
 
-    private void addActualNamespaceConfigPlaceholderToDeployment(Deployment deployment) {
-        var envs = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        envs.add(new EnvVar("QUARKUS_OPERATOR_SDK_NAMESPACES", "{watchNamespaces}", null));
+    private void addActualNamespaceConfigPlaceholderToDeployment(Deployment deployment,
+            ControllerConfigurationsBuildItem controllerConfigurations) {
+        controllerConfigurations.getControllerConfigs().values().stream().forEach(c -> {
+            var envs = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+            envs.add(new EnvVar("QUARKUS_OPERATOR_SDK_CONTROLLERS_" + c.getName().toUpperCase() + "_NAMESPACES",
+                    "{watchNamespaces}", null));
+            // use this when fixed?
+            // envs.add(new EnvVar("QUARKUS_OPERATOR_SDK_NAMESPACES", "{watchNamespaces}", null));
+        });
+
     }
 
     private void addPrimaryClusterRoleBindings(File helmDir, Collection<QuarkusControllerConfiguration> reconcilerValues) {
