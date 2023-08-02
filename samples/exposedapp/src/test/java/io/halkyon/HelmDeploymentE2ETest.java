@@ -1,4 +1,4 @@
-package io.quarkiverse.operatorsdk.samples.mysqlschema;
+package io.halkyon;
 
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -7,6 +7,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import jakarta.inject.Inject;
 
@@ -34,35 +35,36 @@ class HelmDeploymentE2ETest {
 
     @AfterEach
     void cleanup() {
-        deleteWithHelm();
+        //        deleteWithHelm();
+        client.resource(testResource(namespace)).delete();
     }
 
     @Test
     void testClusterWideDeployment() {
-        deployWithHelm();
+        //        deployWithHelm();
         namespace = "clusterscopetest";
         createNamespace(namespace);
-        client.resource(testSchema(namespace)).create();
+        client.resource(testResource(namespace)).create();
 
-        await().untilAsserted(() -> {
-            MySQLSchema updToDateSchema = client.resources(MySQLSchema.class)
+        await().atMost(60, TimeUnit.SECONDS).untilAsserted(() -> {
+            var exposedApp = client.resources(ExposedApp.class)
                     .inNamespace(namespace)
                     .withName(TEST_RESOURCE).get();
-            assertThat(updToDateSchema, is(notNullValue()));
-            assertThat(updToDateSchema.getStatus(), is(notNullValue()));
-            assertThat(updToDateSchema.getStatus().getStatus(), equalTo("CREATED"));
+            assertThat(exposedApp, is(notNullValue()));
+            assertThat(exposedApp.getStatus(), is(notNullValue()));
+            assertThat(exposedApp.getStatus().getMessage(), equalTo("exposed"));
         });
     }
 
-    MySQLSchema testSchema(String namespace) {
-        var schema = new MySQLSchema();
-        schema.setMetadata(new ObjectMetaBuilder()
+    ExposedApp testResource(String namespace) {
+        var app = new ExposedApp();
+        app.setMetadata(new ObjectMetaBuilder()
                 .withName(TEST_RESOURCE)
                 .withNamespace(namespace)
                 .build());
-        schema.setSpec(new SchemaSpec());
-        schema.getSpec().setEncoding("utf8");
-        return schema;
+        app.setSpec(new ExposedAppSpec());
+        app.getSpec().setImageRef("nginx:1.14.2");
+        return app;
     }
 
     private void createNamespace(String namespace) {
@@ -70,7 +72,9 @@ class HelmDeploymentE2ETest {
         ns.setMetadata(new ObjectMetaBuilder()
                 .withName(namespace)
                 .build());
-        client.namespaces().resource(ns).create();
+        if (client.namespaces().resource(ns).get() == null) {
+            client.namespaces().resource(ns).create();
+        }
     }
 
     //    @Test
@@ -84,20 +88,26 @@ class HelmDeploymentE2ETest {
     //    }
 
     private void deployWithHelm() {
-        execHelmCommand("helm install mysql target/helm");
+        execHelmCommand("helm install exposedapp target/helm");
     }
 
     private void deleteWithHelm() {
-        execHelmCommand("helm delete mysql");
+        execHelmCommand("helm delete exposedapp");
     }
 
     private static void execHelmCommand(String command) {
+        execHelmCommand(command, false);
+    }
+
+    private static void execHelmCommand(String command, boolean silent) {
         try {
             var process = Runtime.getRuntime().exec(command);
             var exitCode = process.waitFor();
             if (exitCode != 0) {
                 log.infof("Error with helm: %s", new String(process.getErrorStream().readAllBytes()));
-                throw new IllegalStateException("Helm exit code: " + exitCode);
+                if (!silent) {
+                    throw new IllegalStateException("Helm exit code: " + exitCode);
+                }
             }
         } catch (IOException | InterruptedException e) {
             throw new IllegalStateException(e);
