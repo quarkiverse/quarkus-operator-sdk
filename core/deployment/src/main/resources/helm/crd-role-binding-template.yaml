@@ -24,7 +24,7 @@ subjects:
     name: {{ $.Chart.Name }}
     namespace: {{ $.Release.Namespace }}
 {{ else }}
-{{ range $anamespace := ( split ", " $.Values.watchNamespaces ) }}
+{{ range $anamespace := ( split "," $.Values.watchNamespaces ) }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:

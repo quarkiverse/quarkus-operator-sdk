@@ -48,7 +48,7 @@ class MySQLSchemaOperatorE2ETest {
 
     @AfterEach
     void stopOperator() {
-        operator.start();
+        operator.stop();
     }
 
     @Test
