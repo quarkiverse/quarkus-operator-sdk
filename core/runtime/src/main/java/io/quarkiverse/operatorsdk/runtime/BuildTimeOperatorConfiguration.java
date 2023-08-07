@@ -84,4 +84,12 @@ public class BuildTimeOperatorConfiguration {
      */
     @ConfigItem(name = "enable-ssa", defaultValue = "true")
     public boolean enableSSA;
+
+    /**
+     * An optional list of comma-separated watched namespace names that will be used to generate manifests at build time if
+     * controllers do <strong>NOT</strong> specify a value individually. See
+     * {@link BuildTimeControllerConfiguration#generateWithWatchedNamespaces} for more information.
+     */
+    @ConfigItem
+    public Optional<List<String>> generateWithWatchedNamespaces;
 }
