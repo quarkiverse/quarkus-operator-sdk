@@ -95,7 +95,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             String resourceTypeName,
             String crVersion, boolean generationAware,
             Class resourceClass,
-            Long informerListLimit,
+            Long nullableInformerListLimit,
             Set<String> namespaces,
             boolean wereNamespacesSet,
             String finalizerName, String labelSelector,
@@ -112,7 +112,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.crVersion = crVersion;
         this.generationAware = generationAware;
         this.resourceClass = resourceClass;
-        this.informerListLimit = Optional.ofNullable(informerListLimit);
+        this.informerListLimit = Optional.ofNullable(nullableInformerListLimit);
         this.dependentsMetadata = dependentsMetadata;
         this.workflow = workflow;
         this.retryConfiguration = ControllerConfiguration.super.getRetryConfiguration();
@@ -155,6 +155,12 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     @Override
     public Optional<Long> getInformerListLimit() {
         return informerListLimit;
+    }
+
+    @SuppressWarnings("unused")
+    // this is needed by Quarkus for the RecordableConstructor
+    public Long getNullableInformerListLimit() {
+        return informerListLimit.orElse(null);
     }
 
     @Override
