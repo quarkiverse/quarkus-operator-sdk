@@ -167,6 +167,7 @@ class QuarkusControllerConfigurationBuildStep {
         Class<?> retryConfigurationClass = null;
         Class<? extends RateLimiter> rateLimiterClass = DefaultRateLimiter.class;
         Class<?> rateLimiterConfigurationClass = null;
+        Long nullableInformerListLimit = null;
         if (controllerAnnotation != null) {
             final var intervalFromAnnotation = ConfigurationUtils.annotationValueOrDefault(
                     controllerAnnotation, "maxReconciliationInterval", AnnotationValue::asNested,
@@ -202,6 +203,9 @@ class QuarkusControllerConfigurationBuildStep {
             final var rateLimiterConfigurableInfo = configurableInfos.get(rateLimiterClass.getName());
             rateLimiterConfigurationClass = getConfigurationAnnotationClass(reconcilerInfo,
                     rateLimiterConfigurableInfo);
+            nullableInformerListLimit = ConfigurationUtils.annotationValueOrDefault(
+                    controllerAnnotation, "informerListLimit", AnnotationValue::asLong,
+                    () -> null);
         }
 
         // extract the namespaces
@@ -249,7 +253,7 @@ class QuarkusControllerConfigurationBuildStep {
                 primaryAsResource.version(),
                 configExtractor.generationAware(),
                 resourceClass,
-                null,
+                nullableInformerListLimit,
                 namespaces,
                 wereNamespacesSet,
                 getFinalizer(controllerAnnotation, resourceFullName),
