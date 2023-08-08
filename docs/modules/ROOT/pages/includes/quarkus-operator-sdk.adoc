@@ -268,7 +268,7 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_GENERATE_WITH_WATCHED_NAMESPACES+++`
 endif::add-copy-button-to-env-var[]
---|list of string
+--|list of string 
 |
 
 
@@ -284,7 +284,7 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_HELM_ENABLED+++`
 endif::add-copy-button-to-env-var[]
---|boolean
+--|boolean 
 |`true`
 
 
