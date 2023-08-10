@@ -14,8 +14,6 @@ public class CustomResourceAugmentedClassInfo extends ReconciledResourceAugmente
 
     public static final String EXISTING_CRDS_KEY = "existing-crds-key";
 
-    private boolean hasNonVoidStatus;
-
     protected CustomResourceAugmentedClassInfo(ClassInfo classInfo, String associatedReconcilerName) {
         super(classInfo, Constants.CUSTOM_RESOURCE, 2, associatedReconcilerName);
     }
@@ -38,26 +36,22 @@ public class CustomResourceAugmentedClassInfo extends ReconciledResourceAugmente
     protected void doAugment(IndexView index, Logger log, Map<String, Object> context) {
         super.doAugment(index, log, context);
 
-        // check if the primary is also a CR, in which case we also need to register its
-        // spec and status classes if we can determine them
-        // register spec and status for reflection if we're targeting a CustomResource
-        // note that this shouldn't be necessary anymore once https://github.com/quarkusio/quarkus/pull/26188
-        // is merged and available as the kubernetes-client extension will properly take care of the
-        // registration of the custom resource and associated status / spec classes for reflection
+        // registering these classes is not necessary anymore since the kubernetes client extension takes care of it
+        // however, we keep doing it here so that the name of these classes appear in the logs as has been the case since the first version of this extension
         final var specClassName = typeAt(0).name().toString();
         final var statusClassName = typeAt(1).name().toString();
-        hasNonVoidStatus = ClassUtils.isStatusNotVoid(statusClassName);
         registerForReflection(specClassName);
         registerForReflection(statusClassName);
     }
 
     @Override
-    public boolean isCR() {
-        return true;
+    protected boolean hasStatus(IndexView index) {
+        final var statusClassName = typeAt(1).name().toString();
+        return ClassUtils.isStatusNotVoid(statusClassName);
     }
 
     @Override
-    public boolean hasNonVoidStatus() {
-        return hasNonVoidStatus;
+    public boolean isCR() {
+        return true;
     }
 }
