@@ -8,12 +8,12 @@
   </parent>
   <groupId>io.quarkiverse.operatorsdk</groupId>
   <artifactId>quarkus-operator-sdk-parent</artifactId>
-  <version>6.3.3-SNAPSHOT</version>
+  <version>6.4.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Quarkus - Operator SDK - Parent</name>
   <properties>
-    <quarkus.version>3.2.6.Final</quarkus.version>
-    <java-operator-sdk.version>4.4.3</java-operator-sdk.version>
+    <quarkus.version>3.4.0</quarkus.version>
+    <java-operator-sdk.version>4.5.0-SNAPSHOT</java-operator-sdk.version>
   </properties>
   <scm>
     <connection>:git:git@github.com:quarkiverse/quarkus-operator-sdk.git</connection>
