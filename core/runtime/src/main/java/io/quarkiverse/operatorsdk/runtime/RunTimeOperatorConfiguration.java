@@ -14,6 +14,8 @@
  */
 package io.quarkiverse.operatorsdk.runtime;
 
+import static io.quarkiverse.operatorsdk.runtime.Constants.QOSDK_USE_BUILDTIME_NAMESPACES;
+
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +61,10 @@ public class RunTimeOperatorConfiguration {
      * specified by the kube config file the operator uses.
      * </p>
      */
-    @ConfigItem
+    // We use a default here so that we are able to detect if the configuration value is set to "". Setting the value to "" will
+    // reset the configuration and result in an empty Optional, but not setting the value at all will result in the default being
+    // applied.
+    @ConfigItem(defaultValue = QOSDK_USE_BUILDTIME_NAMESPACES)
     public Optional<List<String>> namespaces;
 
     /**
