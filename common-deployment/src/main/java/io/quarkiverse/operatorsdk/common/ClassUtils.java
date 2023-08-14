@@ -107,4 +107,21 @@ public class ClassUtils {
             }
         }
     }
+
+    public static boolean hasField(IndexView index, ClassInfo info, String fieldName) {
+        ClassInfo tmpClassInfo = info;
+        while (tmpClassInfo != null) {
+            final var status = tmpClassInfo.field(fieldName);
+            if (status != null) {
+                return true;
+            }
+            // look up the hierarchy
+            if (tmpClassInfo.superName() != null) {
+                tmpClassInfo = index.getClassByName(tmpClassInfo.superName());
+            } else {
+                tmpClassInfo = null;
+            }
+        }
+        return false;
+    }
 }
