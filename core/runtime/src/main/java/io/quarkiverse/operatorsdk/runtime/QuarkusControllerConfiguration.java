@@ -2,10 +2,7 @@ package io.quarkiverse.operatorsdk.runtime;
 
 import java.lang.annotation.Annotation;
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -115,7 +112,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.dependentsMetadata = dependentsMetadata;
         this.workflow = workflow;
         this.retryConfiguration = ControllerConfiguration.super.getRetryConfiguration();
-        this.namespaces = Set.copyOf(namespaces);
+        setNamespaces(namespaces);
         this.wereNamespacesSet = wereNamespacesSet;
         setFinalizer(finalizerName);
         this.labelSelector = labelSelector;
@@ -193,9 +190,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     }
 
     @SuppressWarnings("unchecked")
-    void setNamespaces(Set<String> namespaces) {
+    void setNamespaces(Collection<String> namespaces) {
         if (!namespaces.equals(this.namespaces)) {
-            this.namespaces = namespaces;
+            this.namespaces = namespaces.stream().map(String::trim).collect(Collectors.toSet());
             wereNamespacesSet = true;
             // propagate namespace changes to the dependents' config if needed
             this.dependentsMetadata.forEach((name, spec) -> {
