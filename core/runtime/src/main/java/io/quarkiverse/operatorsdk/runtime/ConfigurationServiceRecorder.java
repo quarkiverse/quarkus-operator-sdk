@@ -1,5 +1,8 @@
 package io.quarkiverse.operatorsdk.runtime;
 
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
+import static io.quarkiverse.operatorsdk.runtime.Constants.QOSDK_USE_BUILDTIME_NAMESPACES_SET;
+
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -55,9 +58,22 @@ public class ConfigurationServiceRecorder {
                 c.setRetryConfiguration(null);
             }
 
-            // if despite all of this, we still haven't set the namespaces, use the operator-level default if it exists
+            // if the namespaces weren't set as an annotation, use the operator-level configuration if it exists
             if (!c.isWereNamespacesSet()) {
-                runTimeConfiguration.namespaces.ifPresent(ns -> c.setNamespaces(new HashSet<>(ns)));
+                // The namespaces field has a default value so that we are able to detect if the configuration value is set to "".
+                // Setting the value to "" will reset the configuration and result in an empty Optional.
+                // Not setting the value at all will result in the default being applied, which we can test for.
+                if (runTimeConfiguration.namespaces.isPresent()) {
+                    final var runtimeNamespaces = new HashSet<>(runTimeConfiguration.namespaces.get());
+                    // If it's not the default value, use it because it was set.
+                    // If it is the default value, ignore it and let any build time config be used.
+                    if (!QOSDK_USE_BUILDTIME_NAMESPACES_SET.equals(runtimeNamespaces)) {
+                        c.setNamespaces(runtimeNamespaces);
+                    }
+                } else {
+                    // Value has been explicitly reset (value was empty string), use all namespaces mode
+                    c.setNamespaces(DEFAULT_NAMESPACES_SET);
+                }
             }
         });
 

@@ -114,7 +114,7 @@ class OperatorSDKResourceTest {
     }
 
     @Test
-    void configurationForControllerShouldExistAndUseOperatorLevelConfigurationWhenSet() {
+    void configurationForControllerShouldExistAndUseBuildTimeOperatorLevelConfigurationWhenSet() {
         // check that the config for the test controller can be retrieved and is conform to our
         // expectations
         final var resourceName = io.quarkiverse.operatorsdk.it.Test.class.getCanonicalName();
@@ -127,8 +127,10 @@ class OperatorSDKResourceTest {
                         "customResourceClass", equalTo(resourceName),
                         "name", equalTo(TestReconciler.NAME),
                         "watchCurrentNamespace", equalTo(false),
-                        "namespaces", hasSize(1),
-                        "namespaces", hasItem("operator-level"),
+                        // build time values are propagated at runtime if no runtime value is specified
+                        "namespaces", hasSize(2),
+                        "namespaces", hasItem("builtime-namespace1"),
+                        "namespaces", hasItem("buildtime-ns2"),
                         "retry.maxAttempts", equalTo(1),
                         "generationAware", equalTo(false),
                         "maxReconciliationIntervalSeconds", equalTo(TestReconciler.INTERVAL));
@@ -173,7 +175,7 @@ class OperatorSDKResourceTest {
                 .statusCode(200).body(
                         "watchCurrentNamespace", equalTo(false),
                         "namespaces", hasSize(1),
-                        "namespaces", hasItem("operator-level"),
+                        "namespaces", hasItem("operator-level-for-manifests"),
                         "dependents", hasSize(2),
                         "dependents.dependentClass",
                         hasItems(ReadOnlyDependentResource.class.getCanonicalName(),
