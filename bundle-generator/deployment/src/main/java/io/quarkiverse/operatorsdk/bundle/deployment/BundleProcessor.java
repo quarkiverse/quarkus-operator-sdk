@@ -75,7 +75,9 @@ public class BundleProcessor {
             CombinedIndexBuildItem combinedIndexBuildItem) {
         final var index = combinedIndexBuildItem.getIndex();
         final var defaultName = bundleConfiguration.packageName.orElse(configuration.getName());
-        final var sharedMetadataHolders = getSharedMetadataHolders(defaultName, index);
+        final var version = configuration.getVersion();
+        final var defaultVersion = ApplicationInfoBuildItem.UNSET_VALUE.equals(version) ? null : version;
+        final var sharedMetadataHolders = getSharedMetadataHolders(defaultName, defaultVersion, index);
         final var csvGroups = new HashMap<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>>();
 
         ClassUtils.getKnownReconcilers(index, log)
@@ -107,7 +109,7 @@ public class BundleProcessor {
                             }
                         }
                         csvMetadata = createMetadataHolder(csvMetadataAnnotation,
-                                new CSVMetadataHolder(csvMetadataName, origin));
+                                new CSVMetadataHolder(csvMetadataName, defaultVersion, origin));
                     }
                     log.infov("Assigning ''{0}'' reconciler to {1}",
                             reconcilerInfo.nameOrFailIfUnset(),
@@ -252,8 +254,8 @@ public class BundleProcessor {
         }
     }
 
-    private Map<String, CSVMetadataHolder> getSharedMetadataHolders(String name, IndexView index) {
-        CSVMetadataHolder csvMetadata = new CSVMetadataHolder(name, "default");
+    private Map<String, CSVMetadataHolder> getSharedMetadataHolders(String name, String version, IndexView index) {
+        CSVMetadataHolder csvMetadata = new CSVMetadataHolder(name, version, "default");
         final var sharedMetadataImpls = index.getAllKnownImplementors(SHARED_CSV_METADATA);
         final var result = new HashMap<String, CSVMetadataHolder>(sharedMetadataImpls.size() + 1);
         sharedMetadataImpls.forEach(sharedMetadataImpl -> {

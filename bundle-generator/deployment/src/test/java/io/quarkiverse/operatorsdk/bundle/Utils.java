@@ -4,9 +4,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.utils.Serialization;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion;
 
 public class Utils {
 
@@ -19,13 +22,24 @@ public class Utils {
         assertFileExistsIn(operatorManifests.resolve("bundle.Dockerfile"), bundle);
         final var manifests = operatorManifests.resolve("manifests");
         assertFileExistsIn(manifests, bundle);
-        assertFileExistsIn(manifests.resolve(operatorName + ".clusterserviceversion.yaml"), manifests);
+        assertFileExistsIn(manifests.resolve(getCSVFileNameFor(operatorName)), manifests);
         if (resourceClass != null) {
             assertFileExistsIn(manifests.resolve(getCRDNameFor(resourceClass)), manifests);
         }
         final var metadata = operatorManifests.resolve("metadata");
         assertFileExistsIn(metadata, bundle);
         assertFileExistsIn(metadata.resolve("annotations.yaml"), metadata);
+    }
+
+    @NotNull
+    private static String getCSVFileNameFor(String operatorName) {
+        return operatorName + ".clusterserviceversion.yaml";
+    }
+
+    static ClusterServiceVersion getCSVFor(Path bundle, String operatorName) throws IOException {
+        final var csvPath = bundle.resolve(operatorName).resolve("manifests").resolve(getCSVFileNameFor(operatorName));
+        final var csvAsString = Files.readString(csvPath);
+        return Serialization.unmarshal(csvAsString, ClusterServiceVersion.class);
     }
 
     static String getCRDNameFor(Class<? extends HasMetadata> resourceClass) {
