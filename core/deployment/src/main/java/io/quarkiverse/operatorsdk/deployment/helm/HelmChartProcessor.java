@@ -24,11 +24,9 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
-import io.fabric8.kubernetes.model.annotation.Group;
 import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
 import io.quarkiverse.operatorsdk.deployment.ControllerConfigurationsBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
-import io.quarkiverse.operatorsdk.deployment.ReconcilerInfosBuildItem;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkus.container.spi.ContainerImageInfoBuildItem;
@@ -86,8 +84,6 @@ public class HelmChartProcessor {
         }
     }
 
-    // In this way the deployment is customizable with standard properties
-    // handle cases if the generated resource is not a deployment?
     private void addGeneratedDeployment(File helmDir, List<GeneratedKubernetesResourceBuildItem> generatedResources,
             ControllerConfigurationsBuildItem controllerConfigurations) {
         var kubernetesYaml = generatedResources.stream().filter(r -> "kubernetes.yml".equals(r.getName())).findAny();
@@ -100,7 +96,7 @@ public class HelmChartProcessor {
                         .orElseThrow();
                 addActualNamespaceConfigPlaceholderToDeployment(deployment, controllerConfigurations);
                 var template = serialization.asYaml(deployment);
-                // this is a hacky solution to get the exact placeholder without brackets
+                // a bit solution to get the exact placeholder without brackets
                 String res = template.replace("\"{watchNamespaces}\"", "{{ .Values.watchNamespaces }}");
                 Files.writeString(Paths.get(helmDir.getPath(), TEMPLATES_DIR, "deployment.yaml"),
                         res);
@@ -116,7 +112,7 @@ public class HelmChartProcessor {
             var envs = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
             envs.add(new EnvVar("QUARKUS_OPERATOR_SDK_CONTROLLERS_" + c.getName().toUpperCase() + "_NAMESPACES",
                     "{watchNamespaces}", null));
-            // use this when fixed?
+            // use this when the global variable issue is fixed
             // envs.add(new EnvVar("QUARKUS_OPERATOR_SDK_NAMESPACES", "{watchNamespaces}", null));
         });
 
@@ -185,17 +181,6 @@ public class HelmChartProcessor {
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
-    }
-
-    private List<ReconcilerDescriptor> createReconcilerValues(ReconcilerInfosBuildItem reconcilerInfosBuildItem) {
-        return reconcilerInfosBuildItem.getReconcilers().entrySet().stream().map(e -> {
-            ReconcilerDescriptor val = new ReconcilerDescriptor();
-            val.setApiGroup(e.getValue().associatedResourceInfo()
-                    .classInfo().annotation(Group.class).value().value().toString());
-            val.setResource(HasMetadata.getPlural(e.getValue().associatedResourceInfo().loadAssociatedClass()));
-            val.setName(e.getKey());
-            return val;
-        }).collect(Collectors.toList());
     }
 
     private void addChartYaml(File helmDir, String name, String version) {

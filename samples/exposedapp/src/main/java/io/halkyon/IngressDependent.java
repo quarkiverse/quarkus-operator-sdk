@@ -71,11 +71,9 @@ public class IngressDependent extends CRUDKubernetesDependentResource<Ingress, E
         return context.getSecondaryResource(Ingress.class).map(in -> {
             final var status = in.getStatus();
             if (status != null) {
-                // todo discuss why was not working for me
-                //                final var ingresses = status.getLoadBalancer().getIngress();
+                final var ingresses = status.getLoadBalancer().getIngress();
                 // only set the status if the ingress is ready to provide the info we need
-                //                return ingresses != null && !ingresses.isEmpty();
-                return status.getLoadBalancer() != null;
+                return ingresses != null && !ingresses.isEmpty();
             }
             return false;
         }).orElse(false);

@@ -10,11 +10,8 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE, name = "exposedapp", dependents = {
@@ -45,11 +42,10 @@ public class ExposedAppReconciler implements Reconciler<ExposedApp>,
         return context.managedDependentResourceContext().getWorkflowReconcileResult()
                 .map(wrs -> {
                     if (wrs.allDependentResourcesReady()) {
-                        // todo
-                        //                        final var url = IngressDependent.getExposedURL(
-                        //                                context.getSecondaryResource(Ingress.class).orElseThrow());
-                        //                        exposedApp.setStatus(new ExposedAppStatus(url, exposedApp.getSpec().getEndpoint()));
-                        exposedApp.setStatus(new ExposedAppStatus("http://fake.url", "endpoint"));
+
+                        final var url = IngressDependent.getExposedURL(
+                                context.getSecondaryResource(Ingress.class).orElseThrow());
+                        exposedApp.setStatus(new ExposedAppStatus(url, exposedApp.getSpec().getEndpoint()));
                         log.info("App {} is exposed and ready to be used at {}", name, exposedApp.getStatus().getHost());
                         return UpdateControl.updateStatus(exposedApp);
                     } else {
