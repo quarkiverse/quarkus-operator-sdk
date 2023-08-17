@@ -16,6 +16,7 @@ import io.fabric8.crd.generator.CRDGenerator;
 import io.fabric8.crd.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.quarkiverse.operatorsdk.common.CustomResourceAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.common.FileUtils;
 import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
@@ -76,11 +77,7 @@ class CRDGeneration {
                     .map(d -> Paths.get("").toAbsolutePath().resolve(d))
                     .orElse(outputTarget.getOutputDirectory().resolve(KUBERNETES));
             final var outputDir = targetDirectory.toFile();
-            if (!outputDir.exists()) {
-                if (!outputDir.mkdirs()) {
-                    throw new IllegalArgumentException("Couldn't create " + outputDir.getAbsolutePath());
-                }
-            }
+            FileUtils.ensureDirectoryExists(outputDir);
 
             // generate CRDs with detailed information
             final var info = generator.forCRDVersions(crdConfiguration.versions).inOutputDir(outputDir).detailedGenerate();

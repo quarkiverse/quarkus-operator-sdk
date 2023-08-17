@@ -1,0 +1,45 @@
+package io.quarkiverse.operatorsdk.test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+
+import java.io.File;
+import java.nio.file.Path;
+import java.util.Objects;
+
+import org.hamcrest.io.FileMatchers;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+
+import io.quarkiverse.operatorsdk.test.sources.SimpleCR;
+import io.quarkiverse.operatorsdk.test.sources.SimpleReconciler;
+import io.quarkiverse.operatorsdk.test.sources.SimpleSpec;
+import io.quarkiverse.operatorsdk.test.sources.SimpleStatus;
+import io.quarkus.test.ProdBuildResults;
+import io.quarkus.test.ProdModeTestResults;
+import io.quarkus.test.QuarkusProdModeTest;
+
+class HelmChartGeneratorTest {
+
+    @RegisterExtension
+    static final QuarkusProdModeTest config = new QuarkusProdModeTest()
+            .setApplicationName("helm-chart-test")
+            .overrideConfigKey("quarkus.operator-sdk.helm.enabled", "true")
+            .withApplicationRoot(
+                    (jar) -> jar.addClasses(SimpleReconciler.class, SimpleCR.class, SimpleSpec.class, SimpleStatus.class));
+
+    @ProdBuildResults
+    private ProdModeTestResults prodModeTestResults;
+
+    @Test
+    void generatesHelmChart() {
+        Path buildDir = prodModeTestResults.getBuildDir();
+        var helmDir = new File(buildDir.toFile(), "helm");
+
+        assertThat(new File(helmDir, "Chart.yaml"), FileMatchers.anExistingFile());
+        assertThat(new File(helmDir, "values.yaml"), FileMatchers.anExistingFile());
+        assertThat(Objects.requireNonNull(new File(helmDir, "templates").listFiles()).length,
+                greaterThanOrEqualTo(7));
+    }
+
+}
