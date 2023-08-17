@@ -19,13 +19,14 @@ import io.quarkus.deployment.builditem.LaunchModeBuildItem;
 import io.quarkus.deployment.builditem.LiveReloadBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 
-public class CRDGenerationBuildStep {
+class CRDGenerationBuildStep {
     static final Logger log = Logger.getLogger(CRDGenerationBuildStep.class.getName());
+
+    private BuildTimeOperatorConfiguration buildTimeConfiguration;
 
     @BuildStep
     GeneratedCRDInfoBuildItem generateCRDs(
             ReconcilerInfosBuildItem reconcilers,
-            BuildTimeOperatorConfiguration buildTimeConfiguration,
             LaunchModeBuildItem launchModeBuildItem,
             LiveReloadBuildItem liveReload,
             OutputTargetBuildItem outputTarget,
