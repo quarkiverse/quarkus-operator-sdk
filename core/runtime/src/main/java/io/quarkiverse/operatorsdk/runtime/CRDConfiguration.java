@@ -61,4 +61,10 @@ public class CRDConfiguration {
     @ConfigItem(defaultValue = "false")
     public Boolean generateInParallel;
 
+    /**
+     * A comma-separated list of fully-qualified class names implementing custom resources to exclude from the CRD generation
+     * process.
+     */
+    @ConfigItem
+    public Optional<List<String>> excludeResources;
 }

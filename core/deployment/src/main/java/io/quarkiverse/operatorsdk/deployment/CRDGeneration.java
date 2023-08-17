@@ -149,6 +149,14 @@ class CRDGeneration {
 
     @SuppressWarnings("rawtypes")
     public void withCustomResource(Class<? extends CustomResource> crClass, String crdName, String associatedControllerName) {
+        // first check if the CR is not filtered out
+        if (crdConfiguration.excludeResources.map(excluded -> excluded.contains(crClass.getName())).orElse(false)) {
+            log.infov(
+                    "CRD generation was skipped for ''{1}'' because it was excluded from generation",
+                    crClass.getName());
+            return;
+        }
+
         try {
             // generator MUST be initialized before we start processing classes as initializing it
             // will reset the types information held by the generator
