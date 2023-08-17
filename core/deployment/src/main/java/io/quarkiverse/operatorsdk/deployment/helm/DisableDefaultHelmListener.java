@@ -7,6 +7,9 @@ import io.dekorate.WithSession;
 import io.dekorate.kubernetes.config.BaseConfigFluent;
 import io.dekorate.kubernetes.config.Configurator;
 
+/**
+ * Used to disable default helm chart generator
+ */
 public class DisableDefaultHelmListener extends Configurator<BaseConfigFluent<?>> implements WithSession {
     @Override
     public void visit(BaseConfigFluent<?> baseConfigFluent) {

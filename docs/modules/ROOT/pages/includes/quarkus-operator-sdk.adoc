@@ -290,6 +290,7 @@ endif::add-copy-button-to-env-var[]
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-sdk.helm.enabled]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.helm.enabled[quarkus.operator-sdk.helm.enabled]`
 
+
 [.description]
 --
 Can be used to disable helm chart generation.
