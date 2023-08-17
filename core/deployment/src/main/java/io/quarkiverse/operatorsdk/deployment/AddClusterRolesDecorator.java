@@ -70,7 +70,7 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
         }
     }
 
-    public static ClusterRole createClusterRole(QuarkusControllerConfiguration cri) {
+    public static ClusterRole createClusterRole(QuarkusControllerConfiguration<?> cri) {
         final var rule = new PolicyRuleBuilder();
         final var resourceClass = cri.getResourceClass();
         final var plural = HasMetadata.getPlural(resourceClass);
@@ -95,8 +95,7 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                 .endMetadata()
                 .addToRules(rule.build());
 
-        @SuppressWarnings({ "rawtypes", "unchecked" })
-        final Map<String, DependentResourceSpecMetadata> dependentsMetadata = cri.getDependentsMetadata();
+        final Map<String, DependentResourceSpecMetadata<?,?,?>> dependentsMetadata = cri.getDependentsMetadata();
         dependentsMetadata.forEach((name, spec) -> {
             final var dependentResourceClass = spec.getDependentResourceClass();
             final var associatedResourceClass = spec.getDependentType();
