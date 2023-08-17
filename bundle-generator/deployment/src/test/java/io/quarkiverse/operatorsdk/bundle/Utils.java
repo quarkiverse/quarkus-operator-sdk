@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -31,7 +30,6 @@ public class Utils {
         assertFileExistsIn(metadata.resolve("annotations.yaml"), metadata);
     }
 
-    @NotNull
     private static String getCSVFileNameFor(String operatorName) {
         return operatorName + ".clusterserviceversion.yaml";
     }
