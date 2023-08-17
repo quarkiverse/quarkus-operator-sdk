@@ -8,7 +8,8 @@ import io.dekorate.kubernetes.config.BaseConfigFluent;
 import io.dekorate.kubernetes.config.Configurator;
 
 /**
- * Used to disable default helm chart generator
+ * Used to disable default Dekorate Helm chart generator, which would get automatically triggered by depending on the Dekorate
+ * Helm annotations and the Quarkus Kubernetes extension.
  */
 public class DisableDefaultHelmListener extends Configurator<BaseConfigFluent<?>> implements WithSession {
     @Override
