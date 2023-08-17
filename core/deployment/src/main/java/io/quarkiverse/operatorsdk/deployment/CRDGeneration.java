@@ -16,10 +16,10 @@ import io.fabric8.crd.generator.CRDGenerator;
 import io.fabric8.crd.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.quarkiverse.operatorsdk.common.CustomResourceAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.common.FileUtils;
 import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
-import io.quarkiverse.operatorsdk.runtime.FileUtils;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.runtime.LaunchMode;
 

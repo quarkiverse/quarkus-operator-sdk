@@ -88,24 +88,20 @@ public class HelmChartProcessor {
 
     private void addGeneratedDeployment(File helmDir, List<GeneratedKubernetesResourceBuildItem> generatedResources,
             ControllerConfigurationsBuildItem controllerConfigurations) {
-        var kubernetesYaml = generatedResources.stream().filter(r -> "kubernetes.yml".equals(r.getName())).findAny();
-        kubernetesYaml.ifPresent(yaml -> {
-            try {
-                KubernetesSerialization serialization = new KubernetesSerialization();
-                // is there a better way than to deserialize this?
-                ArrayList<HasMetadata> resources = serialization.unmarshal(new ByteArrayInputStream(yaml.getContent()));
-                Deployment deployment = (Deployment) resources.stream().filter(r -> r instanceof Deployment).findFirst()
-                        .orElseThrow();
-                addActualNamespaceConfigPlaceholderToDeployment(deployment, controllerConfigurations);
-                var template = serialization.asYaml(deployment);
-                // a bit solution to get the exact placeholder without brackets
-                String res = template.replace("\"{watchNamespaces}\"", "{{ .Values.watchNamespaces }}");
-                Files.writeString(Paths.get(helmDir.getPath(), TEMPLATES_DIR, "deployment.yaml"),
-                        res);
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
-            }
-        });
+        final var resources = GeneratedResourcesUtils.loadFrom(generatedResources);
+        Deployment deployment = (Deployment) resources.stream()
+                .filter(r -> r instanceof Deployment).findFirst()
+                .orElseThrow();
+        addActualNamespaceConfigPlaceholderToDeployment(deployment, controllerConfigurations);
+        var template = FileUtils.asYaml(deployment);
+        // a bit solution to get the exact placeholder without brackets
+        String res = template.replace("\"{watchNamespaces}\"", "{{ .Values.watchNamespaces }}");
+        try {
+            Files.writeString(Paths.get(helmDir.getPath(), TEMPLATES_DIR, "deployment.yaml"),
+                    res);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private void addActualNamespaceConfigPlaceholderToDeployment(Deployment deployment,

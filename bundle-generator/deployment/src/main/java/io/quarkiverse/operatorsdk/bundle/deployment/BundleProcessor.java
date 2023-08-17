@@ -2,7 +2,6 @@ package io.quarkiverse.operatorsdk.bundle.deployment;
 
 import static io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator.ALL_VERBS;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -22,7 +21,6 @@ import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
 
-import io.dekorate.utils.Serialization;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
@@ -34,10 +32,7 @@ import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata.Icon;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.bundle.runtime.SharedCSVMetadata;
-import io.quarkiverse.operatorsdk.common.ClassUtils;
-import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
-import io.quarkiverse.operatorsdk.common.ReconciledAugmentedClassInfo;
-import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.common.*;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.deployment.VersionBuildItem;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
@@ -190,44 +185,37 @@ public class BundleProcessor {
             final var roles = new LinkedList<Role>();
             final var deployments = new LinkedList<Deployment>();
 
-            generatedKubernetesManifests.stream()
-                    .filter(bi -> bi.getName().equals("kubernetes.yml"))
-                    .findAny()
-                    .ifPresent(
-                            bi -> {
-                                final var resources = Serialization
-                                        .unmarshalAsList(new ByteArrayInputStream(bi.getContent()));
-                                resources.getItems().forEach(r -> {
-                                    if (r instanceof ServiceAccount) {
-                                        serviceAccounts.add((ServiceAccount) r);
-                                        return;
-                                    }
+            final var resources = GeneratedResourcesUtils.loadFrom(generatedKubernetesManifests);
+            resources.forEach(r -> {
+                if (r instanceof ServiceAccount) {
+                    serviceAccounts.add((ServiceAccount) r);
+                    return;
+                }
 
-                                    if (r instanceof ClusterRoleBinding) {
-                                        clusterRoleBindings.add((ClusterRoleBinding) r);
-                                        return;
-                                    }
+                if (r instanceof ClusterRoleBinding) {
+                    clusterRoleBindings.add((ClusterRoleBinding) r);
+                    return;
+                }
 
-                                    if (r instanceof ClusterRole) {
-                                        clusterRoles.add((ClusterRole) r);
-                                        return;
-                                    }
+                if (r instanceof ClusterRole) {
+                    clusterRoles.add((ClusterRole) r);
+                    return;
+                }
 
-                                    if (r instanceof RoleBinding) {
-                                        roleBindings.add((RoleBinding) r);
-                                        return;
-                                    }
+                if (r instanceof RoleBinding) {
+                    roleBindings.add((RoleBinding) r);
+                    return;
+                }
 
-                                    if (r instanceof Role) {
-                                        roles.add((Role) r);
-                                        return;
-                                    }
+                if (r instanceof Role) {
+                    roles.add((Role) r);
+                    return;
+                }
 
-                                    if (r instanceof Deployment) {
-                                        deployments.add((Deployment) r);
-                                    }
-                                });
-                            });
+                if (r instanceof Deployment) {
+                    deployments.add((Deployment) r);
+                }
+            });
             final var generated = BundleGenerator.prepareGeneration(bundleConfiguration, versionBuildItem.getVersion(),
                     csvMetadata.getCsvGroups(), crds, outputTarget.getOutputDirectory());
             generated.forEach(manifestBuilder -> {
