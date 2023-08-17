@@ -2,15 +2,12 @@ package io.quarkiverse.operatorsdk.deployment.helm;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -21,14 +18,13 @@ import org.jboss.logging.Logger;
 import io.dekorate.helm.model.Chart;
 import io.dekorate.utils.Serialization;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
+import io.quarkiverse.operatorsdk.common.FileUtils;
+import io.quarkiverse.operatorsdk.common.GeneratedResourcesUtils;
 import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
 import io.quarkiverse.operatorsdk.deployment.ControllerConfigurationsBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
-import io.quarkiverse.operatorsdk.runtime.FileUtils;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkus.container.spi.ContainerImageInfoBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -55,11 +51,12 @@ public class HelmChartProcessor {
     public static final String CHART_YAML_FILENAME = "Chart.yaml";
     public static final String VALUES_YAML_FILENAME = "values.yaml";
     public static final String CRD_DIR = "crds";
+    public static final String CRD_ROLE_BINDING_TEMPLATE_PATH = "/helm/crd-role-binding-template.yaml";
 
     @BuildStep
     public void handleHelmCharts(
             // to make it produce a build item, so it gets executed
-            BuildProducer<ArtifactResultBuildItem> dummy,
+            @SuppressWarnings("unused") BuildProducer<ArtifactResultBuildItem> dummy,
             List<GeneratedKubernetesResourceBuildItem> generatedResources,
             ControllerConfigurationsBuildItem controllerConfigurations,
             BuildTimeOperatorConfiguration buildTimeConfiguration,
@@ -97,7 +94,7 @@ public class HelmChartProcessor {
         // a bit solution to get the exact placeholder without brackets
         String res = template.replace("\"{watchNamespaces}\"", "{{ .Values.watchNamespaces }}");
         try {
-            Files.writeString(Paths.get(helmDir.getPath(), TEMPLATES_DIR, "deployment.yaml"),
+            Files.writeString(Path.of(helmDir.getPath(), TEMPLATES_DIR, "deployment.yaml"),
                     res);
         } catch (IOException e) {
             throw new IllegalStateException(e);
@@ -116,15 +113,20 @@ public class HelmChartProcessor {
 
     }
 
-    private void addPrimaryClusterRoleBindings(File helmDir, Collection<QuarkusControllerConfiguration> reconcilerValues) {
+    @SuppressWarnings("rawtypes")
+    private void addPrimaryClusterRoleBindings(File helmDir, Collection<QuarkusControllerConfiguration> controllerConfigs) {
         try (InputStream file = Thread.currentThread().getContextClassLoader()
-                .getResourceAsStream("/helm/crd-role-binding-template.yaml")) {
+                .getResourceAsStream(CRD_ROLE_BINDING_TEMPLATE_PATH)) {
+            if (file == null) {
+                throw new IllegalArgumentException("Template file " + CRD_ROLE_BINDING_TEMPLATE_PATH + " doesn't exist");
+            }
             String template = new String(file.readAllBytes(), StandardCharsets.UTF_8);
-            reconcilerValues.forEach(r -> {
+            controllerConfigs.forEach(config -> {
                 try {
-                    String res = Qute.fmt(template, Map.of("reconciler-name", r.getName()));
-                    Files.writeString(new File(new File(helmDir, TEMPLATES_DIR),
-                            r.getName() + "-crd-role-binding.yaml").toPath(), res);
+                    final var name = config.getName();
+                    String res = Qute.fmt(template, Map.of("reconciler-name", name));
+                    Files.writeString(Path.of(helmDir.getPath(), TEMPLATES_DIR,
+                            name + "-crd-role-binding.yaml"), res);
                 } catch (IOException e) {
                     throw new IllegalStateException(e);
                 }
@@ -141,7 +143,7 @@ public class HelmChartProcessor {
             try {
                 var clusterRole = AddClusterRolesDecorator.createClusterRole(cc);
                 var yaml = io.fabric8.kubernetes.client.utils.Serialization.asYaml(clusterRole);
-                Files.writeString(Paths.get(helmDir.getPath(), TEMPLATES_DIR, cc.getName() + "-crd-cluster-role.yaml"),
+                Files.writeString(Path.of(helmDir.getPath(), TEMPLATES_DIR, cc.getName() + "-crd-cluster-role.yaml"),
                         yaml);
             } catch (IOException e) {
                 throw new IllegalStateException(e);
@@ -158,7 +160,7 @@ public class HelmChartProcessor {
             try {
                 var generateCrdPath = Path.of(crdInfo.getFilePath());
                 // replace needed since tests might generate files multiple times
-                Files.copy(generateCrdPath, new File(crdDir, generateCrdPath.getFileName().toString()).toPath(),
+                Files.copy(generateCrdPath, Path.of(crdDir.getPath(), generateCrdPath.getFileName().toString()),
                         REPLACE_EXISTING);
             } catch (IOException e) {
                 throw new IllegalStateException(e);
