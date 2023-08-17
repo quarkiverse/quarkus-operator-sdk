@@ -66,8 +66,8 @@ public class HelmChartProcessor {
             ContainerImageInfoBuildItem containerImageInfoBuildItem) {
 
         if (buildTimeConfiguration.helm.enabled) {
-            log.infov("Generating helm chart");
-            var helmDir = outputTarget.getOutputDirectory().resolve("helm").toFile();
+            final var helmDir = outputTarget.getOutputDirectory().resolve("helm").toFile();
+            log.infov("Generating helm chart to {0}", helmDir);
             var controllerConfigs = controllerConfigurations.getControllerConfigs().values();
 
             createRelatedDirectories(helmDir);
@@ -79,7 +79,7 @@ public class HelmChartProcessor {
             addValuesYaml(helmDir, containerImageInfoBuildItem.getTag());
             addCRDs(new File(helmDir, CRD_DIR), generatedCRDInfoBuildItem);
         } else {
-            log.infov("Generating helm chart is disabled");
+            log.debug("Generating helm chart is disabled");
         }
     }
 
@@ -94,8 +94,7 @@ public class HelmChartProcessor {
         // a bit solution to get the exact placeholder without brackets
         String res = template.replace("\"{watchNamespaces}\"", "{{ .Values.watchNamespaces }}");
         try {
-            Files.writeString(Path.of(helmDir.getPath(), TEMPLATES_DIR, "deployment.yaml"),
-                    res);
+            Files.writeString(Path.of(helmDir.getPath(), TEMPLATES_DIR, "deployment.yaml"), res);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -103,7 +102,7 @@ public class HelmChartProcessor {
 
     private void addActualNamespaceConfigPlaceholderToDeployment(Deployment deployment,
             ControllerConfigurationsBuildItem controllerConfigurations) {
-        controllerConfigurations.getControllerConfigs().values().stream().forEach(c -> {
+        controllerConfigurations.getControllerConfigs().values().forEach(c -> {
             var envs = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
             envs.add(new EnvVar("QUARKUS_OPERATOR_SDK_CONTROLLERS_" + c.getName().toUpperCase() + "_NAMESPACES",
                     "{watchNamespaces}", null));
@@ -168,12 +167,11 @@ public class HelmChartProcessor {
         });
     }
 
-    private void addValuesYaml(File helmDir,
-            String tag) {
+    private void addValuesYaml(File helmDir, String tag) {
         try {
             var values = new Values();
             values.setVersion(tag);
-            var valuesYaml = Serialization.asYaml(values);
+            var valuesYaml = FileUtils.asYaml(values);
             Files.writeString(Path.of(helmDir.getPath(), VALUES_YAML_FILENAME), valuesYaml);
         } catch (IOException e) {
             throw new IllegalStateException(e);
@@ -186,7 +184,7 @@ public class HelmChartProcessor {
             chart.setName(name);
             chart.setVersion(version);
             chart.setApiVersion("v2");
-            var chartYaml = Serialization.asYaml(chart);
+            var chartYaml = FileUtils.asYaml(chart);
             Files.writeString(Path.of(helmDir.getPath(), CHART_YAML_FILENAME), chartYaml);
         } catch (IOException e) {
             throw new IllegalStateException(e);
