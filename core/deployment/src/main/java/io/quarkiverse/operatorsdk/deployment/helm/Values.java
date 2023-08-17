@@ -6,7 +6,6 @@ public class Values {
 
     private String watchNamespaces = WATCH_ALL_NAMESPACES;
     private String version;
-    private String image;
 
     public String getWatchNamespaces() {
         return watchNamespaces;
@@ -23,15 +22,6 @@ public class Values {
 
     public Values setVersion(String version) {
         this.version = version;
-        return this;
-    }
-
-    public String getImage() {
-        return image;
-    }
-
-    public Values setImage(String image) {
-        this.image = image;
         return this;
     }
 }

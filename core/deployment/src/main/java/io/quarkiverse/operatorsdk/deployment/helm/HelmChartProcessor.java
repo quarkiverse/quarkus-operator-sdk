@@ -76,8 +76,7 @@ public class HelmChartProcessor {
             addPrimaryClusterRoleBindings(helmDir, controllerConfigs);
             addGeneratedDeployment(helmDir, generatedResources, controllerConfigurations);
             addChartYaml(helmDir, appInfo.getName(), appInfo.getVersion());
-            addValuesYaml(helmDir, containerImageInfoBuildItem.getImage(),
-                    containerImageInfoBuildItem.getTag());
+            addValuesYaml(helmDir, containerImageInfoBuildItem.getTag());
             addCRDs(new File(helmDir, CRD_DIR), generatedCRDInfoBuildItem);
         } else {
             log.infov("Generating helm chart is disabled");
@@ -169,13 +168,10 @@ public class HelmChartProcessor {
     }
 
     private void addValuesYaml(File helmDir,
-            String image,
             String tag) {
         try {
             var values = new Values();
             values.setVersion(tag);
-            var imageWithoutTage = image.replace(":" + tag, "");
-            values.setImage(imageWithoutTage);
             var valuesYaml = Serialization.asYaml(values);
             Files.writeString(Path.of(helmDir.getPath(), VALUES_YAML_FILENAME), valuesYaml);
         } catch (IOException e) {
