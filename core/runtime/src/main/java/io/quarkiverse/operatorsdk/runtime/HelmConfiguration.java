@@ -9,7 +9,7 @@ public class HelmConfiguration {
     /**
      * Can be used to disable helm chart generation.
      */
-    @ConfigItem(defaultValue = "true")
+    @ConfigItem(defaultValue = "false")
     public Boolean enabled;
 
 }

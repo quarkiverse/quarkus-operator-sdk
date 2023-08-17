@@ -302,7 +302,7 @@ ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_HELM_ENABLED+++`
 endif::add-copy-button-to-env-var[]
 --|boolean 
-|`true`
+|`false`
 
 
 a| [[quarkus-operator-sdk_quarkus.operator-sdk.concurrent-reconciliation-threads]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.concurrent-reconciliation-threads[quarkus.operator-sdk.concurrent-reconciliation-threads]`

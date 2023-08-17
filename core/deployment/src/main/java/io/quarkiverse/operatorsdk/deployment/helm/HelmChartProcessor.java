@@ -56,6 +56,7 @@ public class HelmChartProcessor {
 
     @BuildStep
     public void handleHelmCharts(
+            // to make it produce a build item, so it gets executed
             BuildProducer<ArtifactResultBuildItem> dummy,
             List<GeneratedKubernetesResourceBuildItem> generatedResources,
             ControllerConfigurationsBuildItem controllerConfigurations,
