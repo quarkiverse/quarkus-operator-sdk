@@ -28,6 +28,7 @@ import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
 import io.quarkiverse.operatorsdk.deployment.ControllerConfigurationsBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
+import io.quarkiverse.operatorsdk.runtime.FileUtils;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkus.container.spi.ContainerImageInfoBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -44,6 +45,7 @@ public class HelmChartProcessor {
     private static final Logger log = Logger.getLogger(HelmChartProcessor.class);
 
     private static final String TEMPLATES_DIR = "templates";
+    private static final String HELM_TEMPLATES_STATIC_DIR = "/helm/static/";
     private static final String[] TEMPLATE_FILES = new String[] {
             "generic-crd-cluster-role.yaml",
             "generic-crd-cluster-role-binding.yaml",
@@ -194,10 +196,14 @@ public class HelmChartProcessor {
     }
 
     private void copyTemplates(File helmDir) {
+        final var destinationDir = helmDir.toPath().resolve(TEMPLATES_DIR);
         for (String template : TEMPLATE_FILES) {
-            try (InputStream file = Thread.currentThread().getContextClassLoader()
-                    .getResourceAsStream("/helm/static/" + template)) {
-                Files.copy(file, new File(new File(helmDir, TEMPLATES_DIR), template).toPath(), REPLACE_EXISTING);
+            try (InputStream is = Thread.currentThread().getContextClassLoader()
+                    .getResourceAsStream(HELM_TEMPLATES_STATIC_DIR + template)) {
+                if (is == null) {
+                    throw new IllegalArgumentException("Template file " + template + " doesn't exist");
+                }
+                Files.copy(is, destinationDir.resolve(template), REPLACE_EXISTING);
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
@@ -205,17 +211,9 @@ public class HelmChartProcessor {
     }
 
     private void createRelatedDirectories(File helmDir) {
-        createDirIfNotExists(helmDir);
-        createDirIfNotExists(new File(helmDir, TEMPLATES_DIR));
-        createDirIfNotExists(new File(helmDir, CRD_DIR));
-    }
-
-    private void createDirIfNotExists(File dir) {
-        if (!dir.exists()) {
-            if (!dir.mkdirs()) {
-                throw new IllegalArgumentException("Couldn't create " + dir.getAbsolutePath());
-            }
-        }
+        FileUtils.ensureDirectoryExists(helmDir);
+        FileUtils.ensureDirectoryExists(new File(helmDir, TEMPLATES_DIR));
+        FileUtils.ensureDirectoryExists(new File(helmDir, CRD_DIR));
     }
 
     @BuildStep
