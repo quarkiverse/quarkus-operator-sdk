@@ -217,17 +217,17 @@ class QuarkusControllerConfigurationBuildStep {
                     .orElse(null);
         }
         // remember whether or not we explicitly set the namespaces
-        final boolean wereNamespacesSet;
+        final boolean namespaceSetFromAnnotation;
         if (namespaces == null) {
             namespaces = io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
-            wereNamespacesSet = false;
+            namespaceSetFromAnnotation = false;
         } else {
-            wereNamespacesSet = true;
+            namespaceSetFromAnnotation = true;
         }
 
         // check if we're asking to generate manifests with a specific set of namespaces
         // note that this should *NOT* be considered as explicitly setting the namespaces for the purpose of runtime overriding
-        final var buildTimeNamespaces = configExtractor.generateWithWatchedNamespaces(wereNamespacesSet);
+        final var buildTimeNamespaces = configExtractor.generateWithWatchedNamespaces(namespaceSetFromAnnotation);
         if (buildTimeNamespaces != null) {
             namespaces = buildTimeNamespaces;
         }
@@ -255,7 +255,7 @@ class QuarkusControllerConfigurationBuildStep {
                 resourceClass,
                 nullableInformerListLimit,
                 namespaces,
-                wereNamespacesSet,
+                false,
                 getFinalizer(controllerAnnotation, resourceFullName),
                 getLabelSelector(controllerAnnotation),
                 primaryAsResource.hasNonVoidStatus(),
