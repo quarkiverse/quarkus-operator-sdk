@@ -3,4 +3,4 @@ kind: ExposedApp
 metadata:
   name: hello-quarkus
 spec:
-  imageRef: 'quay.io/metacosm/hello:1.0.0-SNAPSHOT'
+  imageRef: 'nginx:1.14.2'

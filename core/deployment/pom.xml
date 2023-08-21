@@ -4,7 +4,7 @@
   <parent>
     <groupId>io.quarkiverse.operatorsdk</groupId>
     <artifactId>quarkus-operator-sdk-core-parent</artifactId>
-    <version>6.2.2-SNAPSHOT</version>
+    <version>6.3.1-SNAPSHOT</version>
   </parent>
   <artifactId>quarkus-operator-sdk-deployment</artifactId>
   <name>Quarkus - Operator SDK - Core - Deployment</name>
@@ -50,6 +50,21 @@
       <groupId>org.semver4j</groupId>
       <artifactId>semver4j</artifactId>
       <version>5.1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>io.dekorate</groupId>
+      <artifactId>helm-annotations</artifactId>
+      <classifier>noapt</classifier>
+      <exclusions>
+        <exclusion>
+          <groupId>io.sundr</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun</groupId>
+          <artifactId>tools</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>io.dekorate</groupId>

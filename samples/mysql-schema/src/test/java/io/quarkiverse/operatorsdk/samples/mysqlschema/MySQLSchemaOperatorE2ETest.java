@@ -16,6 +16,8 @@ import static org.mockito.Mockito.verify;
 import jakarta.inject.Inject;
 
 import org.jboss.logging.Logger;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -39,9 +41,18 @@ class MySQLSchemaOperatorE2ETest {
     @Inject
     KubernetesClient client;
 
+    @BeforeEach
+    void startOperator() {
+        operator.start();
+    }
+
+    @AfterEach
+    void stopOperator() {
+        operator.stop();
+    }
+
     @Test
     void test() {
-        operator.start();
 
         MySQLSchema testSchema = new MySQLSchema();
         testSchema.setMetadata(new ObjectMetaBuilder()

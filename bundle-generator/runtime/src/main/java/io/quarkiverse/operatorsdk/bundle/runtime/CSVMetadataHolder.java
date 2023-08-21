@@ -117,8 +117,8 @@ public class CSVMetadataHolder {
 
     }
 
-    public CSVMetadataHolder(String name, String origin) {
-        this(name, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+    public CSVMetadataHolder(String name, String version, String origin) {
+        this(name, null, null, null, null, null, null, null, null, version, null, null, null, null, null, null, null, null,
                 origin);
     }
 

@@ -11,17 +11,13 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ContextInitializer;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE, name = "exposedapp", dependents = {
         @Dependent(type = DeploymentDependent.class),
         @Dependent(name = "service", type = ServiceDependent.class),
-        @Dependent(type = IngressDependent.class, dependsOn = "service", readyPostcondition = IngressDependent.class)
+        @Dependent(type = IngressDependent.class, readyPostcondition = IngressDependent.class)
 })
 public class ExposedAppReconciler implements Reconciler<ExposedApp>,
         ContextInitializer<ExposedApp> {
@@ -46,6 +42,7 @@ public class ExposedAppReconciler implements Reconciler<ExposedApp>,
         return context.managedDependentResourceContext().getWorkflowReconcileResult()
                 .map(wrs -> {
                     if (wrs.allDependentResourcesReady()) {
+
                         final var url = IngressDependent.getExposedURL(
                                 context.getSecondaryResource(Ingress.class).orElseThrow());
                         exposedApp.setStatus(new ExposedAppStatus(url, exposedApp.getSpec().getEndpoint()));

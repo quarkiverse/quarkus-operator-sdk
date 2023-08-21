@@ -3,7 +3,7 @@
   <parent>
     <artifactId>quarkus-operator-sdk-build-parent</artifactId>
     <groupId>io.quarkiverse.operatorsdk</groupId>
-    <version>6.2.2-SNAPSHOT</version>
+    <version>6.3.1-SNAPSHOT</version>
     <relativePath>../build-parent/pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
