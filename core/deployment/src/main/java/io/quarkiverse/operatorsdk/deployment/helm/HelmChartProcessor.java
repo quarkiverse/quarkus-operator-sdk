@@ -91,7 +91,7 @@ public class HelmChartProcessor {
                 .orElseThrow();
         addActualNamespaceConfigPlaceholderToDeployment(deployment, controllerConfigurations);
         var template = FileUtils.asYaml(deployment);
-        // a bit solution to get the exact placeholder without brackets
+        // a bit hacky solution to get the exact placeholder without brackets
         String res = template.replace("\"{watchNamespaces}\"", "{{ .Values.watchNamespaces }}");
         try {
             Files.writeString(Path.of(helmDir.getPath(), TEMPLATES_DIR, "deployment.yaml"), res);
@@ -106,10 +106,7 @@ public class HelmChartProcessor {
             var envs = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
             envs.add(new EnvVar("QUARKUS_OPERATOR_SDK_CONTROLLERS_" + c.getName().toUpperCase() + "_NAMESPACES",
                     "{watchNamespaces}", null));
-            // use this when the global variable issue is fixed
-            // envs.add(new EnvVar("QUARKUS_OPERATOR_SDK_NAMESPACES", "{watchNamespaces}", null));
         });
-
     }
 
     @SuppressWarnings("rawtypes")

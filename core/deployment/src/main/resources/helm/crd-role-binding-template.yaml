@@ -3,6 +3,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: {reconciler-name}-role-binding
+  labels:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/version: {{ .Values.version }}
+    app.kubernetes.io/managed-by: quarkus
 roleRef:
   kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
@@ -15,6 +19,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: {reconciler-name}-role-binding
+  labels:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/version: {{ .Values.version }}
+    app.kubernetes.io/managed-by: quarkus
 roleRef:
   kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
@@ -30,6 +38,10 @@ kind: RoleBinding
 metadata:
   name: {reconciler-name}-role-binding
   namespace: {{ $anamespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/version: {{ .Values.version }}
+    app.kubernetes.io/managed-by: quarkus
 roleRef:
   kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
