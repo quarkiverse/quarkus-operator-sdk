@@ -48,6 +48,10 @@ public class HelmChartProcessor {
             "service.yaml",
             "serviceaccount.yaml"
     };
+    private static final String[] ROOT_STATIC_FILES = new String[] {
+            "README.md",
+            "values.schema.json"
+    };
     public static final String CHART_YAML_FILENAME = "Chart.yaml";
     public static final String VALUES_YAML_FILENAME = "values.yaml";
     public static final String CRD_DIR = "crds";
@@ -71,16 +75,21 @@ public class HelmChartProcessor {
             var controllerConfigs = controllerConfigurations.getControllerConfigs().values();
 
             createRelatedDirectories(helmDir);
-            copyTemplates(helmDir);
+            addTemplateFiles(helmDir);
             addClusterRolesForReconcilers(helmDir, controllerConfigs);
             addPrimaryClusterRoleBindings(helmDir, controllerConfigs);
             addGeneratedDeployment(helmDir, generatedResources, controllerConfigurations);
             addChartYaml(helmDir, appInfo.getName(), appInfo.getVersion());
             addValuesYaml(helmDir, containerImageInfoBuildItem.getTag());
+            addReadmeAndSchema(helmDir);
             addCRDs(new File(helmDir, CRD_DIR), generatedCRDInfoBuildItem);
         } else {
             log.debug("Generating helm chart is disabled");
         }
+    }
+
+    private void addTemplateFiles(File helmDir) {
+        copyTemplates(helmDir.toPath().resolve(TEMPLATES_DIR), TEMPLATE_FILES);
     }
 
     private void addGeneratedDeployment(File helmDir, List<GeneratedKubernetesResourceBuildItem> generatedResources,
@@ -175,6 +184,10 @@ public class HelmChartProcessor {
         }
     }
 
+    private void addReadmeAndSchema(File helmDir) {
+        copyTemplates(helmDir.toPath(), ROOT_STATIC_FILES);
+    }
+
     private void addChartYaml(File helmDir, String name, String version) {
         try {
             Chart chart = new Chart();
@@ -188,15 +201,14 @@ public class HelmChartProcessor {
         }
     }
 
-    private void copyTemplates(File helmDir) {
-        final var destinationDir = helmDir.toPath().resolve(TEMPLATES_DIR);
-        for (String template : TEMPLATE_FILES) {
+    private void copyTemplates(Path path, String[] staticTemplateFiles) {
+        for (String template : staticTemplateFiles) {
             try (InputStream is = Thread.currentThread().getContextClassLoader()
                     .getResourceAsStream(HELM_TEMPLATES_STATIC_DIR + template)) {
                 if (is == null) {
                     throw new IllegalArgumentException("Template file " + template + " doesn't exist");
                 }
-                Files.copy(is, destinationDir.resolve(template), REPLACE_EXISTING);
+                Files.copy(is, path.resolve(template), REPLACE_EXISTING);
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
