@@ -4,10 +4,10 @@
   "type": "object",
   "properties": {
     "watchNamespaces": {
-      "type": "String"
+      "type": "string"
     },
     "version": {
-      "type": "String"
+      "type": "string"
     }
   }
 }
