@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 import org.jboss.logging.Logger;
 
 import io.dekorate.helm.model.Chart;
-import io.dekorate.utils.Serialization;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.quarkiverse.operatorsdk.common.FileUtils;
@@ -78,7 +77,7 @@ public class HelmChartProcessor {
             addTemplateFiles(helmDir);
             addClusterRolesForReconcilers(helmDir, controllerConfigs);
             addPrimaryClusterRoleBindings(helmDir, controllerConfigs);
-            addGeneratedDeployment(helmDir, generatedResources, controllerConfigurations);
+            addGeneratedDeployment(helmDir, generatedResources, controllerConfigurations, appInfo);
             addChartYaml(helmDir, appInfo.getName(), appInfo.getVersion());
             addValuesYaml(helmDir, containerImageInfoBuildItem.getTag());
             addReadmeAndSchema(helmDir);
@@ -93,15 +92,17 @@ public class HelmChartProcessor {
     }
 
     private void addGeneratedDeployment(File helmDir, List<GeneratedKubernetesResourceBuildItem> generatedResources,
-            ControllerConfigurationsBuildItem controllerConfigurations) {
+            ControllerConfigurationsBuildItem controllerConfigurations,
+            ApplicationInfoBuildItem appInfo) {
         final var resources = GeneratedResourcesUtils.loadFrom(generatedResources);
         Deployment deployment = (Deployment) resources.stream()
-                .filter(r -> r instanceof Deployment).findFirst()
+                .filter(Deployment.class::isInstance).findFirst()
                 .orElseThrow();
         addActualNamespaceConfigPlaceholderToDeployment(deployment, controllerConfigurations);
         var template = FileUtils.asYaml(deployment);
         // a bit hacky solution to get the exact placeholder without brackets
         String res = template.replace("\"{watchNamespaces}\"", "{{ .Values.watchNamespaces }}");
+        res = res.replaceAll(appInfo.getVersion(), "{{ .Values.version }}");
         try {
             Files.writeString(Path.of(helmDir.getPath(), TEMPLATES_DIR, "deployment.yaml"), res);
         } catch (IOException e) {
