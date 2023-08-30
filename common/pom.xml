@@ -10,11 +10,4 @@
 
   <name>Quarkus - Operator SDK - Common</name>
   <artifactId>quarkus-operator-sdk-common</artifactId>
-
-  <dependencies>
-    <dependency>
-      <groupId>io.smallrye.config</groupId>
-      <artifactId>smallrye-config</artifactId>
-    </dependency>
-  </dependencies>
 </project>
