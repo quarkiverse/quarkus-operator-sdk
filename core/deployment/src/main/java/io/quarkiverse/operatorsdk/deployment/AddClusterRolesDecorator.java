@@ -68,7 +68,7 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
         rule.addToResources(plural + "/finalizers");
 
         rule.addToApiGroups(HasMetadata.getGroup(resourceClass))
-                .addToVerbs(Verbs.ALL_VERBS)
+                .addToVerbs(Verbs.ALL_COMMON_VERBS)
                 .build();
 
         final var clusterRoleBuilder = new ClusterRoleBuilder()
@@ -92,12 +92,12 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                     dependentRule.addToVerbs(Verbs.UPDATE_VERBS);
                 }
                 if (Deleter.class.isAssignableFrom(dependentResourceClass)) {
-                    dependentRule.addToVerbs(Verbs.DELETE_VERB);
+                    dependentRule.addToVerbs(Verbs.DELETE);
                 }
                 if (Creator.class.isAssignableFrom(dependentResourceClass)) {
-                    dependentRule.addToVerbs(Verbs.CREATE_VERB);
-                    if (!dependentRule.getVerbs().contains(Verbs.PATCH_VERB)) {
-                        dependentRule.addToVerbs(Verbs.PATCH_VERB);
+                    dependentRule.addToVerbs(Verbs.CREATE);
+                    if (!dependentRule.getVerbs().contains(Verbs.PATCH)) {
+                        dependentRule.addToVerbs(Verbs.PATCH);
                     }
                 }
                 clusterRoleBuilder.addToRules(dependentRule.build());

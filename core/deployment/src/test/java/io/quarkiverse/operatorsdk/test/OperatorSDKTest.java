@@ -1,7 +1,7 @@
 package io.quarkiverse.operatorsdk.test;
 
-import static io.quarkiverse.operatorsdk.annotations.Verbs.ALL_VERBS;
-import static io.quarkiverse.operatorsdk.annotations.Verbs.CREATE_VERB;
+import static io.quarkiverse.operatorsdk.annotations.Verbs.ALL_COMMON_VERBS;
+import static io.quarkiverse.operatorsdk.annotations.Verbs.CREATE;
 import static io.quarkiverse.operatorsdk.annotations.Verbs.READ_VERBS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -84,7 +84,7 @@ public class OperatorSDKTest {
                                 final var plural = HasMetadata.getPlural(TestCR.class);
                                 // status is void so shouldn't be present in resources
                                 return resources.equals(List.of(plural, plural + "/finalizers"))
-                                        && rule.getVerbs().equals(Arrays.asList(ALL_VERBS));
+                                        && rule.getVerbs().equals(Arrays.asList(ALL_COMMON_VERBS));
                             }));
                     assertTrue(rules.stream()
                             .filter(rule -> rule.getResources().equals(List.of(HasMetadata.getPlural(Secret.class))))
@@ -93,12 +93,12 @@ public class OperatorSDKTest {
                             .filter(rule -> rule.getResources().equals(List.of(HasMetadata.getPlural(
                                     Service.class))))
                             .anyMatch(rule -> rule.getVerbs().containsAll(Arrays.asList(READ_VERBS))
-                                    && rule.getVerbs().contains(CREATE_VERB)));
+                                    && rule.getVerbs().contains(CREATE)));
                     assertTrue(rules.stream()
                             .filter(rule -> rule.getResources().equals(List.of(HasMetadata.getPlural(ConfigMap.class))))
                             .anyMatch(rule -> {
                                 final var verbs = rule.getVerbs();
-                                return verbs.size() == ALL_VERBS.length && verbs.containsAll(Arrays.asList(ALL_VERBS));
+                                return verbs.size() == ALL_COMMON_VERBS.length && verbs.containsAll(Arrays.asList(ALL_COMMON_VERBS));
                             }));
                 });
 
@@ -133,7 +133,7 @@ public class OperatorSDKTest {
                     final var plural = HasMetadata.getPlural(SimpleCR.class);
                     // status is void so shouldn't be present in resources
                     assertEquals(List.of(plural, plural + "/status", plural + "/finalizers"), resources);
-                    assertEquals(Arrays.asList(ALL_VERBS), rule.getVerbs());
+                    assertEquals(Arrays.asList(ALL_COMMON_VERBS), rule.getVerbs());
                 });
 
         // check that we have a role binding for TestReconciler using the operator-level specified namespace
