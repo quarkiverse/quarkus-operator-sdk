@@ -2,6 +2,7 @@ package io.quarkiverse.operatorsdk.deployment;
 
 import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.instantiate;
 import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.loadClass;
+import static io.quarkiverse.operatorsdk.common.Constants.ADDITIONAL_RBAC_RULES;
 import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATION;
 
 import java.time.Duration;
@@ -9,13 +10,12 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import org.jboss.jandex.AnnotationInstance;
-import org.jboss.jandex.AnnotationValue;
-import org.jboss.jandex.IndexView;
-import org.jboss.jandex.Type;
+import org.jboss.jandex.*;
 import org.jboss.logging.Logger;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
@@ -208,6 +208,9 @@ class QuarkusControllerConfigurationBuildStep {
                     () -> null);
         }
 
+        // check if we have additional RBAC rules to handle
+        final var additionalRBACRules = extractAdditionalRBACRules(info);
+
         // extract the namespaces
         // first check if we explicitly set the namespaces via the annotations
         Set<String> namespaces = null;
@@ -261,9 +264,8 @@ class QuarkusControllerConfigurationBuildStep {
                 primaryAsResource.hasNonVoidStatus(),
                 finalFilter,
                 maxReconciliationInterval,
-                onAddFilter, onUpdateFilter, genericFilter, retryClass, retryConfigurationClass,
-                rateLimiterClass,
-                rateLimiterConfigurationClass, dependentResources, null);
+                onAddFilter, onUpdateFilter, genericFilter, retryClass, retryConfigurationClass, rateLimiterClass,
+                rateLimiterConfigurationClass, dependentResources, null, additionalRBACRules);
 
         if (hasDependents) {
             dependentResourceInfos.forEach(dependent -> {
@@ -289,6 +291,49 @@ class QuarkusControllerConfigurationBuildStep {
                 "Processed ''{0}'' reconciler named ''{1}'' for ''{2}'' resource (version ''{3}'')",
                 reconcilerClassName, name, resourceFullName, HasMetadata.getApiVersion(resourceClass));
         return configuration;
+    }
+
+    private static List<PolicyRule> extractAdditionalRBACRules(ClassInfo info) {
+        final var additionalRuleAnnotations = ConfigurationUtils.annotationValueOrDefault(
+                info.declaredAnnotation(ADDITIONAL_RBAC_RULES),
+                "value",
+                AnnotationValue::asNestedArray,
+                () -> null);
+        List<PolicyRule> additionalRBACRules = Collections.emptyList();
+        if (additionalRuleAnnotations != null && additionalRuleAnnotations.length > 0) {
+            additionalRBACRules = new ArrayList<>(additionalRuleAnnotations.length);
+            for (AnnotationInstance ruleAnnotation : additionalRuleAnnotations) {
+                final var builder = new PolicyRuleBuilder();
+
+                builder.withApiGroups(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
+                        "apiGroups",
+                        AnnotationValue::asStringArray,
+                        () -> null));
+
+                builder.withVerbs(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
+                        "verbs",
+                        AnnotationValue::asStringArray,
+                        () -> null));
+
+                builder.withResources(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
+                        "resources",
+                        AnnotationValue::asStringArray,
+                        () -> null));
+
+                builder.withResourceNames(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
+                        "resourceNames",
+                        AnnotationValue::asStringArray,
+                        () -> null));
+
+                builder.withNonResourceURLs(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
+                        "nonResourceURLs",
+                        AnnotationValue::asStringArray,
+                        () -> null));
+
+                additionalRBACRules.add(builder.build());
+            }
+        }
+        return additionalRBACRules;
     }
 
     private static Class<?> getConfigurationAnnotationClass(SelectiveAugmentedClassInfo configurationTargetInfo,

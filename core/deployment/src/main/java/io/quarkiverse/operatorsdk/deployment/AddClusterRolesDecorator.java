@@ -104,6 +104,10 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
             }
 
         });
+
+        // add additional RBAC rules
+        clusterRoleBuilder.addAllToRules(cri.getAdditionalRBACRules());
+
         return clusterRoleBuilder.build();
     }
 

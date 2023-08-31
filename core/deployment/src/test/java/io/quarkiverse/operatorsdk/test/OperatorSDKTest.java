@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
 import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
 import io.quarkiverse.operatorsdk.deployment.AddRoleBindingsDecorator;
 import io.quarkiverse.operatorsdk.test.sources.CRUDConfigMap;
@@ -98,7 +99,8 @@ public class OperatorSDKTest {
                             .filter(rule -> rule.getResources().equals(List.of(HasMetadata.getPlural(ConfigMap.class))))
                             .anyMatch(rule -> {
                                 final var verbs = rule.getVerbs();
-                                return verbs.size() == ALL_COMMON_VERBS.length && verbs.containsAll(Arrays.asList(ALL_COMMON_VERBS));
+                                return verbs.size() == ALL_COMMON_VERBS.length
+                                        && verbs.containsAll(Arrays.asList(ALL_COMMON_VERBS));
                             }));
                 });
 
@@ -126,14 +128,30 @@ public class OperatorSDKTest {
                 .map(ClusterRole.class::cast)
                 .forEach(cr -> {
                     final var rules = cr.getRules();
-                    assertEquals(1, rules.size());
-                    final var rule = rules.get(0);
+                    assertEquals(3, rules.size());
+
+                    var rule = rules.get(0);
                     assertEquals(List.of(HasMetadata.getGroup(SimpleCR.class)), rule.getApiGroups());
                     final var resources = rule.getResources();
                     final var plural = HasMetadata.getPlural(SimpleCR.class);
                     // status is void so shouldn't be present in resources
                     assertEquals(List.of(plural, plural + "/status", plural + "/finalizers"), resources);
                     assertEquals(Arrays.asList(ALL_COMMON_VERBS), rule.getVerbs());
+
+                    // check additional rules
+                    rule = rules.get(1);
+                    assertEquals(List.of(SimpleReconciler.CERTIFICATES_K8S_IO_GROUP), rule.getApiGroups());
+                    assertEquals(List.of(RBACVerbs.UPDATE), rule.getVerbs());
+                    assertEquals(List.of(SimpleReconciler.ADDITIONAL_UPDATE_RESOURCE), rule.getResources());
+                    assertTrue(rule.getResourceNames().isEmpty());
+                    assertTrue(rule.getNonResourceURLs().isEmpty());
+
+                    rule = rules.get(2);
+                    assertEquals(List.of(SimpleReconciler.CERTIFICATES_K8S_IO_GROUP), rule.getApiGroups());
+                    assertEquals(List.of(SimpleReconciler.SIGNERS_VERB), rule.getVerbs());
+                    assertEquals(List.of(SimpleReconciler.SIGNERS_RESOURCE), rule.getResources());
+                    assertEquals(List.of(SimpleReconciler.SIGNERS_RESOURCE_NAMES), rule.getResourceNames());
+                    assertTrue(rule.getNonResourceURLs().isEmpty());
                 });
 
         // check that we have a role binding for TestReconciler using the operator-level specified namespace
