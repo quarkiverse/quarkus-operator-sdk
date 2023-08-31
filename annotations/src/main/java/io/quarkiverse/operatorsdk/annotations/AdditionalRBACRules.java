@@ -9,5 +9,5 @@ import java.lang.annotation.Target;
 @Target({ ElementType.TYPE })
 @SuppressWarnings("unused")
 public @interface AdditionalRBACRules {
-    RBACRule[] rules();
+    RBACRule[] value();
 }
