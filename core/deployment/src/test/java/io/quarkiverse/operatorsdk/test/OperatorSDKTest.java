@@ -1,8 +1,8 @@
 package io.quarkiverse.operatorsdk.test;
 
-import static io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator.ALL_VERBS;
-import static io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator.CREATE_VERB;
-import static io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator.READ_VERBS;
+import static io.quarkiverse.operatorsdk.annotations.Verbs.ALL_VERBS;
+import static io.quarkiverse.operatorsdk.annotations.Verbs.CREATE_VERB;
+import static io.quarkiverse.operatorsdk.annotations.Verbs.READ_VERBS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
