@@ -3,7 +3,7 @@ package io.quarkiverse.operatorsdk.annotations;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class Verbs {
+public class RBACVerbs {
     public static final String CREATE = "create";
     public static final String PATCH = "patch";
     public static final String UPDATE = "update";
@@ -24,6 +24,6 @@ public class Verbs {
         ALL_COMMON_VERBS = verbs.toArray(new String[0]);
     }
 
-    private Verbs() {
+    private RBACVerbs() {
     }
 }

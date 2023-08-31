@@ -1,6 +1,6 @@
 package io.quarkiverse.operatorsdk.bundle.deployment;
 
-import static io.quarkiverse.operatorsdk.annotations.Verbs.ALL_COMMON_VERBS;
+import static io.quarkiverse.operatorsdk.annotations.RBACVerbs.ALL_COMMON_VERBS;
 
 import java.io.IOException;
 import java.nio.file.Path;

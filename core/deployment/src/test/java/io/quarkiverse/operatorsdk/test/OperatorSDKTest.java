@@ -1,8 +1,8 @@
 package io.quarkiverse.operatorsdk.test;
 
-import static io.quarkiverse.operatorsdk.annotations.Verbs.ALL_COMMON_VERBS;
-import static io.quarkiverse.operatorsdk.annotations.Verbs.CREATE;
-import static io.quarkiverse.operatorsdk.annotations.Verbs.READ_VERBS;
+import static io.quarkiverse.operatorsdk.annotations.RBACVerbs.ALL_COMMON_VERBS;
+import static io.quarkiverse.operatorsdk.annotations.RBACVerbs.CREATE;
+import static io.quarkiverse.operatorsdk.annotations.RBACVerbs.READ_VERBS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

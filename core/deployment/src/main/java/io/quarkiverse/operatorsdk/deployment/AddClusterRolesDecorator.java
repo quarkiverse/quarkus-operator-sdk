@@ -12,7 +12,7 @@ import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
-import io.quarkiverse.operatorsdk.annotations.Verbs;
+import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
 import io.quarkiverse.operatorsdk.runtime.DependentResourceSpecMetadata;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 
@@ -68,7 +68,7 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
         rule.addToResources(plural + "/finalizers");
 
         rule.addToApiGroups(HasMetadata.getGroup(resourceClass))
-                .addToVerbs(Verbs.ALL_COMMON_VERBS)
+                .addToVerbs(RBACVerbs.ALL_COMMON_VERBS)
                 .build();
 
         final var clusterRoleBuilder = new ClusterRoleBuilder()
@@ -87,17 +87,17 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                 final var dependentRule = new PolicyRuleBuilder()
                         .addToApiGroups(HasMetadata.getGroup(associatedResourceClass))
                         .addToResources(HasMetadata.getPlural(associatedResourceClass))
-                        .addToVerbs(Verbs.READ_VERBS);
+                        .addToVerbs(RBACVerbs.READ_VERBS);
                 if (Updater.class.isAssignableFrom(dependentResourceClass)) {
-                    dependentRule.addToVerbs(Verbs.UPDATE_VERBS);
+                    dependentRule.addToVerbs(RBACVerbs.UPDATE_VERBS);
                 }
                 if (Deleter.class.isAssignableFrom(dependentResourceClass)) {
-                    dependentRule.addToVerbs(Verbs.DELETE);
+                    dependentRule.addToVerbs(RBACVerbs.DELETE);
                 }
                 if (Creator.class.isAssignableFrom(dependentResourceClass)) {
-                    dependentRule.addToVerbs(Verbs.CREATE);
-                    if (!dependentRule.getVerbs().contains(Verbs.PATCH)) {
-                        dependentRule.addToVerbs(Verbs.PATCH);
+                    dependentRule.addToVerbs(RBACVerbs.CREATE);
+                    if (!dependentRule.getVerbs().contains(RBACVerbs.PATCH)) {
+                        dependentRule.addToVerbs(RBACVerbs.PATCH);
                     }
                 }
                 clusterRoleBuilder.addToRules(dependentRule.build());
