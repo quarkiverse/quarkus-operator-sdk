@@ -11,6 +11,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.quarkiverse.operatorsdk.annotations.AdditionalRBACRules;
+import io.quarkiverse.operatorsdk.annotations.RBACRule;
 
 public class Constants {
     private Constants() {
@@ -26,4 +27,5 @@ public class Constants {
     public static final DotName ANNOTATION_CONFIGURABLE = DotName.createSimple(AnnotationConfigurable.class.getName());
     public static final DotName OBJECT = DotName.createSimple(Object.class.getName());
     public static final DotName ADDITIONAL_RBAC_RULES = DotName.createSimple(AdditionalRBACRules.class.getName());
+    public static final DotName RBAC_RULE = DotName.createSimple(RBACRule.class.getName());
 }

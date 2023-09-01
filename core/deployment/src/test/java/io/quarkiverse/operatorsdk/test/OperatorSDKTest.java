@@ -1,8 +1,6 @@
 package io.quarkiverse.operatorsdk.test;
 
-import static io.quarkiverse.operatorsdk.annotations.RBACVerbs.ALL_COMMON_VERBS;
-import static io.quarkiverse.operatorsdk.annotations.RBACVerbs.CREATE;
-import static io.quarkiverse.operatorsdk.annotations.RBACVerbs.READ_VERBS;
+import static io.quarkiverse.operatorsdk.annotations.RBACVerbs.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -24,6 +22,7 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
 import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
 import io.quarkiverse.operatorsdk.deployment.AddRoleBindingsDecorator;
@@ -77,7 +76,7 @@ public class OperatorSDKTest {
                 .map(ClusterRole.class::cast)
                 .forEach(cr -> {
                     final var rules = cr.getRules();
-                    assertEquals(4, rules.size());
+                    assertEquals(5, rules.size());
                     assertTrue(rules.stream()
                             .filter(rule -> rule.getApiGroups().equals(List.of(HasMetadata.getGroup(TestCR.class))))
                             .anyMatch(rule -> {
@@ -102,6 +101,10 @@ public class OperatorSDKTest {
                                 return verbs.size() == ALL_COMMON_VERBS.length
                                         && verbs.containsAll(Arrays.asList(ALL_COMMON_VERBS));
                             }));
+                    assertTrue(rules.stream()
+                            .filter(rule -> rule.getResources().equals(List.of(RBACRule.ALL)))
+                            .anyMatch(rule -> rule.getVerbs().equals(List.of(UPDATE))
+                                    && rule.getApiGroups().equals(List.of(RBACRule.ALL))));
                 });
 
         // check that we have a role binding for TestReconciler using the operator-level specified namespace

@@ -2,8 +2,7 @@ package io.quarkiverse.operatorsdk.deployment;
 
 import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.instantiate;
 import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.loadClass;
-import static io.quarkiverse.operatorsdk.common.Constants.ADDITIONAL_RBAC_RULES;
-import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATION;
+import static io.quarkiverse.operatorsdk.common.Constants.*;
 
 import java.time.Duration;
 import java.util.*;
@@ -294,6 +293,7 @@ class QuarkusControllerConfigurationBuildStep {
     }
 
     private static List<PolicyRule> extractAdditionalRBACRules(ClassInfo info) {
+        // if there are multiple annotations they should be found under an automatically generated AdditionalRBACRules
         final var additionalRuleAnnotations = ConfigurationUtils.annotationValueOrDefault(
                 info.declaredAnnotation(ADDITIONAL_RBAC_RULES),
                 "value",
@@ -303,37 +303,48 @@ class QuarkusControllerConfigurationBuildStep {
         if (additionalRuleAnnotations != null && additionalRuleAnnotations.length > 0) {
             additionalRBACRules = new ArrayList<>(additionalRuleAnnotations.length);
             for (AnnotationInstance ruleAnnotation : additionalRuleAnnotations) {
-                final var builder = new PolicyRuleBuilder();
-
-                builder.withApiGroups(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
-                        "apiGroups",
-                        AnnotationValue::asStringArray,
-                        () -> null));
-
-                builder.withVerbs(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
-                        "verbs",
-                        AnnotationValue::asStringArray,
-                        () -> null));
-
-                builder.withResources(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
-                        "resources",
-                        AnnotationValue::asStringArray,
-                        () -> null));
-
-                builder.withResourceNames(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
-                        "resourceNames",
-                        AnnotationValue::asStringArray,
-                        () -> null));
-
-                builder.withNonResourceURLs(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
-                        "nonResourceURLs",
-                        AnnotationValue::asStringArray,
-                        () -> null));
-
-                additionalRBACRules.add(builder.build());
+                additionalRBACRules.add(extractRule(ruleAnnotation));
             }
         }
+
+        // if there's only one, it will be found under RBACRule annotation
+        final var rbacRuleAnnotation = info.declaredAnnotation(RBAC_RULE);
+        if (rbacRuleAnnotation != null) {
+            additionalRBACRules = List.of(extractRule(rbacRuleAnnotation));
+        }
+
         return additionalRBACRules;
+    }
+
+    private static PolicyRule extractRule(AnnotationInstance ruleAnnotation) {
+        final var builder = new PolicyRuleBuilder();
+
+        builder.withApiGroups(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
+                "apiGroups",
+                AnnotationValue::asStringArray,
+                () -> null));
+
+        builder.withVerbs(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
+                "verbs",
+                AnnotationValue::asStringArray,
+                () -> null));
+
+        builder.withResources(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
+                "resources",
+                AnnotationValue::asStringArray,
+                () -> null));
+
+        builder.withResourceNames(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
+                "resourceNames",
+                AnnotationValue::asStringArray,
+                () -> null));
+
+        builder.withNonResourceURLs(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
+                "nonResourceURLs",
+                AnnotationValue::asStringArray,
+                () -> null));
+
+        return builder.build();
     }
 
     private static Class<?> getConfigurationAnnotationClass(SelectiveAugmentedClassInfo configurationTargetInfo,
