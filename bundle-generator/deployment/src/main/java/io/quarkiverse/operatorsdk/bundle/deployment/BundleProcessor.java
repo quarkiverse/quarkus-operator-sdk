@@ -1,6 +1,6 @@
 package io.quarkiverse.operatorsdk.bundle.deployment;
 
-import static io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator.ALL_VERBS;
+import static io.quarkiverse.operatorsdk.annotations.RBACVerbs.ALL_COMMON_VERBS;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -401,7 +401,7 @@ public class BundleProcessor {
                         ConfigurationUtils.annotationValueOrDefault(permissionsAnn[i], "resources",
                                 AnnotationValue::asStringArray, () -> null),
                         ConfigurationUtils.annotationValueOrDefault(permissionsAnn[i], "verbs",
-                                AnnotationValue::asStringArray, () -> ALL_VERBS),
+                                AnnotationValue::asStringArray, () -> ALL_COMMON_VERBS),
                         ConfigurationUtils.annotationValueOrDefault(permissionsAnn[i], "serviceAccountName",
                                 AnnotationValue::asString, () -> null));
             }

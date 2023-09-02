@@ -37,5 +37,10 @@
       <artifactId>quarkus-junit5-internal</artifactId>
       <scope>test</scope>
     </dependency>
+      <dependency>
+          <groupId>io.quarkiverse.operatorsdk</groupId>
+          <artifactId>quarkus-operator-sdk-annotations</artifactId>
+          <scope>compile</scope>
+      </dependency>
   </dependencies>
 </project>

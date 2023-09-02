@@ -6,6 +6,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
@@ -72,6 +73,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final Optional<OnAddFilter<? super R>> onAddFilter;
     private final Optional<OnUpdateFilter<? super R>> onUpdateFilter;
     private final Optional<GenericFilter<? super R>> genericFilter;
+    private final List<PolicyRule> additionalRBACRules;
     private Class<? extends Annotation> retryConfigurationClass;
     private Class<? extends Retry> retryClass;
     private Class<? extends Annotation> rateLimiterConfigurationClass;
@@ -104,8 +106,8 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             OnAddFilter<R> onAddFilter, OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter,
             Class<? extends Retry> retryClass, Class<? extends Annotation> retryConfigurationClass,
             Class<? extends RateLimiter> rateLimiterClass, Class<? extends Annotation> rateLimiterConfigurationClass,
-            Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata,
-            ManagedWorkflow<R> workflow) {
+            Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata, ManagedWorkflow<R> workflow,
+            List<PolicyRule> additionalRBACRules) {
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
         this.resourceTypeName = resourceTypeName;
@@ -113,6 +115,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.generationAware = generationAware;
         this.resourceClass = resourceClass;
         this.informerListLimit = Optional.ofNullable(nullableInformerListLimit);
+        this.additionalRBACRules = additionalRBACRules;
         this.dependentsMetadata = dependentsMetadata;
         this.workflow = workflow;
         this.retryConfiguration = ControllerConfiguration.super.getRetryConfiguration();
@@ -401,5 +404,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
                 configurable.initFrom(annotation);
             }
         }
+    }
+
+    public List<PolicyRule> getAdditionalRBACRules() {
+        return additionalRBACRules;
     }
 }

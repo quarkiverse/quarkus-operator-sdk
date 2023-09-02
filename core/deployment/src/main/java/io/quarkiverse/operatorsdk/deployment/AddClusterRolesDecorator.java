@@ -1,7 +1,5 @@
 package io.quarkiverse.operatorsdk.deployment;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
@@ -14,27 +12,11 @@ import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
+import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
 import io.quarkiverse.operatorsdk.runtime.DependentResourceSpecMetadata;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 
 public class AddClusterRolesDecorator extends ResourceProvidingDecorator<KubernetesListBuilder> {
-
-    public static final String CREATE_VERB = "create";
-    public static final String PATCH_VERB = "patch";
-    public static final String DELETE_VERB = "delete";
-
-    public static final String[] READ_VERBS = new String[] { "get", "list", "watch" };
-    public static final String[] UPDATE_VERBS = new String[] { PATCH_VERB, "update" };
-
-    public static final String[] ALL_VERBS;
-    static {
-        final var verbs = new ArrayList<String>(READ_VERBS.length + UPDATE_VERBS.length + 2);
-        verbs.addAll(Arrays.asList(READ_VERBS));
-        verbs.addAll(Arrays.asList(UPDATE_VERBS));
-        verbs.add(CREATE_VERB);
-        verbs.add(DELETE_VERB);
-        ALL_VERBS = verbs.toArray(new String[0]);
-    }
 
     static final String JOSDK_CRD_VALIDATING_CLUSTER_ROLE = "josdk-crd-validating-cluster-role";
     @SuppressWarnings("rawtypes")
@@ -86,7 +68,7 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
         rule.addToResources(plural + "/finalizers");
 
         rule.addToApiGroups(HasMetadata.getGroup(resourceClass))
-                .addToVerbs(ALL_VERBS)
+                .addToVerbs(RBACVerbs.ALL_COMMON_VERBS)
                 .build();
 
         final var clusterRoleBuilder = new ClusterRoleBuilder()
@@ -105,23 +87,27 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                 final var dependentRule = new PolicyRuleBuilder()
                         .addToApiGroups(HasMetadata.getGroup(associatedResourceClass))
                         .addToResources(HasMetadata.getPlural(associatedResourceClass))
-                        .addToVerbs(READ_VERBS);
+                        .addToVerbs(RBACVerbs.READ_VERBS);
                 if (Updater.class.isAssignableFrom(dependentResourceClass)) {
-                    dependentRule.addToVerbs(UPDATE_VERBS);
+                    dependentRule.addToVerbs(RBACVerbs.UPDATE_VERBS);
                 }
                 if (Deleter.class.isAssignableFrom(dependentResourceClass)) {
-                    dependentRule.addToVerbs(DELETE_VERB);
+                    dependentRule.addToVerbs(RBACVerbs.DELETE);
                 }
                 if (Creator.class.isAssignableFrom(dependentResourceClass)) {
-                    dependentRule.addToVerbs(CREATE_VERB);
-                    if (!dependentRule.getVerbs().contains(PATCH_VERB)) {
-                        dependentRule.addToVerbs(PATCH_VERB);
+                    dependentRule.addToVerbs(RBACVerbs.CREATE);
+                    if (!dependentRule.getVerbs().contains(RBACVerbs.PATCH)) {
+                        dependentRule.addToVerbs(RBACVerbs.PATCH);
                     }
                 }
                 clusterRoleBuilder.addToRules(dependentRule.build());
             }
 
         });
+
+        // add additional RBAC rules
+        clusterRoleBuilder.addAllToRules(cri.getAdditionalRBACRules());
+
         return clusterRoleBuilder.build();
     }
 
