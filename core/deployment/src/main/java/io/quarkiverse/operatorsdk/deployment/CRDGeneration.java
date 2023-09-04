@@ -148,9 +148,7 @@ class CRDGeneration {
     public void withCustomResource(Class<? extends CustomResource> crClass, String crdName, String associatedControllerName) {
         // first check if the CR is not filtered out
         if (crdConfiguration.excludeResources.map(excluded -> excluded.contains(crClass.getName())).orElse(false)) {
-            log.infov(
-                    "CRD generation was skipped for ''{1}'' because it was excluded from generation",
-                    crClass.getName());
+            log.infov("CRD generation was skipped for ''{0}'' because it was excluded from generation", crClass.getName());
             return;
         }
 

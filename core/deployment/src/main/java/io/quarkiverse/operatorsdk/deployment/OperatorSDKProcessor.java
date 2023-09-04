@@ -141,8 +141,7 @@ class OperatorSDKProcessor {
                         .setUnremovable()
                         .setDefaultScope(APPLICATION_SCOPED)
                         .build()))
-                .collect(
-                        Collectors.toMap(ResourceAssociatedAugmentedClassInfo::nameOrFailIfUnset, Function.identity()));
+                .collect(Collectors.toMap(ResourceAssociatedAugmentedClassInfo::nameOrFailIfUnset, Function.identity()));
         return new ReconcilerInfosBuildItem(reconcilers);
     }
 
