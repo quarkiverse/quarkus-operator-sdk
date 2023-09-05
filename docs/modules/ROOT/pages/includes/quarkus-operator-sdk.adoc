@@ -452,6 +452,23 @@ endif::add-copy-button-to-env-var[]
 |
 
 
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.unowned-primary]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.unowned-primary[quarkus.operator-sdk.controllers."controllers".unowned-primary]`
+
+
+[.description]
+--
+Indicates whether the primary resource for the associated controller is unowned, meaning that another controller is the principal controller handling resources of this type. By default, controllers are assumed to own their primary resource but there are cases where this might not be the case, for example, when extra processing of a given resource type is required even though another controller already handles reconciliations of resources of that type. Set this property to `true` if you want to indicate that the controller doesn't own its primary resource
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__UNOWNED_PRIMARY+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__UNOWNED_PRIMARY+++`
+endif::add-copy-button-to-env-var[]
+--|boolean 
+|`false`
+
+
 a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.namespaces]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.namespaces[quarkus.operator-sdk.controllers."controllers".namespaces]`
 
 

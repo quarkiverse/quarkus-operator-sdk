@@ -35,6 +35,7 @@ import io.quarkiverse.operatorsdk.bundle.runtime.SharedCSVMetadata;
 import io.quarkiverse.operatorsdk.common.*;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.deployment.VersionBuildItem;
+import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -167,6 +168,7 @@ public class BundleProcessor {
     @BuildStep(onlyIf = IsGenerationEnabled.class)
     void generateBundle(ApplicationInfoBuildItem configuration,
             BundleGenerationConfiguration bundleConfiguration,
+            BuildTimeOperatorConfiguration operatorConfiguration,
             OutputTargetBuildItem outputTarget,
             CSVMetadataBuildItem csvMetadata,
             VersionBuildItem versionBuildItem,
@@ -218,7 +220,8 @@ public class BundleProcessor {
                     deployments.add((Deployment) r);
                 }
             });
-            final var generated = BundleGenerator.prepareGeneration(bundleConfiguration, versionBuildItem.getVersion(),
+            final var generated = BundleGenerator.prepareGeneration(bundleConfiguration, operatorConfiguration,
+                    versionBuildItem.getVersion(),
                     csvMetadata.getCsvGroups(), crds, outputTarget.getOutputDirectory());
             generated.forEach(manifestBuilder -> {
                 final var fileName = manifestBuilder.getFileName();
