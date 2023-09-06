@@ -27,11 +27,10 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
+import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
 import io.quarkiverse.operatorsdk.bundle.runtime.BundleGenerationConfiguration;
-import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata;
-import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata.Icon;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
-import io.quarkiverse.operatorsdk.bundle.runtime.SharedCSVMetadata;
 import io.quarkiverse.operatorsdk.common.*;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.deployment.VersionBuildItem;
@@ -367,7 +366,7 @@ public class BundleProcessor {
                         ConfigurationUtils.annotationValueOrDefault(iconAnn[i], "fileName",
                                 AnnotationValue::asString, () -> null),
                         ConfigurationUtils.annotationValueOrDefault(iconAnn[i], "mediatype",
-                                AnnotationValue::asString, () -> Icon.DEFAULT_MEDIA_TYPE));
+                                AnnotationValue::asString, () -> CSVMetadata.Icon.DEFAULT_MEDIA_TYPE));
             }
         } else {
             icon = mh.icon;

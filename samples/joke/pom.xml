@@ -25,6 +25,10 @@
       <artifactId>quarkus-operator-sdk-bundle-generator</artifactId>
     </dependency>
     <dependency>
+      <groupId>io.quarkiverse.operatorsdk</groupId>
+      <artifactId>quarkus-operator-sdk-annotations</artifactId>
+    </dependency>
+    <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-resteasy-reactive-jackson</artifactId>
     </dependency>

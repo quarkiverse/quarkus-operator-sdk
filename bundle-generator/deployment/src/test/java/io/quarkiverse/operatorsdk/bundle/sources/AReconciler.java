@@ -4,8 +4,8 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata;
-import io.quarkiverse.operatorsdk.bundle.runtime.SharedCSVMetadata;
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
+import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
 
 @CSVMetadata(name = "shared", version = "0.0.1")
 public class AReconciler implements Reconciler<ConfigMap>, SharedCSVMetadata {

@@ -1,4 +1,4 @@
-package io.quarkiverse.operatorsdk.bundle.runtime;
+package io.quarkiverse.operatorsdk.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -8,10 +8,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE })
 @SuppressWarnings("unused")
-@Deprecated(since = "6.3.1", forRemoval = true)
-/**
- * @deprecated Use {@link io.quarkiverse.operatorsdk.annotations.CSVMetadata} instead
- */
 public @interface CSVMetadata {
     String name() default "";
 
