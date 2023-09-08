@@ -32,9 +32,10 @@ class AssertGeneratedResourcesIT {
         assertEquals(1, permissions.size());
     }
 
+    @SuppressWarnings("unchecked")
     <T extends HasMetadata> Optional<T> findFirst(KubernetesList list, Class<T> t) {
         return (Optional<T>) list.getItems().stream()
-                .filter(i -> t.isInstance(i))
+                .filter(t::isInstance)
                 .findFirst();
     }
 

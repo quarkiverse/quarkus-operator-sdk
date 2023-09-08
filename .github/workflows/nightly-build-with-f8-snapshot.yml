@@ -2,7 +2,7 @@ name: Release snapshot of next-fabric8-version branch each day at midnight
 
 on:
   schedule:
-    - cron: '0 0 * * *' # run each day at midnight
+    - cron: '0 0 * * SUN' # run each Sunday at midnight
 
 jobs:
   build-for-latest-quarkus-version:

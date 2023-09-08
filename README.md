@@ -53,7 +53,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- markdownlint-disable -->
 <table>
   <tr>
-    <td align="center"><a href="http://about.me/metacosm"><img src="https://avatars.githubusercontent.com/u/120057?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Chris Laprun</b></sub></a><br /><a href="https://github.com/quarkiverse/quarkus-operator-sdk/commits?author=metacosm" title="Code">💻</a> <a href="#maintenance-metacosm" title="Maintenance">🚧</a></td>
+    <td align="center"><a href="https://about.me/metacosm"><img src="https://avatars.githubusercontent.com/u/120057?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Chris Laprun</b></sub></a><br /><a href="https://github.com/quarkiverse/quarkus-operator-sdk/commits?author=metacosm" title="Code">💻</a> <a href="#maintenance-metacosm" title="Maintenance">🚧</a></td>
     <td align="center"><a href="https://www.inulogic.fr"><img src="https://avatars.githubusercontent.com/u/88554524?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sébastien CROCQUESEL</b></sub></a><br /><a href="https://github.com/quarkiverse/quarkus-operator-sdk/commits?author=scrocquesel" title="Code">💻</a></td>
     <td align="center"><a href="https://sgitario.github.io/about/"><img src="https://avatars.githubusercontent.com/u/6310047?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jose Carvajal</b></sub></a><br /><a href="https://github.com/quarkiverse/quarkus-operator-sdk/commits?author=Sgitario" title="Code">💻</a> <a href="#ideas-Sgitario" title="Ideas, Planning, & Feedback">🤔</a></td>
   </tr>
