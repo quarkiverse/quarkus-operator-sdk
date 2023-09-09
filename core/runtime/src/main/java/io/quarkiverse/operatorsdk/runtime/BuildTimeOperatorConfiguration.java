@@ -98,4 +98,9 @@ public class BuildTimeOperatorConfiguration {
      */
     @ConfigItem
     public HelmConfiguration helm;
+
+    public boolean isControllerOwningPrimary(String controllerName) {
+        final var controllerConfiguration = controllers.get(controllerName);
+        return controllerConfiguration == null || !controllerConfiguration.unownedPrimary;
+    }
 }

@@ -6,10 +6,7 @@ import java.util.Map;
 
 import org.jboss.logging.Logger;
 
-import io.quarkiverse.operatorsdk.common.ClassUtils;
-import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
-import io.quarkiverse.operatorsdk.common.Constants;
-import io.quarkiverse.operatorsdk.common.CustomResourceAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.common.*;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
@@ -22,7 +19,7 @@ import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 class CRDGenerationBuildStep {
     static final Logger log = Logger.getLogger(CRDGenerationBuildStep.class.getName());
 
-    private BuildTimeOperatorConfiguration buildTimeConfiguration;
+    private BuildTimeOperatorConfiguration operatorConfiguration;
 
     @BuildStep
     GeneratedCRDInfoBuildItem generateCRDs(
@@ -31,7 +28,7 @@ class CRDGenerationBuildStep {
             LiveReloadBuildItem liveReload,
             OutputTargetBuildItem outputTarget,
             CombinedIndexBuildItem combinedIndexBuildItem) {
-        final var crdConfig = buildTimeConfiguration.crd;
+        final var crdConfig = operatorConfiguration.crd;
         final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(crdConfig.validate);
 
         //apply should imply generate: we cannot apply if we're not generating!
@@ -51,20 +48,27 @@ class CRDGenerationBuildStep {
 
         if (generate) {
             reconcilers.getReconcilers().values().forEach(raci -> {
-                // add associated primary resource for CRD generation if needed
-                if (raci.associatedResourceInfo().isCR()) {
-                    final var crInfo = raci.associatedResourceInfo().asResourceTargeting();
-                    // When we have a live reload, check if we need to regenerate the associated CRD
-                    Map<String, CRDInfo> crdInfos = Collections.emptyMap();
-
+                // add associated primary resource for CRD generation if it's a CR and it's owned by the reconciler
+                final ReconciledAugmentedClassInfo<?> associatedResource = raci.associatedResourceInfo();
+                if (associatedResource.isCR()) {
+                    final var crInfo = associatedResource.asResourceTargeting();
                     final String targetCRName = crInfo.fullResourceName();
-                    if (liveReload.isLiveReload()) {
-                        crdInfos = storedCRDInfos.getCRDInfosFor(targetCRName);
-                    }
 
-                    if (crdGeneration.scheduleForGenerationIfNeeded((CustomResourceAugmentedClassInfo) crInfo, crdInfos,
-                            changedClasses)) {
+                    // if the primary resource is unowned, mark it as "scheduled" (i.e. already handled) so that it doesn't get considered if all CRDs generation is requested
+                    if (!operatorConfiguration.isControllerOwningPrimary(raci.nameOrFailIfUnset())) {
                         scheduledForGeneration.add(targetCRName);
+                    } else {
+                        // When we have a live reload, check if we need to regenerate the associated CRD
+                        Map<String, CRDInfo> crdInfos = Collections.emptyMap();
+                        if (liveReload.isLiveReload()) {
+                            crdInfos = storedCRDInfos.getCRDInfosFor(targetCRName);
+                        }
+
+                        // schedule the generation of associated primary resource CRD if required
+                        if (crdGeneration.scheduleForGenerationIfNeeded((CustomResourceAugmentedClassInfo) crInfo, crdInfos,
+                                changedClasses)) {
+                            scheduledForGeneration.add(targetCRName);
+                        }
                     }
                 }
             });

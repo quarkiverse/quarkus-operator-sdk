@@ -41,4 +41,14 @@ public class BuildTimeControllerConfiguration {
      */
     @ConfigItem
     public Optional<List<String>> generateWithWatchedNamespaces;
+
+    /**
+     * Indicates whether the primary resource for the associated controller is unowned, meaning that another controller is the
+     * principal controller handling resources of this type. By default, controllers are assumed to own their primary resource
+     * but there are cases where this might not be the case, for example, when extra processing of a given resource type is
+     * required even though another controller already handles reconciliations of resources of that type. Set this property to
+     * {@code true} if you want to indicate that the controller doesn't own its primary resource
+     */
+    @ConfigItem(defaultValue = "false")
+    public boolean unownedPrimary;
 }

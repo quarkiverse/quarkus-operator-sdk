@@ -24,6 +24,7 @@ import io.quarkiverse.operatorsdk.common.ReconciledAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ReconciledResourceAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ResourceAssociatedAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 
 public class CsvManifestsBuilder extends ManifestsBuilder {
 
@@ -42,7 +43,8 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     private final Set<CRDDescription> requiredCRs = new HashSet<>();
     private final Path kubernetesResources;
 
-    public CsvManifestsBuilder(CSVMetadataHolder metadata, List<ReconcilerAugmentedClassInfo> controllers,
+    public CsvManifestsBuilder(CSVMetadataHolder metadata, BuildTimeOperatorConfiguration operatorConfiguration,
+            List<ReconcilerAugmentedClassInfo> controllers,
             Path mainSourcesRoot) {
         super(metadata);
         this.kubernetesResources = mainSourcesRoot != null ? mainSourcesRoot.resolve("kubernetes") : null;
@@ -142,11 +144,23 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         // add owned and required CRD, also collect them
         final var nativeApis = new ArrayList<GroupVersionKind>();
         controllers.forEach(raci -> {
-            // add owned CRD
+            // deal with primary resource
             final var resourceInfo = raci.associatedResourceInfo();
             if (resourceInfo.isCR()) {
                 final var asResource = resourceInfo.asResourceTargeting();
-                ownedCRs.add(createCRDDescription(asResource));
+                // if the primary is not a CR, mark it as native API
+                if (asResource.isCR()) {
+                    // check if the primary resource is unowned, in which case, make it required, otherwise, it's owned
+                    final var crdDescription = createCRDDescription(asResource);
+                    if (operatorConfiguration.isControllerOwningPrimary(raci.nameOrFailIfUnset())) {
+                        ownedCRs.add(crdDescription);
+                    } else {
+                        requiredCRs.add(crdDescription);
+                    }
+                } else {
+                    nativeApis.add(new GroupVersionKind(asResource.group(), asResource.kind(),
+                            asResource.version()));
+                }
             }
 
             // add required CRD for each dependent that targets a CR
