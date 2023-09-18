@@ -16,13 +16,15 @@ public class QuarkusKubernetesDependentResourceConfig<R extends HasMetadata> ext
     @RecordableConstructor
     public QuarkusKubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector,
             boolean configuredNS,
+            boolean createResourceOnlyIfNotExistingWithSSA,
             ResourceDiscriminator<R, ?> resourceDiscriminator,
+            Boolean useSSA,
             OnAddFilter<R> onAddFilter,
             OnUpdateFilter<R> onUpdateFilter,
             OnDeleteFilter<R> onDeleteFilter,
             GenericFilter<R> genericFilter) {
-        super(namespaces, labelSelector, configuredNS, resourceDiscriminator, onAddFilter, onUpdateFilter, onDeleteFilter,
-                genericFilter);
+        super(namespaces, labelSelector, configuredNS, createResourceOnlyIfNotExistingWithSSA, resourceDiscriminator,
+                useSSA, onAddFilter, onUpdateFilter, onDeleteFilter, genericFilter);
     }
 
     // Needed for the recordable constructor
@@ -68,5 +70,17 @@ public class QuarkusKubernetesDependentResourceConfig<R extends HasMetadata> ext
     @SuppressWarnings("unused")
     public boolean getConfiguredNS() {
         return wereNamespacesConfigured();
+    }
+
+    // Needed for the recordable constructor
+    @SuppressWarnings("unused")
+    public boolean isCreateResourceOnlyIfNotExistingWithSSA() {
+        return createResourceOnlyIfNotExistingWithSSA();
+    }
+
+    // Needed for the recordable constructor
+    @SuppressWarnings("unused")
+    public Boolean isUseSSA() {
+        return useSSA().orElse(null);
     }
 }

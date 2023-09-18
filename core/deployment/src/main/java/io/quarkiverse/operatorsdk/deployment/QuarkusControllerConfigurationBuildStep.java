@@ -65,7 +65,9 @@ class QuarkusControllerConfigurationBuildStep {
             return new QuarkusKubernetesDependentResourceConfig(original.namespaces(),
                     original.labelSelector(),
                     original.wereNamespacesConfigured(),
-                    original.getResourceDiscriminator(), original.onAddFilter(),
+                    original.createResourceOnlyIfNotExistingWithSSA(), original.getResourceDiscriminator(),
+                    (Boolean) original.useSSA().orElse(null),
+                    original.onAddFilter(),
                     original.onUpdateFilter(), original.onDeleteFilter(), original.genericFilter());
         }
     };
