@@ -282,14 +282,13 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         return YAML_MAPPER.writeValueAsBytes(csv);
     }
 
-    private void handleDeployments(List<Deployment> deployments,
-            NamedInstallStrategyFluent.SpecNested<ClusterServiceVersionSpecFluent.InstallNested<ClusterServiceVersionFluent.SpecNested<ClusterServiceVersionBuilder>>> installSpec) {
+    private void handleDeployments(List<Deployment> deployments, NamedInstallStrategyFluent.SpecNested<?> installSpec) {
         deployments.forEach(deployment -> handleDeployment(deployment, installSpec));
     }
 
     private void handlePermissions(List<ClusterRole> clusterRoles, List<RoleBinding> roleBindings, List<Role> roles,
             String defaultServiceAccountName,
-            NamedInstallStrategyFluent.SpecNested<ClusterServiceVersionSpecFluent.InstallNested<ClusterServiceVersionFluent.SpecNested<ClusterServiceVersionBuilder>>> installSpec) {
+            NamedInstallStrategyFluent.SpecNested<?> installSpec) {
         Map<String, List<PolicyRule>> customPermissionRules = new HashMap<>();
         if (metadata.permissionRules != null) {
             for (CSVMetadataHolder.PermissionRule permissionRule : metadata.permissionRules) {
@@ -322,7 +321,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     private void handleClusterPermissions(List<ClusterRoleBinding> clusterRoleBindings, List<ClusterRole> clusterRoles,
             List<Role> roles,
             String defaultServiceAccountName,
-            NamedInstallStrategyFluent.SpecNested<ClusterServiceVersionSpecFluent.InstallNested<ClusterServiceVersionFluent.SpecNested<ClusterServiceVersionBuilder>>> installSpec) {
+            NamedInstallStrategyFluent.SpecNested<?> installSpec) {
         for (ClusterRoleBinding binding : clusterRoleBindings) {
             String serviceAccountName = findServiceAccountFromSubjects(binding.getSubjects(), defaultServiceAccountName);
             if (NO_SERVICE_ACCOUNT.equals(serviceAccountName)) {
@@ -335,8 +334,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         }
     }
 
-    private void handleDeployment(Deployment deployment,
-            NamedInstallStrategyFluent.SpecNested<ClusterServiceVersionSpecFluent.InstallNested<ClusterServiceVersionFluent.SpecNested<ClusterServiceVersionBuilder>>> installSpec) {
+    private void handleDeployment(Deployment deployment, NamedInstallStrategyFluent.SpecNested<?> installSpec) {
         if (deployment != null) {
             installSpec.addNewDeployment()
                     .withName(deployment.getMetadata().getName())
@@ -345,9 +343,8 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         }
     }
 
-    private void handlerPermission(List<PolicyRule> rules,
-            String serviceAccountName,
-            NamedInstallStrategyFluent.SpecNested<ClusterServiceVersionSpecFluent.InstallNested<ClusterServiceVersionFluent.SpecNested<ClusterServiceVersionBuilder>>> installSpec) {
+    private void handlerPermission(List<PolicyRule> rules, String serviceAccountName,
+            NamedInstallStrategyFluent.SpecNested<?> installSpec) {
         if (!rules.isEmpty()) {
             Predicate<StrategyDeploymentPermissionsBuilder> sameServiceAccountName = p -> serviceAccountName
                     .equals(p.getServiceAccountName());
@@ -366,7 +363,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
 
     private void handleClusterPermission(List<PolicyRule> rules,
             String serviceAccountName,
-            NamedInstallStrategyFluent.SpecNested<ClusterServiceVersionSpecFluent.InstallNested<ClusterServiceVersionFluent.SpecNested<ClusterServiceVersionBuilder>>> installSpec) {
+            NamedInstallStrategyFluent.SpecNested<?> installSpec) {
 
         Predicate<StrategyDeploymentPermissionsBuilder> sameServiceAccountName = p -> serviceAccountName
                 .equals(p.getServiceAccountName());
