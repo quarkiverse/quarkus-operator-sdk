@@ -9,6 +9,7 @@ import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 public class FirstReconciler implements Reconciler<First> {
 
     public static final String VERSION = "first-version";
+    public static final String REPLACES = "first-replaces";
 
     @Override
     public UpdateControl<First> reconcile(First request, Context<First> context) {
