@@ -60,15 +60,28 @@ public class MultipleOperatorsBundleTest {
         assertEquals(External.DESCRIPTION, externalCRD.getDescription());
         assertEquals(HasMetadata.getFullResourceName(SecondExternal.class), crds.getRequired().get(1).getName());
         // should list native APIs as well
-        final var podGVK = csv.getSpec().getNativeAPIs().get(0);
+        final var spec = csv.getSpec();
+        final var podGVK = spec.getNativeAPIs().get(0);
         assertEquals(HasMetadata.getGroup(Pod.class), podGVK.getGroup());
         assertEquals(HasMetadata.getKind(Pod.class), podGVK.getKind());
         assertEquals(HasMetadata.getVersion(Pod.class), podGVK.getVersion());
-        assertEquals("1.0.0", csv.getSpec().getReplaces());
-        assertEquals(">=1.0.0 <1.0.3", csv.getMetadata().getAnnotations().get("olm.skipRange"));
-        assertEquals("Test", csv.getMetadata().getAnnotations().get("capabilities"));
-        assertEquals("bar", csv.getMetadata().getAnnotations().get("foo"));
+        assertEquals("1.0.0", spec.getReplaces());
+        final var metadata = csv.getMetadata();
+        assertEquals(">=1.0.0 <1.0.3", metadata.getAnnotations().get("olm.skipRange"));
+        assertEquals("Test", metadata.getAnnotations().get("capabilities"));
+        assertEquals("bar", metadata.getAnnotations().get("foo"));
         // version should be the default application's version since it's not provided for this reconciler
-        assertEquals(VERSION, csv.getSpec().getVersion());
+        assertEquals(VERSION, spec.getVersion());
+
+        // check that the env variable to set the reconciler namespaces is properly set
+        /*
+         * disabled because of https://github.com/quarkusio/quarkus/issues/36041
+         * final var firstContainer = spec.getInstall().getSpec().getDeployments().get(0).getSpec().getTemplate().getSpec()
+         * .getContainers().get(0);
+         * assertTrue(firstContainer.getEnv().stream()
+         * .anyMatch(envVar -> envVar.getName()
+         * .equals(ConfigurationUtils.getNamespacesPropertyName(ThirdReconciler.NAME, true))));
+         *
+         */
     }
 }

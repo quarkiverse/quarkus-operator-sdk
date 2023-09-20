@@ -49,7 +49,7 @@ public class BundleGenerator {
     public static List<ManifestsBuilder> prepareGeneration(BundleGenerationConfiguration bundleConfiguration,
             BuildTimeOperatorConfiguration operatorConfiguration, Version version,
             Map<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>> csvGroups, Map<String, CRDInfo> crds,
-            Path outputDirectory) {
+            Path outputDirectory, String deploymentName) {
         List<ManifestsBuilder> builders = new ArrayList<>();
         for (Map.Entry<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>> entry : csvGroups.entrySet()) {
             final var csvMetadata = entry.getKey();
@@ -57,7 +57,7 @@ public class BundleGenerator {
 
             final var mainSourcesRoot = PathsUtil.findMainSourcesRoot(outputDirectory);
             final var csvBuilder = new CsvManifestsBuilder(csvMetadata, operatorConfiguration, entry.getValue(),
-                    mainSourcesRoot != null ? mainSourcesRoot.getKey() : null);
+                    mainSourcesRoot != null ? mainSourcesRoot.getKey() : null, deploymentName);
             builders.add(csvBuilder);
             builders.add(new AnnotationsManifestsBuilder(csvMetadata, labels));
             builders.add(new BundleDockerfileManifestsBuilder(csvMetadata, labels));

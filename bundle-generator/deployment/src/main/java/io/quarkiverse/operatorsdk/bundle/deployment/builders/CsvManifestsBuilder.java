@@ -16,14 +16,12 @@ import org.jboss.logging.Logger;
 import io.fabric8.kubernetes.api.model.GroupVersionKind;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DeploymentSpecBuilder;
 import io.fabric8.kubernetes.api.model.rbac.*;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.*;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder.RequiredCRD;
-import io.quarkiverse.operatorsdk.common.ReconciledAugmentedClassInfo;
-import io.quarkiverse.operatorsdk.common.ReconciledResourceAugmentedClassInfo;
-import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
-import io.quarkiverse.operatorsdk.common.ResourceAssociatedAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.common.*;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 
 public class CsvManifestsBuilder extends ManifestsBuilder {
@@ -38,15 +36,20 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     private static final String NO_SERVICE_ACCOUNT = "";
     private static final Logger LOGGER = Logger.getLogger(CsvManifestsBuilder.class.getName());
     private static final String IMAGE_PNG = "image/png";
+    public static final String OLM_TARGET_NAMESPACES = "metadata.annotations['olm.targetNamespaces']";
     private ClusterServiceVersionBuilder csvBuilder;
     private final Set<CRDDescription> ownedCRs = new HashSet<>();
     private final Set<CRDDescription> requiredCRs = new HashSet<>();
     private final Path kubernetesResources;
+    private final String deploymentName;
+    private final List<ReconcilerAugmentedClassInfo> controllers;
 
     public CsvManifestsBuilder(CSVMetadataHolder metadata, BuildTimeOperatorConfiguration operatorConfiguration,
             List<ReconcilerAugmentedClassInfo> controllers,
-            Path mainSourcesRoot) {
+            Path mainSourcesRoot, String deploymentName) {
         super(metadata);
+        this.deploymentName = deploymentName;
+        this.controllers = controllers;
         this.kubernetesResources = mainSourcesRoot != null ? mainSourcesRoot.resolve("kubernetes") : null;
 
         csvBuilder = new ClusterServiceVersionBuilder();
@@ -58,8 +61,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             metadataBuilder.addToAnnotations("repository", metadata.annotations.repository);
             metadataBuilder.addToAnnotations("capabilities", metadata.annotations.capabilities);
             metadataBuilder.addToAnnotations("categories", metadata.annotations.categories);
-            metadataBuilder.addToAnnotations("certified",
-                    String.valueOf(metadata.annotations.certified));
+            metadataBuilder.addToAnnotations("certified", String.valueOf(metadata.annotations.certified));
             metadataBuilder.addToAnnotations("alm-examples", metadata.annotations.almExamples);
             if (metadata.annotations.others != null) {
                 metadata.annotations.others.forEach(metadataBuilder::addToAnnotations);
@@ -336,9 +338,38 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
 
     private void handleDeployment(Deployment deployment, NamedInstallStrategyFluent.SpecNested<?> installSpec) {
         if (deployment != null) {
+            final var deploymentName = deployment.getMetadata().getName();
+            var deploymentSpec = deployment.getSpec();
+
+            // if we're dealing with the operator's deployment, modify it to add the namespaces env variables
+            if (deploymentName.equals(this.deploymentName)) {
+                final var containerBuilder = new DeploymentSpecBuilder(deploymentSpec)
+                        .editTemplate()
+                        .editSpec()
+                        .editFirstContainer();
+                controllers.stream()
+                        .map(ResourceAssociatedAugmentedClassInfo::nameOrFailIfUnset)
+                        .forEach(reconcilerName -> {
+                            final var envVarName = ConfigurationUtils.getNamespacesPropertyName(reconcilerName, true);
+                            containerBuilder
+                                    .addNewEnv()
+                                    .withName(envVarName)
+                                    .withNewValueFrom()
+                                    .withNewFieldRef()
+                                    .withFieldPath(OLM_TARGET_NAMESPACES)
+                                    .endFieldRef()
+                                    .endValueFrom()
+                                    .endEnv();
+                        });
+                deploymentSpec = containerBuilder
+                        .endContainer()
+                        .endSpec()
+                        .endTemplate()
+                        .build();
+            }
             installSpec.addNewDeployment()
-                    .withName(deployment.getMetadata().getName())
-                    .withSpec(deployment.getSpec())
+                    .withName(deploymentName)
+                    .withSpec(deploymentSpec)
                     .endDeployment();
         }
     }
