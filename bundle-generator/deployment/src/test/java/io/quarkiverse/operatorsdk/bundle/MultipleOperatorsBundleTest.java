@@ -18,6 +18,8 @@ import io.quarkus.test.QuarkusProdModeTest;
 public class MultipleOperatorsBundleTest {
 
     private static final String VERSION = "test-version";
+    public static final String BUNDLE_PACKAGE = "olm-package";
+
     @RegisterExtension
     static final QuarkusProdModeTest config = new QuarkusProdModeTest()
             .setApplicationVersion(VERSION)
@@ -26,7 +28,8 @@ public class MultipleOperatorsBundleTest {
                             Second.class, SecondReconciler.class,
                             Third.class, External.class, SecondExternal.class, ThirdReconciler.class,
                             ExternalDependentResource.class, PodDependentResource.class))
-            .overrideConfigKey("quarkus.operator-sdk.crd.generate-all", "true");
+            .overrideConfigKey("quarkus.operator-sdk.crd.generate-all", "true")
+            .overrideConfigKey("quarkus.operator-sdk.bundle.package-name", BUNDLE_PACKAGE);
 
     @SuppressWarnings("unused")
     @ProdBuildResults
@@ -38,6 +41,7 @@ public class MultipleOperatorsBundleTest {
         checkBundleFor(bundle, "first-operator", First.class);
         // check that version is properly overridden
         var csv = getCSVFor(bundle, "first-operator");
+        var bundleMeta = getAnnotationFor(bundle, "first-operator");
         assertEquals(FirstReconciler.VERSION, csv.getSpec().getVersion());
 
         checkBundleFor(bundle, "second-operator", Second.class);
@@ -70,5 +74,6 @@ public class MultipleOperatorsBundleTest {
         assertEquals("bar", csv.getMetadata().getAnnotations().get("foo"));
         // version should be the default application's version since it's not provided for this reconciler
         assertEquals(VERSION, csv.getSpec().getVersion());
+        assertEquals(BUNDLE_PACKAGE, bundleMeta.getAnnotations().get("operators.operatorframework.io.bundle.package.v1"));
     }
 }
