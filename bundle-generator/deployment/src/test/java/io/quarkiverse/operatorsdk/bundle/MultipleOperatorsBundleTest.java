@@ -29,6 +29,7 @@ public class MultipleOperatorsBundleTest {
                             Third.class, External.class, SecondExternal.class, ThirdReconciler.class,
                             ExternalDependentResource.class, PodDependentResource.class))
             .overrideConfigKey("quarkus.operator-sdk.crd.generate-all", "true")
+            .overrideConfigKey("quarkus.operator-sdk.bundle.replaces", FirstReconciler.REPLACES)
             .overrideConfigKey("quarkus.operator-sdk.bundle.package-name", BUNDLE_PACKAGE);
 
     @SuppressWarnings("unused")
@@ -42,6 +43,7 @@ public class MultipleOperatorsBundleTest {
         // check that version is properly overridden
         var csv = getCSVFor(bundle, "first-operator");
         assertEquals(FirstReconciler.VERSION, csv.getSpec().getVersion());
+        assertEquals(FirstReconciler.REPLACES, csv.getSpec().getReplaces());
         var bundleMeta = getAnnotationFor(bundle, "first-operator");
         assertEquals(BUNDLE_PACKAGE, bundleMeta.getAnnotations().get("operators.operatorframework.io.bundle.package.v1"));
 

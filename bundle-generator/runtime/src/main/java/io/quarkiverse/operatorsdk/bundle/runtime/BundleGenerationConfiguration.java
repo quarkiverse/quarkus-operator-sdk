@@ -32,4 +32,17 @@ public class BundleGenerationConfiguration {
     @ConfigItem
     public Optional<String> packageName;
 
+    /**
+     * The replaces value that should be used in the generated CSV.
+     */
+    @ConfigItem
+    public Optional<String> replaces;
+
+    /**
+     * The version value that should be used in the generated CSV instead of the automatically detected one extracted from the
+     * project information.
+     */
+    @ConfigItem
+    public Optional<String> version;
+
 }

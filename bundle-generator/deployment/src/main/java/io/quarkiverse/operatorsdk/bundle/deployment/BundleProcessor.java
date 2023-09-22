@@ -72,9 +72,16 @@ public class BundleProcessor {
             CombinedIndexBuildItem combinedIndexBuildItem) {
         final var index = combinedIndexBuildItem.getIndex();
         final var defaultName = bundleConfiguration.packageName.orElse(configuration.getName());
+
+        // note that version, replaces, etc. should probably be settable at the reconciler level
+        // use version specified in bundle configuration, if not use the one extracted from the project, if available
         final var version = configuration.getVersion();
-        final var defaultVersion = ApplicationInfoBuildItem.UNSET_VALUE.equals(version) ? null : version;
-        final var sharedMetadataHolders = getSharedMetadataHolders(defaultName, defaultVersion, index);
+        final var defaultVersion = bundleConfiguration.version
+                .orElse(ApplicationInfoBuildItem.UNSET_VALUE.equals(version) ? null : version);
+
+        final var defaultReplaces = bundleConfiguration.replaces.orElse(null);
+
+        final var sharedMetadataHolders = getSharedMetadataHolders(defaultName, defaultVersion, defaultReplaces, index);
         final var csvGroups = new HashMap<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>>();
 
         ClassUtils.getKnownReconcilers(index, log)
@@ -106,7 +113,7 @@ public class BundleProcessor {
                             }
                         }
                         csvMetadata = createMetadataHolder(csvMetadataAnnotation,
-                                new CSVMetadataHolder(csvMetadataName, defaultVersion, origin));
+                                new CSVMetadataHolder(csvMetadataName, defaultVersion, defaultReplaces, origin));
                     }
                     log.infov("Assigning ''{0}'' reconciler to {1}",
                             reconcilerInfo.nameOrFailIfUnset(),
@@ -249,8 +256,9 @@ public class BundleProcessor {
         }
     }
 
-    private Map<String, CSVMetadataHolder> getSharedMetadataHolders(String name, String version, IndexView index) {
-        CSVMetadataHolder csvMetadata = new CSVMetadataHolder(name, version, "default");
+    private Map<String, CSVMetadataHolder> getSharedMetadataHolders(String name, String version, String defaultReplaces,
+            IndexView index) {
+        CSVMetadataHolder csvMetadata = new CSVMetadataHolder(name, version, defaultReplaces, "default");
         final var sharedMetadataImpls = index.getAllKnownImplementors(SHARED_CSV_METADATA);
         final var result = new HashMap<String, CSVMetadataHolder>(sharedMetadataImpls.size() + 1);
         sharedMetadataImpls.forEach(sharedMetadataImpl -> {
