@@ -41,8 +41,9 @@ public class MultipleOperatorsBundleTest {
         checkBundleFor(bundle, "first-operator", First.class);
         // check that version is properly overridden
         var csv = getCSVFor(bundle, "first-operator");
-        var bundleMeta = getAnnotationFor(bundle, "first-operator");
         assertEquals(FirstReconciler.VERSION, csv.getSpec().getVersion());
+        var bundleMeta = getAnnotationFor(bundle, "first-operator");
+        assertEquals(BUNDLE_PACKAGE, bundleMeta.getAnnotations().get("operators.operatorframework.io.bundle.package.v1"));
 
         checkBundleFor(bundle, "second-operator", Second.class);
 
@@ -74,6 +75,5 @@ public class MultipleOperatorsBundleTest {
         assertEquals("bar", csv.getMetadata().getAnnotations().get("foo"));
         // version should be the default application's version since it's not provided for this reconciler
         assertEquals(VERSION, csv.getSpec().getVersion());
-        assertEquals(BUNDLE_PACKAGE, bundleMeta.getAnnotations().get("operators.operatorframework.io.bundle.package.v1"));
     }
 }
