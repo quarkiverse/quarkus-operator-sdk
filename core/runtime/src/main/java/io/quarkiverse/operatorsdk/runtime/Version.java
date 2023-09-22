@@ -11,6 +11,7 @@ import java.util.Properties;
 import org.jboss.logging.Logger;
 
 import io.javaoperatorsdk.operator.api.config.Utils;
+import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
 public class Version extends io.javaoperatorsdk.operator.api.config.Version {
@@ -46,6 +47,14 @@ public class Version extends io.javaoperatorsdk.operator.api.config.Version {
 
     public Date getExtensionBuildTime() {
         return extensionBuildTime;
+    }
+
+    @IgnoreProperty
+    public String getExtensionCompleteVersion() {
+        final var branch = Version.UNKNOWN.equals(extensionBranch)
+                ? " on branch: " + extensionBranch
+                : "";
+        return extensionVersion + " (commit: " + extensionCommit + branch + ") built on " + extensionBuildTime;
     }
 
     public String getQuarkusVersion() {

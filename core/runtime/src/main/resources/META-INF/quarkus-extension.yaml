@@ -8,3 +8,5 @@ metadata:
   categories:
   - "cloud"
   short-name: "qosdk"
+  cli-plugins:
+  - "${project.groupId}:quarkus-operator-sdk-cli:${project.version}"

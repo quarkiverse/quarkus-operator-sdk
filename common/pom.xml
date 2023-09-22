@@ -9,5 +9,11 @@
     </parent>
 
   <name>Quarkus - Operator SDK - Common</name>
-  <artifactId>quarkus-operator-sdk-common</artifactId>
+    <dependencies>
+        <dependency>
+            <groupId>io.quarkus.qute</groupId>
+            <artifactId>qute-core</artifactId>
+        </dependency>
+    </dependencies>
+    <artifactId>quarkus-operator-sdk-common</artifactId>
 </project>

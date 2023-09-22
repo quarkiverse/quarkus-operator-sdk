@@ -36,12 +36,7 @@ public class OperatorProducer {
     Operator operator(QuarkusConfigurationService configuration, Instance<Reconciler<? extends HasMetadata>> reconcilers) {
         if (configuration.getVersion() instanceof Version) {
             final var version = ((Version) configuration.getVersion());
-            final var branch = !version.getExtensionBranch().equals(Version.UNKNOWN)
-                    ? " on branch: " + version.getExtensionBranch()
-                    : "";
-            log.info("Quarkus Java Operator SDK extension {} (commit: {}{}) built on {}",
-                    version.getExtensionVersion(),
-                    version.getExtensionCommit(), branch, version.getExtensionBuildTime());
+            log.info("Quarkus Java Operator SDK extension {}", version.getExtensionCompleteVersion());
         }
 
         // if some CRDs just got generated and need to be applied, apply them
