@@ -1,14 +1,13 @@
-name: Operator SDK - Bundle Generator
-description: Bundle Generation for Java Operator SDK operators
+name: Operator SDK - OLM Bundle Generator
+description: OLM Bundle Generation for Java Operator SDK operators
 metadata:
-keywords:
-  - operator
-  - kubernetes
-  - openshift
-  - olm
-  - csv
-  - bundle
-#  guide: ...
-categories:
-  - cloud
-#  status: "preview"
+  keywords:
+    - operator
+    - kubernetes
+    - openshift
+    - olm
+    - csv
+    - bundle
+  categories:
+    - cloud
+  short-name: "olm"
