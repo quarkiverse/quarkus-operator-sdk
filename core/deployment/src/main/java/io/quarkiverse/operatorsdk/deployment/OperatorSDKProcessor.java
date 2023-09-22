@@ -22,10 +22,12 @@ import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInf
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.Constants;
 import io.quarkiverse.operatorsdk.common.ResourceAssociatedAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.deployment.devui.commands.ConsoleCommands;
 import io.quarkiverse.operatorsdk.runtime.*;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
+import io.quarkus.deployment.IsDevelopment;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
@@ -86,6 +88,12 @@ class OperatorSDKProcessor {
 
         // register health check
         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorHealthCheck.class));
+    }
+
+    @BuildStep(onlyIf = IsDevelopment.class)
+    void addConsoleCommands(VersionBuildItem versionBuildItem, BuildProducer<ConsoleCommandBuildItem> commands) {
+        // register dev console commands
+        commands.produce(new ConsoleCommandBuildItem(new ConsoleCommands(versionBuildItem.getVersion())));
     }
 
     @BuildStep

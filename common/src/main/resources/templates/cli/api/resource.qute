@@ -1,0 +1,10 @@
+package {packageName};
+
+import io.fabric8.kubernetes.api.model.Namespaced;
+import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.model.annotation.Group;
+import io.fabric8.kubernetes.model.annotation.Version;
+
+@Version("{version}")
+@Group("{group}")
+public class {kind} extends CustomResource<{kind}Spec, {kind}Status> implements Namespaced { }

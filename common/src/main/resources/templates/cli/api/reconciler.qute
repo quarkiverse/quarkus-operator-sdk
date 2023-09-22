@@ -1,0 +1,13 @@
+package {packageName};
+
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+
+public class {kind}Reconciler implements Reconciler<{kind}> {
+    @Override
+    public UpdateControl<{kind}> reconcile({kind} resource, Context<{kind}> context) {
+        return UpdateControl.noUpdate();
+    }
+}
