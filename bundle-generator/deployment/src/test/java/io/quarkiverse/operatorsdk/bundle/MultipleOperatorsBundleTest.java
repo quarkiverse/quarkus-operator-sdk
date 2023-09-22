@@ -18,6 +18,8 @@ import io.quarkus.test.QuarkusProdModeTest;
 public class MultipleOperatorsBundleTest {
 
     private static final String VERSION = "test-version";
+    public static final String BUNDLE_PACKAGE = "olm-package";
+
     @RegisterExtension
     static final QuarkusProdModeTest config = new QuarkusProdModeTest()
             .setApplicationVersion(VERSION)
@@ -26,7 +28,8 @@ public class MultipleOperatorsBundleTest {
                             Second.class, SecondReconciler.class,
                             Third.class, External.class, SecondExternal.class, ThirdReconciler.class,
                             ExternalDependentResource.class, PodDependentResource.class))
-            .overrideConfigKey("quarkus.operator-sdk.crd.generate-all", "true");
+            .overrideConfigKey("quarkus.operator-sdk.crd.generate-all", "true")
+            .overrideConfigKey("quarkus.operator-sdk.bundle.package-name", BUNDLE_PACKAGE);
 
     @SuppressWarnings("unused")
     @ProdBuildResults
@@ -39,6 +42,8 @@ public class MultipleOperatorsBundleTest {
         // check that version is properly overridden
         var csv = getCSVFor(bundle, "first-operator");
         assertEquals(FirstReconciler.VERSION, csv.getSpec().getVersion());
+        var bundleMeta = getAnnotationFor(bundle, "first-operator");
+        assertEquals(BUNDLE_PACKAGE, bundleMeta.getAnnotations().get("operators.operatorframework.io.bundle.package.v1"));
 
         checkBundleFor(bundle, "second-operator", Second.class);
 
