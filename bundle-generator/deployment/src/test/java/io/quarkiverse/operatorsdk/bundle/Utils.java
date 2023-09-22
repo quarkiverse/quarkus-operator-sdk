@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Assertions;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion;
 
@@ -38,6 +39,12 @@ public class Utils {
         final var csvPath = bundle.resolve(operatorName).resolve("manifests").resolve(getCSVFileNameFor(operatorName));
         final var csvAsString = Files.readString(csvPath);
         return Serialization.unmarshal(csvAsString, ClusterServiceVersion.class);
+    }
+
+    static ObjectMeta getAnnotationFor(Path bundle, String operatorName) throws IOException {
+        final var annotationPath = bundle.resolve(operatorName).resolve("metadata").resolve("annotations.yaml");
+        final var annotationsaAsString = Files.readString(annotationPath);
+        return Serialization.unmarshal(annotationsaAsString, ObjectMeta.class);
     }
 
     static String getCRDNameFor(Class<? extends HasMetadata> resourceClass) {
