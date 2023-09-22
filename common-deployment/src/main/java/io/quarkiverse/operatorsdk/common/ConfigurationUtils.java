@@ -17,6 +17,7 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.quarkus.bootstrap.app.ClassChangeInformation;
 import io.quarkus.deployment.builditem.LiveReloadBuildItem;
+import io.smallrye.config.common.utils.StringUtil;
 
 public class ConfigurationUtils {
 
@@ -146,5 +147,10 @@ public class ConfigurationUtils {
         return liveReload.isLiveReload() ? Optional.ofNullable(liveReload.getChangeInformation())
                 .map(ClassChangeInformation::getChangedClasses)
                 .orElse(Collections.emptySet()) : Collections.emptySet();
+    }
+
+    public static String getNamespacesPropertyName(String reconcilerName, boolean asEnvVar) {
+        final var propName = "quarkus.operator-sdk.controllers." + reconcilerName + ".namespaces";
+        return asEnvVar ? StringUtil.replaceNonAlphanumericByUnderscores(propName.toUpperCase()) : propName;
     }
 }
