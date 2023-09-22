@@ -42,6 +42,8 @@ import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.GeneratedFileSystemResourceBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
+import io.quarkus.kubernetes.deployment.KubernetesConfig;
+import io.quarkus.kubernetes.deployment.ResourceNameUtil;
 import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 
 public class BundleProcessor {
@@ -166,6 +168,7 @@ public class BundleProcessor {
     @SuppressWarnings("unused")
     @BuildStep(onlyIf = IsGenerationEnabled.class)
     void generateBundle(ApplicationInfoBuildItem configuration,
+            KubernetesConfig kubernetesConfig,
             BundleGenerationConfiguration bundleConfiguration,
             BuildTimeOperatorConfiguration operatorConfiguration,
             OutputTargetBuildItem outputTarget,
@@ -219,9 +222,11 @@ public class BundleProcessor {
                     deployments.add((Deployment) r);
                 }
             });
+
+            final var deploymentName = ResourceNameUtil.getResourceName(kubernetesConfig, configuration);
             final var generated = BundleGenerator.prepareGeneration(bundleConfiguration, operatorConfiguration,
                     versionBuildItem.getVersion(),
-                    csvMetadata.getCsvGroups(), crds, outputTarget.getOutputDirectory());
+                    csvMetadata.getCsvGroups(), crds, outputTarget.getOutputDirectory(), deploymentName);
             generated.forEach(manifestBuilder -> {
                 final var fileName = manifestBuilder.getFileName();
                 try {
