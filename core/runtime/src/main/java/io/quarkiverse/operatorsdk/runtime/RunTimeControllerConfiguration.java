@@ -1,5 +1,7 @@
 package io.quarkiverse.operatorsdk.runtime;
 
+import static io.quarkiverse.operatorsdk.runtime.Constants.QOSDK_USE_BUILDTIME_NAMESPACES;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -15,7 +17,7 @@ public class RunTimeControllerConfiguration {
      * The value can be set to "JOSDK_WATCH_CURRENT" to watch the current (default) namespace from kube config.
      * Constant(s) can be found in at {@link io.javaoperatorsdk.operator.api.reconciler.Constants}".
      */
-    @ConfigItem
+    @ConfigItem(defaultValue = QOSDK_USE_BUILDTIME_NAMESPACES)
     public Optional<List<String>> namespaces;
 
     /**

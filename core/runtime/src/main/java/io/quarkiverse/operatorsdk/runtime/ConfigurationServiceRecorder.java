@@ -4,6 +4,7 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMES
 import static io.quarkiverse.operatorsdk.runtime.Constants.QOSDK_USE_BUILDTIME_NAMESPACES_SET;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -45,8 +46,8 @@ public class ConfigurationServiceRecorder {
             if (extConfig != null) {
                 extConfig.finalizer.ifPresent(c::setFinalizer);
                 extConfig.selector.ifPresent(c::setLabelSelector);
-                extConfig.namespaces.map(HashSet::new).ifPresent(c::setNamespaces);
                 c.setRetryConfiguration(RetryConfigurationResolver.resolve(extConfig.retry));
+                setNamespacesFromRuntime(c, extConfig.namespaces);
             }
 
             // set retry to default if it hasn't been set already
@@ -58,22 +59,9 @@ public class ConfigurationServiceRecorder {
                 c.setRetryConfiguration(null);
             }
 
-            // if the namespaces weren't set as an annotation, use the operator-level configuration if it exists
+            // if the namespaces weren't set on controller level or as an annotation, use the operator-level configuration if it exists
             if (!c.isWereNamespacesSet()) {
-                // The namespaces field has a default value so that we are able to detect if the configuration value is set to "".
-                // Setting the value to "" will reset the configuration and result in an empty Optional.
-                // Not setting the value at all will result in the default being applied, which we can test for.
-                if (runTimeConfiguration.namespaces.isPresent()) {
-                    final var runtimeNamespaces = new HashSet<>(runTimeConfiguration.namespaces.get());
-                    // If it's not the default value, use it because it was set.
-                    // If it is the default value, ignore it and let any build time config be used.
-                    if (!QOSDK_USE_BUILDTIME_NAMESPACES_SET.equals(runtimeNamespaces)) {
-                        c.setNamespaces(runtimeNamespaces);
-                    }
-                } else {
-                    // Value has been explicitly reset (value was empty string), use all namespaces mode
-                    c.setNamespaces(DEFAULT_NAMESPACES_SET);
-                }
+                setNamespacesFromRuntime(c, runTimeConfiguration.namespaces);
             }
         });
 
@@ -108,6 +96,25 @@ public class ConfigurationServiceRecorder {
                     buildTimeConfiguration.stopOnInformerErrorDuringStartup,
                     buildTimeConfiguration.enableSSA);
         };
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked", "OptionalUsedAsFieldOrParameterType" })
+    private static void setNamespacesFromRuntime(QuarkusControllerConfiguration controllerConfig,
+            Optional<List<String>> runtimeNamespaces) {
+        // The namespaces field has a default value so that we are able to detect if the configuration value is set to "".
+        // Setting the value to "" will reset the configuration and result in an empty Optional.
+        // Not setting the value at all will result in the default being applied, which we can test for.
+        if (runtimeNamespaces.isPresent()) {
+            final var namespaces = new HashSet<>(runtimeNamespaces.get());
+            // If it's not the default value, use it because it was set.
+            // If it is the default value, ignore it and let any build time config be used.
+            if (!QOSDK_USE_BUILDTIME_NAMESPACES_SET.equals(namespaces)) {
+                controllerConfig.setNamespaces(namespaces);
+            }
+        } else {
+            // Value has been explicitly reset (value was empty string), use all namespaces mode
+            controllerConfig.setNamespaces(DEFAULT_NAMESPACES_SET);
+        }
     }
 
     static boolean shouldStartOperator(Optional<Boolean> fromConfiguration, LaunchMode launchMode) {
