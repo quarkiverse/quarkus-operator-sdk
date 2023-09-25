@@ -76,7 +76,7 @@ jobs:
       - name: Update QOSDK version to ${{steps.metadata.outputs.current-version}} in java-operator-plugins
         run: |
           cd sdk-plugins
-          sed -i -e 's|<quarkus-sdk.version>.*</quarkus-sdk.version>|<quarkus-sdk.version>${{steps.metadata.outputs.current-version}}</quarkus-sdk.version>|' $(pwd)/pkg/quarkus/v1alpha/scaffolds/internal/templates/pomxml.go
+          sed -i -e 's|<quarkus-sdk.version>.*</quarkus-sdk.version>|<quarkus-sdk.version>${{steps.metadata.outputs.current-version}}</quarkus-sdk.version>|' $(pwd)/pkg/quarkus/v1beta/scaffolds/internal/templates/pomxml.go
           sed -i -e 's|<quarkus-sdk.version>.*</quarkus-sdk.version>|<quarkus-sdk.version>${{steps.metadata.outputs.current-version}}</quarkus-sdk.version>|' $(pwd)/testdata/quarkus/memcached-quarkus-operator/pom.xml
 
       - name: Create java-operator-plugins pull request
