@@ -2,6 +2,7 @@ package io.quarkiverse.operatorsdk.bundle;
 
 import static io.quarkiverse.operatorsdk.bundle.Utils.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.quarkiverse.operatorsdk.bundle.sources.*;
+import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkus.test.ProdBuildResults;
 import io.quarkus.test.ProdModeTestResults;
 import io.quarkus.test.QuarkusProdModeTest;
@@ -81,14 +83,13 @@ public class MultipleOperatorsBundleTest {
         assertEquals(VERSION, spec.getVersion());
 
         // check that the env variable to set the reconciler namespaces is properly set
-        /*
-         * disabled because of https://github.com/quarkusio/quarkus/issues/36041
-         * final var firstContainer = spec.getInstall().getSpec().getDeployments().get(0).getSpec().getTemplate().getSpec()
-         * .getContainers().get(0);
-         * assertTrue(firstContainer.getEnv().stream()
-         * .anyMatch(envVar -> envVar.getName()
-         * .equals(ConfigurationUtils.getNamespacesPropertyName(ThirdReconciler.NAME, true))));
-         *
-         */
+
+        //disabled because of https://github.com/quarkusio/quarkus/issues/36041
+        final var firstContainer = spec.getInstall().getSpec().getDeployments().get(0).getSpec().getTemplate().getSpec()
+                .getContainers().get(0);
+        assertTrue(firstContainer.getEnv().stream()
+                .anyMatch(envVar -> envVar.getName()
+                        .equals(ConfigurationUtils.getNamespacesPropertyName(ThirdReconciler.NAME, true))));
+
     }
 }
