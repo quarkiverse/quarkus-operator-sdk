@@ -49,7 +49,7 @@
     <dependency>
       <groupId>org.semver4j</groupId>
       <artifactId>semver4j</artifactId>
-      <version>5.1.0</version>
+      <version>5.2.0</version>
     </dependency>
     <dependency>
       <groupId>io.dekorate</groupId>
