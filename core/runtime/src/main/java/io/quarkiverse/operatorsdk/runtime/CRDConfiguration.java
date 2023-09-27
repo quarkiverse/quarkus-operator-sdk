@@ -5,66 +5,63 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.quarkus.runtime.annotations.ConfigGroup;
-import io.quarkus.runtime.annotations.ConfigItem;
+import io.smallrye.config.WithDefault;
 
 @ConfigGroup
-public class CRDConfiguration {
+public interface CRDConfiguration {
 
-    public static final String DEFAULT_OUTPUT_DIRECTORY = "kubernetes";
-    public static final String DEFAULT_VALIDATE = "true";
-    public static final String DEFAULT_VERSIONS = "v1";
+    String DEFAULT_OUTPUT_DIRECTORY = "kubernetes";
+    String DEFAULT_VALIDATE = "true";
+    String DEFAULT_VERSIONS = "v1";
+
     /**
      * Whether the operator should check that the CRD is properly deployed and that the associated
      * {@link CustomResource} implementation matches its information before registering the associated
      * controller.
      */
-    @ConfigItem(defaultValue = DEFAULT_VALIDATE)
-    public Boolean validate;
+    @WithDefault(DEFAULT_VALIDATE)
+    boolean validate();
 
     /**
      * Whether the extension should automatically generate the CRD based on {@link CustomResource}
      * implementations.
      */
-    @ConfigItem
-    public Optional<Boolean> generate;
+    Optional<Boolean> generate();
 
     /**
      * Whether the extension should automatically apply updated CRDs when they change.
      * When running on DEV mode, the CRD changes will always be applied automatically.
      */
-    @ConfigItem
-    public Optional<Boolean> apply;
+    Optional<Boolean> apply();
 
     /**
      * Comma-separated list of which CRD versions should be generated.
      */
-    @ConfigItem(defaultValue = DEFAULT_VERSIONS)
-    public List<String> versions;
+    @WithDefault(DEFAULT_VERSIONS)
+    List<String> versions();
 
     /**
      * The directory where the CRDs will be generated, defaults to the {@code kubernetes}
      * directory of the project's output directory.
      */
-    @ConfigItem
-    public Optional<String> outputDirectory;
+    Optional<String> outputDirectory();
 
     /**
      * Whether the extension should generate all CRDs even if some are not tied to a Reconciler.
      */
-    @ConfigItem(defaultValue = "false")
-    public Boolean generateAll;
+    @WithDefault("false")
+    boolean generateAll();
 
     /**
      * Whether the CRDs should be generated in parallel. Please note that this feature is experimental
      * and it may lead to unexpected results.
      */
-    @ConfigItem(defaultValue = "false")
-    public Boolean generateInParallel;
+    @WithDefault("false")
+    boolean generateInParallel();
 
     /**
      * A comma-separated list of fully-qualified class names implementing custom resources to exclude from the CRD generation
      * process.
      */
-    @ConfigItem
-    public Optional<List<String>> excludeResources;
+    Optional<List<String>> excludeResources();
 }

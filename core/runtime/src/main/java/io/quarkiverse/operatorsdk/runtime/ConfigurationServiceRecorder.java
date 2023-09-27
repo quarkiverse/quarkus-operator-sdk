@@ -30,21 +30,22 @@ public class ConfigurationServiceRecorder {
             Map<String, QuarkusControllerConfiguration> configurations,
             CRDGenerationInfo crdInfo, RunTimeOperatorConfiguration runTimeConfiguration,
             BuildTimeOperatorConfiguration buildTimeConfiguration, LaunchMode launchMode) {
-        final var maxThreads = runTimeConfiguration.concurrentReconciliationThreads
+        final var maxThreads = runTimeConfiguration.concurrentReconciliationThreads()
                 .orElse(ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
-        final var timeout = runTimeConfiguration.terminationTimeoutSeconds
+        final var timeout = runTimeConfiguration.terminationTimeoutSeconds()
                 .orElse(ConfigurationService.DEFAULT_TERMINATION_TIMEOUT_SECONDS);
-        final var workflowThreads = runTimeConfiguration.concurrentWorkflowThreads
+        final var workflowThreads = runTimeConfiguration.concurrentWorkflowThreads()
                 .orElse(ConfigurationService.DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER);
-        final var cacheSyncTimeout = runTimeConfiguration.cacheSyncTimeout;
+        final var cacheSyncTimeout = runTimeConfiguration.cacheSyncTimeout();
 
-        final var hasOperatorLevelNamespaces = runTimeConfiguration.namespaces.isPresent()
-                && !isDefaultNamespaces(runTimeConfiguration.namespaces.get());
-        final var operatorLevelNamespaces = hasOperatorLevelNamespaces ? new HashSet(runTimeConfiguration.namespaces.get())
+        final var maybeOperatorLevelNamespaces = runTimeConfiguration.namespaces();
+        final var hasOperatorLevelNamespaces = maybeOperatorLevelNamespaces.isPresent()
+                && !isDefaultNamespaces(maybeOperatorLevelNamespaces.get());
+        final var operatorLevelNamespaces = hasOperatorLevelNamespaces ? new HashSet(maybeOperatorLevelNamespaces.get())
                 : null;
 
         configurations.forEach((name, c) -> {
-            final var extConfig = runTimeConfiguration.controllers.get(name);
+            final var extConfig = runTimeConfiguration.controllers().get(name);
             // set the operator-level namespaces as default if it's not the default value, otherwise watch all namespaces by default
             if (hasOperatorLevelNamespaces) {
                 c.setNamespaces(operatorLevelNamespaces);
@@ -54,10 +55,10 @@ public class ConfigurationServiceRecorder {
 
             // then override with controller-specific configuration if present
             if (extConfig != null) {
-                extConfig.finalizer.ifPresent(c::setFinalizer);
-                extConfig.selector.ifPresent(c::setLabelSelector);
-                setNamespacesFromRuntime(c, extConfig.namespaces);
-                c.setRetryConfiguration(RetryConfigurationResolver.resolve(extConfig.retry));
+                extConfig.finalizer().ifPresent(c::setFinalizer);
+                extConfig.selector().ifPresent(c::setLabelSelector);
+                setNamespacesFromRuntime(c, extConfig.namespaces());
+                c.setRetryConfiguration(RetryConfigurationResolver.resolve(extConfig.retry()));
             }
 
             // set retry to default if it hasn't been set already
@@ -76,11 +77,12 @@ public class ConfigurationServiceRecorder {
             // deactivate leader election in dev mode
             LeaderElectionConfiguration leaderElectionConfiguration = null;
             final var profiles = ConfigUtils.getProfiles();
-            if (profiles.stream().anyMatch(buildTimeConfiguration.activateLeaderElectionForProfiles::contains)) {
+            final var activated = buildTimeConfiguration.activateLeaderElectionForProfiles();
+            if (profiles.stream().anyMatch(activated::contains)) {
                 leaderElectionConfiguration = container.instance(LeaderElectionConfiguration.class).get();
             } else {
                 log.info("Leader election deactivated because it is only activated for "
-                        + buildTimeConfiguration.activateLeaderElectionForProfiles
+                        + activated
                         + " profiles. Currently active profiles: " + profiles);
             }
 
@@ -94,12 +96,12 @@ public class ConfigurationServiceRecorder {
                     timeout,
                     cacheSyncTimeout,
                     container.instance(Metrics.class).get(),
-                    shouldStartOperator(buildTimeConfiguration.startOperator, launchMode),
+                    shouldStartOperator(buildTimeConfiguration.startOperator(), launchMode),
                     leaderElectionConfiguration,
                     container.instance(InformerStoppedHandler.class).orElse(null),
-                    buildTimeConfiguration.closeClientOnStop,
-                    buildTimeConfiguration.stopOnInformerErrorDuringStartup,
-                    buildTimeConfiguration.enableSSA);
+                    buildTimeConfiguration.closeClientOnStop(),
+                    buildTimeConfiguration.stopOnInformerErrorDuringStartup(),
+                    buildTimeConfiguration.enableSSA());
         };
     }
 

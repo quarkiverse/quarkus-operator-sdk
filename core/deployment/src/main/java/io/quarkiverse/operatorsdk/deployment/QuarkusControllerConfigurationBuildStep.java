@@ -144,7 +144,7 @@ class QuarkusControllerConfigurationBuildStep {
         // extract the configuration from annotation and/or external configuration
         final var controllerAnnotation = info.declaredAnnotation(CONTROLLER_CONFIGURATION);
 
-        final var externalConfiguration = buildTimeConfiguration.controllers.get(name);
+        final var externalConfiguration = buildTimeConfiguration.controllers().get(name);
         final var configExtractor = new BuildTimeHybridControllerConfiguration(buildTimeConfiguration,
                 externalConfiguration,
                 controllerAnnotation);

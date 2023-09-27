@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
@@ -56,7 +57,23 @@ public class HelmChartProcessor {
     public static final String CRD_DIR = "crds";
     public static final String CRD_ROLE_BINDING_TEMPLATE_PATH = "/helm/crd-role-binding-template.yaml";
 
-    @BuildStep
+    private static class IsHelmEnabled implements BooleanSupplier {
+
+        private BuildTimeOperatorConfiguration config;
+
+        @Override
+        public boolean getAsBoolean() {
+            return config.helm().enabled();
+        }
+    }
+
+    @BuildStep(onlyIfNot = IsHelmEnabled.class)
+    void helmGenerationDisabled(// to make it produce a build item, so it gets executed
+            @SuppressWarnings("unused") BuildProducer<ArtifactResultBuildItem> dummy) {
+        log.debug("Generating helm chart is disabled");
+    }
+
+    @BuildStep(onlyIf = IsHelmEnabled.class)
     public void handleHelmCharts(
             // to make it produce a build item, so it gets executed
             @SuppressWarnings("unused") BuildProducer<ArtifactResultBuildItem> dummy,
@@ -68,23 +85,19 @@ public class HelmChartProcessor {
             ApplicationInfoBuildItem appInfo,
             ContainerImageInfoBuildItem containerImageInfoBuildItem) {
 
-        if (buildTimeConfiguration.helm.enabled) {
-            final var helmDir = outputTarget.getOutputDirectory().resolve("helm").toFile();
-            log.infov("Generating helm chart to {0}", helmDir);
-            var controllerConfigs = controllerConfigurations.getControllerConfigs().values();
+        final var helmDir = outputTarget.getOutputDirectory().resolve("helm").toFile();
+        log.infov("Generating helm chart to {0}", helmDir);
+        var controllerConfigs = controllerConfigurations.getControllerConfigs().values();
 
-            createRelatedDirectories(helmDir);
-            addTemplateFiles(helmDir);
-            addClusterRolesForReconcilers(helmDir, controllerConfigs);
-            addPrimaryClusterRoleBindings(helmDir, controllerConfigs);
-            addGeneratedDeployment(helmDir, generatedResources, controllerConfigurations, appInfo);
-            addChartYaml(helmDir, appInfo.getName(), appInfo.getVersion());
-            addValuesYaml(helmDir, containerImageInfoBuildItem.getTag());
-            addReadmeAndSchema(helmDir);
-            addCRDs(new File(helmDir, CRD_DIR), generatedCRDInfoBuildItem);
-        } else {
-            log.debug("Generating helm chart is disabled");
-        }
+        createRelatedDirectories(helmDir);
+        addTemplateFiles(helmDir);
+        addClusterRolesForReconcilers(helmDir, controllerConfigs);
+        addPrimaryClusterRoleBindings(helmDir, controllerConfigs);
+        addGeneratedDeployment(helmDir, generatedResources, controllerConfigurations, appInfo);
+        addChartYaml(helmDir, appInfo.getName(), appInfo.getVersion());
+        addValuesYaml(helmDir, containerImageInfoBuildItem.getTag());
+        addReadmeAndSchema(helmDir);
+        addCRDs(new File(helmDir, CRD_DIR), generatedCRDInfoBuildItem);
     }
 
     private void addTemplateFiles(File helmDir) {

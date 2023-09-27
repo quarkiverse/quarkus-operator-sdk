@@ -29,24 +29,26 @@ class BuildTimeHybridControllerConfiguration {
     boolean generationAware() {
         return ConfigurationUtils.extract(
                 externalConfiguration,
-                controllerAnnotation, c -> c.generationAware,
+                controllerAnnotation,
+                BuildTimeControllerConfiguration::generationAware,
                 "generationAwareEventProcessing",
                 AnnotationValue::asBoolean,
-                () -> operatorConfiguration.generationAware.orElse(true));
+                () -> operatorConfiguration.generationAware());
     }
 
     Set<String> generateWithWatchedNamespaces(boolean wereNamespacesSet) {
         Set<String> namespaces = null;
         if (externalConfiguration != null) {
-            Optional<List<String>> overrideNamespaces = externalConfiguration.generateWithWatchedNamespaces;
+            Optional<List<String>> overrideNamespaces = externalConfiguration.generateWithWatchedNamespaces();
             if (overrideNamespaces.isPresent()) {
                 namespaces = new HashSet<>(overrideNamespaces.get());
             }
         }
 
         // check if we have an operator-level configuration only if namespaces haven't been explicitly set already
-        if (!wereNamespacesSet && namespaces == null && operatorConfiguration.generateWithWatchedNamespaces.isPresent()) {
-            namespaces = new HashSet<>(operatorConfiguration.generateWithWatchedNamespaces.get());
+        final var generateWithWatchedNamespaces = operatorConfiguration.generateWithWatchedNamespaces();
+        if (!wereNamespacesSet && namespaces == null && generateWithWatchedNamespaces.isPresent()) {
+            namespaces = new HashSet<>(generateWithWatchedNamespaces.get());
         }
 
         return namespaces;

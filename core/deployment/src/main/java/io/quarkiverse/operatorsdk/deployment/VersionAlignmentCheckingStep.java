@@ -48,7 +48,7 @@ public class VersionAlignmentCheckingStep {
         if (!expectedVersion.equals(foundVersion)) {
             String message = "Mismatched " + name + " version found: \"" + found + "\", expected: \"" + expected
                     + "\"";
-            if (buildTimeConfiguration.failOnVersionCheck) {
+            if (buildTimeConfiguration.failOnVersionCheck()) {
                 throw new RuntimeException(message);
             } else {
                 final var diff = expectedVersion.diff(foundVersion);
@@ -64,7 +64,7 @@ public class VersionAlignmentCheckingStep {
 
     private static Optional<Semver> getSemverFrom(String version) {
         try {
-            return Optional.of(Semver.coerce(version));
+            return Optional.ofNullable(Semver.coerce(version));
         } catch (Exception e) {
             log.warn("Couldn't convert version " + version);
         }
