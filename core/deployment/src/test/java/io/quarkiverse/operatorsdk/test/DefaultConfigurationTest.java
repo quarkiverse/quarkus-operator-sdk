@@ -17,7 +17,8 @@ public class DefaultConfigurationTest {
     @RegisterExtension
     static QuarkusUnitTest runner = new QuarkusUnitTest()
             .withApplicationRoot(
-                    jar -> jar.addClasses(SimpleReconciler.class, SimpleCR.class, SimpleStatus.class, SimpleSpec.class));
+                    jar -> jar.addClasses(SimpleReconciler.class, SimpleCR.class, SimpleStatus.class, SimpleSpec.class,
+                            SameNSReconciler.class));
 
     @Inject
     ConfigurationService configurationService;
@@ -25,9 +26,16 @@ public class DefaultConfigurationTest {
     @Inject
     SimpleReconciler testReconciler;
 
+    @Inject
+    SameNSReconciler sameNSReconciler;
+
     @Test
     void checkDefaultOperatorLevelNamespaces() {
         final var config = configurationService.getConfigurationFor(testReconciler);
         assertEquals(Constants.DEFAULT_NAMESPACES_SET, config.getNamespaces());
+
+        // build time values are not propagated by default anymore
+        assertEquals(Constants.DEFAULT_NAMESPACES_SET,
+                configurationService.getConfigurationFor(sameNSReconciler).getNamespaces());
     }
 }

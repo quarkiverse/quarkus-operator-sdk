@@ -60,10 +60,12 @@ public class RunTimeOperatorConfiguration {
      * The value can be set to {@link Constants#WATCH_CURRENT_NAMESPACE} to make all controllers watch the current namespace as
      * specified by the kube config file the operator uses.
      * </p>
+     * <p>
+     * A default value is defined so that we are able to detect whether the configuration value is set to {@code ""} (empty
+     * string) as setting the value to the empty string will result in resetting the configuration and an empty
+     * {@link Optional}, while not setting the value at all will result in the default value being applied.
+     * </p>
      */
-    // We use a default here so that we are able to detect if the configuration value is set to "". Setting the value to "" will
-    // reset the configuration and result in an empty Optional, but not setting the value at all will result in the default being
-    // applied.
     @ConfigItem(defaultValue = QOSDK_USE_BUILDTIME_NAMESPACES)
     public Optional<List<String>> namespaces;
 

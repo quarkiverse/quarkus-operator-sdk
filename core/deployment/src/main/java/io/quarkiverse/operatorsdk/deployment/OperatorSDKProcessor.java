@@ -206,25 +206,6 @@ class OperatorSDKProcessor {
                 });
     }
 
-    /**
-     * create default configuration entry to ensure that env variable names will be properly mapped to what we expect. This is
-     * needed because the conversion function is not a bijection i.e. there's no way to tell that OPERATOR_SDK should be mapped
-     * to operator-sdk instead of operator.sdk for example.
-     */
-    @BuildStep
-    void initializeRuntimeNamespacesFromBuildTimeValues(
-            ControllerConfigurationsBuildItem configurations,
-            BuildProducer<RunTimeConfigurationDefaultBuildItem> runtimeConfig) {
-        configurations.getControllerConfigs().forEach((name, configuration) -> {
-            @SuppressWarnings("unchecked")
-            final var namespaces = String.join(",", configuration.getNamespaces());
-            runtimeConfig.produce(new RunTimeConfigurationDefaultBuildItem(
-                    "quarkus.operator-sdk.controllers." + configuration.getName() + ".namespaces",
-                    namespaces));
-        });
-
-    }
-
     private void registerAssociatedClassesForReflection(BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             Set<String> classNamesToRegister) {

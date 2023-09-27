@@ -2,18 +2,15 @@ package io.quarkiverse.operatorsdk.it;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.startsWith;
+import static org.hamcrest.Matchers.*;
+
+import java.util.Arrays;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.DisabledOnIntegrationTest;
 import io.quarkus.test.junit.QuarkusTest;
@@ -22,7 +19,6 @@ import io.quarkus.test.junit.QuarkusTest;
  * This test will only pass in IDEs if you set your runner to set env properties as follow:
  *
  * <ul>
- * <li>{@link NamespaceFromEnvReconciler#ENV_VAR_NAME} = {@link NamespaceFromEnvReconciler#FROM_ENV_VAR_NS}</li>
  * <li>QUARKUS_OPERATOR_SDK_CONTROLLERS_{@link EmptyReconciler#NAME}.toUpperCase()_NAMESPACES =
  * {@link EmptyReconciler#FROM_ENV_NS1} + ", " + {@link EmptyReconciler#FROM_ENV_NS2}</li>
  * <li>{@link VariableNSReconciler#ENV_VAR_NAME} = {@link VariableNSReconciler#EXPECTED_NS_VALUE}</li>
@@ -106,7 +102,7 @@ class OperatorSDKResourceTest {
                 TestReconciler.NAME,
                 ReconcilerUtils.getDefaultNameFor(SecretReconciler.class),
                 ReconcilerUtils.getDefaultNameFor(GatewayReconciler.class),
-                DependentDefiningReconciler.NAME, NamespaceFromEnvReconciler.NAME,
+                DependentDefiningReconciler.NAME,
                 EmptyReconciler.NAME, VariableNSReconciler.NAME,
                 AnnotatedDependentReconciler.NAME,
                 ReconcilerUtils.getDefaultNameFor(KeycloakController.class),
@@ -127,10 +123,9 @@ class OperatorSDKResourceTest {
                         "customResourceClass", equalTo(resourceName),
                         "name", equalTo(TestReconciler.NAME),
                         "watchCurrentNamespace", equalTo(false),
-                        // build time values are propagated at runtime if no runtime value is specified
-                        "namespaces", hasSize(2),
-                        "namespaces", hasItem("builtime-namespace1"),
-                        "namespaces", hasItem("buildtime-ns2"),
+                        // build time values are NOT propagated anymore at runtime
+                        "namespaces", hasSize(1),
+                        "namespaces", hasItem(Constants.WATCH_ALL_NAMESPACES),
                         "retry.maxAttempts", equalTo(1),
                         "generationAware", equalTo(false),
                         "maxReconciliationIntervalSeconds", equalTo(TestReconciler.INTERVAL));
@@ -175,7 +170,7 @@ class OperatorSDKResourceTest {
                 .statusCode(200).body(
                         "watchCurrentNamespace", equalTo(false),
                         "namespaces", hasSize(1),
-                        "namespaces", hasItem("operator-level-for-manifests"),
+                        "namespaces", hasItem(Constants.WATCH_ALL_NAMESPACES),
                         "dependents", hasSize(2),
                         "dependents.dependentClass",
                         hasItems(ReadOnlyDependentResource.class.getCanonicalName(),
@@ -217,20 +212,6 @@ class OperatorSDKResourceTest {
     }
 
     @Test
-    void shouldExpandVariablesInNamespacesConfigurationFromAnnotation() {
-        assertThat(System.getenv(NamespaceFromEnvReconciler.ENV_VAR_NAME),
-                is(NamespaceFromEnvReconciler.FROM_ENV_VAR_NS));
-        given()
-                .when()
-                .get("/operator/" + NamespaceFromEnvReconciler.NAME + "/config")
-                .then()
-                .statusCode(200).body(
-                        "namespaces", hasItem(NamespaceFromEnvReconciler.FROM_ENV_VAR_NS),
-                        "namespaces", hasItem("static"),
-                        "namespaces", hasSize(2));
-    }
-
-    @Test
     void shouldExpandVariablesInNamespacesConfigurationFromProperties() {
         assertThat(System.getenv(VariableNSReconciler.ENV_VAR_NAME), is(VariableNSReconciler.EXPECTED_NS_VALUE));
         given()
@@ -244,6 +225,11 @@ class OperatorSDKResourceTest {
 
     @Test
     void shouldUseNamespacesFromEnvVariableIfSet() {
+        final var envVar = System
+                .getenv("QUARKUS_OPERATOR_SDK_CONTROLLERS_" + EmptyReconciler.NAME.toUpperCase() + "_NAMESPACES");
+        assertThat(envVar, notNullValue());
+        final var namespaces = Arrays.stream(envVar.split(",")).map(String::trim).toArray();
+        assertThat(namespaces, arrayContainingInAnyOrder(EmptyReconciler.FROM_ENV_NS1, EmptyReconciler.FROM_ENV_NS2));
         given()
                 .when()
                 .get("/operator/" + EmptyReconciler.NAME + "/config")
