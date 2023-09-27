@@ -36,11 +36,13 @@ class CRDGeneration {
         this.mode = mode;
     }
 
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     static boolean shouldGenerate(Optional<Boolean> configuredGenerate, Optional<Boolean> configuredApply,
             LaunchMode launchMode) {
         return shouldApply(configuredApply, launchMode) || configuredGenerate.orElse(true);
     }
 
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     static boolean shouldApply(Optional<Boolean> configuredApply, LaunchMode launchMode) {
         if (launchMode == null || !launchMode.isDevOrTest()) {
             return false;

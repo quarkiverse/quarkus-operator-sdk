@@ -31,7 +31,8 @@ public interface RunTimeControllerConfiguration {
 
     /**
      * An optional list of comma-separated label selectors that Custom Resources must match to trigger the controller.
-     * See https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/ for more details on selectors.
+     * See <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/">the documentation</a> for more
+     * details on selectors.
      */
     Optional<String> selector();
 }

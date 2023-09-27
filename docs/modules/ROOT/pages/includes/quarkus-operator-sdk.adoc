@@ -365,6 +365,10 @@ An optional list of comma-separated namespace names all controllers will watch i
 
 If this property is left empty then controllers will watch all namespaces by default (which is equivalent to setting this property to `Constants++#++WATCH_ALL_NAMESPACES`, assuming they do not provide their own list of namespaces to watch. . The value can be set to `Constants++#++WATCH_CURRENT_NAMESPACE` to make all controllers watch the current namespace as specified by the kube config file the operator uses.
 
+
+
+A default value is defined so that we are able to detect whether the configuration value is set to `""` (empty string) as setting the value to the empty string will result in resetting the configuration and an empty `Optional`, while not setting the value at all will result in the default value being applied.
+
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_NAMESPACES+++[]
 endif::add-copy-button-to-env-var[]
@@ -469,7 +473,7 @@ endif::add-copy-button-to-env-var[]
 |`false`
 
 
-a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.namespaces]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.namespaces[quarkus.operator-sdk.controllers."controllers".namespaces]`
+a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-reconciler-name-.namespaces]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.controllers.-reconciler-name-.namespaces[quarkus.operator-sdk.controllers."reconciler-name".namespaces]`
 
 
 [.description]
@@ -477,16 +481,16 @@ a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.namespa
 An optional list of comma-separated namespace names the controller should watch. If this property is left empty then the controller will watch all namespaces. The value can be set to "JOSDK_WATCH_CURRENT" to watch the current (default) namespace from kube config. Constant(s) can be found in at `io.javaoperatorsdk.operator.api.reconciler.Constants`".
 
 ifdef::add-copy-button-to-env-var[]
-Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__NAMESPACES+++[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__RECONCILER_NAME__NAMESPACES+++[]
 endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
-Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__NAMESPACES+++`
+Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__RECONCILER_NAME__NAMESPACES+++`
 endif::add-copy-button-to-env-var[]
 --|list of string 
-|
+|`QOSDK_USE_BUILDTIME_NAMESPACES`
 
 
-a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.finalizer]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.finalizer[quarkus.operator-sdk.controllers."controllers".finalizer]`
+a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-reconciler-name-.finalizer]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.controllers.-reconciler-name-.finalizer[quarkus.operator-sdk.controllers."reconciler-name".finalizer]`
 
 
 [.description]
@@ -494,16 +498,16 @@ a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.finaliz
 The optional name of the finalizer for the controller. If none is provided, one will be automatically generated.
 
 ifdef::add-copy-button-to-env-var[]
-Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__FINALIZER+++[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__RECONCILER_NAME__FINALIZER+++[]
 endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
-Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__FINALIZER+++`
+Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__RECONCILER_NAME__FINALIZER+++`
 endif::add-copy-button-to-env-var[]
 --|string 
 |
 
 
-a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.retry.max-attempts]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.retry.max-attempts[quarkus.operator-sdk.controllers."controllers".retry.max-attempts]`
+a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-reconciler-name-.retry.max-attempts]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.controllers.-reconciler-name-.retry.max-attempts[quarkus.operator-sdk.controllers."reconciler-name".retry.max-attempts]`
 
 
 [.description]
@@ -511,16 +515,16 @@ a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.retry.m
 How many times an operation should be retried before giving up
 
 ifdef::add-copy-button-to-env-var[]
-Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_MAX_ATTEMPTS+++[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__RECONCILER_NAME__RETRY_MAX_ATTEMPTS+++[]
 endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
-Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_MAX_ATTEMPTS+++`
+Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__RECONCILER_NAME__RETRY_MAX_ATTEMPTS+++`
 endif::add-copy-button-to-env-var[]
 --|int 
 |
 
 
-a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.retry.interval.initial]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.retry.interval.initial[quarkus.operator-sdk.controllers."controllers".retry.interval.initial]`
+a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-reconciler-name-.retry.interval.initial]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.controllers.-reconciler-name-.retry.interval.initial[quarkus.operator-sdk.controllers."reconciler-name".retry.interval.initial]`
 
 
 [.description]
@@ -528,16 +532,16 @@ a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.retry.i
 The initial interval that the controller waits for before attempting the first retry
 
 ifdef::add-copy-button-to-env-var[]
-Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_INTERVAL_INITIAL+++[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__RECONCILER_NAME__RETRY_INTERVAL_INITIAL+++[]
 endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
-Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_INTERVAL_INITIAL+++`
+Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__RECONCILER_NAME__RETRY_INTERVAL_INITIAL+++`
 endif::add-copy-button-to-env-var[]
 --|long 
 |`2000`
 
 
-a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.retry.interval.multiplier]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.retry.interval.multiplier[quarkus.operator-sdk.controllers."controllers".retry.interval.multiplier]`
+a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-reconciler-name-.retry.interval.multiplier]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.controllers.-reconciler-name-.retry.interval.multiplier[quarkus.operator-sdk.controllers."reconciler-name".retry.interval.multiplier]`
 
 
 [.description]
@@ -545,16 +549,16 @@ a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.retry.i
 The value by which the initial interval is multiplied by for each retry
 
 ifdef::add-copy-button-to-env-var[]
-Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_INTERVAL_MULTIPLIER+++[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__RECONCILER_NAME__RETRY_INTERVAL_MULTIPLIER+++[]
 endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
-Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_INTERVAL_MULTIPLIER+++`
+Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__RECONCILER_NAME__RETRY_INTERVAL_MULTIPLIER+++`
 endif::add-copy-button-to-env-var[]
 --|double 
 |`1.5`
 
 
-a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.retry.interval.max]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.retry.interval.max[quarkus.operator-sdk.controllers."controllers".retry.interval.max]`
+a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-reconciler-name-.retry.interval.max]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.controllers.-reconciler-name-.retry.interval.max[quarkus.operator-sdk.controllers."reconciler-name".retry.interval.max]`
 
 
 [.description]
@@ -562,16 +566,16 @@ a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.retry.i
 The maximum interval that the controller will wait for before attempting a retry, regardless of all other configuration
 
 ifdef::add-copy-button-to-env-var[]
-Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_INTERVAL_MAX+++[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__RECONCILER_NAME__RETRY_INTERVAL_MAX+++[]
 endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
-Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_INTERVAL_MAX+++`
+Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__RECONCILER_NAME__RETRY_INTERVAL_MAX+++`
 endif::add-copy-button-to-env-var[]
 --|long 
 |
 
 
-a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.selector]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.selector[quarkus.operator-sdk.controllers."controllers".selector]`
+a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-reconciler-name-.selector]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.controllers.-reconciler-name-.selector[quarkus.operator-sdk.controllers."reconciler-name".selector]`
 
 
 [.description]
@@ -579,10 +583,10 @@ a| [[quarkus-operator-sdk_quarkus.operator-sdk.controllers.-controllers-.selecto
 An optional list of comma-separated label selectors that Custom Resources must match to trigger the controller. See https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/ for more details on selectors.
 
 ifdef::add-copy-button-to-env-var[]
-Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__SELECTOR+++[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__RECONCILER_NAME__SELECTOR+++[]
 endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
-Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__SELECTOR+++`
+Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__RECONCILER_NAME__SELECTOR+++`
 endif::add-copy-button-to-env-var[]
 --|string 
 |
