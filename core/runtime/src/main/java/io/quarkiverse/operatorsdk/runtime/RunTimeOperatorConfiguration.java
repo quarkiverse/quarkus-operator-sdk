@@ -29,7 +29,7 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 
 @ConfigRoot(phase = ConfigPhase.RUN_TIME)
-@ConfigMapping(prefix = "quarkus.operator-sdk")
+@ConfigMapping(prefix = io.quarkiverse.operatorsdk.runtime.Constants.NEW_QOSDK_PREFIX)
 public interface RunTimeOperatorConfiguration {
     /**
      * Maps a controller name to its configuration.

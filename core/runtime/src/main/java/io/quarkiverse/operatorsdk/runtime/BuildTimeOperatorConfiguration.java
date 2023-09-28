@@ -11,7 +11,7 @@ import io.smallrye.config.WithDefault;
 import io.smallrye.config.WithName;
 
 @ConfigRoot(phase = ConfigPhase.BUILD_AND_RUN_TIME_FIXED)
-@ConfigMapping(prefix = "quarkus.operator-sdk")
+@ConfigMapping(prefix = Constants.NEW_QOSDK_PREFIX)
 public interface BuildTimeOperatorConfiguration {
 
     /**

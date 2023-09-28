@@ -226,7 +226,7 @@ class OperatorSDKResourceTest {
     @Test
     void shouldUseNamespacesFromEnvVariableIfSet() {
         final var envVar = System
-                .getenv("QUARKUS_OPERATOR_SDK_CONTROLLERS_" + EmptyReconciler.NAME.toUpperCase() + "_NAMESPACES");
+                .getenv("QOSDK_CONTROLLERS_" + EmptyReconciler.NAME.toUpperCase() + "_NAMESPACES");
         assertThat(envVar, notNullValue());
         final var namespaces = Arrays.stream(envVar.split(",")).map(String::trim).toArray();
         assertThat(namespaces, arrayContainingInAnyOrder(EmptyReconciler.FROM_ENV_NS1, EmptyReconciler.FROM_ENV_NS2));

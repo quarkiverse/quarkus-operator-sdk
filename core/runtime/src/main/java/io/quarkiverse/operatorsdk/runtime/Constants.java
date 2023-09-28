@@ -4,6 +4,9 @@ import java.util.Collections;
 import java.util.Set;
 
 public final class Constants {
+    public static final String OLD_QOSDK_PREFIX = "quarkus.operator-sdk";
+    public static final String NEW_QOSDK_PREFIX = "qosdk";
+
     private Constants() {
     }
 

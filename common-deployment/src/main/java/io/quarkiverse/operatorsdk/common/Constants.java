@@ -13,6 +13,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.quarkiverse.operatorsdk.annotations.AdditionalRBACRules;
 import io.quarkiverse.operatorsdk.annotations.RBACRule;
 
+// todo: move to common-deployment module?
 public class Constants {
     private Constants() {
     }

@@ -16,6 +16,7 @@ import org.jboss.jandex.IndexView;
 import org.jboss.jandex.Type;
 import org.jboss.logging.Logger;
 
+// todo: move to common-deployment module?
 public class ClassUtils {
 
     private ClassUtils() {
