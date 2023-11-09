@@ -29,7 +29,7 @@ Follow the [Quarkiverse release process](https://github.com/quarkiverse/quarkive
 
 A snapshot is generated each time the `main` or `next` branches are changed. To be able to use the
 snapshots, please add the following repository definition to your POM file (in the `repositories`
-section):
+section) or, preferably, to your `settings.xml` file:
 
 ```xml
     <repositories>
