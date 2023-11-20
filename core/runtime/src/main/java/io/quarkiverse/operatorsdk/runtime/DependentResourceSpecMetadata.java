@@ -22,9 +22,11 @@ public class DependentResourceSpecMetadata<R, P extends HasMetadata, C> extends
             Condition<?, ?> readyCondition,
             Condition<?, ?> reconcileCondition,
             Condition<?, ?> deletePostCondition,
+            Condition<?, ?> activationCondition,
             String quarkusUseEventSourceWithName,
             String dependentTypeName) {
         super(dependentResourceClass, name, dependsOn, readyCondition, reconcileCondition, deletePostCondition,
+                activationCondition,
                 quarkusUseEventSourceWithName);
         this.dependentResourceConfig = dependentResourceConfig;
         this.dependentTypeName = dependentTypeName;
