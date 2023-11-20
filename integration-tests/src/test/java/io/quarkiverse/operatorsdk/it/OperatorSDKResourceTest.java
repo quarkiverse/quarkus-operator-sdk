@@ -14,7 +14,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.DisabledOnIntegrationTest;
 import io.quarkus.test.junit.QuarkusTest;
@@ -111,7 +110,8 @@ class OperatorSDKResourceTest {
                 EmptyReconciler.NAME, VariableNSReconciler.NAME,
                 AnnotatedDependentReconciler.NAME,
                 ReconcilerUtils.getDefaultNameFor(KeycloakController.class),
-                NameWithSpaceReconciler.NAME));
+                NameWithSpaceReconciler.NAME,
+                CustomRateLimiterReconciler.NAME));
     }
 
     @Test
@@ -150,8 +150,7 @@ class OperatorSDKResourceTest {
                         "retryConfiguration.maxAttempts", equalTo(10),
                         "retry.maxAttempts", equalTo(ConfiguredReconciler.MAX_ATTEMPTS),
                         "retryConfiguration.initialInterval", equalTo(20000),
-                        "rateLimiterClass", equalTo(QuarkusControllerConfiguration.DefaultRateLimiter.class.getCanonicalName()),
-                        "refreshPeriodSeconds", equalTo(60),
+                        "rateLimiter.refreshPeriod", equalTo(60F), // for some reason the period is reported as a float
                         "labelSelector", equalTo("environment=production,tier!=frontend"));
 
         given()
@@ -282,4 +281,14 @@ class OperatorSDKResourceTest {
                         "dependents[0].dependentConfig.value", equalTo(AnnotatedDependentResource.VALUE));
     }
 
+    @Test
+    void customRateLimiterConfiguredViaCustomAnnotationShouldWork() {
+        given()
+                .when()
+                .get("/operator/" + CustomRateLimiterReconciler.NAME + "/config")
+                .then()
+                .statusCode(200)
+                .body(
+                        "rateLimiter.value", equalTo(42));
+    }
 }
