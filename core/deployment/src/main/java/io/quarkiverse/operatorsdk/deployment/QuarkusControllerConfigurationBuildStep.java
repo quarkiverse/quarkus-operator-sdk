@@ -402,12 +402,17 @@ class QuarkusControllerConfigurationBuildStep {
         final var deletePostcondition = ConfigurationUtils.instantiateImplementationClass(
                 dependentConfig, "deletePostcondition", Condition.class,
                 Condition.class, true, index);
+        final var activationCondition = ConfigurationUtils.instantiateImplementationClass(
+                dependentConfig, "activationCondition", Condition.class,
+                Condition.class, true, index);
+
         final var useEventSourceWithName = ConfigurationUtils.annotationValueOrDefault(
                 dependentConfig, "useEventSourceWithName", AnnotationValue::asString,
                 () -> null);
 
         return new DependentResourceSpecMetadata(dependentClass, cfg, dependent.nameOrFailIfUnset(),
-                dependsOn, readyCondition, reconcilePrecondition, deletePostcondition, useEventSourceWithName,
+                dependsOn, readyCondition, reconcilePrecondition, deletePostcondition, activationCondition,
+                useEventSourceWithName,
                 resourceTypeName);
 
     }
