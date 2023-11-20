@@ -54,6 +54,10 @@ jobs:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
 
+      - name: Retrieve Quarkus version
+        id: quarkus-version
+        run: echo "quarkus_version=${mvn help:evaluate -Dexpression=quarkus.version -q -DforceStdout}" >> $GITHUB_OUTPUT
+
       - name: Push tags
         run: git push && git push --tags
 
@@ -98,6 +102,9 @@ jobs:
           cd sdk-plugins
           sed -i -e 's|<quarkus-sdk.version>.*</quarkus-sdk.version>|<quarkus-sdk.version>${{steps.metadata.outputs.current-version}}</quarkus-sdk.version>|' $(pwd)/pkg/quarkus/v1beta/scaffolds/internal/templates/pomxml.go
           sed -i -e 's|<quarkus-sdk.version>.*</quarkus-sdk.version>|<quarkus-sdk.version>${{steps.metadata.outputs.current-version}}</quarkus-sdk.version>|' $(pwd)/testdata/quarkus/memcached-quarkus-operator/pom.xml
+          echo "Using Quarkus ${{ steps.quarkus-version.outputs.quarkus_version }}"
+          mvn versions:set-property -Dproperty=quarkus.version -DnewVersion=${{steps.quarkus-version.outputs.quarkus_version}} -f ./testdata/quarkus/memcached-quarkus-operator/pom.xml versions:commit
+          sed -i -e 's|<quarkus.version>.*</quarkus.version>|<quarkus.version>${{steps.quarkus-version.outputs.quarkus_version}}</quarkus.version>|' $(pwd)/pkg/quarkus/v1beta/scaffolds/internal/templates/pomxml.go
 
       - name: Create java-operator-plugins pull request
         uses: peter-evans/create-pull-request@v5
