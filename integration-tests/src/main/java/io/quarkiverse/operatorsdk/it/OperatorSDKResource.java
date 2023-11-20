@@ -26,6 +26,7 @@ import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
+import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
@@ -223,6 +224,20 @@ public class OperatorSDKResource {
         @JsonProperty("maxReconciliationIntervalSeconds")
         public long maxReconciliationIntervalSeconds() {
             return conf.maxReconciliationInterval().map(Duration::getSeconds).orElseThrow();
+        }
+
+        public String getRateLimiterClass() {
+            return conf.getRateLimiter().getClass().getCanonicalName();
+        }
+
+        public long getRefreshPeriodSeconds() {
+            final var rateLimiter = conf.getRateLimiter();
+            if (rateLimiter instanceof LinearRateLimiter) {
+                LinearRateLimiter limiter = (LinearRateLimiter) rateLimiter;
+                return limiter.getRefreshPeriod().getSeconds();
+            } else {
+                return -1;
+            }
         }
     }
 

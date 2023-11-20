@@ -27,6 +27,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
+import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
@@ -201,7 +202,12 @@ class QuarkusControllerConfigurationBuildStep {
                     controllerAnnotation,
                     "rateLimiter", av -> loadClass(av.asClass().name().toString(), RateLimiter.class),
                     () -> DefaultRateLimiter.class);
-            final var rateLimiterConfigurableInfo = configurableInfos.get(rateLimiterClass.getName());
+            // ugly hack: we currently need this because DefaultRateLimiter is not currently found as an implementor of AnnotationConfigurable
+            var rateLimiterClassNameForConfigurable = rateLimiterClass.getName();
+            if (DefaultRateLimiter.class.equals(rateLimiterClass)) {
+                rateLimiterClassNameForConfigurable = LinearRateLimiter.class.getName();
+            }
+            final var rateLimiterConfigurableInfo = configurableInfos.get(rateLimiterClassNameForConfigurable);
             rateLimiterConfigurationClass = getConfigurationAnnotationClass(reconcilerInfo,
                     rateLimiterConfigurableInfo);
             nullableInformerListLimit = ConfigurationUtils.annotationValueOrDefault(

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.DisabledOnIntegrationTest;
 import io.quarkus.test.junit.QuarkusTest;
@@ -149,6 +150,8 @@ class OperatorSDKResourceTest {
                         "retryConfiguration.maxAttempts", equalTo(10),
                         "retry.maxAttempts", equalTo(ConfiguredReconciler.MAX_ATTEMPTS),
                         "retryConfiguration.initialInterval", equalTo(20000),
+                        "rateLimiterClass", equalTo(QuarkusControllerConfiguration.DefaultRateLimiter.class.getCanonicalName()),
+                        "refreshPeriodSeconds", equalTo(60),
                         "labelSelector", equalTo("environment=production,tier!=frontend"));
 
         given()
