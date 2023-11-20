@@ -21,6 +21,7 @@
     <url>https://github.com/quarkiverse/quarkus-operator-sdk</url>
     <tag>HEAD</tag>
   </scm>
+
   <distributionManagement>
     <snapshotRepository>
       <id>ossrh</id>
