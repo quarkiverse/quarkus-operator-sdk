@@ -58,7 +58,8 @@ class OperatorSDKProcessor {
             BuildProducer<FeatureBuildItem> features,
             BuildProducer<UnremovableBeanBuildItem> unremovableBeans,
             Optional<MetricsCapabilityBuildItem> metricsCapability,
-            BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
+            BuildProducer<AdditionalBeanBuildItem> additionalBeans,
+            BuildProducer<AdditionalIndexedClassesBuildItem> additionalIndexedClasses) {
         features.produce(new FeatureBuildItem(FEATURE));
         indexDependency.produce(
                 new IndexDependencyBuildItem("io.javaoperatorsdk", "operator-framework-core"));
@@ -88,6 +89,10 @@ class OperatorSDKProcessor {
 
         // register health check
         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorHealthCheck.class));
+
+        // register DefaultRateLimiter so that it can properly be configured via RateLimited annotation as expected
+        additionalIndexedClasses.produce(
+                new AdditionalIndexedClassesBuildItem(QuarkusControllerConfiguration.DefaultRateLimiter.class.getName()));
     }
 
     @BuildStep(onlyIf = IsDevelopment.class)
