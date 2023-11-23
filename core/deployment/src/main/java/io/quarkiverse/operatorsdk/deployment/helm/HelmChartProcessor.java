@@ -5,14 +5,20 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.KubernetesList;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import org.jboss.logging.Logger;
 
 import io.dekorate.helm.model.Chart;
@@ -82,9 +88,19 @@ public class HelmChartProcessor {
             addValuesYaml(helmDir, containerImageInfoBuildItem.getTag());
             addReadmeAndSchema(helmDir);
             addCRDs(new File(helmDir, CRD_DIR), generatedCRDInfoBuildItem);
+            addExplicitlyAddedKubernetesResources(helmDir,generatedResources);
         } else {
             log.debug("Generating helm chart is disabled");
         }
+    }
+
+    private void addExplicitlyAddedKubernetesResources(File helmDir,
+                                                       List<GeneratedKubernetesResourceBuildItem> generatedResources) {
+        var kubeYamlBuildItem =
+                generatedResources.stream().filter(r->r.getName().equals("kubernetes.yml")).findAny();
+        kubeYamlBuildItem.ifPresent(k-> {
+            String resources = new String(k.getContent(), StandardCharsets.UTF_8);
+        });
     }
 
     private void addTemplateFiles(File helmDir) {
