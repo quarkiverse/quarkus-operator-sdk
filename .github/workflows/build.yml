@@ -38,13 +38,13 @@ jobs:
     strategy:
       matrix:
         java-version: [ 11, 17 ]
-#        quarkus-version-jq-cmd:
-#          - '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current) | .releases[0].version'
-#          - '.platforms[0].streams[] | select(.id == "3.5") | .releases[0].version'
+        quarkus-version-jq-cmd:
+          - '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current) | .releases[0].version'
+#          - '.platforms[0].streams[] | select(.id == "3.6") | .releases[0].version'
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
 #      quarkus-version-jq-cmd: ${{ matrix.quarkus-version-jq-cmd }}
-      quarkus-version: 3.6.0.CR1
+      quarkus-version: 3.6.0
       java-version: ${{ matrix.java-version }}
       branch: ${{ needs.extract-branch-name.outputs.branch_name }}
       native-modules: "integration-tests"
