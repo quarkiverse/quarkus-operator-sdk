@@ -1,9 +1,6 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Properties;
@@ -65,22 +62,22 @@ public class Version extends io.javaoperatorsdk.operator.api.config.Version {
         final var sdkVersion = Utils.VERSION;
         InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("extension-version.properties");
         Properties properties = new Properties();
-//        if (is != null) {
-//            try {
-//                properties.load(is);
-//            } catch (IOException e) {
-//                log.warnf("Couldn't load extension version information: {0}", e.getMessage());
-//            }
-//        } else {
-//            log.warn("Couldn't find extension-version.properties file. Default version information will be used.");
-//        }
-//
+        //        if (is != null) {
+        //            try {
+        //                properties.load(is);
+        //            } catch (IOException e) {
+        //                log.warnf("Couldn't load extension version information: {0}", e.getMessage());
+        //            }
+        //        } else {
+        //            log.warn("Couldn't find extension-version.properties file. Default version information will be used.");
+        //        }
+        //
         Date builtTime;
-//        try {
-//            builtTime = (new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")).parse(properties.getProperty("git.build.time"));
-//        } catch (ParseException var4) {
-//            builtTime = Date.from(Instant.EPOCH);
-//        }
+        //        try {
+        //            builtTime = (new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")).parse(properties.getProperty("git.build.time"));
+        //        } catch (ParseException var4) {
+        //            builtTime = Date.from(Instant.EPOCH);
+        //        }
         builtTime = Date.from(Instant.EPOCH);
 
         return new Version(sdkVersion.getCommit(), sdkVersion.getBuiltTime(),

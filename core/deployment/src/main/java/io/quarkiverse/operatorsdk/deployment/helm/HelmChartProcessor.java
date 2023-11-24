@@ -5,25 +5,23 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.KubernetesList;
-import io.fabric8.kubernetes.client.utils.Serialization;
 import org.jboss.logging.Logger;
 
 import io.dekorate.helm.model.Chart;
-import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.quarkiverse.operatorsdk.common.FileUtils;
 import io.quarkiverse.operatorsdk.common.GeneratedResourcesUtils;
 import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
@@ -37,14 +35,14 @@ import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
 import io.quarkus.deployment.pkg.builditem.ArtifactResultBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
-import io.quarkus.kubernetes.spi.ConfiguratorBuildItem;
-import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
+import io.quarkus.kubernetes.spi.*;
 import io.quarkus.qute.Qute;
 
 public class HelmChartProcessor {
 
     private static final Logger log = Logger.getLogger(HelmChartProcessor.class);
 
+    private static final KubernetesSerialization kubernetesSerialization = new KubernetesSerialization();
     private static final String TEMPLATES_DIR = "templates";
     private static final String HELM_TEMPLATES_STATIC_DIR = "/helm/static/";
     private static final String[] TEMPLATE_FILES = new String[] {
@@ -88,19 +86,52 @@ public class HelmChartProcessor {
             addValuesYaml(helmDir, containerImageInfoBuildItem.getTag());
             addReadmeAndSchema(helmDir);
             addCRDs(new File(helmDir, CRD_DIR), generatedCRDInfoBuildItem);
-            addExplicitlyAddedKubernetesResources(helmDir,generatedResources);
+            addExplicitlyAddedKubernetesResources(helmDir, generatedResources, appInfo);
         } else {
             log.debug("Generating helm chart is disabled");
         }
     }
 
     private void addExplicitlyAddedKubernetesResources(File helmDir,
-                                                       List<GeneratedKubernetesResourceBuildItem> generatedResources) {
-        var kubeYamlBuildItem =
-                generatedResources.stream().filter(r->r.getName().equals("kubernetes.yml")).findAny();
-        kubeYamlBuildItem.ifPresent(k-> {
+            List<GeneratedKubernetesResourceBuildItem> generatedResources, ApplicationInfoBuildItem appInfo) {
+        var kubeYamlBuildItem = generatedResources.stream().filter(r -> r.getName().equals("kubernetes.yml")).findAny();
+        kubeYamlBuildItem.ifPresent(k -> {
             String resources = new String(k.getContent(), StandardCharsets.UTF_8);
+            List<HasMetadata> list = kubernetesSerialization.unmarshal(resources);
+            list = filterOutStandardResources(list, appInfo);
+            if (!list.isEmpty()) {
+                addResourceToHelmDir(helmDir, list);
+            }
         });
+    }
+
+    private List<HasMetadata> filterOutStandardResources(List<HasMetadata> list, ApplicationInfoBuildItem appInfo) {
+        return list.stream().filter(r -> {
+            if (r instanceof ClusterRole) {
+                return !r.getMetadata().getName().equals("simple-cluster-role") &&
+                        !r.getMetadata().getName().equals("josdk-crd-validating-cluster-role");
+            }
+            if (r instanceof ClusterRoleBinding) {
+                return !r.getMetadata().getName().equals("simple-crd-validating-role-binding");
+            }
+            if (r instanceof RoleBinding) {
+                return !r.getMetadata().getName().equals(appInfo.getName() + "-view") &&
+                        !r.getMetadata().getName().equals("simple-role-binding");
+            }
+            if (r instanceof Service || r instanceof Deployment || r instanceof ServiceAccount) {
+                return !r.getMetadata().getName().equals(appInfo.getName());
+            }
+            return true;
+        }).collect(Collectors.toList());
+    }
+
+    private void addResourceToHelmDir(File helmDir, List<HasMetadata> list) {
+        String yaml = kubernetesSerialization.asYaml(list);
+        try {
+            Files.writeString(Path.of(helmDir.getPath(), TEMPLATES_DIR, "deployment.yaml"), yaml);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private void addTemplateFiles(File helmDir) {
