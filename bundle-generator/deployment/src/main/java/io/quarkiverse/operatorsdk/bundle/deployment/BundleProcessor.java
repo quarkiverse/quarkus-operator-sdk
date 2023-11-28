@@ -4,21 +4,12 @@ import static io.quarkiverse.operatorsdk.annotations.RBACVerbs.ALL_COMMON_VERBS;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.jboss.jandex.AnnotationInstance;
-import org.jboss.jandex.AnnotationValue;
-import org.jboss.jandex.DotName;
-import org.jboss.jandex.IndexView;
+import org.jboss.jandex.*;
 import org.jboss.logging.Logger;
 
 import io.fabric8.kubernetes.api.model.ServiceAccount;
@@ -36,11 +27,14 @@ import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.deployment.VersionBuildItem;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
+import io.quarkus.builder.item.MultiBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
+import io.quarkus.deployment.annotations.Produce;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.GeneratedFileSystemResourceBuildItem;
+import io.quarkus.deployment.pkg.builditem.ArtifactResultBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.kubernetes.deployment.KubernetesConfig;
 import io.quarkus.kubernetes.deployment.ResourceNameUtil;
@@ -50,7 +44,11 @@ public class BundleProcessor {
 
     private static final Logger log = Logger.getLogger(BundleProcessor.class);
     private static final DotName SHARED_CSV_METADATA = DotName.createSimple(SharedCSVMetadata.class.getName());
+    private static final DotName OLD_SHARED_CSV_METADATA = DotName
+            .createSimple(io.quarkiverse.operatorsdk.bundle.runtime.SharedCSVMetadata.class.getName());
     private static final DotName CSV_METADATA = DotName.createSimple(CSVMetadata.class.getName());
+    private static final DotName OLD_CSV_METADATA = DotName
+            .createSimple(io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata.class.getName());
     private static final String BUNDLE = "bundle";
     public static final String CRD_DISPLAY_NAME = "CRD_DISPLAY_NAME";
     public static final String CRD_DESCRIPTION = "CRD_DESCRIPTION";
@@ -170,6 +168,68 @@ public class BundleProcessor {
             return "bundle " + (csvMetadataName.isEmpty() ? "automatically " : "") + "named '"
                     + actualName + "' defined by '" + metadataHolder.getOrigin() + "'";
         }
+    }
+
+    final static class DeprecatedMetadataBuildItem extends MultiBuildItem {
+        private final String deprecated;
+        private final DotName deprecatedItem;
+
+        DeprecatedMetadataBuildItem(String deprecated, DotName deprecatedItem) {
+            this.deprecated = deprecated;
+            this.deprecatedItem = deprecatedItem;
+        }
+
+        public String getDeprecated() {
+            return deprecated;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @BuildStep(onlyIf = IsGenerationEnabled.class)
+    @Produce(ArtifactResultBuildItem.class)
+    void failIfDeprecatedCSVMetadataIsUsed(List<DeprecatedMetadataBuildItem> deprecated) {
+        if (!deprecated.isEmpty()) {
+            final var sharedMetadataMsg = getMessage(deprecated, OLD_SHARED_CSV_METADATA, SHARED_CSV_METADATA);
+            final var csvMetadataMsg = getMessage(deprecated, OLD_CSV_METADATA, CSV_METADATA);
+            if (sharedMetadataMsg != null || csvMetadataMsg != null) {
+                throw new IllegalStateException("Using deprecated and now ignored features, please use their replacement!\n"
+                        + sharedMetadataMsg + csvMetadataMsg);
+            }
+        }
+    }
+
+    private static String getMessage(List<DeprecatedMetadataBuildItem> deprecated, DotName deprecatedItemName,
+            DotName newItemName) {
+        final var prefix = "Class(es) using deprecated " + deprecatedItemName
+                + ", use its " + newItemName + " replacement instead:\n - ";
+        var sharedMetadataMsg = deprecated.stream()
+                .filter(bi -> deprecatedItemName.equals(bi.deprecatedItem))
+                .map(DeprecatedMetadataBuildItem::getDeprecated)
+                .collect(Collectors.joining("\n - "));
+        sharedMetadataMsg = sharedMetadataMsg.isBlank() ? null : prefix + sharedMetadataMsg;
+        return sharedMetadataMsg;
+    }
+
+    @SuppressWarnings("unused")
+    @BuildStep(onlyIf = IsGenerationEnabled.class)
+    void failOnUseOfDeprecatedSharedMetadata(CombinedIndexBuildItem combinedIndexBuildItem,
+            BuildProducer<DeprecatedMetadataBuildItem> deprecatedProducer) {
+        final var index = combinedIndexBuildItem.getIndex();
+        index.getAllKnownImplementors(OLD_SHARED_CSV_METADATA)
+                .forEach(ci -> deprecatedProducer
+                        .produce(new DeprecatedMetadataBuildItem(ci.name().toString(), OLD_SHARED_CSV_METADATA)));
+    }
+
+    @SuppressWarnings("unused")
+    @BuildStep(onlyIf = IsGenerationEnabled.class)
+    void failOnUseOfDeprecatedCSVMetadata(CombinedIndexBuildItem combinedIndexBuildItem,
+            BuildProducer<DeprecatedMetadataBuildItem> deprecatedProducer) {
+        final var index = combinedIndexBuildItem.getIndex();
+        // collect the names of the reconcilers annotated with deprecated CSVMetadata
+        ClassUtils.getKnownReconcilers(index, log)
+                .filter(reconcilerInfo -> reconcilerInfo.classInfo().declaredAnnotation(OLD_CSV_METADATA) != null)
+                .map(raci -> raci.classInfo().name().toString())
+                .forEach(s -> deprecatedProducer.produce(new DeprecatedMetadataBuildItem(s, OLD_CSV_METADATA)));
     }
 
     @SuppressWarnings("unused")
