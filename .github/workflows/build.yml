@@ -37,7 +37,7 @@ jobs:
       - extract-branch-name
     strategy:
       matrix:
-        java-version: [ 11, 17 ]
+        java-version: [ 17, 21 ]
         quarkus-version-jq-cmd:
           - '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current) | .releases[0].version'
 #          - '.platforms[0].streams[] | select(.id == "3.6") | .releases[0].version'
