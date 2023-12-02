@@ -22,6 +22,10 @@ jobs:
 
       - uses: actions/checkout@v3
 
+      - name: Retrieve Quarkus version
+        id: quarkus-version
+        run: echo "quarkus_version=$(mvn help:evaluate -Dexpression=quarkus.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+
       - name: Import GPG key
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v5
@@ -88,3 +92,37 @@ jobs:
         run: |
           echo "Pull Request Number - ${{ steps.qp-pr.outputs.pull-request-number }}"
           echo "Pull Request URL - ${{ steps.qp-pr.outputs.pull-request-url }}"
+
+      - uses: actions/checkout@v3
+        with:
+          repository: operator-framework/java-operator-plugins
+          path: sdk-plugins
+
+      - name: Update QOSDK version to ${{steps.metadata.outputs.current-version}} in java-operator-plugins
+        run: |
+          cd sdk-plugins
+          sed -i -e 's|<quarkus-sdk.version>.*</quarkus-sdk.version>|<quarkus-sdk.version>${{steps.metadata.outputs.current-version}}</quarkus-sdk.version>|' $(pwd)/pkg/quarkus/v1beta/scaffolds/internal/templates/pomxml.go
+          sed -i -e 's|<quarkus-sdk.version>.*</quarkus-sdk.version>|<quarkus-sdk.version>${{steps.metadata.outputs.current-version}}</quarkus-sdk.version>|' $(pwd)/testdata/quarkus/memcached-quarkus-operator/pom.xml
+          echo "Using Quarkus ${{ steps.quarkus-version.outputs.quarkus_version }}"
+          mvn versions:set-property -Dproperty=quarkus.version -DnewVersion=${{steps.quarkus-version.outputs.quarkus_version}} -f ./testdata/quarkus/memcached-quarkus-operator/pom.xml versions:commit
+          sed -i -e 's|<quarkus.version>.*</quarkus.version>|<quarkus.version>${{steps.quarkus-version.outputs.quarkus_version}}</quarkus.version>|' $(pwd)/pkg/quarkus/v1beta/scaffolds/internal/templates/pomxml.go
+
+      - name: Create java-operator-plugins pull request
+        uses: peter-evans/create-pull-request@v5
+        id: jop-pr
+        with:
+          path: sdk-plugins
+          title: "feat: update QOSDK to ${{steps.metadata.outputs.current-version}}"
+          commit-message: "feat: update QOSDK to ${{steps.metadata.outputs.current-version}}"
+          committer: metacosm <metacosm@users.noreply.github.com>
+          author: metacosm <metacosm@users.noreply.github.com>
+          branch: qosdk-release-${{steps.metadata.outputs.current-version}}
+          token: ${{ secrets.QOSDK_BOT_TOKEN }}
+          push-to-fork: qosdk-bot/java-operator-plugins
+          delete-branch: true
+
+      - name: Check java-operator-plugins PR
+        if: ${{ steps.jop-pr.outputs.pull-request-number }}
+        run: |
+          echo "Pull Request Number - ${{ steps.jop-pr.outputs.pull-request-number }}"
+          echo "Pull Request URL - ${{ steps.jop-pr.outputs.pull-request-url }}"
