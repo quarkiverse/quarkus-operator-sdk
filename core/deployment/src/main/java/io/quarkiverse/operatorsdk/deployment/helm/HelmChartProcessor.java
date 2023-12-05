@@ -108,15 +108,14 @@ public class HelmChartProcessor {
     private List<HasMetadata> filterOutStandardResources(List<HasMetadata> list, ApplicationInfoBuildItem appInfo) {
         return list.stream().filter(r -> {
             if (r instanceof ClusterRole) {
-                return !r.getMetadata().getName().equals("simple-cluster-role") &&
-                        !r.getMetadata().getName().equals("josdk-crd-validating-cluster-role");
+                return !r.getMetadata().getName().endsWith("-cluster-role");
             }
             if (r instanceof ClusterRoleBinding) {
-                return !r.getMetadata().getName().equals("simple-crd-validating-role-binding");
+                return !r.getMetadata().getName().endsWith("-crd-validating-role-binding");
             }
             if (r instanceof RoleBinding) {
                 return !r.getMetadata().getName().equals(appInfo.getName() + "-view") &&
-                        !r.getMetadata().getName().equals("simple-role-binding");
+                        !r.getMetadata().getName().endsWith("-role-binding");
             }
             if (r instanceof Service || r instanceof Deployment || r instanceof ServiceAccount) {
                 return !r.getMetadata().getName().equals(appInfo.getName());
@@ -128,7 +127,7 @@ public class HelmChartProcessor {
     private void addResourceToHelmDir(File helmDir, List<HasMetadata> list) {
         String yaml = kubernetesSerialization.asYaml(list);
         try {
-            Files.writeString(Path.of(helmDir.getPath(), TEMPLATES_DIR, "deployment.yaml"), yaml);
+            Files.writeString(Path.of(helmDir.getPath(), TEMPLATES_DIR, "kubernetes.yml"), yaml);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
