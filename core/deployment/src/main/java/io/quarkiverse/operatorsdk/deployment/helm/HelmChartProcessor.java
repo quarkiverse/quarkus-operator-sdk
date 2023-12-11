@@ -8,10 +8,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
@@ -22,16 +20,16 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.DeserializedKubernetesResourcesBuildItem;
 import io.quarkiverse.operatorsdk.common.FileUtils;
 import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
 import io.quarkiverse.operatorsdk.deployment.ControllerConfigurationsBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
-import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
-import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkus.container.spi.ContainerImageInfoBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
+import io.quarkus.deployment.annotations.BuildSteps;
 import io.quarkus.deployment.annotations.Produce;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
 import io.quarkus.deployment.pkg.builditem.ArtifactResultBuildItem;
@@ -39,11 +37,12 @@ import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.kubernetes.spi.*;
 import io.quarkus.qute.Qute;
 
+@BuildSteps(onlyIf = HelmGenerationEnabled.class)
 public class HelmChartProcessor {
 
     private static final Logger log = Logger.getLogger(HelmChartProcessor.class);
 
-    private static final String TEMPLATES_DIR = "templates";
+    static final String TEMPLATES_DIR = "templates";
     private static final String HELM_TEMPLATES_STATIC_DIR = "/helm/static/";
     private static final String[] TEMPLATE_FILES = new String[] {
             "generic-crd-cluster-role.yaml",
@@ -60,52 +59,87 @@ public class HelmChartProcessor {
     public static final String CRD_DIR = "crds";
     public static final String CRD_ROLE_BINDING_TEMPLATE_PATH = "/helm/crd-role-binding-template.yaml";
 
-    private static class HelmGenerationEnabled implements BooleanSupplier {
-        private BuildTimeOperatorConfiguration config;
-
-        @Override
-        public boolean getAsBoolean() {
-            return config.helm.enabled;
-        }
-    }
-
     @BuildStep(onlyIfNot = HelmGenerationEnabled.class)
     @Produce(ArtifactResultBuildItem.class)
     void outputHelmGenerationDisabled() {
         log.debug("Generating Helm chart is disabled");
     }
 
-    @BuildStep(onlyIf = HelmGenerationEnabled.class)
-    @Produce(ArtifactResultBuildItem.class) // to make it produce a build item, so it gets executed
-    void handleHelmCharts(DeserializedKubernetesResourcesBuildItem generatedKubernetesResources,
-            ControllerConfigurationsBuildItem controllerConfigurations,
-            GeneratedCRDInfoBuildItem generatedCRDInfoBuildItem,
-            OutputTargetBuildItem outputTarget,
-            ApplicationInfoBuildItem appInfo,
-            ContainerImageInfoBuildItem containerImageInfoBuildItem) {
-
+    @BuildStep
+    HelmTargetDirectoryBuildItem createRelatedDirectories(OutputTargetBuildItem outputTarget) {
         final var helmDir = outputTarget.getOutputDirectory().resolve("helm").toFile();
         log.infov("Generating helm chart to {0}", helmDir);
-        var controllerConfigs = controllerConfigurations.getControllerConfigs().values();
-
-        final var resources = generatedKubernetesResources.getResources();
-        createRelatedDirectories(helmDir);
-        addTemplateFiles(helmDir);
-        addClusterRolesForReconcilers(helmDir, controllerConfigs);
-        addPrimaryClusterRoleBindings(helmDir, controllerConfigs);
-        addGeneratedDeployment(helmDir, resources, controllerConfigurations, appInfo);
-        addChartYaml(helmDir, appInfo.getName(), appInfo.getVersion());
-        addValuesYaml(helmDir, containerImageInfoBuildItem.getTag());
-        addReadmeAndSchema(helmDir);
-        addCRDs(new File(helmDir, CRD_DIR), generatedCRDInfoBuildItem);
-        addExplicitlyAddedKubernetesResources(helmDir, resources, appInfo);
+        FileUtils.ensureDirectoryExists(helmDir);
+        FileUtils.ensureDirectoryExists(new File(helmDir, TEMPLATES_DIR));
+        FileUtils.ensureDirectoryExists(new File(helmDir, CRD_DIR));
+        return new HelmTargetDirectoryBuildItem(helmDir);
     }
 
-    private void addExplicitlyAddedKubernetesResources(File helmDir,
-            List<HasMetadata> resources, ApplicationInfoBuildItem appInfo) {
+    @BuildStep
+    @Produce(ArtifactResultBuildItem.class)
+    void addPrimaryClusterRoleBindings(HelmTargetDirectoryBuildItem helmTargetDirectoryBuildItem,
+            ControllerConfigurationsBuildItem controllerConfigurations) {
+        final var controllerConfigs = controllerConfigurations.getControllerConfigs().values();
+
+        final String template;
+        try (InputStream file = Thread.currentThread().getContextClassLoader()
+                .getResourceAsStream(CRD_ROLE_BINDING_TEMPLATE_PATH)) {
+            if (file == null) {
+                throw new IllegalArgumentException("Template file " + CRD_ROLE_BINDING_TEMPLATE_PATH + " doesn't exist");
+            }
+            template = new String(file.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+
+        final var templatesDir = helmTargetDirectoryBuildItem.getPathToTemplatesDir();
+
+        controllerConfigs.forEach(cc -> {
+            try {
+                final var name = cc.getName();
+                String res = Qute.fmt(template, Map.of("reconciler-name", name));
+                Files.writeString(templatesDir.resolve(name + "-crd-role-binding.yaml"), res);
+
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+        });
+    }
+
+    @BuildStep
+    @Produce(ArtifactResultBuildItem.class)
+    void addClusterRolesForReconcilers(HelmTargetDirectoryBuildItem helmTargetDirectoryBuildItem,
+            ControllerConfigurationsBuildItem controllerConfigurations) {
+        final var controllerConfigs = controllerConfigurations.getControllerConfigs().values();
+        final var templatesDir = helmTargetDirectoryBuildItem.getPathToTemplatesDir();
+
+        controllerConfigs.forEach(cc -> {
+            try {
+                final var name = cc.getName();
+                var clusterRole = AddClusterRolesDecorator.createClusterRole(cc);
+                var yaml = FileUtils.asYaml(clusterRole);
+                Files.writeString(templatesDir.resolve(name + "-crd-cluster-role.yaml"), yaml);
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+        });
+    }
+
+    @BuildStep
+    @Produce(ArtifactResultBuildItem.class)
+    void addExplicitlyAddedKubernetesResources(DeserializedKubernetesResourcesBuildItem generatedKubernetesResources,
+            HelmTargetDirectoryBuildItem helmDirBI,
+            ApplicationInfoBuildItem appInfo) {
+        var resources = generatedKubernetesResources.getResources();
         resources = filterOutStandardResources(resources, appInfo);
         if (!resources.isEmpty()) {
-            addResourceToHelmDir(helmDir, resources);
+            final var kubernetesManifest = helmDirBI.getPathToTemplatesDir().resolve("kubernetes.yml");
+            String yaml = FileUtils.asYaml(resources);
+            try {
+                Files.writeString(kubernetesManifest, yaml);
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
         }
     }
 
@@ -128,124 +162,92 @@ public class HelmChartProcessor {
         }).collect(Collectors.toList());
     }
 
-    private void addResourceToHelmDir(File helmDir, List<HasMetadata> list) {
-        String yaml = FileUtils.asYaml(list);
-        try {
-            Files.writeString(Path.of(helmDir.getPath(), TEMPLATES_DIR, "kubernetes.yml"), yaml);
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
+    @BuildStep
+    @Produce(ArtifactResultBuildItem.class)
+    private void addTemplateFiles(HelmTargetDirectoryBuildItem helmDirBI) {
+        copyTemplates(helmDirBI.getPathToTemplatesDir(), TEMPLATE_FILES);
     }
 
-    private void addTemplateFiles(File helmDir) {
-        copyTemplates(helmDir.toPath().resolve(TEMPLATES_DIR), TEMPLATE_FILES);
-    }
-
-    private void addGeneratedDeployment(File helmDir, List<HasMetadata> resources,
+    @BuildStep
+    @Produce(ArtifactResultBuildItem.class)
+    void addGeneratedDeployment(HelmTargetDirectoryBuildItem helmDirBI,
+            DeserializedKubernetesResourcesBuildItem deserializedKubernetesResources,
             ControllerConfigurationsBuildItem controllerConfigurations,
             ApplicationInfoBuildItem appInfo) {
-        Deployment deployment = (Deployment) resources.stream()
+        // add an env var for each reconciler's watch namespace in the operator's deployment
+        final var deployment = (Deployment) deserializedKubernetesResources.getResources().stream()
                 .filter(Deployment.class::isInstance).findFirst()
                 .orElseThrow();
-        addActualNamespaceConfigPlaceholderToDeployment(deployment, controllerConfigurations);
-        var template = FileUtils.asYaml(deployment);
-        // a bit hacky solution to get the exact placeholder without brackets
-        String res = template.replace("\"{watchNamespaces}\"", "{{ .Values.watchNamespaces }}");
-        res = res.replaceAll(appInfo.getVersion(), "{{ .Values.version }}");
-        try {
-            Files.writeString(Path.of(helmDir.getPath(), TEMPLATES_DIR, "deployment.yaml"), res);
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    private void addActualNamespaceConfigPlaceholderToDeployment(Deployment deployment,
-            ControllerConfigurationsBuildItem controllerConfigurations) {
+        final var envs = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         controllerConfigurations.getControllerConfigs().values().forEach(c -> {
-            var envs = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-            envs.add(new EnvVar("QUARKUS_OPERATOR_SDK_CONTROLLERS_" + c.getName().toUpperCase() + "_NAMESPACES",
+            envs.add(new EnvVar(ConfigurationUtils.getNamespacesPropertyName(c.getName(), true),
                     "{watchNamespaces}", null));
         });
-    }
 
-    @SuppressWarnings("rawtypes")
-    private void addPrimaryClusterRoleBindings(File helmDir, Collection<QuarkusControllerConfiguration> controllerConfigs) {
-        try (InputStream file = Thread.currentThread().getContextClassLoader()
-                .getResourceAsStream(CRD_ROLE_BINDING_TEMPLATE_PATH)) {
-            if (file == null) {
-                throw new IllegalArgumentException("Template file " + CRD_ROLE_BINDING_TEMPLATE_PATH + " doesn't exist");
-            }
-            String template = new String(file.readAllBytes(), StandardCharsets.UTF_8);
-            controllerConfigs.forEach(config -> {
-                try {
-                    final var name = config.getName();
-                    String res = Qute.fmt(template, Map.of("reconciler-name", name));
-                    Files.writeString(Path.of(helmDir.getPath(), TEMPLATES_DIR,
-                            name + "-crd-role-binding.yaml"), res);
-                } catch (IOException e) {
-                    throw new IllegalStateException(e);
-                }
-            });
+        // a bit hacky solution to get the exact placeholder without brackets
+        final var template = FileUtils.asYaml(deployment);
+        var res = template.replace("\"{watchNamespaces}\"", "{{ .Values.watchNamespaces }}");
+        res = res.replaceAll(appInfo.getVersion(), "{{ .Values.version }}");
+        try {
+            Files.writeString(helmDirBI.getPathToTemplatesDir().resolve("deployment.yaml"), res);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
     }
 
-    @SuppressWarnings("rawtypes")
-    private void addClusterRolesForReconcilers(File helmDir,
-            Collection<QuarkusControllerConfiguration> controllerConfigurations) {
-        controllerConfigurations.forEach(cc -> {
-            try {
-                var clusterRole = AddClusterRolesDecorator.createClusterRole(cc);
-                var yaml = io.fabric8.kubernetes.client.utils.Serialization.asYaml(clusterRole);
-                Files.writeString(Path.of(helmDir.getPath(), TEMPLATES_DIR, cc.getName() + "-crd-cluster-role.yaml"),
-                        yaml);
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
-            }
-        });
-    }
-
-    private void addCRDs(File crdDir, GeneratedCRDInfoBuildItem generatedCRDInfoBuildItem) {
+    @BuildStep
+    @Produce(ArtifactResultBuildItem.class)
+    private void addCRDs(HelmTargetDirectoryBuildItem helmDirBI, GeneratedCRDInfoBuildItem generatedCRDInfoBuildItem) {
         var crdInfos = generatedCRDInfoBuildItem.getCRDGenerationInfo().getCrds().values().stream()
                 .flatMap(m -> m.values().stream())
                 .collect(Collectors.toList());
 
+        final var crdDir = helmDirBI.getPathToHelmDir().resolve(CRD_DIR);
         crdInfos.forEach(crdInfo -> {
             try {
                 var generateCrdPath = Path.of(crdInfo.getFilePath());
                 // replace needed since tests might generate files multiple times
-                Files.copy(generateCrdPath, Path.of(crdDir.getPath(), generateCrdPath.getFileName().toString()),
-                        REPLACE_EXISTING);
+                Files.copy(generateCrdPath, crdDir.resolve(generateCrdPath.getFileName().toString()), REPLACE_EXISTING);
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
         });
     }
 
-    private void addValuesYaml(File helmDir, String tag) {
+    @BuildStep
+    @Produce(ArtifactResultBuildItem.class)
+    private void addValuesYaml(HelmTargetDirectoryBuildItem helmTargetDirectoryBuildItem,
+            ContainerImageInfoBuildItem containerImageInfoBuildItem) {
         try {
             var values = new Values();
+            final var tag = containerImageInfoBuildItem.getTag();
             values.setVersion(tag);
             var valuesYaml = FileUtils.asYaml(values);
-            Files.writeString(Path.of(helmDir.getPath(), VALUES_YAML_FILENAME), valuesYaml);
+            var valuesFile = helmTargetDirectoryBuildItem.getPathToHelmDir().resolve(VALUES_YAML_FILENAME);
+            Files.writeString(valuesFile, valuesYaml);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
     }
 
-    private void addReadmeAndSchema(File helmDir) {
-        copyTemplates(helmDir.toPath(), ROOT_STATIC_FILES);
+    @BuildStep
+    @Produce(ArtifactResultBuildItem.class)
+    private void addReadmeAndSchema(HelmTargetDirectoryBuildItem helmDirBI) {
+        copyTemplates(helmDirBI.getPathToHelmDir(), ROOT_STATIC_FILES);
     }
 
-    private void addChartYaml(File helmDir, String name, String version) {
+    @BuildStep
+    @Produce(ArtifactResultBuildItem.class)
+    void addChartYaml(HelmTargetDirectoryBuildItem helmTargetDirectoryBuildItem,
+            ApplicationInfoBuildItem appInfo) {
         try {
             Chart chart = new Chart();
-            chart.setName(name);
-            chart.setVersion(version);
+            chart.setName(appInfo.getName());
+            chart.setVersion(appInfo.getVersion());
             chart.setApiVersion("v2");
             var chartYaml = FileUtils.asYaml(chart);
-            Files.writeString(Path.of(helmDir.getPath(), CHART_YAML_FILENAME), chartYaml);
+            final var chartFile = helmTargetDirectoryBuildItem.getPathToHelmDir().resolve(CHART_YAML_FILENAME);
+            Files.writeString(chartFile, chartYaml);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -263,12 +265,6 @@ public class HelmChartProcessor {
                 throw new IllegalStateException(e);
             }
         }
-    }
-
-    private void createRelatedDirectories(File helmDir) {
-        FileUtils.ensureDirectoryExists(helmDir);
-        FileUtils.ensureDirectoryExists(new File(helmDir, TEMPLATES_DIR));
-        FileUtils.ensureDirectoryExists(new File(helmDir, CRD_DIR));
     }
 
     @BuildStep
