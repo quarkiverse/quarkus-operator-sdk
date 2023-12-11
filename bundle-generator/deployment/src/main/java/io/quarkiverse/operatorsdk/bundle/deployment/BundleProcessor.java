@@ -44,7 +44,6 @@ import io.quarkus.deployment.builditem.GeneratedFileSystemResourceBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.kubernetes.deployment.KubernetesConfig;
 import io.quarkus.kubernetes.deployment.ResourceNameUtil;
-import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
 
 public class BundleProcessor {
 
@@ -183,7 +182,7 @@ public class BundleProcessor {
             VersionBuildItem versionBuildItem,
             BuildProducer<GeneratedBundleBuildItem> doneGeneratingCSV,
             GeneratedCRDInfoBuildItem generatedCustomResourcesDefinitions,
-            List<GeneratedKubernetesResourceBuildItem> generatedKubernetesManifests,
+            DeserializedKubernetesResourcesBuildItem generatedKubernetesResources,
             BuildProducer<GeneratedFileSystemResourceBuildItem> generatedCSVs) {
         final var crds = generatedCustomResourcesDefinitions.getCRDGenerationInfo().getCrds()
                 .values().stream()
@@ -197,7 +196,7 @@ public class BundleProcessor {
         final var roles = new LinkedList<Role>();
         final var deployments = new LinkedList<Deployment>();
 
-        final var resources = GeneratedResourcesUtils.loadFrom(generatedKubernetesManifests);
+        final var resources = generatedKubernetesResources.getResources();
         resources.forEach(r -> {
             if (r instanceof ServiceAccount) {
                 serviceAccounts.add((ServiceAccount) r);

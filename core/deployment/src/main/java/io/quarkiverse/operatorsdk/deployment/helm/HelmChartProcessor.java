@@ -22,9 +22,8 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
-import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
+import io.quarkiverse.operatorsdk.common.DeserializedKubernetesResourcesBuildItem;
 import io.quarkiverse.operatorsdk.common.FileUtils;
-import io.quarkiverse.operatorsdk.common.GeneratedResourcesUtils;
 import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
 import io.quarkiverse.operatorsdk.deployment.ControllerConfigurationsBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
@@ -44,7 +43,6 @@ public class HelmChartProcessor {
 
     private static final Logger log = Logger.getLogger(HelmChartProcessor.class);
 
-    private static final KubernetesSerialization kubernetesSerialization = new KubernetesSerialization();
     private static final String TEMPLATES_DIR = "templates";
     private static final String HELM_TEMPLATES_STATIC_DIR = "/helm/static/";
     private static final String[] TEMPLATE_FILES = new String[] {
@@ -79,8 +77,7 @@ public class HelmChartProcessor {
 
     @BuildStep(onlyIf = HelmGenerationEnabled.class)
     @Produce(ArtifactResultBuildItem.class) // to make it produce a build item, so it gets executed
-    void handleHelmCharts(
-            List<GeneratedKubernetesResourceBuildItem> generatedResources,
+    void handleHelmCharts(DeserializedKubernetesResourcesBuildItem generatedKubernetesResources,
             ControllerConfigurationsBuildItem controllerConfigurations,
             GeneratedCRDInfoBuildItem generatedCRDInfoBuildItem,
             OutputTargetBuildItem outputTarget,
@@ -91,33 +88,29 @@ public class HelmChartProcessor {
         log.infov("Generating helm chart to {0}", helmDir);
         var controllerConfigs = controllerConfigurations.getControllerConfigs().values();
 
+        final var resources = generatedKubernetesResources.getResources();
         createRelatedDirectories(helmDir);
         addTemplateFiles(helmDir);
         addClusterRolesForReconcilers(helmDir, controllerConfigs);
         addPrimaryClusterRoleBindings(helmDir, controllerConfigs);
-        addGeneratedDeployment(helmDir, generatedResources, controllerConfigurations, appInfo);
+        addGeneratedDeployment(helmDir, resources, controllerConfigurations, appInfo);
         addChartYaml(helmDir, appInfo.getName(), appInfo.getVersion());
         addValuesYaml(helmDir, containerImageInfoBuildItem.getTag());
         addReadmeAndSchema(helmDir);
         addCRDs(new File(helmDir, CRD_DIR), generatedCRDInfoBuildItem);
-        addExplicitlyAddedKubernetesResources(helmDir, generatedResources, appInfo);
+        addExplicitlyAddedKubernetesResources(helmDir, resources, appInfo);
     }
 
     private void addExplicitlyAddedKubernetesResources(File helmDir,
-            List<GeneratedKubernetesResourceBuildItem> generatedResources, ApplicationInfoBuildItem appInfo) {
-        var kubeYamlBuildItem = generatedResources.stream().filter(r -> r.getName().equals("kubernetes.yml")).findAny();
-        kubeYamlBuildItem.ifPresent(k -> {
-            String resources = new String(k.getContent(), StandardCharsets.UTF_8);
-            List<HasMetadata> list = kubernetesSerialization.unmarshal(resources);
-            list = filterOutStandardResources(list, appInfo);
-            if (!list.isEmpty()) {
-                addResourceToHelmDir(helmDir, list);
-            }
-        });
+            List<HasMetadata> resources, ApplicationInfoBuildItem appInfo) {
+        resources = filterOutStandardResources(resources, appInfo);
+        if (!resources.isEmpty()) {
+            addResourceToHelmDir(helmDir, resources);
+        }
     }
 
-    private List<HasMetadata> filterOutStandardResources(List<HasMetadata> list, ApplicationInfoBuildItem appInfo) {
-        return list.stream().filter(r -> {
+    private List<HasMetadata> filterOutStandardResources(List<HasMetadata> resources, ApplicationInfoBuildItem appInfo) {
+        return resources.stream().filter(r -> {
             if (r instanceof ClusterRole) {
                 return !r.getMetadata().getName().endsWith("-cluster-role");
             }
@@ -136,7 +129,7 @@ public class HelmChartProcessor {
     }
 
     private void addResourceToHelmDir(File helmDir, List<HasMetadata> list) {
-        String yaml = kubernetesSerialization.asYaml(list);
+        String yaml = FileUtils.asYaml(list);
         try {
             Files.writeString(Path.of(helmDir.getPath(), TEMPLATES_DIR, "kubernetes.yml"), yaml);
         } catch (IOException e) {
@@ -148,10 +141,9 @@ public class HelmChartProcessor {
         copyTemplates(helmDir.toPath().resolve(TEMPLATES_DIR), TEMPLATE_FILES);
     }
 
-    private void addGeneratedDeployment(File helmDir, List<GeneratedKubernetesResourceBuildItem> generatedResources,
+    private void addGeneratedDeployment(File helmDir, List<HasMetadata> resources,
             ControllerConfigurationsBuildItem controllerConfigurations,
             ApplicationInfoBuildItem appInfo) {
-        final var resources = GeneratedResourcesUtils.loadFrom(generatedResources);
         Deployment deployment = (Deployment) resources.stream()
                 .filter(Deployment.class::isInstance).findFirst()
                 .orElseThrow();
