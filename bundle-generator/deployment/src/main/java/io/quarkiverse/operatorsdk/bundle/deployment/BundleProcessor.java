@@ -185,75 +185,72 @@ public class BundleProcessor {
             GeneratedCRDInfoBuildItem generatedCustomResourcesDefinitions,
             List<GeneratedKubernetesResourceBuildItem> generatedKubernetesManifests,
             BuildProducer<GeneratedFileSystemResourceBuildItem> generatedCSVs) {
-        if (bundleConfiguration.enabled) {
-            final var crds = generatedCustomResourcesDefinitions.getCRDGenerationInfo().getCrds()
-                    .values().stream()
-                    .flatMap(entry -> entry.values().stream())
-                    .collect(Collectors.toMap(CRDInfo::getCrdName, Function.identity()));
-            final var outputDir = outputTarget.getOutputDirectory().resolve(BUNDLE);
-            final var serviceAccounts = new LinkedList<ServiceAccount>();
-            final var clusterRoleBindings = new LinkedList<ClusterRoleBinding>();
-            final var clusterRoles = new LinkedList<ClusterRole>();
-            final var roleBindings = new LinkedList<RoleBinding>();
-            final var roles = new LinkedList<Role>();
-            final var deployments = new LinkedList<Deployment>();
+        final var crds = generatedCustomResourcesDefinitions.getCRDGenerationInfo().getCrds()
+                .values().stream()
+                .flatMap(entry -> entry.values().stream())
+                .collect(Collectors.toMap(CRDInfo::getCrdName, Function.identity()));
+        final var outputDir = outputTarget.getOutputDirectory().resolve(BUNDLE);
+        final var serviceAccounts = new LinkedList<ServiceAccount>();
+        final var clusterRoleBindings = new LinkedList<ClusterRoleBinding>();
+        final var clusterRoles = new LinkedList<ClusterRole>();
+        final var roleBindings = new LinkedList<RoleBinding>();
+        final var roles = new LinkedList<Role>();
+        final var deployments = new LinkedList<Deployment>();
 
-            final var resources = GeneratedResourcesUtils.loadFrom(generatedKubernetesManifests);
-            resources.forEach(r -> {
-                if (r instanceof ServiceAccount) {
-                    serviceAccounts.add((ServiceAccount) r);
-                    return;
-                }
+        final var resources = GeneratedResourcesUtils.loadFrom(generatedKubernetesManifests);
+        resources.forEach(r -> {
+            if (r instanceof ServiceAccount) {
+                serviceAccounts.add((ServiceAccount) r);
+                return;
+            }
 
-                if (r instanceof ClusterRoleBinding) {
-                    clusterRoleBindings.add((ClusterRoleBinding) r);
-                    return;
-                }
+            if (r instanceof ClusterRoleBinding) {
+                clusterRoleBindings.add((ClusterRoleBinding) r);
+                return;
+            }
 
-                if (r instanceof ClusterRole) {
-                    clusterRoles.add((ClusterRole) r);
-                    return;
-                }
+            if (r instanceof ClusterRole) {
+                clusterRoles.add((ClusterRole) r);
+                return;
+            }
 
-                if (r instanceof RoleBinding) {
-                    roleBindings.add((RoleBinding) r);
-                    return;
-                }
+            if (r instanceof RoleBinding) {
+                roleBindings.add((RoleBinding) r);
+                return;
+            }
 
-                if (r instanceof Role) {
-                    roles.add((Role) r);
-                    return;
-                }
+            if (r instanceof Role) {
+                roles.add((Role) r);
+                return;
+            }
 
-                if (r instanceof Deployment) {
-                    deployments.add((Deployment) r);
-                }
-            });
+            if (r instanceof Deployment) {
+                deployments.add((Deployment) r);
+            }
+        });
 
-            final var deploymentName = ResourceNameUtil.getResourceName(kubernetesConfig, configuration);
-            final var generated = BundleGenerator.prepareGeneration(bundleConfiguration, operatorConfiguration,
-                    versionBuildItem.getVersion(),
-                    csvMetadata.getCsvGroups(), crds, outputTarget.getOutputDirectory(), deploymentName);
-            generated.forEach(manifestBuilder -> {
-                final var fileName = manifestBuilder.getFileName();
-                try {
-                    generatedCSVs.produce(
-                            new GeneratedFileSystemResourceBuildItem(
-                                    Path.of(BUNDLE).resolve(manifestBuilder.getName()).resolve(fileName).toString(),
-                                    manifestBuilder.getManifestData(serviceAccounts, clusterRoleBindings, clusterRoles,
-                                            roleBindings, roles, deployments)));
-                    log.infov("Generating {0} for ''{1}'' controller -> {2}",
-                            manifestBuilder.getManifestType(),
-                            manifestBuilder.getName(),
-                            outputDir.resolve(manifestBuilder.getName()).resolve(fileName));
-                } catch (IOException e) {
-                    log.errorv("Cannot generate {0} for ''{1}'' controller: {2}",
-                            manifestBuilder.getManifestType(), manifestBuilder.getName(), e.getMessage());
-                }
-            });
-            doneGeneratingCSV.produce(new GeneratedBundleBuildItem());
-
-        }
+        final var deploymentName = ResourceNameUtil.getResourceName(kubernetesConfig, configuration);
+        final var generated = BundleGenerator.prepareGeneration(bundleConfiguration, operatorConfiguration,
+                versionBuildItem.getVersion(),
+                csvMetadata.getCsvGroups(), crds, outputTarget.getOutputDirectory(), deploymentName);
+        generated.forEach(manifestBuilder -> {
+            final var fileName = manifestBuilder.getFileName();
+            try {
+                generatedCSVs.produce(
+                        new GeneratedFileSystemResourceBuildItem(
+                                Path.of(BUNDLE).resolve(manifestBuilder.getName()).resolve(fileName).toString(),
+                                manifestBuilder.getManifestData(serviceAccounts, clusterRoleBindings, clusterRoles,
+                                        roleBindings, roles, deployments)));
+                log.infov("Generating {0} for ''{1}'' controller -> {2}",
+                        manifestBuilder.getManifestType(),
+                        manifestBuilder.getName(),
+                        outputDir.resolve(manifestBuilder.getName()).resolve(fileName));
+            } catch (IOException e) {
+                log.errorv("Cannot generate {0} for ''{1}'' controller: {2}",
+                        manifestBuilder.getManifestType(), manifestBuilder.getName(), e.getMessage());
+            }
+        });
+        doneGeneratingCSV.produce(new GeneratedBundleBuildItem());
     }
 
     private Map<String, CSVMetadataHolder> getSharedMetadataHolders(String name, String version, String defaultReplaces,
