@@ -15,6 +15,7 @@ import org.jboss.logging.Logger;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
+import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
@@ -169,6 +170,8 @@ class QuarkusControllerConfigurationBuildStep {
         Class<? extends RateLimiter> rateLimiterClass = DefaultRateLimiter.class;
         Class<?> rateLimiterConfigurationClass = null;
         Long nullableInformerListLimit = null;
+        String fieldManager = null;
+        ItemStore<?> itemStore = null;
         if (controllerAnnotation != null) {
             final var intervalFromAnnotation = ConfigurationUtils.annotationValueOrDefault(
                     controllerAnnotation, "maxReconciliationInterval", AnnotationValue::asNested,
@@ -207,6 +210,10 @@ class QuarkusControllerConfigurationBuildStep {
             nullableInformerListLimit = ConfigurationUtils.annotationValueOrDefault(
                     controllerAnnotation, "informerListLimit", AnnotationValue::asLong,
                     () -> null);
+            fieldManager = ConfigurationUtils.annotationValueOrDefault(controllerAnnotation, "fieldManager",
+                    AnnotationValue::asString, () -> null);
+            itemStore = ConfigurationUtils.instantiateImplementationClass(controllerAnnotation, "itemStore", ItemStore.class,
+                    ItemStore.class, true, index);
         }
 
         // check if we have additional RBAC rules to handle
@@ -266,7 +273,7 @@ class QuarkusControllerConfigurationBuildStep {
                 finalFilter,
                 maxReconciliationInterval,
                 onAddFilter, onUpdateFilter, genericFilter, retryClass, retryConfigurationClass, rateLimiterClass,
-                rateLimiterConfigurationClass, dependentResources, null, additionalRBACRules);
+                rateLimiterConfigurationClass, dependentResources, null, additionalRBACRules, fieldManager, itemStore);
 
         if (hasDependents) {
             dependentResourceInfos.forEach(dependent -> {

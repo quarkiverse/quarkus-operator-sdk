@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
+import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
@@ -74,6 +75,8 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final Optional<OnUpdateFilter<? super R>> onUpdateFilter;
     private final Optional<GenericFilter<? super R>> genericFilter;
     private final List<PolicyRule> additionalRBACRules;
+    private final String fieldManager;
+    private final Optional<ItemStore<R>> itemStore;
     private Class<? extends Annotation> retryConfigurationClass;
     private Class<? extends Retry> retryClass;
     private Class<? extends Annotation> rateLimiterConfigurationClass;
@@ -107,7 +110,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             Class<? extends Retry> retryClass, Class<? extends Annotation> retryConfigurationClass,
             Class<? extends RateLimiter> rateLimiterClass, Class<? extends Annotation> rateLimiterConfigurationClass,
             Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata, ManagedWorkflow<R> workflow,
-            List<PolicyRule> additionalRBACRules) {
+            List<PolicyRule> additionalRBACRules, String fieldManager, ItemStore<R> nullableItemStore) {
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
         this.resourceTypeName = resourceTypeName;
@@ -138,6 +141,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.rateLimiterClass = rateLimiterClass;
         this.rateLimiter = DefaultRateLimiter.class.equals(rateLimiterClass) ? new DefaultRateLimiter() : null;
         this.rateLimiterConfigurationClass = rateLimiterConfigurationClass;
+
+        this.fieldManager = fieldManager != null ? fieldManager : ControllerConfiguration.super.fieldManager();
+        this.itemStore = Optional.ofNullable(nullableItemStore);
     }
 
     @Override
@@ -408,5 +414,27 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     public List<PolicyRule> getAdditionalRBACRules() {
         return additionalRBACRules;
+    }
+
+    @SuppressWarnings("unused")
+    // this is needed by Quarkus for the RecordableConstructor
+    public String getFieldManager() {
+        return fieldManager;
+    }
+
+    @Override
+    public String fieldManager() {
+        return fieldManager;
+    }
+
+    @Override
+    public Optional<ItemStore<R>> getItemStore() {
+        return itemStore;
+    }
+
+    @SuppressWarnings("unused")
+    // this is needed by Quarkus for the RecordableConstructor
+    public ItemStore<R> getNullableItemStore() {
+        return itemStore.orElse(null);
     }
 }
