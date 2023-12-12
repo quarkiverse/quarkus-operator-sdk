@@ -11,15 +11,19 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 
 import io.dekorate.helm.model.Chart;
-import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.quarkiverse.operatorsdk.common.DeserializedKubernetesResourcesBuildItem;
 import io.quarkiverse.operatorsdk.common.FileUtils;
-import io.quarkiverse.operatorsdk.common.GeneratedResourcesUtils;
 import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
 import io.quarkiverse.operatorsdk.deployment.ControllerConfigurationsBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
@@ -28,11 +32,11 @@ import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkus.container.spi.ContainerImageInfoBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
+import io.quarkus.deployment.annotations.Produce;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
 import io.quarkus.deployment.pkg.builditem.ArtifactResultBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
-import io.quarkus.kubernetes.spi.ConfiguratorBuildItem;
-import io.quarkus.kubernetes.spi.GeneratedKubernetesResourceBuildItem;
+import io.quarkus.kubernetes.spi.*;
 import io.quarkus.qute.Qute;
 
 public class HelmChartProcessor {
@@ -56,34 +60,80 @@ public class HelmChartProcessor {
     public static final String CRD_DIR = "crds";
     public static final String CRD_ROLE_BINDING_TEMPLATE_PATH = "/helm/crd-role-binding-template.yaml";
 
-    @BuildStep
-    public void handleHelmCharts(
-            // to make it produce a build item, so it gets executed
-            @SuppressWarnings("unused") BuildProducer<ArtifactResultBuildItem> dummy,
-            List<GeneratedKubernetesResourceBuildItem> generatedResources,
+    private static class HelmGenerationEnabled implements BooleanSupplier {
+        private BuildTimeOperatorConfiguration config;
+
+        @Override
+        public boolean getAsBoolean() {
+            return config.helm.enabled;
+        }
+    }
+
+    @BuildStep(onlyIfNot = HelmGenerationEnabled.class)
+    @Produce(ArtifactResultBuildItem.class)
+    void outputHelmGenerationDisabled() {
+        log.debug("Generating Helm chart is disabled");
+    }
+
+    @BuildStep(onlyIf = HelmGenerationEnabled.class)
+    @Produce(ArtifactResultBuildItem.class) // to make it produce a build item, so it gets executed
+    void handleHelmCharts(DeserializedKubernetesResourcesBuildItem generatedKubernetesResources,
             ControllerConfigurationsBuildItem controllerConfigurations,
-            BuildTimeOperatorConfiguration buildTimeConfiguration,
             GeneratedCRDInfoBuildItem generatedCRDInfoBuildItem,
             OutputTargetBuildItem outputTarget,
             ApplicationInfoBuildItem appInfo,
             ContainerImageInfoBuildItem containerImageInfoBuildItem) {
 
-        if (buildTimeConfiguration.helm.enabled) {
-            final var helmDir = outputTarget.getOutputDirectory().resolve("helm").toFile();
-            log.infov("Generating helm chart to {0}", helmDir);
-            var controllerConfigs = controllerConfigurations.getControllerConfigs().values();
+        final var helmDir = outputTarget.getOutputDirectory().resolve("helm").toFile();
+        log.infov("Generating helm chart to {0}", helmDir);
+        var controllerConfigs = controllerConfigurations.getControllerConfigs().values();
 
-            createRelatedDirectories(helmDir);
-            addTemplateFiles(helmDir);
-            addClusterRolesForReconcilers(helmDir, controllerConfigs);
-            addPrimaryClusterRoleBindings(helmDir, controllerConfigs);
-            addGeneratedDeployment(helmDir, generatedResources, controllerConfigurations, appInfo);
-            addChartYaml(helmDir, appInfo.getName(), appInfo.getVersion());
-            addValuesYaml(helmDir, containerImageInfoBuildItem.getTag());
-            addReadmeAndSchema(helmDir);
-            addCRDs(new File(helmDir, CRD_DIR), generatedCRDInfoBuildItem);
-        } else {
-            log.debug("Generating helm chart is disabled");
+        final var resources = generatedKubernetesResources.getResources();
+        createRelatedDirectories(helmDir);
+        addTemplateFiles(helmDir);
+        addClusterRolesForReconcilers(helmDir, controllerConfigs);
+        addPrimaryClusterRoleBindings(helmDir, controllerConfigs);
+        addGeneratedDeployment(helmDir, resources, controllerConfigurations, appInfo);
+        addChartYaml(helmDir, appInfo.getName(), appInfo.getVersion());
+        addValuesYaml(helmDir, containerImageInfoBuildItem.getTag());
+        addReadmeAndSchema(helmDir);
+        addCRDs(new File(helmDir, CRD_DIR), generatedCRDInfoBuildItem);
+        addExplicitlyAddedKubernetesResources(helmDir, resources, appInfo);
+    }
+
+    private void addExplicitlyAddedKubernetesResources(File helmDir,
+            List<HasMetadata> resources, ApplicationInfoBuildItem appInfo) {
+        resources = filterOutStandardResources(resources, appInfo);
+        if (!resources.isEmpty()) {
+            addResourceToHelmDir(helmDir, resources);
+        }
+    }
+
+    private List<HasMetadata> filterOutStandardResources(List<HasMetadata> resources, ApplicationInfoBuildItem appInfo) {
+        return resources.stream().filter(r -> {
+            if (r instanceof ClusterRole) {
+                return !r.getMetadata().getName().endsWith("-cluster-role");
+            }
+            if (r instanceof ClusterRoleBinding) {
+                return !r.getMetadata().getName().endsWith("-crd-validating-role-binding");
+            }
+            if (r instanceof RoleBinding) {
+                return !r.getMetadata().getName().equals(appInfo.getName() + "-view") &&
+                        !r.getMetadata().getName().endsWith("-role-binding");
+            }
+            if (r instanceof Service || r instanceof Deployment || r instanceof ServiceAccount) {
+                return !r.getMetadata().getName().equals(appInfo.getName());
+            }
+            return true;
+        }).collect(Collectors.toList());
+    }
+
+    private void addResourceToHelmDir(File helmDir, List<HasMetadata> list) {
+        String yaml = FileUtils.asYaml(list);
+        try {
+            Files.writeString(Path.of(helmDir.getPath(), TEMPLATES_DIR, "kubernetes.yml"), yaml);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
     }
 
@@ -91,10 +141,9 @@ public class HelmChartProcessor {
         copyTemplates(helmDir.toPath().resolve(TEMPLATES_DIR), TEMPLATE_FILES);
     }
 
-    private void addGeneratedDeployment(File helmDir, List<GeneratedKubernetesResourceBuildItem> generatedResources,
+    private void addGeneratedDeployment(File helmDir, List<HasMetadata> resources,
             ControllerConfigurationsBuildItem controllerConfigurations,
             ApplicationInfoBuildItem appInfo) {
-        final var resources = GeneratedResourcesUtils.loadFrom(generatedResources);
         Deployment deployment = (Deployment) resources.stream()
                 .filter(Deployment.class::isInstance).findFirst()
                 .orElseThrow();
