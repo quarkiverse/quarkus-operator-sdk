@@ -18,6 +18,7 @@ import jakarta.ws.rs.Produces;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
@@ -229,6 +230,10 @@ public class OperatorSDKResource {
         @SuppressWarnings("rawtypes")
         public RateLimiter getRateLimiter() {
             return conf.getRateLimiter();
+        }
+
+        public ItemStore<?> getItemStore() {
+            return conf.getItemStore().orElse(null);
         }
     }
 

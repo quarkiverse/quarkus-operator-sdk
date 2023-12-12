@@ -6,7 +6,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
-@ControllerConfiguration(name = CustomRateLimiterReconciler.NAME, rateLimiter = CustomRateLimiter.class)
+@ControllerConfiguration(name = CustomRateLimiterReconciler.NAME, rateLimiter = CustomRateLimiter.class, itemStore = NullItemStore.class)
 @CustomRateConfiguration(42)
 public class CustomRateLimiterReconciler implements Reconciler<ResourceQuota> {
 

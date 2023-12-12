@@ -2,13 +2,7 @@ package io.quarkiverse.operatorsdk.it;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.startsWith;
+import static org.hamcrest.Matchers.*;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -289,6 +283,7 @@ class OperatorSDKResourceTest {
                 .then()
                 .statusCode(200)
                 .body(
-                        "rateLimiter.value", equalTo(42));
+                        "rateLimiter.value", equalTo(42),
+                        "itemStore.name", equalTo(NullItemStore.NAME));
     }
 }
