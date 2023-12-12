@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 
-import io.dekorate.helm.model.Chart;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
@@ -26,8 +25,8 @@ import io.quarkiverse.operatorsdk.common.FileUtils;
 import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
 import io.quarkiverse.operatorsdk.deployment.ControllerConfigurationsBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
+import io.quarkiverse.operatorsdk.deployment.helm.model.Chart;
 import io.quarkus.container.spi.ContainerImageInfoBuildItem;
-import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.BuildSteps;
 import io.quarkus.deployment.annotations.Produce;
@@ -265,10 +264,5 @@ public class HelmChartProcessor {
                 throw new IllegalStateException(e);
             }
         }
-    }
-
-    @BuildStep
-    void disableDefaultHelmListener(BuildProducer<ConfiguratorBuildItem> helmConfiguration) {
-        helmConfiguration.produce(new ConfiguratorBuildItem(new DisableDefaultHelmListener()));
     }
 }
