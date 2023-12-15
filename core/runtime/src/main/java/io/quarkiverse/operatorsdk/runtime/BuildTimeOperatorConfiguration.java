@@ -42,8 +42,8 @@ public class BuildTimeOperatorConfiguration {
      * Whether the operator should be automatically started or not. Mostly useful for testing
      * scenarios.
      */
-    @ConfigItem
-    public Optional<Boolean> startOperator;
+    @ConfigItem(defaultValue = "true")
+    public Boolean startOperator;
 
     /**
      * Whether the injected Kubernetes client should be stopped when the operator is stopped.

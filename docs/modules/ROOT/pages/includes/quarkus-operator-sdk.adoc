@@ -194,7 +194,7 @@ ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_START_OPERATOR+++`
 endif::add-copy-button-to-env-var[]
 --|boolean 
-|
+|`true`
 
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus.operator-sdk.close-client-on-stop]]`link:#quarkus-operator-sdk_quarkus.operator-sdk.close-client-on-stop[quarkus.operator-sdk.close-client-on-stop]`
