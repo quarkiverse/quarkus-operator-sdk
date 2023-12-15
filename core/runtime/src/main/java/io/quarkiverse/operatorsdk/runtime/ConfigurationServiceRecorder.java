@@ -17,7 +17,6 @@ import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.quarkus.arc.Arc;
-import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.annotations.Recorder;
 import io.quarkus.runtime.configuration.ConfigUtils;
 
@@ -30,7 +29,7 @@ public class ConfigurationServiceRecorder {
     public Supplier<QuarkusConfigurationService> configurationServiceSupplier(Version version,
             Map<String, QuarkusControllerConfiguration> configurations,
             CRDGenerationInfo crdInfo, RunTimeOperatorConfiguration runTimeConfiguration,
-            BuildTimeOperatorConfiguration buildTimeConfiguration, LaunchMode launchMode) {
+            BuildTimeOperatorConfiguration buildTimeConfiguration) {
         final var maxThreads = runTimeConfiguration.concurrentReconciliationThreads
                 .orElse(ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
         final var timeout = runTimeConfiguration.terminationTimeoutSeconds
@@ -89,7 +88,7 @@ public class ConfigurationServiceRecorder {
                     timeout,
                     cacheSyncTimeout,
                     container.instance(Metrics.class).get(),
-                    shouldStartOperator(buildTimeConfiguration.startOperator, launchMode),
+                    buildTimeConfiguration.startOperator,
                     leaderElectionConfiguration,
                     container.instance(InformerStoppedHandler.class).orElse(null),
                     buildTimeConfiguration.closeClientOnStop,
@@ -114,14 +113,6 @@ public class ConfigurationServiceRecorder {
         } else {
             // Value has been explicitly reset (value was empty string), use all namespaces mode
             controllerConfig.setNamespaces(DEFAULT_NAMESPACES_SET);
-        }
-    }
-
-    static boolean shouldStartOperator(Optional<Boolean> fromConfiguration, LaunchMode launchMode) {
-        if (fromConfiguration == null || fromConfiguration.isEmpty()) {
-            return LaunchMode.TEST != launchMode;
-        } else {
-            return fromConfiguration.orElse(true);
         }
     }
 }
