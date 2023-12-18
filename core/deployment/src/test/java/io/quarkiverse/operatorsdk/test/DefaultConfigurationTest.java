@@ -16,6 +16,7 @@ public class DefaultConfigurationTest {
 
     @RegisterExtension
     static QuarkusUnitTest runner = new QuarkusUnitTest()
+            .overrideConfigKey("quarkus.operator-sdk.start-operator", "false")
             .withApplicationRoot(
                     jar -> jar.addClasses(SimpleReconciler.class, SimpleCR.class, SimpleStatus.class, SimpleSpec.class));
 
