@@ -36,7 +36,8 @@ public class AppEventListener {
 
     public void onShutdown(@Observes ShutdownEvent event) {
         if (configurationService.shouldStartOperator()) {
-            log.info("Quarkus Java Operator SDK extension is shutting down.");
+            log.info("Quarkus Java Operator SDK extension is shutting down. Is standard shutdown: {}",
+                    event.isStandardShutdown());
             operator.stop();
         } else {
             log.warn("Operator was configured not to start automatically, call the stop method to stop it.");
