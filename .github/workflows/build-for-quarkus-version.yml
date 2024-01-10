@@ -172,6 +172,10 @@ jobs:
       - name: Build with Maven (JVM)
         run: mvn -B formatter:validate install -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' --file pom.xml
 
+      - name: Dependency tree on failure
+        if: failure()
+        run: mvn -B dependency:tree -Dverbose
+
       - name: Kubernetes KinD Cluster
         uses: container-tools/kind-action@v2
         with:
