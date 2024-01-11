@@ -80,7 +80,7 @@ jobs:
           cd -
 
       - name: Retrieve Quarkus version from platform
-        if: "${{ inputs.quarkus-version == '' }}"
+        if: "${{ inputs.quarkus-version == '' && inputs.quarkus-pr == ''}}"
         id: get-quarkus-version
         uses: sergeysova/jq-action@v2
         with:
