@@ -25,9 +25,11 @@ on:
         required: true
         default: 'integration-tests,samples'
   workflow_dispatch:
-    quarkus-pr:
-      type: string
-      required: true
+    inputs:
+      quarkus-pr:
+        description: 'Quarkus PR number to use to run a QOSDK build with'
+        type: string
+        required: true
 
 jobs:
   build:
