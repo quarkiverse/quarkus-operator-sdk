@@ -74,7 +74,7 @@ jobs:
         if: "${{ inputs.quarkus-pr != '' }}"
         run: |
           cd quarkus
-          git fetch origin pull/${{ github.event.inputs.quarkus_pr }}/head:pr-to-check
+          git fetch origin pull/${{ github.event.inputs.quarkus-pr }}/head:pr-to-check
           git switch pr-to-check
           mvn -Dquickly
           cd -
