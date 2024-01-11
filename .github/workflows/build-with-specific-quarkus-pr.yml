@@ -32,9 +32,7 @@ jobs:
           cd quarkus
           git fetch origin pull/${{ github.event.inputs.quarkus_pr }}/head:pr-to-check
           git switch pr-to-check
-#          mvn versions:set -DnewVersion=999.${{ github.event.inputs.quarkus_pr }}-SNAPSHOT versions:commit
           mvn -Dquickly
-          
 
   build-with-quarkus-version:
     uses: ./.github/workflows/build-for-quarkus-version.yml
