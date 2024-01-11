@@ -30,6 +30,21 @@ on:
         description: 'Quarkus PR number to use to run a QOSDK build with'
         type: string
         required: true
+      java-version:
+        description: 'Java version to build with'
+        type: string
+        required: true
+        default: '17'
+      branch:
+        description: 'QOSDK branch to build'
+        type: string
+        required: true
+        default: 'main'
+      native-modules:
+        description: 'Comma-separated list of modules that should be built natively'
+        type: string
+        required: true
+        default: 'integration-tests,samples'
 
 jobs:
   build:
