@@ -12,22 +12,29 @@ on:
       java-version:
         type: string
         required: true
+        default: '17'
       branch:
         type: string
         required: true
+        default: 'main'
       repository:
         type: string
         default: ''
       native-modules:
         type: string
         required: true
+        default: 'integration-tests,samples'
+  workflow_dispatch:
+    quarkus-pr:
+      type: string
+      required: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.branch }}
           repository: ${{ inputs.repository }}
@@ -38,6 +45,22 @@ jobs:
           distribution: temurin
           java-version: ${{ inputs.java-version }}
           cache: 'maven'
+
+      - name: Check-out Quarkus if building from PR is requested
+        uses: actions/checkout@v4
+        if: "${{ inputs.quarkus-pr != '' }}"
+        with:
+          repository: quarkusio/quarkus
+          path: quarkus
+
+      - name: Build Quarkus PR if requested
+        if: "${{ inputs.quarkus-pr != '' }}"
+        run: |
+          cd quarkus
+          git fetch origin pull/${{ github.event.inputs.quarkus_pr }}/head:pr-to-check
+          git switch pr-to-check
+          mvn -Dquickly
+          cd -
 
       - name: Retrieve Quarkus version from platform
         if: "${{ inputs.quarkus-version == '' }}"
@@ -55,6 +78,9 @@ jobs:
           fi
           if [[ -n "${{ inputs.quarkus-version }}" ]]; then
             quarkus_version="${{ inputs.quarkus-version }}" 
+          fi
+          if [[ -n "${{ inputs.quarkus-pr }}" ]]; then
+            quarkus_version='999-SNAPSHOT'
           fi
           echo "quarkus_version=${quarkus_version}" >> $GITHUB_OUTPUT
 
