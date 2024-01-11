@@ -76,6 +76,7 @@ jobs:
           cd quarkus
           git fetch origin pull/${{ github.event.inputs.quarkus-pr }}/head:pr-to-check
           git switch pr-to-check
+          ./update-version.sh 999.${{ github.event.inputs.quarkus-pr }}-SNAPSHOT
           mvn -Dquickly
           cd -
 
@@ -97,7 +98,7 @@ jobs:
             quarkus_version="${{ inputs.quarkus-version }}" 
           fi
           if [[ -n "${{ inputs.quarkus-pr }}" ]]; then
-            quarkus_version='999-SNAPSHOT'
+            quarkus_version=999.${{ github.event.inputs.quarkus-pr }}-SNAPSHOT
           fi
           echo "quarkus_version=${quarkus_version}" >> $GITHUB_OUTPUT
 
