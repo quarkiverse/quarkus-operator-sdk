@@ -105,11 +105,13 @@ jobs:
 
       - name: Build Quarkus PR if requested
         if: "${{ inputs.quarkus-pr != '' }}"
+        id: build-quarkus-pr
         run: |
           cd quarkus
           git fetch origin pull/${{ github.event.inputs.quarkus-pr }}/head:pr-to-check
           git switch pr-to-check
           ./update-version.sh 999.${{ github.event.inputs.quarkus-pr }}-SNAPSHOT
+          echo "quarkus_f8_version=$(mvn help:evaluate -Dexpression=kubernetes-client.version -q -DforceStdout)" >> $GITHUB_OUTPUT
           mvn -Dquickly
           cd -
 
@@ -139,6 +141,14 @@ jobs:
         run: |
           echo "Using Quarkus ${{ steps.quarkus-version.outputs.quarkus_version }}"
           mvn versions:set-property -Dproperty=quarkus.version -DnewVersion=${{ steps.quarkus-version.outputs.quarkus_version }}
+
+      - name: Output versions being used
+        run: |
+          echo "QOSDK version: $(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"
+          echo "JOSDK version: $(mvn help:evaluate -Dexpression=java-operator-sdk.version -q -DforceStdout)"
+          echo "JOSDK Fabric8 version: ${{ steps.build-josdk-pr.outputs.josdk_f8_version }}"
+          echo "Quarkus version: $(mvn help:evaluate -Dexpression=quarkus.version -q -DforceStdout)"
+          echo "Quarkus Fabric8 version: ${{ steps.build-quarkus-pr.outputs.quarkus_f8_version }}"
 
       - name: Build with Maven (JVM)
         run: mvn -B formatter:validate install --file pom.xml
