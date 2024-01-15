@@ -26,6 +26,10 @@ on:
         default: 'integration-tests,samples'
   workflow_dispatch:
     inputs:
+      josdk-pr:
+        description: 'JOSDK PR number (or main) to use to build QOSDK with'
+        type: string
+        required: false
       quarkus-pr:
         description: 'Quarkus PR number to use to run a QOSDK build with'
         type: string
@@ -62,6 +66,35 @@ jobs:
           distribution: temurin
           java-version: ${{ inputs.java-version }}
           cache: 'maven'
+
+      - name: Check-out JOSDK if building from PR is requested
+        uses: actions/checkout@v4
+        if: "${{ inputs.josdk-pr != '' }}"
+        with:
+          repository: operator-framework/java-operator-sdk
+          path: josdk
+
+      - name: Build JOSDK PR if requested
+        if: "${{ inputs.josdk-pr != '' }}"
+        id: build-josdk-pr
+        run: |
+          cd josdk
+          echo ${{ inputs.josdk-pr }}
+          if [ "${{ inputs.josdk-pr }}" = "main" ]; then
+            echo "Using JOSDK main branch"
+          else
+            echo "Checking out ${{ inputs.josdk-pr }} PR"
+            git fetch origin pull/${{ github.event.inputs.quarkus-pr }}/head:pr-to-check
+            git switch pr-to-check
+          fi
+          mvn install -DskipTests
+          echo "josdk_version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+          echo "josdk_f8_version=$(mvn help:evaluate -Dexpression=fabric8-client.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+          cd -
+
+      - name: Set JOSDK version from build PR if requested
+        if: "${{ inputs.josdk-pr != '' }}"
+        run: mvn versions:set-property -Dproperty='java-operator-sdk.version' -DnewVersion=${{ steps.build-josdk-pr.outputs.josdk_version }}
 
       - name: Check-out Quarkus if building from PR is requested
         uses: actions/checkout@v4
