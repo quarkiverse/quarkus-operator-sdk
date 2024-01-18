@@ -12,17 +12,18 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: 17
-          cache: 'maven'
 
       - name: Record QOSDK current version
         id: qosdk-version
         run: echo "current-version=${{inputs.current-version}}" >> $GITHUB_OUTPUT
 
       - uses: actions/checkout@v3
+
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: 17
+          cache: 'maven'
 
       - name: Retrieve Quarkus version
         id: quarkus-version
