@@ -23,11 +23,15 @@ jobs:
         run: echo "current-version=${{inputs.current-version}}" >> $GITHUB_OUTPUT
 
       - uses: actions/checkout@v3
+
+      - name: Retrieve Quarkus version
+        id: quarkus-version
+        run: echo "quarkus_version=$(mvn help:evaluate -Dexpression=quarkus.version -q -DforceStdout)" >> $GITHUB_OUTPUT
         
       - name: Process ${{steps.qosdk-version.outputs.current-version}}
         id: release-qosdk
         run: |
-          quarkus_major=$(mvn help:evaluate -Dexpression=quarkus.version -q -DforceStdout | cut -d . -f 1,2)
+          quarkus_major=$(${{steps.quarkus-version.outputs.quarkus_version}} | cut -d . -f 1,2)
           echo "QOSDK defined Quarkus major version: ${quarkus_major}"
           quarkus_platform_version=$(curl -s https://registry.quarkus.io/client/platforms | jq -r '.platforms[0]."current-stream-id"')
           echo "Current platform-defined Quarkus major version: ${quarkus_platform_version}"
@@ -49,6 +53,13 @@ jobs:
           poll-delay: 2
           poll-iterations: 4
           post-delay: 2
+
+      - name: Create java-plugins PR
+        if: "${{ steps.wait-for-bom.outputs.published }}"
+        uses: ./.github/workflows/java-plugins-pr
+        with:
+          qosdk-version: ${{steps.qosdk-version.outputs.current-version}}
+          quarkus-version: ${{steps.quarkus-version.outputs.quarkus_version}}
 
       - uses: actions/checkout@v3
         with:
