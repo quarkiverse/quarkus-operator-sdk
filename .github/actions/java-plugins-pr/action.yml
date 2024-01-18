@@ -1,0 +1,47 @@
+name: Open java-plugins PR
+description: Opens a java-plugins PR to update its QOSDK version
+inputs:
+  qosdk-version:
+    description: QOSDK version to use
+    required: true
+  quarkus-version:
+    description: Quarkus version to use
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v3
+      with:
+        repository: operator-framework/java-operator-plugins
+
+    - name: Update QOSDK version to ${{inputs.qosdk-version}} in java-operator-plugins
+      shell: bash
+      run: |
+        sed -i -e 's|<quarkus-sdk.version>.*</quarkus-sdk.version>|<quarkus-sdk.version>${{inputs.qosdk-version}}</quarkus-sdk.version>|' $(pwd)/pkg/quarkus/v1beta/scaffolds/internal/templates/pomxml.go
+        sed -i -e 's|<quarkus-sdk.version>.*</quarkus-sdk.version>|<quarkus-sdk.version>${{inputs.qosdk-version}}</quarkus-sdk.version>|' $(pwd)/testdata/quarkus/memcached-quarkus-operator/pom.xml
+        
+        echo "Using Quarkus ${{ inputs.quarkus-version }}"
+        mvn versions:set-property -Dproperty=quarkus.version -DnewVersion=${{inputs.quarkus-version}} -f ./testdata/quarkus/memcached-quarkus-operator/pom.xml versions:commit
+        sed -i -e 's|<quarkus.version>.*</quarkus.version>|<quarkus.version>${{inputs.quarkus-version}}</quarkus.version>|' $(pwd)/pkg/quarkus/v1beta/scaffolds/internal/templates/pomxml.go
+
+    - name: Create java-operator-plugins pull request
+      uses: peter-evans/create-pull-request@v5
+      id: jop-pr
+      with:
+        path: sdk-plugins
+        title: "feat: update QOSDK to ${{inputs.qosdk-version}}"
+        commit-message: "feat: update QOSDK to ${{inputs.qosdk-version}}"
+        committer: metacosm <metacosm@users.noreply.github.com>
+        author: metacosm <metacosm@users.noreply.github.com>
+        branch: qosdk-release-${{inputs.qosdk-version}}
+        token: ${{ secrets.QOSDK_BOT_TOKEN }}
+        push-to-fork: qosdk-bot/java-operator-plugins
+        delete-branch: true
+
+    - name: Check java-operator-plugins PR
+      shell: bash
+      if: ${{ steps.jop-pr.outputs.pull-request-number }}
+      run: |
+        echo "Pull Request Number - ${{ steps.jop-pr.outputs.pull-request-number }}"
+        echo "Pull Request URL - ${{ steps.jop-pr.outputs.pull-request-url }}"

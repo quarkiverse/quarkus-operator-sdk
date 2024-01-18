@@ -57,7 +57,7 @@ jobs:
 
       - name: Create java-plugins PR
         if: "${{ steps.wait-for-bom.outputs.published }}"
-        uses: ./.github/workflows/java-plugins-pr.yml
+        uses: ./.github/actions/java-plugins-pr
         with:
           qosdk-version: ${{steps.qosdk-version.outputs.current-version}}
           quarkus-version: ${{steps.quarkus-version.outputs.quarkus_version}}
