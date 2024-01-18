@@ -9,7 +9,9 @@ on:
       quarkus-version:
         type: string
         required: true
-
+      qosdk-bot-token:
+        type: string
+        required: true
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,13 +33,12 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         id: jop-pr
         with:
-          path: sdk-plugins
           title: "feat: update QOSDK to ${{inputs.qosdk-version}}"
           commit-message: "feat: update QOSDK to ${{inputs.qosdk-version}}"
           committer: metacosm <metacosm@users.noreply.github.com>
           author: metacosm <metacosm@users.noreply.github.com>
           branch: qosdk-release-${{inputs.qosdk-version}}
-          token: ${{ secrets.QOSDK_BOT_TOKEN }}
+          token: ${{ inputs.qosdk-bot-token }}
           push-to-fork: qosdk-bot/java-operator-plugins
           delete-branch: true
 

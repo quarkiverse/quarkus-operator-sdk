@@ -77,3 +77,4 @@ jobs:
       qosdk-version: ${{needs.test.outputs.qosdk-version}}
       quarkus-version: ${{needs.test.outputs.quarkus_version}}
       quarkus-platform-branch: ${{needs.test.outputs.quarkus-platform-branch}}
+      qosdk-bot-token: ${{ secrets.QOSDK_BOT_TOKEN }}

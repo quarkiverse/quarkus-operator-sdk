@@ -12,20 +12,21 @@ on:
       quarkus-platform-branch:
         type: string
         required: true
+      qosdk-bot-token:
+        type: string
+        required: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: quarkusio/quarkus-platform
-          path: quarkus-platform
+          ref: ${{inputs.quarkus-platform-branch}}
 
       - name: Update QOSDK version to ${{inputs.qosdk-version}} in quarkus-platform ${{inputs.quarkus-platform-branch}}
         run: |
-          cd quarkus-platform
-          git checkout ${{inputs.quarkus-platform-branch}}
           mvn -B versions:set-property -Dproperty=quarkus-operator-sdk.version -DnewVersion=${{inputs.qosdk-version}}
           ./mvnw -Dsync
 
@@ -33,13 +34,12 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         id: qp-pr
         with:
-          path: quarkus-platform
           title: "Update QOSDK to ${{inputs.qosdk-version}} for ${{inputs.quarkus-platform-branch}}"
           commit-message: "Update QOSDK to ${{inputs.qosdk-version}}"
           committer: metacosm <metacosm@users.noreply.github.com>
           author: metacosm <metacosm@users.noreply.github.com>
           branch: qosdk-release-${{inputs.qosdk-version}}-${{inputs.quarkus-platform-branch}}
-          token: ${{ secrets.QOSDK_BOT_TOKEN }}
+          token: ${{ inputs.qosdk-bot-token }}
           push-to-fork: qosdk-bot/quarkus-platform
           delete-branch: true
 
@@ -64,7 +64,6 @@ jobs:
       - name: Update QOSDK version to ${{inputs.qosdk-version}} in quarkus-platform main
         if: "${{steps.need-main-pr-check.outputs.need_main_pr == 'true'}}"
         run: |
-          cd quarkus-platform
           git reset --hard origin/main
           mvn -B versions:set-property -Dproperty=quarkus-operator-sdk.version -DnewVersion=${{inputs.qosdk-version}}
           ./mvnw -Dsync
@@ -74,13 +73,12 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         id: qp-pr-main
         with:
-          path: quarkus-platform
           title: "Update QOSDK to ${{inputs.qosdk-version}}"
           commit-message: "Update QOSDK to ${{inputs.qosdk-version}}"
           committer: metacosm <metacosm@users.noreply.github.com>
           author: metacosm <metacosm@users.noreply.github.com>
           branch: qosdk-release-${{inputs.qosdk-version}}
-          token: ${{ secrets.QOSDK_BOT_TOKEN }}
+          token: ${{ inputs.qosdk-bot-token }}
           push-to-fork: qosdk-bot/quarkus-platform
           delete-branch: true
 
