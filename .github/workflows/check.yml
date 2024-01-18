@@ -67,3 +67,13 @@ jobs:
     with:
       qosdk-version: ${{needs.test.outputs.qosdk-version}}
       quarkus-version: ${{needs.test.outputs.quarkus_version}}
+
+  create-quarkus-platform-pr:
+    needs:
+      - test
+    uses: ./.github/workflows/quarkus-platform-pr.yml
+    if: "${{ needs.test.outputs.released }}"
+    with:
+      qosdk-version: ${{needs.test.outputs.qosdk-version}}
+      quarkus-version: ${{needs.test.outputs.quarkus_version}}
+      quarkus-platform-branch: ${{needs.test.outputs.quarkus-platform-branch}}
