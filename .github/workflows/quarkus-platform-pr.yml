@@ -61,10 +61,14 @@ jobs:
             echo "No need for PR on quarkus-platform main"
           fi
 
+      - uses: actions/checkout@v4
+        if: "${{steps.need-main-pr-check.outputs.need_main_pr == 'true'}}"
+        with:
+          repository: quarkusio/quarkus-platform
+
       - name: Update QOSDK version to ${{inputs.qosdk-version}} in quarkus-platform main
         if: "${{steps.need-main-pr-check.outputs.need_main_pr == 'true'}}"
         run: |
-          git reset --hard origin/main
           mvn -B versions:set-property -Dproperty=quarkus-operator-sdk.version -DnewVersion=${{inputs.qosdk-version}}
           ./mvnw -Dsync
 
