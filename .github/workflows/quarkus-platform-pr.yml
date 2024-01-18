@@ -12,8 +12,8 @@ on:
       quarkus-platform-branch:
         type: string
         required: true
+    secrets:
       qosdk-bot-token:
-        type: string
         required: true
 
 jobs:
@@ -39,7 +39,7 @@ jobs:
           committer: metacosm <metacosm@users.noreply.github.com>
           author: metacosm <metacosm@users.noreply.github.com>
           branch: qosdk-release-${{inputs.qosdk-version}}-${{inputs.quarkus-platform-branch}}
-          token: ${{ inputs.qosdk-bot-token }}
+          token: ${{ secrets.qosdk-bot-token }}
           push-to-fork: qosdk-bot/quarkus-platform
           delete-branch: true
 
@@ -78,7 +78,7 @@ jobs:
           committer: metacosm <metacosm@users.noreply.github.com>
           author: metacosm <metacosm@users.noreply.github.com>
           branch: qosdk-release-${{inputs.qosdk-version}}
-          token: ${{ inputs.qosdk-bot-token }}
+          token: ${{ secrets.qosdk-bot-token }}
           push-to-fork: qosdk-bot/quarkus-platform
           delete-branch: true
 

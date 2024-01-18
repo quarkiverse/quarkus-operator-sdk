@@ -9,8 +9,8 @@ on:
       quarkus-version:
         type: string
         required: true
+    secrets: 
       qosdk-bot-token:
-        type: string
         required: true
 jobs:
   build:
@@ -38,7 +38,7 @@ jobs:
           committer: metacosm <metacosm@users.noreply.github.com>
           author: metacosm <metacosm@users.noreply.github.com>
           branch: qosdk-release-${{inputs.qosdk-version}}
-          token: ${{ inputs.qosdk-bot-token }}
+          token: ${{ secrets.qosdk-bot-token }}
           push-to-fork: qosdk-bot/java-operator-plugins
           delete-branch: true
 
