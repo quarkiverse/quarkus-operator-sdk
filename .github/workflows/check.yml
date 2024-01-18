@@ -36,7 +36,20 @@ jobs:
             quarkus_platform_branch="${quarkus_platform_version}"
           fi
           echo "quarkus_platform_branch=${quarkus_platform_branch}" >> $GITHUB_OUTPUT
-          
+
+      - name: Wait for QOSDK BOM to be published
+        uses: quarkusio/monitor-artifact-publication-action@main
+        id: wait-for-bom
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          group-id: io.quarkiverse.operatorsdk
+          artifact-id: quarkus-operator-sdk-bom
+          version: ${{steps.qosdk-version.outputs.current-version}}
+          initial-delay: 1
+          poll-delay: 2
+          poll-iterations: 4
+          post-delay: 2
+
       - uses: actions/checkout@v3
         with:
           repository: quarkusio/quarkus-platform
