@@ -21,7 +21,6 @@ jobs:
     uses: ./.github/workflows/release-quarkus-platform-pr.yml
     with:
       qosdk-version: ${{needs.test.outputs.qosdk-version}}
-      quarkus-version: ${{needs.test.outputs.quarkus_version}}
       quarkus-platform-branch: ${{needs.test.outputs.quarkus-platform-branch}}
     secrets:
       qosdk-bot-token: ${{ inputs.qosdk-bot-token }}
