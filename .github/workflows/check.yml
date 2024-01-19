@@ -72,10 +72,10 @@ jobs:
           group-id: io.quarkiverse.operatorsdk
           artifact-id: quarkus-operator-sdk-bom
           version: ${{steps.qosdk-version.outputs.current-version}}
-          initial-delay: 1
+          initial-delay: 10
           poll-delay: 2
           poll-iterations: 4
-          post-delay: 2
+          post-delay: 5
 
   update-java-plugins:
     needs:
