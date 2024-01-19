@@ -23,7 +23,7 @@ jobs:
       qosdk-version: ${{inputs.qosdk-version}}
       quarkus-platform-branch: ${{inputs.quarkus-platform-branch}}
     secrets:
-      qosdk-bot-token: ${{ inputs.qosdk-bot-token }}
+      qosdk-bot-token: ${{ secrets.qosdk-bot-token }}
 
   update-quarkus-platform-main-if-needed:
     if: ${{ inputs.needs-main-pr }}
@@ -31,4 +31,4 @@ jobs:
     with:
       qosdk-version: ${{inputs.qosdk-version}}
     secrets:
-      qosdk-bot-token: ${{ inputs.qosdk-bot-token }}
+      qosdk-bot-token: ${{ secrets.qosdk-bot-token }}
