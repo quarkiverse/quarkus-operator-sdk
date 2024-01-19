@@ -20,8 +20,8 @@ jobs:
   update-quarkus-platform-branch:
     uses: ./.github/workflows/release-quarkus-platform-pr.yml
     with:
-      qosdk-version: ${{needs.test.outputs.qosdk-version}}
-      quarkus-platform-branch: ${{needs.test.outputs.quarkus-platform-branch}}
+      qosdk-version: ${{inputs.qosdk-version}}
+      quarkus-platform-branch: ${{inputs.quarkus-platform-branch}}
     secrets:
       qosdk-bot-token: ${{ inputs.qosdk-bot-token }}
 
@@ -29,6 +29,6 @@ jobs:
     if: ${{ inputs.needs-main-pr }}
     uses: ./.github/workflows/release-quarkus-platform-pr.yml
     with:
-      qosdk-version: ${{needs.test.outputs.qosdk-version}}
+      qosdk-version: ${{inputs.qosdk-version}}
     secrets:
       qosdk-bot-token: ${{ inputs.qosdk-bot-token }}
