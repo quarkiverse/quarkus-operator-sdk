@@ -7,7 +7,7 @@ import org.aesh.command.invocation.CommandInvocation;
 
 import io.quarkiverse.operatorsdk.runtime.Version;
 
-@CommandDefinition(name = "versions", description = "Outputs Quarkus, Fabric8, QOSDK and JOSDK versions")
+@CommandDefinition(name = "versions", description = "Outputs QOSDK, Quarkus, Fabric8 and JOSDK versions, with which this QOSDK version was built")
 @SuppressWarnings("rawtypes")
 public class VersionsCommand implements Command {
 
@@ -19,8 +19,8 @@ public class VersionsCommand implements Command {
 
     @Override
     public CommandResult execute(CommandInvocation commandInvocation) {
-        String output = "Quarkus version: " + version.getQuarkusVersion() + "\n" +
-                "Fabric8 client version: " + version.getKubernetesClientVersion() + "\n" +
+        String output = "Targeted Quarkus version: " + version.getQuarkusVersion() + "\n" +
+                "Fabric8 client version targeted by JOSDK: " + version.getKubernetesClientVersion() + "\n" +
                 "QOSDK version: " + version.getExtensionCompleteVersion() + "\n" +
                 "JOSDK version: " + version.getSdkVersion();
         commandInvocation.println(output);
