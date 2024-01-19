@@ -83,7 +83,7 @@ jobs:
     if: "${{ needs.test.outputs.released }}"
     with:
       qosdk-version: ${{needs.test.outputs.qosdk-version}}
-      quarkus-version: ${{needs.test.outputs.quarkus_version}}
+      quarkus-version: ${{needs.test.outputs.quarkus-version}}
     secrets:
       qosdk-bot-token: ${{ secrets.QOSDK_BOT_TOKEN }}
 
