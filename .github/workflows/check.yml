@@ -96,6 +96,6 @@ jobs:
     with:
       qosdk-version: ${{needs.test.outputs.qosdk-version}}
       quarkus-platform-branch: ${{needs.test.outputs.quarkus-platform-branch}}
-      needs-main-pr: ${{needs.test.outputs.needs-quarkus-platform-main-pr}}
+      needs-main-pr: ${{ needs.test.outputs.needs-quarkus-platform-main-pr == 'true' }}
     secrets: 
       qosdk-bot-token: ${{ secrets.QOSDK_BOT_TOKEN }}
