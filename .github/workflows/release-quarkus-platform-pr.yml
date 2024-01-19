@@ -8,7 +8,6 @@ on:
         required: true
       quarkus-platform-branch:
         type: string
-        required: true
         default: 'main'
     secrets:
       qosdk-bot-token:
