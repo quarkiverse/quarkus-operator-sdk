@@ -1,4 +1,4 @@
-name: Open java-plugins PR
+name: Update java-operator-plugins
 
 on:
   workflow_call:
@@ -13,7 +13,7 @@ on:
       qosdk-bot-token:
         required: true
 jobs:
-  build:
+  update-java-operator-plugins:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

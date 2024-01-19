@@ -79,7 +79,7 @@ jobs:
   update-java-plugins:
     needs:
       - test
-    uses: ./.github/workflows/release-update-java-plugins.yml
+    uses: ./.github/workflows/release-update-java-operator-plugins.yml
     if: "${{ needs.test.outputs.released }}"
     with:
       qosdk-version: ${{needs.test.outputs.qosdk-version}}
