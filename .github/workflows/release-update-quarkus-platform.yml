@@ -1,0 +1,35 @@
+name: Update quarkus-platform
+
+on:
+  workflow_call:
+    inputs:
+      qosdk-version:
+        type: string
+        required: true
+      quarkus-platform-branch:
+        type: string
+        required: true
+      needs-main-pr:
+        type: boolean
+        required: true
+    secrets:
+      qosdk-bot-token:
+        required: true
+
+jobs:
+  update-quarkus-platform-branch:
+    uses: ./.github/workflows/release-quarkus-platform-pr.yml
+    with:
+      qosdk-version: ${{needs.test.outputs.qosdk-version}}
+      quarkus-version: ${{needs.test.outputs.quarkus_version}}
+      quarkus-platform-branch: ${{needs.test.outputs.quarkus-platform-branch}}
+    secrets:
+      qosdk-bot-token: ${{ inputs.qosdk-bot-token }}
+
+  update-quarkus-platform-main-if-needed:
+    if: ${{ inputs.needs-main-pr }}
+    uses: ./.github/workflows/release-quarkus-platform-pr.yml
+    with:
+      qosdk-version: ${{needs.test.outputs.qosdk-version}}
+    secrets:
+      qosdk-bot-token: ${{ inputs.qosdk-bot-token }}
