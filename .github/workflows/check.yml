@@ -56,10 +56,11 @@ jobs:
             echo "Check if quarkus-platform also needs to be updated on main"
             qosdk_latest=$(curl -sL https://api.github.com/repos/quarkiverse/quarkus-operator-sdk/releases/latest | jq -r ".tag_name")
             echo "Latest QOSDK release: ${qosdk_latest}"
-            if [ "${{inputs.qosdk-version}}" = "${qosdk_latest}" ]; then
+            if [ "${{steps.qosdk-version.outputs.current-version}}" = "${qosdk_latest}" ]; then
               echo "need_main_pr=true" >> $GITHUB_OUTPUT
             else
               echo "No need for PR on quarkus-platform main"
+              echo "need_main_pr=false" >> $GITHUB_OUTPUT
             fi
           fi
 
