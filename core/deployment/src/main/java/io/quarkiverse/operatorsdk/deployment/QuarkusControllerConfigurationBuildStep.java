@@ -1,6 +1,5 @@
 package io.quarkiverse.operatorsdk.deployment;
 
-import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.instantiate;
 import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.loadClass;
 import static io.quarkiverse.operatorsdk.common.Constants.*;
 
@@ -32,7 +31,6 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
@@ -157,17 +155,6 @@ class QuarkusControllerConfigurationBuildStep {
                 externalConfiguration,
                 controllerAnnotation);
 
-        // deal with event filters
-        ResourceEventFilter finalFilter = null;
-        final var eventFilterTypes = ConfigurationUtils.annotationValueOrDefault(
-                controllerAnnotation, "eventFilters",
-                AnnotationValue::asClassArray, () -> new Type[0]);
-        for (Type filterType : eventFilterTypes) {
-            final var filterClass = loadClass(filterType.name().toString(), ResourceEventFilter.class);
-            final var filter = instantiate(filterClass);
-            finalFilter = finalFilter == null ? filter : finalFilter.and(filter);
-        }
-
         Duration maxReconciliationInterval = null;
         OnAddFilter onAddFilter = null;
         OnUpdateFilter onUpdateFilter = null;
@@ -280,7 +267,6 @@ class QuarkusControllerConfigurationBuildStep {
                 getFinalizer(controllerAnnotation, resourceFullName),
                 getLabelSelector(controllerAnnotation),
                 primaryAsResource.hasNonVoidStatus(),
-                finalFilter,
                 maxReconciliationInterval,
                 onAddFilter, onUpdateFilter, genericFilter, retryClass, retryConfigurationClass, rateLimiterClass,
                 rateLimiterConfigurationClass, dependentResources, null, additionalRBACRules, additionalRBACRoleRefs,
