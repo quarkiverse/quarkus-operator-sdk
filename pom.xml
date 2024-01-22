@@ -12,8 +12,8 @@
   <packaging>pom</packaging>
   <name>Quarkus - Operator SDK - Parent</name>
   <properties>
-    <quarkus.version>3.11.3</quarkus.version>
-    <java-operator-sdk.version>4.9.1</java-operator-sdk.version>
+    <quarkus.version>3.8.4</quarkus.version>
+    <java-operator-sdk.version>5.0.0-SNAPSHOT</java-operator-sdk.version>
   </properties>
   <scm>
     <connection>:git:git@github.com:quarkiverse/quarkus-operator-sdk.git</connection>
