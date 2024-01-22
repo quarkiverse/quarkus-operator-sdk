@@ -17,11 +17,9 @@ import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.processing.Controller;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
@@ -34,20 +32,6 @@ import io.quarkus.runtime.annotations.RecordableConstructor;
 @SuppressWarnings("rawtypes")
 public class QuarkusControllerConfiguration<R extends HasMetadata> implements ControllerConfiguration<R>,
         DependentResourceConfigurationProvider {
-
-    // we need to create this class because Quarkus cannot reference the default implementation that
-    // JOSDK provides as it doesn't like lambdas at build time. The class also needs to be public
-    // because otherwise Quarkus isn't able to access it… :(
-    public final static class PassthroughResourceEventFilter implements ResourceEventFilter {
-
-        @Override
-        public boolean acceptChange(Controller controller, HasMetadata hasMetadata,
-                HasMetadata p1) {
-            return true;
-        }
-    }
-
-    private final static ResourceEventFilter DEFAULT = new PassthroughResourceEventFilter();
 
     // Needed by Quarkus because LinearRateLimiter doesn't expose setters for byte recording
     public final static class DefaultRateLimiter extends LinearRateLimiter {
@@ -71,7 +55,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final boolean statusPresentAndNotVoid;
     private final Class<R> resourceClass;
     private final Optional<Long> informerListLimit;
-    private final ResourceEventFilter<R> eventFilter;
     private final Optional<OnAddFilter<? super R>> onAddFilter;
     private final Optional<OnUpdateFilter<? super R>> onUpdateFilter;
     private final Optional<GenericFilter<? super R>> genericFilter;
@@ -107,7 +90,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             Set<String> namespaces,
             boolean wereNamespacesSet,
             String finalizerName, String labelSelector,
-            boolean statusPresentAndNotVoid, ResourceEventFilter eventFilter,
+            boolean statusPresentAndNotVoid,
             Duration maxReconciliationInterval,
             OnAddFilter<R> onAddFilter, OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter,
             Class<? extends Retry> retryClass, Class<? extends Annotation> retryConfigurationClass,
@@ -132,7 +115,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         setFinalizer(finalizerName);
         this.labelSelector = labelSelector;
         this.statusPresentAndNotVoid = statusPresentAndNotVoid;
-        this.eventFilter = eventFilter != null ? eventFilter : DEFAULT;
         this.maxReconciliationInterval = maxReconciliationInterval != null ? Optional.of(maxReconciliationInterval)
                 : ControllerConfiguration.super.maxReconciliationInterval();
         this.onAddFilter = Optional.ofNullable(onAddFilter);
@@ -304,11 +286,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     @Override
     public RateLimiter getRateLimiter() {
         return rateLimiter;
-    }
-
-    @Override
-    public ResourceEventFilter<R> getEventFilter() {
-        return eventFilter;
     }
 
     public Optional<Duration> maxReconciliationInterval() {
