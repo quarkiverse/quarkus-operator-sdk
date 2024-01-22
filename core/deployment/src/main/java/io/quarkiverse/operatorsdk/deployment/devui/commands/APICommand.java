@@ -23,13 +23,21 @@ public class APICommand implements Command {
     @Option(name = CLIConstants.API_VERSION, shortName = CLIConstants.API_VERSION_SHORT, description = CLIConstants.API_VERSION_DESCRIPTION, required = true)
     private String version;
 
+    @Option(shortName = 'h', hasValue = false, overrideRequired = true)
+    public boolean help;
+
     @Override
     public CommandResult execute(CommandInvocation commandInvocation) throws CommandException, InterruptedException {
-        return Files.generateAPIFiles(group, version, kind, new Files.MessageWriter() {
-            @Override
-            public void write(String message, Exception e, boolean forError) {
-                commandInvocation.println(formatMessageWithException(message, e));
-            }
-        }) ? CommandResult.SUCCESS : CommandResult.FAILURE;
+        if (this.help) {
+            commandInvocation.getShell().write(commandInvocation.getHelpInfo());
+            return CommandResult.SUCCESS;
+        } else {
+            return Files.generateAPIFiles(group, version, kind, new Files.MessageWriter() {
+                @Override
+                public void write(String message, Exception e, boolean forError) {
+                    commandInvocation.println(formatMessageWithException(message, e));
+                }
+            }) ? CommandResult.SUCCESS : CommandResult.FAILURE;
+        }
     }
 }
