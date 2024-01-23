@@ -24,6 +24,9 @@ on:
         type: string
         required: true
         default: 'integration-tests,samples'
+      profiles:
+        type: string
+        required: false
   workflow_dispatch:
     inputs:
       josdk-pr:
@@ -151,10 +154,10 @@ jobs:
           echo "Quarkus Fabric8 version: ${{ steps.build-quarkus-pr.outputs.quarkus_f8_version }}"
 
       - name: Build with Maven (JVM)
-        run: mvn -B formatter:validate install --file pom.xml
+        run: mvn -B formatter:validate install -P'${{inputs.profiles}}' --file pom.xml
 
       - name: Build with Maven (Native)
-        run: mvn -B install -Dnative --file pom.xml -pl '${{inputs.native-modules}}' -amd
+        run: mvn -B install -Dnative --file pom.xml -P'${{inputs.profiles}}' -pl '${{inputs.native-modules}}' -amd
 
       - name: Kubernetes KinD Cluster
         uses: container-tools/kind-action@v2
