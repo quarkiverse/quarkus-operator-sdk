@@ -12,6 +12,7 @@ jobs:
       java-version: 17
       branch: "next-fabric8-version"
       native-modules: "integration-tests,samples"
+      profiles: "use-snapshots"
 
   release-snapshot:
     runs-on: ubuntu-latest
@@ -40,4 +41,4 @@ jobs:
         run: |
           mvn versions:set -DnewVersion=999.F8-SNAPSHOT versions:commit
           gpg --quiet --batch --yes --decrypt --passphrase="${{secrets.GPG_PASSPHRASE}}" --output maven-settings.xml .github/release/maven-settings.xml.gpg
-          mvn -B deploy -DperformRelease -Dno-samples -Prelease -s maven-settings.xml
+          mvn -B deploy -DperformRelease -Dno-samples -Prelease,use-snapshots -s maven-settings.xml
