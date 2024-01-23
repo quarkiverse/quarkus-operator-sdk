@@ -30,11 +30,13 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Icon;
+import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestSpec.ExcludedTopic;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestStatus.State;
 
-@CSVMetadata(permissionRules = @CSVMetadata.PermissionRule(apiGroups = Joke.GROUP, resources = "jokes"), requiredCRDs = @CSVMetadata.RequiredCRD(kind = "Joke", name = Joke.NAME, version = Joke.VERSION), icon = @Icon(fileName = "icon.png", mediatype = "image/png"))
+@CSVMetadata(requiredCRDs = @CSVMetadata.RequiredCRD(kind = "Joke", name = Joke.NAME, version = Joke.VERSION), icon = @Icon(fileName = "icon.png", mediatype = "image/png"))
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
+@RBACRule(apiGroups = Joke.GROUP, resources = "jokes", verbs = RBACRule.ALL)
 @SuppressWarnings("unused")
 public class JokeRequestReconciler implements Reconciler<JokeRequest> {
     @Inject

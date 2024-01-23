@@ -91,6 +91,12 @@ public @interface CSVMetadata {
         boolean supported() default true;
     }
 
+    /**
+     * Additional RBAC rules that need to be provided because they cannot be inferred automatically. Note that RBAC rules added
+     * to your reconciler via {@link RBACRule} should already be handled automatically, under the service account name
+     * associated with your Reconciler so this annotation should only be used to add additional rules to other service accounts
+     * or for rules that you don't want to appear in the generated Kubernetes manifests.
+     */
     @interface PermissionRule {
         String[] apiGroups();
 
