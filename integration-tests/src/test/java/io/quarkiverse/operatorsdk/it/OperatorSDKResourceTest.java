@@ -126,7 +126,7 @@ class OperatorSDKResourceTest {
                         "namespaces", hasSize(2),
                         "namespaces", hasItem("builtime-namespace1"),
                         "namespaces", hasItem("buildtime-ns2"),
-                        "retry.maxAttempts", equalTo(1),
+                        "retry.maxAttempts", equalTo(1), // should use property even if no annotation exists
                         "generationAware", equalTo(false),
                         "maxReconciliationIntervalSeconds", equalTo(TestReconciler.INTERVAL));
     }
@@ -141,9 +141,8 @@ class OperatorSDKResourceTest {
                 .body(
                         "finalizer", equalTo("from-property/finalizer"),
                         "namespaces", hasItem("bar"),
-                        "retryConfiguration.maxAttempts", equalTo(10),
-                        "retry.maxAttempts", equalTo(ConfiguredReconciler.MAX_ATTEMPTS),
-                        "retryConfiguration.initialInterval", equalTo(20000),
+                        "retry.maxAttempts", equalTo(ConfiguredReconciler.MAX_ATTEMPTS), // from annotation
+                        "retry.initialInterval", equalTo(20000), // annotation value should be overridden by property
                         "rateLimiter.refreshPeriod", equalTo(60F), // for some reason the period is reported as a float
                         "labelSelector", equalTo("environment=production,tier!=frontend"));
 

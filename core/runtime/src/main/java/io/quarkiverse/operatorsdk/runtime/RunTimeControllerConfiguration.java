@@ -5,6 +5,7 @@ import static io.quarkiverse.operatorsdk.runtime.Constants.QOSDK_USE_BUILDTIME_N
 import java.util.List;
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.quarkus.runtime.annotations.ConfigGroup;
 import io.quarkus.runtime.annotations.ConfigItem;
 
@@ -28,10 +29,13 @@ public class RunTimeControllerConfiguration {
     public Optional<String> finalizer;
 
     /**
-     * The optional controller retry configuration
+     * Configures the controller's {@link io.javaoperatorsdk.operator.processing.retry.GradualRetry} policy. This will only take
+     * effect if {@link ControllerConfiguration#retry()} is set to use the
+     * {@link io.javaoperatorsdk.operator.processing.retry.GenericRetry} implementation (which is what is used by default if not
+     * otherwise configured)
      */
     @ConfigItem
-    public ExternalRetryConfiguration retry;
+    public ExternalGradualRetryConfiguration retry;
 
     /**
      * An optional list of comma-separated label selectors that Custom Resources must match to trigger the controller.
