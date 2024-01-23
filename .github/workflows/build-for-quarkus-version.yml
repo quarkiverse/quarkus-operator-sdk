@@ -27,6 +27,7 @@ on:
       profiles:
         type: string
         required: false
+        default: 'default'
   workflow_dispatch:
     inputs:
       josdk-pr:
