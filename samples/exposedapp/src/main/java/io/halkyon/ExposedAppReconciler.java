@@ -41,21 +41,19 @@ public class ExposedAppReconciler implements Reconciler<ExposedApp>,
     public UpdateControl<ExposedApp> reconcile(ExposedApp exposedApp, Context<ExposedApp> context) {
         final var name = exposedApp.getMetadata().getName();
         // retrieve the workflow reconciliation result and re-schedule if we have dependents that are not yet ready
-        return context.managedDependentResourceContext().getWorkflowReconcileResult()
-                .map(wrs -> {
-                    if (wrs.allDependentResourcesReady()) {
+        final var wrs = context.managedDependentResourceContext().getWorkflowReconcileResult();
+        if (wrs.allDependentResourcesReady()) {
 
-                        final var url = IngressDependent.getExposedURL(
-                                context.getSecondaryResource(Ingress.class).orElseThrow());
-                        exposedApp.setStatus(new ExposedAppStatus(url, exposedApp.getSpec().getEndpoint()));
-                        log.info("App {} is exposed and ready to be used at {}", name, exposedApp.getStatus().getHost());
-                        return UpdateControl.updateStatus(exposedApp);
-                    } else {
-                        final var duration = Duration.ofSeconds(1);
-                        log.info("App {} is not ready yet, rescheduling reconciliation after {}s", name, duration.toSeconds());
-                        return UpdateControl.<ExposedApp> noUpdate().rescheduleAfter(duration);
-                    }
-                }).orElseThrow();
+            final var url = IngressDependent.getExposedURL(
+                    context.getSecondaryResource(Ingress.class).orElseThrow());
+            exposedApp.setStatus(new ExposedAppStatus(url, exposedApp.getSpec().getEndpoint()));
+            log.info("App {} is exposed and ready to be used at {}", name, exposedApp.getStatus().getHost());
+            return UpdateControl.updateStatus(exposedApp);
+        } else {
+            final var duration = Duration.ofSeconds(1);
+            log.info("App {} is not ready yet, rescheduling reconciliation after {}s", name, duration.toSeconds());
+            return UpdateControl.<ExposedApp> noUpdate().rescheduleAfter(duration);
+        }
     }
 
     static ObjectMeta createMetadata(ExposedApp resource, Map<String, String> labels) {
