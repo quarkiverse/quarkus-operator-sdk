@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
@@ -200,10 +199,6 @@ public class OperatorSDKResource {
         @JsonProperty("watchCurrentNamespace")
         public boolean watchCurrentNamespace() {
             return conf.watchCurrentNamespace();
-        }
-
-        public RetryConfiguration getRetryConfiguration() {
-            return conf.getRetryConfiguration();
         }
 
         public Retry getRetry() {
