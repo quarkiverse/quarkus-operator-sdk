@@ -13,7 +13,6 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -70,13 +69,13 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private String finalizer;
     private Set<String> namespaces;
     private boolean wereNamespacesSet;
-    private RetryConfiguration retryConfiguration;
     private String labelSelector;
     private final Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata;
     private Retry retry;
     private RateLimiter rateLimiter;
     private ManagedWorkflow<R> workflow;
     private QuarkusConfigurationService parent;
+    private ExternalGradualRetryConfiguration gradualRetry;
 
     @RecordableConstructor
     @SuppressWarnings("unchecked")
@@ -109,7 +108,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.additionalRBACRoleRefs = additionalRBACRoleRefs;
         this.dependentsMetadata = dependentsMetadata;
         this.workflow = workflow;
-        this.retryConfiguration = ControllerConfiguration.super.getRetryConfiguration();
         setNamespaces(namespaces);
         this.wereNamespacesSet = wereNamespacesSet;
         setFinalizer(finalizerName);
@@ -122,7 +120,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.genericFilter = Optional.ofNullable(genericFilter);
 
         this.retryClass = retryClass;
-        this.retry = GenericRetry.class.equals(retryClass) ? ControllerConfiguration.super.getRetry() : null;
+        this.retry = GenericRetry.class.equals(retryClass) ? new GenericRetry() : null;
         this.retryConfigurationClass = retryConfigurationClass;
 
         this.rateLimiterClass = rateLimiterClass;
@@ -217,20 +215,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     public boolean isWereNamespacesSet() {
         return wereNamespacesSet;
-    }
-
-    @Override
-    public RetryConfiguration getRetryConfiguration() {
-        return retryConfiguration;
-    }
-
-    void setRetryConfiguration(RetryConfiguration retryConfiguration) {
-        this.retryConfiguration = retryConfiguration != null ? retryConfiguration
-                : ControllerConfiguration.super.getRetryConfiguration();
-        // reset retry if needed
-        if (retry == null || retry instanceof GenericRetry) {
-            retry = GenericRetry.fromConfiguration(retryConfiguration);
-        }
     }
 
     @IgnoreProperty
@@ -341,6 +325,10 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return retryClass;
     }
 
+    void setGradualRetryConfiguration(ExternalGradualRetryConfiguration gradualRetry) {
+        this.gradualRetry = gradualRetry;
+    }
+
     // for Quarkus' RecordableConstructor
     @SuppressWarnings("unused")
     public Class<? extends RateLimiter> getRateLimiterClass() {
@@ -355,11 +343,20 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     void initAnnotationConfigurables(Reconciler<R> reconciler) {
         final Class<? extends Reconciler> reconcilerClass = reconciler.getClass();
-        if (retryConfigurationClass != null) {
+        if (retryConfigurationClass != null || gradualRetry != null) {
             if (retry == null) {
                 retry = ClassLoadingUtils.instantiate(retryClass);
             }
             configure(reconcilerClass, retryConfigurationClass, (AnnotationConfigurable) retry);
+            // override with configuration from application.properties (if it exists) for GradualRetry
+            if (gradualRetry != null) {
+                // configurable should be a GenericRetry as validated by RetryResolver
+                final var genericRetry = (GenericRetry) retry;
+                gradualRetry.maxAttempts.ifPresent(genericRetry::setMaxAttempts);
+                gradualRetry.interval.initial.ifPresent(genericRetry::setInitialInterval);
+                gradualRetry.interval.max.ifPresent(genericRetry::setMaxInterval);
+                gradualRetry.interval.multiplier.ifPresent(genericRetry::setIntervalMultiplier);
+            }
             retryClass = null;
             retryConfigurationClass = null;
         }
