@@ -66,15 +66,17 @@ public class BundleProcessor {
 
     @SuppressWarnings({ "unused" })
     @BuildStep(onlyIf = IsGenerationEnabled.class)
-    CSVMetadataBuildItem gatherCSVMetadata(ApplicationInfoBuildItem configuration,
+    CSVMetadataBuildItem gatherCSVMetadata(KubernetesConfig kubernetesConfig,
+            ApplicationInfoBuildItem appConfiguration,
             BundleGenerationConfiguration bundleConfiguration,
             CombinedIndexBuildItem combinedIndexBuildItem) {
         final var index = combinedIndexBuildItem.getIndex();
-        final var defaultName = bundleConfiguration.packageName.orElse(configuration.getName());
+        final var defaultName = bundleConfiguration.packageName
+                .orElse(ResourceNameUtil.getResourceName(kubernetesConfig, appConfiguration));
 
         // note that version, replaces, etc. should probably be settable at the reconciler level
         // use version specified in bundle configuration, if not use the one extracted from the project, if available
-        final var version = configuration.getVersion();
+        final var version = kubernetesConfig.getVersion().orElse(appConfiguration.getVersion());
         final var defaultVersion = bundleConfiguration.version
                 .orElse(ApplicationInfoBuildItem.UNSET_VALUE.equals(version) ? null : version);
 
