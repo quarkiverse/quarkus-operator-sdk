@@ -154,11 +154,19 @@ jobs:
           echo "Quarkus version: $(mvn help:evaluate -Dexpression=quarkus.version -q -DforceStdout)"
           echo "Quarkus Fabric8 version: ${{ steps.build-quarkus-pr.outputs.quarkus_f8_version }}"
 
+      - name: Use snapshots profile for non-main builds
+        id: set-mvn-profiles
+        run: |
+          maven_profiles="${{ inputs.profiles }}"
+          if [ "${{ inputs.branch }}" != "main" ]; then
+            maven_profiles='${maven_profiles},use-snapshots'
+          echo "maven_profiles=${maven_profiles}" >> $GITHUB_OUTPUT
+
       - name: Build with Maven (JVM)
-        run: mvn -B formatter:validate install -P'${{inputs.profiles}}' --file pom.xml
+        run: mvn -B formatter:validate install -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' --file pom.xml
 
       - name: Build with Maven (Native)
-        run: mvn -B install -Dnative --file pom.xml -P'${{inputs.profiles}}' -pl '${{inputs.native-modules}}' -amd
+        run: mvn -B install -Dnative --file pom.xml -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -pl '${{inputs.native-modules}}' -amd
 
       - name: Kubernetes KinD Cluster
         uses: container-tools/kind-action@v2
