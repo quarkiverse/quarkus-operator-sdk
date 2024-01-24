@@ -24,6 +24,8 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
+    # only analyze code on main branch 
+    if: github.ref_name == 'main'
     permissions:
       actions: read
       contents: read
