@@ -105,8 +105,11 @@ public @interface CSVMetadata {
         String[] verbs() default { "get", "list", "watch", "create", "delete", "patch", "update" };
 
         /**
-         * @return the service account name for the permission rule. If not provided, it will use the default service account
-         *         name.
+         * @return the service account name to which the permission rule will be assigned. If not provided, the default service
+         *         account name as defined for your operator will be used. Note that for the rule to be effectively added to the
+         *         CSV, a service account with that name <em>must</em> exist in the generated kubernetes manifests as this is
+         *         the base upon which the bundle generator works. This means that if you add a rule that targets a service
+         *         account that is not present in the generated manifest, then this rule won't appear in the generated CSV.
          */
         String serviceAccountName() default "";
     }
