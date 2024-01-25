@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.quarkiverse.operatorsdk.bundle.sources.*;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkus.test.ProdBuildResults;
@@ -50,6 +51,14 @@ public class MultipleOperatorsBundleTest {
         assertEquals(BUNDLE_PACKAGE, bundleMeta.getAnnotations().get("operators.operatorframework.io.bundle.package.v1"));
 
         checkBundleFor(bundle, "second-operator", Second.class);
+        csv = getCSVFor(bundle, "second-operator");
+        final var permissions = csv.getSpec().getInstall().getSpec().getPermissions();
+        assertEquals(1, permissions.size());
+        assertTrue(permissions.get(0).getRules().contains(new PolicyRuleBuilder()
+                .addToApiGroups(SecondReconciler.RBAC_RULE_GROUP)
+                .addToResources(SecondReconciler.RBAC_RULE_RES)
+                .addToVerbs(SecondReconciler.RBAC_RULE_VERBS)
+                .build()));
 
         checkBundleFor(bundle, "third-operator", Third.class);
         // also check that external CRD is present

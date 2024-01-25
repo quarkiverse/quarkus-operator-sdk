@@ -33,7 +33,8 @@ import io.quarkus.deployment.annotations.Produce;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
 import io.quarkus.deployment.pkg.builditem.ArtifactResultBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
-import io.quarkus.kubernetes.spi.*;
+import io.quarkus.kubernetes.deployment.KubernetesConfig;
+import io.quarkus.kubernetes.deployment.ResourceNameUtil;
 import io.quarkus.qute.Qute;
 
 @BuildSteps(onlyIf = HelmGenerationEnabled.class)
@@ -128,9 +129,9 @@ public class HelmChartProcessor {
     @Produce(ArtifactResultBuildItem.class)
     void addExplicitlyAddedKubernetesResources(DeserializedKubernetesResourcesBuildItem generatedKubernetesResources,
             HelmTargetDirectoryBuildItem helmDirBI,
-            ApplicationInfoBuildItem appInfo) {
+            ApplicationInfoBuildItem appInfo, KubernetesConfig kubernetesConfig) {
         var resources = generatedKubernetesResources.getResources();
-        resources = filterOutStandardResources(resources, appInfo);
+        resources = filterOutStandardResources(resources, ResourceNameUtil.getResourceName(kubernetesConfig, appInfo));
         if (!resources.isEmpty()) {
             final var kubernetesManifest = helmDirBI.getPathToTemplatesDir().resolve("kubernetes.yml");
             String yaml = FileUtils.asYaml(resources);
@@ -142,7 +143,7 @@ public class HelmChartProcessor {
         }
     }
 
-    private List<HasMetadata> filterOutStandardResources(List<HasMetadata> resources, ApplicationInfoBuildItem appInfo) {
+    private List<HasMetadata> filterOutStandardResources(List<HasMetadata> resources, String operatorName) {
         return resources.stream().filter(r -> {
             if (r instanceof ClusterRole) {
                 return !r.getMetadata().getName().endsWith("-cluster-role");
@@ -151,11 +152,11 @@ public class HelmChartProcessor {
                 return !r.getMetadata().getName().endsWith("-crd-validating-role-binding");
             }
             if (r instanceof RoleBinding) {
-                return !r.getMetadata().getName().equals(appInfo.getName() + "-view") &&
+                return !r.getMetadata().getName().equals(operatorName + "-view") &&
                         !r.getMetadata().getName().endsWith("-role-binding");
             }
             if (r instanceof Service || r instanceof Deployment || r instanceof ServiceAccount) {
-                return !r.getMetadata().getName().equals(appInfo.getName());
+                return !r.getMetadata().getName().equals(operatorName);
             }
             return true;
         }).collect(Collectors.toList());
@@ -178,10 +179,9 @@ public class HelmChartProcessor {
                 .filter(Deployment.class::isInstance).findFirst()
                 .orElseThrow();
         final var envs = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        controllerConfigurations.getControllerConfigs().values().forEach(c -> {
-            envs.add(new EnvVar(ConfigurationUtils.getNamespacesPropertyName(c.getName(), true),
-                    "{watchNamespaces}", null));
-        });
+        controllerConfigurations.getControllerConfigs()
+                .forEach((name, unused) -> envs.add(new EnvVar(ConfigurationUtils.getNamespacesPropertyName(name, true),
+                        "{watchNamespaces}", null)));
 
         // a bit hacky solution to get the exact placeholder without brackets
         final var template = FileUtils.asYaml(deployment);
