@@ -2,14 +2,14 @@ name: Release snapshot of next-fabric8-version branch each day at midnight
 
 on:
   schedule:
-    - cron: '0 0 * * SUN' # run each Sunday at midnight
+    - cron: '0 0 * * *'
 
 jobs:
   build-for-latest-quarkus-version:
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
       quarkus-version-jq-cmd: '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current) | .releases[0].version'
-      java-version: 17
+      java-version: 21
       branch: "next-fabric8-version"
       native-modules: "integration-tests,samples"
       profiles: "use-snapshots"
@@ -20,7 +20,7 @@ jobs:
       - build-for-latest-quarkus-version
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: "next-fabric8-version"
 
@@ -31,10 +31,10 @@ jobs:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
-      - uses: actions/setup-java@v3
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
           cache: 'maven'
 
       - name: Set version to 999.F8-SNAPSHOT and release snapshot

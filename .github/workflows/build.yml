@@ -13,6 +13,8 @@ on:
       - '*.txt'
       - '.all-contributorsrc'
   pull_request:
+    branches-ignore:
+      - "next-fabric8-version" # only build that branch daily in specific workflow
     paths-ignore:
       - '.gitignore'
       - 'CODEOWNERS'
