@@ -65,7 +65,7 @@ jobs:
           repository: ${{ inputs.repository }}
 
       - name: Set up Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ inputs.java-version }}
@@ -163,6 +163,7 @@ jobs:
           echo "JOSDK Fabric8 version: ${{ steps.build-josdk-pr.outputs.josdk_f8_version }}"
           echo "Quarkus version: $(mvn help:evaluate -Dexpression=quarkus.version -q -DforceStdout)"
           echo "Quarkus Fabric8 version: ${{ steps.build-quarkus-pr.outputs.quarkus_f8_version }}"
+          echo "Effective Fabric8 version: $(mvn dependency:tree -Dincludes=io.fabric8:kubernetes-client-api -pl core/deployment | grep io.fabric8:kubernetes-client-api -m1 | cut -d ':' -f 4)"
 
       - name: Build with Maven (JVM)
         run: mvn -B formatter:validate install -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' --file pom.xml

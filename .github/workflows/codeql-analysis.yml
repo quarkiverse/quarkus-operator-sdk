@@ -24,8 +24,6 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
-    # only analyze code on main branch 
-    if: github.ref_name == 'main'
     permissions:
       actions: read
       contents: read
@@ -40,7 +38,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
@@ -54,8 +52,8 @@ jobs:
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v2
+#    - name: Autobuild
+#      uses: github/codeql-action/autobuild@v2
 
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 https://git.io/JvXDl
@@ -63,10 +61,16 @@ jobs:
     # ✏️ If the Autobuild fails above, remove it and uncomment the following three lines
     #    and modify them (or add more) to build your code if your project
     #    uses a compiled language
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 21
+        cache: 'maven'
 
-    #- run: |
-    #   make bootstrap
-    #   make release
+    - name: Perform quick build
+      run: |
+       mvn -Dquickly -Puse-snapshots
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
