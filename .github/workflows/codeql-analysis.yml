@@ -24,8 +24,6 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
-    # only analyze code on main branch 
-    if: github.ref_name == 'main'
     permissions:
       actions: read
       contents: read
@@ -39,6 +37,33 @@ jobs:
         # Learn more about CodeQL language support at https://git.io/codeql-language-support
 
     steps:
+    - name: Check if analysis should be performed
+      id: check
+      run: |
+        josdk_version=$(mvn help:evaluate -Dexpression=java-operator-sdk.version -q -DforceStdout)
+        quarkus_version=$(mvn help:evaluate -Dexpression=quarkus.version -q -DforceStdout)
+        f8_version=$(mvn dependency:tree -Dincludes=io.fabric8:kubernetes-client-api -pl core/deployment | grep io.fabric8:kubernetes-client-api -m1 | cut -d ':' -f 4)
+        echo "JOSDK version: ${josdk_version}"
+        echo "Fabric8 version: ${f8_version}"
+        echo "Quarkus version: ${quarkus_version}"
+        bypass=false
+        if [[ $josdk_version == *"-SNAPSHOT"* ]]; then
+          bypass=true
+        fi
+        if [[ $quarkus_version == *"-SNAPSHOT"* ]]; then
+          bypass=true
+        fi
+        if [[ $f8_version == *"-SNAPSHOT"* ]]; then
+          bypass=true
+        fi
+        if [ "${bypass}" == "true" ]; then
+            echo "Build uses SNAPSHOT version, skipping CodeQL analysis"
+            gh run cancel ${{ github.run_id }}
+            gh run watch ${{ github.run_id }}
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Checkout repository
       uses: actions/checkout@v3
 
