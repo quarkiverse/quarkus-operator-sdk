@@ -46,7 +46,6 @@
         <module>core</module>
         <module>bundle-generator</module>
         <module>integration-tests</module>
-        <module>docs</module>
       </modules>
     </profile>
     <profile>
@@ -74,6 +73,17 @@
       </activation>
       <modules>
         <module>samples</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>no-docs</id>
+      <activation>
+        <property>
+          <name>!no-docs</name>
+        </property>
+      </activation>
+      <modules>
+        <module>docs</module>
       </modules>
     </profile>
     <profile>

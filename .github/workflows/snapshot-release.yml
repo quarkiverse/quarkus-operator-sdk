@@ -29,6 +29,6 @@ jobs:
 
       - name: Deploy maven snapshot
         run: |
-          mvn -B deploy -DperformRelease -Dno-samples -Prelease,use-snapshots
+          mvn -B deploy -DperformRelease -Dno-samples -Dno-docs -Prelease,use-snapshots
         env:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
