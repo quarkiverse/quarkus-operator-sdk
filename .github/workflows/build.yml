@@ -24,6 +24,10 @@ on:
       - '*.txt'
       - '.all-contributorsrc'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   extract-branch-name:
     runs-on: ubuntu-latest
