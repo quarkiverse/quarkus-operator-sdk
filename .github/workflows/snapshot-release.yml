@@ -24,6 +24,8 @@ jobs:
           distribution: 'temurin'
           java-version: 17
           cache: 'maven'
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
       - name: Deploy maven snapshot
         run: |
