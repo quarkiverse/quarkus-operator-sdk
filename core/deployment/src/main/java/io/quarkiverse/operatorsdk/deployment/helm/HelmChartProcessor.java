@@ -134,7 +134,8 @@ public class HelmChartProcessor {
         resources = filterOutStandardResources(resources, ResourceNameUtil.getResourceName(kubernetesConfig, appInfo));
         if (!resources.isEmpty()) {
             final var kubernetesManifest = helmDirBI.getPathToTemplatesDir().resolve("kubernetes.yml");
-            String yaml = FileUtils.asYaml(resources);
+            // Generate a possibly multi-document YAML
+            String yaml = resources.stream().map(FileUtils::asYaml).collect(Collectors.joining());
             try {
                 Files.writeString(kubernetesManifest, yaml);
             } catch (IOException e) {

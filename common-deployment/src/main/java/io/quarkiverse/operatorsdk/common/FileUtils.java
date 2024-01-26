@@ -2,9 +2,7 @@ package io.quarkiverse.operatorsdk.common;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.util.List;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 
 public class FileUtils {
@@ -18,10 +16,18 @@ public class FileUtils {
         }
     }
 
-    public static List<HasMetadata> unmarshalFrom(byte[] yamlOrJson) {
+    /**
+     * Unmarshal the given YAML or JSON to an object. The returned object will be a list if the input
+     * is a YAML/JSON array.
+     */
+    public static Object unmarshalFrom(byte[] yamlOrJson) {
         return serializer.unmarshal(new ByteArrayInputStream(yamlOrJson));
     }
 
+    /**
+     * Serialize the given object to YAML. If the given object is a list, the returned YAML will be a
+     * YAML array.
+     */
     public static String asYaml(Object toSerialize) {
         return serializer.asYaml(toSerialize);
     }

@@ -22,10 +22,15 @@ public class GeneratedResourcesUtils {
         var buildItem = generatedResources.stream()
                 .filter(r -> resourceName.equals(r.getName()))
                 .findAny();
-        return buildItem.map(bi -> FileUtils.unmarshalFrom(bi.getContent()))
-                .orElseThrow(() -> new IllegalArgumentException("Couldn't find resource " + resourceName +
-                        " in generated resources: " + generatedResources.stream()
-                                .map(GeneratedKubernetesResourceBuildItem::getName).collect(Collectors.toSet())));
+        @SuppressWarnings("unchecked")
+        List<HasMetadata> resources = (List<HasMetadata>) buildItem.map(
+                bi -> FileUtils.unmarshalFrom(bi.getContent()))
+                .orElseThrow(
+                        () -> new IllegalArgumentException("Couldn't find resource " + resourceName +
+                                " in generated resources: " + generatedResources.stream()
+                                        .map(GeneratedKubernetesResourceBuildItem::getName)
+                                        .collect(Collectors.toSet())));
+        return resources;
     }
 
     public static List<HasMetadata> loadFrom(List<GeneratedKubernetesResourceBuildItem> generatedResources) {
