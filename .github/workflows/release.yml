@@ -30,10 +30,13 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - name: Retrieve Quarkus version
+        id: quarkus-version
+        run: echo "quarkus_version=$(mvn help:evaluate -Dexpression=quarkus.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+
+      - uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: 'temurin'
           java-version: 17
           cache: 'maven'
           server-id: ossrh
@@ -47,24 +50,85 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-      - name: Update latest release version in docs
-        run: |
-          mvn -B -ntp -pl docs -am generate-resources -Denforcer.skip -Dformatter.skip -Dimpsort.skip
-          if ! git diff --quiet docs/modules/ROOT/pages/includes/attributes.adoc; then
-            git add docs/modules/ROOT/pages/includes/attributes.adoc
-            git commit -m "Update the latest release version ${{steps.metadata.outputs.current-version}} in documentation"
-          fi
-
       - name: Maven release ${{steps.metadata.outputs.current-version}}
+        id: release-qosdk
         run: |
-          mvn -B release:prepare -Prelease -DreleaseVersion=${{steps.metadata.outputs.current-version}} -DdevelopmentVersion=${{steps.metadata.outputs.next-version}}
-          mvn -B release:perform -Darguments=-DperformRelease -DperformRelease -Prelease
+          echo "quarkus_platform_branch=main" >> $GITHUB_OUTPUT
+          git checkout -b release
+          mvn -B release:prepare -Prelease -Darguments="-DperformRelease -Dno-samples -DskipTests" -DreleaseVersion=${{steps.metadata.outputs.current-version}} -DdevelopmentVersion=${{steps.metadata.outputs.next-version}}
+          git checkout ${{github.base_ref}}
+          git rebase release
+          mvn -B release:perform -Darguments="-DperformRelease -Dno-samples -DskipTests" -DperformRelease -Prelease
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
-      - name: Push changes to ${{github.base_ref}} branch
+      - name: Push tags
+        run: git push && git push --tags
+
+      - uses: actions/checkout@v4
+        with:
+          repository: quarkusio/quarkus-platform
+          path: quarkus-platform
+
+      - name: Update QOSDK version to ${{steps.metadata.outputs.current-version}} in quarkus-platform ${{steps.release-qosdk.outputs.quarkus_platform_branch}}
         run: |
-          git push
-          git push origin ${{steps.metadata.outputs.current-version}}
+          cd quarkus-platform
+          git checkout ${{steps.release-qosdk.outputs.quarkus_platform_branch}}
+          mvn -B versions:set-property -Dproperty=quarkus-operator-sdk.version -DnewVersion=${{steps.metadata.outputs.current-version}}
+          ./mvnw -Dsync
+
+      - name: Create quarkus-platform pull request
+        uses: peter-evans/create-pull-request@v5
+        id: qp-pr
+        with:
+          path: quarkus-platform
+          title: "Update QOSDK to ${{steps.metadata.outputs.current-version}} for ${{steps.release-qosdk.outputs.quarkus_platform_branch}}"
+          commit-message: "Update QOSDK to ${{steps.metadata.outputs.current-version}}"
+          committer: metacosm <metacosm@users.noreply.github.com>
+          author: metacosm <metacosm@users.noreply.github.com>
+          branch: qosdk-release-${{steps.metadata.outputs.current-version}}-${{steps.release-qosdk.outputs.quarkus_platform_branch}}
+          token: ${{ secrets.QOSDK_BOT_TOKEN }}
+          push-to-fork: qosdk-bot/quarkus-platform
+          delete-branch: true
+
+      - name: Check quarkus-platform PR
+        if: ${{ steps.qp-pr.outputs.pull-request-number }}
+        run: |
+          echo "Pull Request Number - ${{ steps.qp-pr.outputs.pull-request-number }}"
+          echo "Pull Request URL - ${{ steps.qp-pr.outputs.pull-request-url }}"
+        
+      - uses: actions/checkout@v4
+        with:
+          repository: operator-framework/java-operator-plugins
+          path: sdk-plugins
+
+      - name: Update QOSDK version to ${{steps.metadata.outputs.current-version}} in java-operator-plugins
+        run: |
+          cd sdk-plugins
+          sed -i -e 's|<quarkus-sdk.version>.*</quarkus-sdk.version>|<quarkus-sdk.version>${{steps.metadata.outputs.current-version}}</quarkus-sdk.version>|' $(pwd)/pkg/quarkus/v1beta/scaffolds/internal/templates/pomxml.go
+          sed -i -e 's|<quarkus-sdk.version>.*</quarkus-sdk.version>|<quarkus-sdk.version>${{steps.metadata.outputs.current-version}}</quarkus-sdk.version>|' $(pwd)/testdata/quarkus/memcached-quarkus-operator/pom.xml
+          echo "Using Quarkus ${{ steps.quarkus-version.outputs.quarkus_version }}"
+          mvn versions:set-property -Dproperty=quarkus.version -DnewVersion=${{steps.quarkus-version.outputs.quarkus_version}} -f ./testdata/quarkus/memcached-quarkus-operator/pom.xml versions:commit
+          sed -i -e 's|<quarkus.version>.*</quarkus.version>|<quarkus.version>${{steps.quarkus-version.outputs.quarkus_version}}</quarkus.version>|' $(pwd)/pkg/quarkus/v1beta/scaffolds/internal/templates/pomxml.go
+
+      - name: Create java-operator-plugins pull request
+        uses: peter-evans/create-pull-request@v5
+        id: jop-pr
+        with:
+          path: sdk-plugins
+          title: "feat: update QOSDK to ${{steps.metadata.outputs.current-version}}"
+          commit-message: "feat: update QOSDK to ${{steps.metadata.outputs.current-version}}"
+          committer: metacosm <metacosm@users.noreply.github.com>
+          author: metacosm <metacosm@users.noreply.github.com>
+          branch: qosdk-release-${{steps.metadata.outputs.current-version}}
+          token: ${{ secrets.QOSDK_BOT_TOKEN }}
+          push-to-fork: qosdk-bot/java-operator-plugins
+          delete-branch: true
+
+      - name: Check java-operator-plugins PR
+        if: ${{ steps.jop-pr.outputs.pull-request-number }}
+        run: |
+          echo "Pull Request Number - ${{ steps.jop-pr.outputs.pull-request-number }}"
+          echo "Pull Request URL - ${{ steps.jop-pr.outputs.pull-request-url }}"
