@@ -134,7 +134,8 @@ public class HelmChartProcessor {
         resources = filterOutStandardResources(resources, ResourceNameUtil.getResourceName(kubernetesConfig, appInfo));
         if (!resources.isEmpty()) {
             final var kubernetesManifest = helmDirBI.getPathToTemplatesDir().resolve("kubernetes.yml");
-            String yaml = FileUtils.asYaml(resources);
+            // Generate a possibly multi-document YAML
+            String yaml = resources.stream().map(FileUtils::asYaml).collect(Collectors.joining());
             try {
                 Files.writeString(kubernetesManifest, yaml);
             } catch (IOException e) {
@@ -149,7 +150,8 @@ public class HelmChartProcessor {
                 return !r.getMetadata().getName().endsWith("-cluster-role");
             }
             if (r instanceof ClusterRoleBinding) {
-                return !r.getMetadata().getName().endsWith("-crd-validating-role-binding");
+                return !r.getMetadata().getName().endsWith("-crd-validating-role-binding") &&
+                        !r.getMetadata().getName().endsWith("-cluster-role-binding");
             }
             if (r instanceof RoleBinding) {
                 return !r.getMetadata().getName().equals(operatorName + "-view") &&
