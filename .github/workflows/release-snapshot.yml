@@ -1,11 +1,18 @@
-name: Release Snapshots of main and next on push
+name: Release snapshot
 
 on:
-  push:
-    branches: [ main, next ]
+  workflow_call:
+    inputs:
+      branch:
+        type: string
+        required: false
+        default: 'main'
+      version:
+        type: string
+        required: false
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: "${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: true
 
 defaults:
@@ -18,6 +25,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: "${{inputs.branch}}"
 
       - uses: actions/setup-java@v4
         with:
@@ -29,6 +38,15 @@ jobs:
           server-password: MAVEN_PASSWORD
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
+
+      - name: Change version to "${{inputs.version}}" if needed
+        if: ${{ inputs.version != '' }}
+        run: |
+          echo "Set version to ${{inputs.version}}"
+          mvn versions:set -DnewVersion="${{inputs.version}}" versions:commit
+
+      - name: Output information
+        run: echo "Release snapshot for branch ${{inputs.branch}} with version $(echo mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"
 
       - name: Deploy maven snapshot
         run: |
