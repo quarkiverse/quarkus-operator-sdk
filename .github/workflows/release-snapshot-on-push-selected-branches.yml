@@ -4,10 +4,6 @@ on:
   push:
     branches: [ main, next, next-fabric8-version ]
 
-concurrency:
-  group: "${{ github.workflow }}-${{ github.ref }}"
-  cancel-in-progress: true
-
 defaults:
   run:
     shell: bash
