@@ -10,6 +10,15 @@ on:
       version:
         type: string
         required: false
+    secrets:
+      GPG_PRIVATE_KEY:
+        required: true
+      OSSRH_USERNAME:
+        required: true
+      OSSRH_TOKEN:
+        required: true
+      GPG_PASSPHRASE:
+        required: true
 
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
