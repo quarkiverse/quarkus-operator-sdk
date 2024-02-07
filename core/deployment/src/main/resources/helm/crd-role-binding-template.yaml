@@ -5,7 +5,7 @@ metadata:
   name: {reconciler-name}-role-binding
   labels:
     app.kubernetes.io/name: {{ .Chart.Name }}
-    app.kubernetes.io/version: {{ .Values.version }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
     app.kubernetes.io/managed-by: quarkus
 roleRef:
   kind: ClusterRole
@@ -21,7 +21,7 @@ metadata:
   name: {reconciler-name}-role-binding
   labels:
     app.kubernetes.io/name: {{ .Chart.Name }}
-    app.kubernetes.io/version: {{ .Values.version }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
     app.kubernetes.io/managed-by: quarkus
 roleRef:
   kind: ClusterRole
@@ -40,7 +40,7 @@ metadata:
   namespace: {{ $anamespace }}
   labels:
     app.kubernetes.io/name: {{ .Chart.Name }}
-    app.kubernetes.io/version: {{ .Values.version }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
     app.kubernetes.io/managed-by: quarkus
 roleRef:
   kind: ClusterRole

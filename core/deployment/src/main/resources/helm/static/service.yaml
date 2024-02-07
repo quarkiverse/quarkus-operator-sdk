@@ -3,7 +3,7 @@ kind: Service
 metadata:
   labels:
     app.kubernetes.io/name: {{ .Chart.Name }}
-    app.kubernetes.io/version: {{ .Values.version }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
     app.kubernetes.io/managed-by: quarkus
   name: {{ .Chart.Name }}
 spec:
@@ -14,5 +14,5 @@ spec:
       targetPort: 8080
   selector:
     app.kubernetes.io/name: {{ .Chart.Name }}
-    app.kubernetes.io/version: {{ .Values.version }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
   type: ClusterIP
