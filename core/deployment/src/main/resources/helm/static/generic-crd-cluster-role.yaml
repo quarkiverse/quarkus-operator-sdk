@@ -4,7 +4,7 @@ metadata:
   name: {{ .Chart.Name }}-crd-validating-cluster-role
   labels:
     app.kubernetes.io/name: {{ .Chart.Name }}
-    app.kubernetes.io/version: {{ .Values.version }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
     app.kubernetes.io/managed-by: quarkus
 rules:
   - apiGroups:

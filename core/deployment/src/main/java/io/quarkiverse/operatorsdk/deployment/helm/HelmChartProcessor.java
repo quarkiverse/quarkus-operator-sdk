@@ -26,7 +26,6 @@ import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
 import io.quarkiverse.operatorsdk.deployment.ControllerConfigurationsBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.deployment.helm.model.Chart;
-import io.quarkus.container.spi.ContainerImageInfoBuildItem;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.BuildSteps;
 import io.quarkus.deployment.annotations.Produce;
@@ -188,7 +187,7 @@ public class HelmChartProcessor {
         // a bit hacky solution to get the exact placeholder without brackets
         final var template = FileUtils.asYaml(deployment);
         var res = template.replace("\"{watchNamespaces}\"", "{{ .Values.watchNamespaces }}");
-        res = res.replaceAll(appInfo.getVersion(), "{{ .Values.version }}");
+        res = res.replaceAll(appInfo.getVersion(), "{{ .Chart.AppVersion }}");
         try {
             Files.writeString(helmDirBI.getPathToTemplatesDir().resolve("deployment.yaml"), res);
         } catch (IOException e) {
@@ -217,12 +216,9 @@ public class HelmChartProcessor {
 
     @BuildStep
     @Produce(ArtifactResultBuildItem.class)
-    private void addValuesYaml(HelmTargetDirectoryBuildItem helmTargetDirectoryBuildItem,
-            ContainerImageInfoBuildItem containerImageInfoBuildItem) {
+    private void addValuesYaml(HelmTargetDirectoryBuildItem helmTargetDirectoryBuildItem) {
         try {
             var values = new Values();
-            final var tag = containerImageInfoBuildItem.getTag();
-            values.setVersion(tag);
             var valuesYaml = FileUtils.asYaml(values);
             var valuesFile = helmTargetDirectoryBuildItem.getPathToHelmDir().resolve(VALUES_YAML_FILENAME);
             Files.writeString(valuesFile, valuesYaml);
@@ -245,6 +241,7 @@ public class HelmChartProcessor {
             Chart chart = new Chart();
             chart.setName(appInfo.getName());
             chart.setVersion(appInfo.getVersion());
+            chart.setAppVersion(appInfo.getVersion());
             chart.setApiVersion("v2");
             var chartYaml = FileUtils.asYaml(chart);
             final var chartFile = helmTargetDirectoryBuildItem.getPathToHelmDir().resolve(CHART_YAML_FILENAME);

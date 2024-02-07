@@ -5,9 +5,6 @@
   "properties": {
     "watchNamespaces": {
       "type": "string"
-    },
-    "version": {
-      "type": "string"
     }
   }
 }
