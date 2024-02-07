@@ -55,7 +55,7 @@ jobs:
           mvn versions:set -DnewVersion="${{inputs.version}}" versions:commit
 
       - name: Output information
-        run: echo "Release snapshot for branch ${{inputs.branch}} with version $(echo mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"
+        run: echo "Release snapshot for branch ${{inputs.branch}} with version $(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"
 
       - name: Deploy maven snapshot
         run: |
