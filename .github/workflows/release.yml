@@ -7,7 +7,7 @@ on:
       - '.github/project.yml'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: "${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: true
 
 defaults:

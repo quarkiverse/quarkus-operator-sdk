@@ -23,6 +23,12 @@ jobs:
           repository: quarkusio/quarkus-platform
           ref: ${{inputs.quarkus-platform-branch}}
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+          cache: 'maven'
+
       - name: Update QOSDK version to ${{inputs.qosdk-version}} in quarkus-platform ${{inputs.quarkus-platform-branch}}
         run: |
           mvn -B versions:set-property -Dproperty=quarkus-operator-sdk.version -DnewVersion=${{inputs.qosdk-version}}
