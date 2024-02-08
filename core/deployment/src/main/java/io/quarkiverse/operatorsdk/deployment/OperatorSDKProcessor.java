@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import jakarta.inject.Singleton;
 
 import org.jboss.jandex.DotName;
+import org.jboss.jandex.Type;
 import org.jboss.logging.Logger;
 
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
@@ -34,7 +35,7 @@ import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.*;
 import io.quarkus.deployment.builditem.nativeimage.ForceNonWeakReflectiveClassBuildItem;
-import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
+import io.quarkus.deployment.builditem.nativeimage.ReflectiveHierarchyBuildItem;
 import io.quarkus.deployment.metrics.MetricsCapabilityBuildItem;
 import io.quarkus.gizmo.AssignableResultHandle;
 import io.quarkus.gizmo.MethodCreator;
@@ -180,10 +181,34 @@ class OperatorSDKProcessor {
         return new AnnotationConfigurablesBuildItem(configurableInfos);
     }
 
+    /**
+     * Gathers the CustomResource implementations that are not part of the application index because they are part of an
+     * external, reusable module for example.
+     *
+     * Note that this will be obsolete once <a href="https://github.com/quarkusio/quarkus/pull/38586">Quarkus #38586</a> is
+     * usable
+     *
+     * @param combinedIndexBuildItem
+     * @param applicationIndexBuildItem
+     * @param reflectiveClassProducer
+     */
+    @BuildStep
+    void gatherOutOfAppCustomResourceImplementations(CombinedIndexBuildItem combinedIndexBuildItem,
+            ApplicationIndexBuildItem applicationIndexBuildItem,
+            BuildProducer<QOSDKReflectiveClassBuildItem> reflectiveClassProducer) {
+        final var combinedIndex = combinedIndexBuildItem.getIndex();
+        final var appIndex = applicationIndexBuildItem.getIndex();
+
+        // only add the CRs found in the combined index that were not already in the application one since Quarkus should already handle these
+        final var crsFromCombined = combinedIndex.getAllKnownSubclasses(Constants.CUSTOM_RESOURCE);
+        crsFromCombined.removeAll(appIndex.getAllKnownSubclasses(Constants.CUSTOM_RESOURCE));
+        crsFromCombined.forEach(ci -> reflectiveClassProducer.produce(new QOSDKReflectiveClassBuildItem(ci.name().toString())));
+    }
+
     @BuildStep
     void registerClassesForReflection(
             List<QOSDKReflectiveClassBuildItem> toRegister,
-            BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
+            BuildProducer<ReflectiveHierarchyBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses) {
         final var toRegisterSet = toRegister.stream()
                 .flatMap(QOSDKReflectiveClassBuildItem::classNamesToRegisterForReflectionStream)
@@ -236,11 +261,13 @@ class OperatorSDKProcessor {
 
     }
 
-    private void registerAssociatedClassesForReflection(BuildProducer<ReflectiveClassBuildItem> reflectionClasses,
+    private void registerAssociatedClassesForReflection(BuildProducer<ReflectiveHierarchyBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             Set<String> classNamesToRegister) {
+        // todo: use builder API when/if https://github.com/quarkusio/quarkus/pull/38679 is available
         classNamesToRegister.forEach(cn -> {
-            reflectionClasses.produce(ReflectiveClassBuildItem.builder(cn).methods().fields().build());
+            reflectionClasses.produce(new ReflectiveHierarchyBuildItem.Builder()
+                    .type(Type.create(DotName.createSimple(cn), Type.Kind.CLASS)).build());
             forcedReflectionClasses.produce(
                     new ForceNonWeakReflectiveClassBuildItem(cn));
             log.infov("Registered ''{0}'' for reflection", cn);
