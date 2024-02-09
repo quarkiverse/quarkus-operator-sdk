@@ -2,10 +2,10 @@ package io.quarkiverse.operatorsdk.bundle;
 
 import static io.quarkiverse.operatorsdk.bundle.Utils.BUNDLE;
 import static io.quarkiverse.operatorsdk.bundle.Utils.getCSVFor;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
-import java.nio.file.Files;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -16,11 +16,11 @@ import io.quarkus.test.ProdBuildResults;
 import io.quarkus.test.ProdModeTestResults;
 import io.quarkus.test.QuarkusProdModeTest;
 
-public class DefaultBundleWhenNoCsvMetadataTest {
-
+public class OutputLabelSelectorsIfRequestedTest {
     @RegisterExtension
     static final QuarkusProdModeTest config = new QuarkusProdModeTest()
-            .setApplicationName("reconciler-with-no-csv-metadata")
+            .setApplicationName("output-kube-labels")
+            .overrideConfigKey("quarkus.kubernetes.add-version-to-label-selectors", "true")
             .withApplicationRoot((jar) -> jar
                     .addClasses(First.class, ReconcilerWithNoCsvMetadata.class));
 
@@ -28,15 +28,11 @@ public class DefaultBundleWhenNoCsvMetadataTest {
     private ProdModeTestResults prodModeTestResults;
 
     @Test
-    public void shouldWriteBundleEvenWhenCsvMetadataIsNotUsed() throws IOException {
-        final var name = "reconciler-with-no-csv-metadata";
-        final var bundle = prodModeTestResults.getBuildDir().resolve(BUNDLE);
-        assertTrue(Files.exists(bundle.resolve(name)));
-        final var csv = getCSVFor(bundle, name);
+    public void shouldHaveVersionLabelWhenRequested() throws IOException {
+        final var name = "output-kube-labels";
+        final var csv = getCSVFor(prodModeTestResults.getBuildDir().resolve(BUNDLE), name);
         final var deployment = csv.getSpec().getInstall().getSpec().getDeployments().get(0);
         assertEquals(name, deployment.getName());
-        // by default, we shouldn't output the version label in the selector match labels as the default controlling this should be overridden by KubernetesLabelConfigOverrider
-        assertNull(deployment.getSpec().getSelector().getMatchLabels().get("app.kubernetes.io/version"));
+        assertNotNull(deployment.getSpec().getSelector().getMatchLabels().get("app.kubernetes.io/version"));
     }
-
 }

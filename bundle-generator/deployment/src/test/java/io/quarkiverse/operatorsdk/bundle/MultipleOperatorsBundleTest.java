@@ -47,7 +47,7 @@ public class MultipleOperatorsBundleTest {
         var csv = getCSVFor(bundle, "first-operator");
         assertEquals(FirstReconciler.VERSION, csv.getSpec().getVersion());
         assertEquals(FirstReconciler.REPLACES, csv.getSpec().getReplaces());
-        var bundleMeta = getAnnotationFor(bundle, "first-operator");
+        var bundleMeta = getAnnotationsFor(bundle, "first-operator");
         assertEquals(BUNDLE_PACKAGE, bundleMeta.getAnnotations().get("operators.operatorframework.io.bundle.package.v1"));
 
         checkBundleFor(bundle, "second-operator", Second.class);
