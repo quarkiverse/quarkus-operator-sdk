@@ -41,7 +41,7 @@ public class Utils {
         return Serialization.unmarshal(csvAsString, ClusterServiceVersion.class);
     }
 
-    static ObjectMeta getAnnotationFor(Path bundle, String operatorName) throws IOException {
+    static ObjectMeta getAnnotationsFor(Path bundle, String operatorName) throws IOException {
         final var annotationPath = bundle.resolve(operatorName).resolve("metadata").resolve("annotations.yaml");
         final var annotationsaAsString = Files.readString(annotationPath);
         return Serialization.unmarshal(annotationsaAsString, ObjectMeta.class);
