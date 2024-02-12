@@ -140,6 +140,11 @@ Find more information about channels and packages https://olm.operatorframework.
 If you're using an insecure container registry, you'll also need to append the next property to the Maven command `-Dquarkus.container-image.insecure=true`.
 ====
 
+[NOTE]
+====
+By default, the bundle generator disables outputting the application's version as part of the manifests' selectors (equivalent to setting `quarkus.kubernetes.add-version-to-label-selectors` to `false`). This is done make updating your operator simpler. If, for some reason, you need that label to be added to the selectors, just set the property to `true`.
+====
+
 === Build the Operator Bundle image
 
 An Operator Bundle is a container image that stores Kubernetes manifests and metadata associated with an operator.
