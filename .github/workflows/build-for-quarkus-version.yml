@@ -146,7 +146,7 @@ jobs:
         run: |
           maven_profiles="${{ inputs.profiles }}"
           if [ "${{ inputs.branch }}" != "main" ]; then
-            maven_profiles='${maven_profiles},use-snapshots'
+            maven_profiles="${maven_profiles},use-snapshots"
           fi
           echo "Computed Maven profiles: ${maven_profiles}"
           echo "maven_profiles=${maven_profiles}" >> $GITHUB_OUTPUT
