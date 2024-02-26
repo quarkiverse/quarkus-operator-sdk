@@ -54,6 +54,10 @@ on:
         required: true
         default: 'integration-tests,samples'
 
+concurrency:
+  group: "${{ inputs.quarkus-version }}-${{inputs.java-version}}-${{ github.ref }}"
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest

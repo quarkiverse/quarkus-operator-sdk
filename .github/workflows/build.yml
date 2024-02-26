@@ -25,33 +25,46 @@ on:
       - '.all-contributorsrc'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: "${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: true
 
 jobs:
-  extract-branch-name:
+  extract-project-metadata:
     runs-on: ubuntu-latest
     outputs:
       branch_name: ${{ steps.extract_branch.outputs.branch }}
+      qosdk_quarkus_version: ${{ steps.quarkus-version.outputs.quarkus_version }}
+      latest_stable_quarkus: ${{ steps.get-quarkus-version.outputs.value }}
     steps:
       - name: Extract branch name
         shell: bash
         run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
         id: extract_branch
+      - uses: actions/checkout@v4
+
+      - name: Retrieve Quarkus version
+        id: quarkus-version
+        run: echo "quarkus_version=$(mvn help:evaluate -Dexpression=quarkus.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+
+      - name: Retrieve latest stable Quarkus version from platform
+        id: get-quarkus-version
+        uses: sergeysova/jq-action@v2
+        with:
+          cmd: curl https://registry.quarkus.io/client/platforms | jq '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current) | .releases[0].version'
+
   build-with-quarkus-version:
     needs:
-      - extract-branch-name
+      - extract-project-metadata
     strategy:
       matrix:
         java-version: [ 17, 21 ]
-        quarkus-version-jq-cmd:
-          - '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current) | .releases[0].version'
-#          - '.platforms[0].streams[] | select(.id == "3.6") | .releases[0].version'
+        quarkus-version:
+          - ${{ needs.extract-project-metadata.outputs.qosdk_quarkus_version }}
+          - ${{ needs.extract-project-metadata.outputs.latest_stable_quarkus }}
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
-      quarkus-version-jq-cmd: ${{ matrix.quarkus-version-jq-cmd }}
-#      quarkus-version: 3.6.0
+      quarkus-version: ${{ matrix.quarkus-version }}
       java-version: ${{ matrix.java-version }}
-      branch: ${{ needs.extract-branch-name.outputs.branch_name }}
+      branch: ${{ needs.extract-project-metadata.outputs.branch_name }}
       native-modules: "integration-tests"
       repository: ${{ github.event.pull_request.head.repo.full_name }}
