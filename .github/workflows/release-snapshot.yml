@@ -52,7 +52,7 @@ jobs:
         if: ${{ inputs.version != '' }}
         run: |
           echo "Set version to ${{inputs.version}}"
-          mvn versions:set -DnewVersion="${{inputs.version}}" versions:commit
+          mvn versions:set -DnewVersion="${{inputs.version}}" versions:commit -Puse-snapshots
 
       - name: Output information
         run: echo "Release snapshot for branch ${{inputs.branch}} with version $(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"
