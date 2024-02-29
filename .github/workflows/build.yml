@@ -44,7 +44,7 @@ jobs:
 
       - name: Retrieve Quarkus version
         id: quarkus-version
-        run: echo "quarkus_version=$(mvn help:evaluate -Dexpression=quarkus.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+        run: echo "quarkus_version=$(mvn help:evaluate -Dexpression=quarkus.version -q -DforceStdout -Puse-snapshots)" >> $GITHUB_OUTPUT
 
       - name: Retrieve latest stable Quarkus version from platform
         id: get-quarkus-version
