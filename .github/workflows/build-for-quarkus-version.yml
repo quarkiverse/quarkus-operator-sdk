@@ -185,7 +185,7 @@ jobs:
           operator-sdk: "latest"
 
       - name: Install Operator Lifecycle Manager and Operator SDK into Kind
-        run: operator-sdk olm install --version v0.23.0
+        run: operator-sdk olm install
 
       - name: Validate OLM ExposedApp bundle
         run: |
