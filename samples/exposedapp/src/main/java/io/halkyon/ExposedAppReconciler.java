@@ -20,7 +20,8 @@ import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
         @Dependent(name = "service", type = ServiceDependent.class),
         @Dependent(type = IngressDependent.class, readyPostcondition = IngressDependent.class)
 })
-@CSVMetadata(provider = @CSVMetadata.Provider(name = "Christophe Laprun", url = "https://github.com/metacosm"))
+@CSVMetadata(displayName = "ExposedApp operator", description = "A sample operator that shows how to use JOSDK's main features with the Quarkus extension",
+        provider = @CSVMetadata.Provider(name = "Christophe Laprun", url = "https://github.com/metacosm"))
 public class ExposedAppReconciler implements Reconciler<ExposedApp>,
         ContextInitializer<ExposedApp> {
 
