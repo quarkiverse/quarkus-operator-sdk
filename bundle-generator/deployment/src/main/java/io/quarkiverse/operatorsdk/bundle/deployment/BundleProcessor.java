@@ -32,6 +32,7 @@ import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
 import io.quarkiverse.operatorsdk.bundle.runtime.BundleGenerationConfiguration;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.common.*;
+import io.quarkiverse.operatorsdk.deployment.ControllerConfigurationsBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.deployment.VersionBuildItem;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
@@ -193,7 +194,8 @@ public class BundleProcessor {
             BuildProducer<GeneratedBundleBuildItem> doneGeneratingCSV,
             GeneratedCRDInfoBuildItem generatedCustomResourcesDefinitions,
             @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<DeserializedKubernetesResourcesBuildItem> maybeGeneratedKubeResources,
-            BuildProducer<GeneratedFileSystemResourceBuildItem> generatedCSVs) {
+            BuildProducer<GeneratedFileSystemResourceBuildItem> generatedCSVs,
+            ControllerConfigurationsBuildItem controllerConfigurationsBuildItem) {
         final var crds = generatedCustomResourcesDefinitions.getCRDGenerationInfo().getCrds()
                 .values().stream()
                 .flatMap(entry -> entry.values().stream())
@@ -243,7 +245,8 @@ public class BundleProcessor {
         final var deploymentName = ResourceNameUtil.getResourceName(kubernetesConfig, configuration);
         final var generated = BundleGenerator.prepareGeneration(bundleConfiguration, operatorConfiguration,
                 versionBuildItem.getVersion(),
-                csvMetadata.getCsvGroups(), crds, outputTarget.getOutputDirectory(), deploymentName);
+                csvMetadata.getCsvGroups(), crds, outputTarget.getOutputDirectory(), deploymentName,
+                controllerConfigurationsBuildItem.getControllerConfigs());
         generated.forEach(manifestBuilder -> {
             final var fileName = manifestBuilder.getFileName();
             try {
