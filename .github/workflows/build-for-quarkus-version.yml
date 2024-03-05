@@ -182,8 +182,7 @@ jobs:
         with:
           source: "github"
           opm: "latest"
-# fixme: use known working version until https://github.com/operator-framework/operator-sdk/issues/6689 is fixed
-          operator-sdk: "v1.33.0"
+          operator-sdk: "latest"
 
       - name: Install Operator Lifecycle Manager and Operator SDK into Kind
         run: operator-sdk olm install --version v0.23.0
