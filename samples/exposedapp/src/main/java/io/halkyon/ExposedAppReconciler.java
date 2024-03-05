@@ -13,12 +13,14 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE, name = "exposedapp", dependents = {
         @Dependent(type = DeploymentDependent.class),
         @Dependent(name = "service", type = ServiceDependent.class),
         @Dependent(type = IngressDependent.class, readyPostcondition = IngressDependent.class)
 })
+@CSVMetadata(provider = @CSVMetadata.Provider(name = "Christophe Laprun", url = "https://github.com/metacosm"))
 public class ExposedAppReconciler implements Reconciler<ExposedApp>,
         ContextInitializer<ExposedApp> {
 
