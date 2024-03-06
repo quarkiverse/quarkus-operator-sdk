@@ -52,6 +52,12 @@ jobs:
         with:
           cmd: curl https://registry.quarkus.io/client/platforms | jq '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current) | .releases[0].version'
 
+      - name: Output retrieved versions
+        run: |
+          echo "Project defined Quarkus version: ${{ steps.quarkus-version.outputs.quarkus_version }}"
+          echo "Latest platform Quarkus version: ${{ steps.get-quarkus-version.outputs.value }}"
+          echo "Different? ${{ needs.extract-project-metadata.outputs.qosdk_quarkus_version != needs.extract-project-metadata.outputs.latest_stable_quarkus }}"
+
   build-with-defined-quarkus-version:
     needs:
       - extract-project-metadata
