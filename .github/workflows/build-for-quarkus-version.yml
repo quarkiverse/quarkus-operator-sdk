@@ -219,6 +219,8 @@ jobs:
             exit 1;
           fi;
 
+          echo "PID: $PID"
+          
           # Kill running process
           kill -9 $PID
 
@@ -241,6 +243,8 @@ jobs:
           SCRIPTS=$(pwd)/.github/scripts
           K8S_NAMESPACE=native
           CURRENT_PWD=$(pwd)
+          
+          ps -aux | grep java
 
           # Create and set namespace
           kubectl create namespace $K8S_NAMESPACE

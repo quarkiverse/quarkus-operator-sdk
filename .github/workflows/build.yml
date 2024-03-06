@@ -34,7 +34,8 @@ jobs:
     outputs:
       branch_name: ${{ steps.extract_branch.outputs.branch }}
       qosdk_quarkus_version: ${{ steps.quarkus-version.outputs.quarkus_version }}
-      latest_stable_quarkus: ${{ steps.get-quarkus-version.outputs.value }}
+      latest_stable_quarkus: ${{ fromJSON(steps.get-quarkus-version.outputs.value) }}
+      same_quarkus_versions: ${{ steps.output-versions.outputs.same_quarkus_versions }}
     steps:
       - name: Extract branch name
         shell: bash
@@ -53,10 +54,12 @@ jobs:
           cmd: curl https://registry.quarkus.io/client/platforms | jq '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current) | .releases[0].version'
 
       - name: Output retrieved versions
+        id: output-versions
         run: |
-          echo "Project defined Quarkus version: ${{ steps.quarkus-version.outputs.quarkus_version }}"
-          echo "Latest platform Quarkus version: ${{ steps.get-quarkus-version.outputs.value }}"
+          echo "Project defined Quarkus version: '${{ steps.quarkus-version.outputs.quarkus_version }}'"
+          echo "Latest platform Quarkus version: '${{ fromJSON(steps.get-quarkus-version.outputs.value) }}'"
           echo "Different? ${{ needs.extract-project-metadata.outputs.qosdk_quarkus_version != needs.extract-project-metadata.outputs.latest_stable_quarkus }}"
+          echo "same_quarkus_versions=${{ needs.extract-project-metadata.outputs.qosdk_quarkus_version == needs.extract-project-metadata.outputs.latest_stable_quarkus }}" >> $GITHUB_OUTPUT
 
   build-with-defined-quarkus-version:
     needs:
@@ -72,7 +75,7 @@ jobs:
       repository: ${{ github.event.pull_request.head.repo.full_name }}
 
   build-with-latest-stable-quarkus-version:
-    if: ${{ needs.extract-project-metadata.outputs.qosdk_quarkus_version != needs.extract-project-metadata.outputs.latest_stable_quarkus }}
+    if: ${{ !fromJSON(needs.extract-project-metadata.outputs.same_quarkus_versions) }}
     needs:
       - extract-project-metadata
     strategy:
