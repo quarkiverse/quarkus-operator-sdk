@@ -205,27 +205,33 @@ jobs:
           # Run operator in DEV mode
           cd samples/joke
           # Need to override application.properties setting to avoid using dev services instead of set up cluster
-          nohup mvn quarkus:dev -Dquarkus.kubernetes-client.devservices.override-kubeconfig=false> app.log 2>&1 &
+          mvn quarkus:dev -Dquarkus.kubernetes-client.devservices.override-kubeconfig=false >app.log 2>&1 &
           PID=$(echo $!)
           cd $CURRENT_PWD
 
+          ERROR=0
           # Wait until the app installed the jokerequest custom resource definition
           if ! $SCRIPTS/waitFor.sh crd $K8S_NAMESPACE jokerequests.samples.javaoperatorsdk.io; then
-            exit 1;
+            echo "CRD not installed"
+            ERROR=1
           fi
 
           # test joke sample
           if ! $SCRIPTS/testJokeSample.sh $K8S_NAMESPACE; then
-            exit 1;
-          fi;
-
-          echo "PID: $PID"
+            echo "Failed to interact with operator"
+            ERROR=1
+          fi
           
-          # Kill running process
-          kill -9 $PID
+          # Kill all running java processes
+          killall -9 java
 
           # Delete namespace
           kubectl delete namespace $K8S_NAMESPACE
+          
+          if [ ERROR = 1 ]; then 
+            echo "Tests failed"
+            exit 1
+          fi
 
       - name: Archive Dev Mode application logs
         uses: actions/upload-artifact@v1
@@ -243,8 +249,6 @@ jobs:
           SCRIPTS=$(pwd)/.github/scripts
           K8S_NAMESPACE=native
           CURRENT_PWD=$(pwd)
-          
-          ps -aux | grep java
 
           # Create and set namespace
           kubectl create namespace $K8S_NAMESPACE
@@ -252,25 +256,33 @@ jobs:
 
           # Run operator in native mode
           cd samples/joke 
-          nohup find . -type f -name '*-runner' -exec {} \; >native.log 2>&1 &
+          find . -type f -name '*-runner' -exec {} \; >native.log 2>&1 &
           PID=$(echo $!)
           cd $CURRENT_PWD
 
+          ERROR=0
           # Wait until the app installed the jokerequest custom resource definition
           if ! $SCRIPTS/waitFor.sh crd $K8S_NAMESPACE jokerequests.samples.javaoperatorsdk.io; then
-            exit 1;
+            echo "CRD not installed"
+            ERROR=1
           fi
 
           # test joke sample
-          if ! $SCRIPTS/testJokeSample.sh $K8S_NAMESPACE; then
-            exit 1;
-          fi;
-
+          if [ ERROR = 0 ] && ! $SCRIPTS/testJokeSample.sh $K8S_NAMESPACE; then
+            echo "Failed to interact with operator"
+            ERROR=1
+          fi
+          
           # Kill running process
           kill -9 $PID
 
           # Delete namespace
           kubectl delete namespace $K8S_NAMESPACE
+          
+          if [ ERROR = 1 ]; then 
+            echo "Tests failed"
+            exit 1
+          fi
 
       - name: Archive native application logs
         uses: actions/upload-artifact@v1
@@ -285,11 +297,13 @@ jobs:
 
           # Install Joke operator
           if ! $SCRIPTS/installOperatorUsingOlm.sh joke $(pwd)/samples/joke $KIND_REGISTRY; then
+            echo "Failed to install operator"
             exit 1;
           fi
 
           # test joke sample
           if ! $SCRIPTS/testJokeSample.sh operators; then
+            echo "Failed to interact with operator"
             exit 1;
           fi;
 
@@ -299,11 +313,13 @@ jobs:
 
           # Install Ping Pong operator
           if ! $SCRIPTS/installOperatorUsingOlm.sh pingpong $(pwd)/samples/pingpong $KIND_REGISTRY; then
+            echo "Failed to install operator"
             exit 1;
           fi
 
           # test joke sample
           if ! $SCRIPTS/testPingPongSample.sh operators; then
+            echo "Failed to interact with operator"
             exit 1;
           fi
 
