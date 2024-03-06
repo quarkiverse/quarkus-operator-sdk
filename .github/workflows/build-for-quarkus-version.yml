@@ -268,6 +268,13 @@ jobs:
           # Delete namespace
           kubectl delete namespace $K8S_NAMESPACE
 
+      - name: Archive native application logs
+        uses: actions/upload-artifact@v1
+        if: failure()
+        with:
+          name: native.log
+          path: samples/joke/native.log
+
       - name: Run Joke sample into Kubernetes using OLM
         run: |
           SCRIPTS=$(pwd)/.github/scripts
