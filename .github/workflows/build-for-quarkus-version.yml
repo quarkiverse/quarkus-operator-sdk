@@ -22,7 +22,7 @@ on:
         default: ''
       native-modules:
         type: string
-        required: true
+        required: false
         default: 'integration-tests,samples'
       profiles:
         type: string
@@ -51,7 +51,7 @@ on:
       native-modules:
         description: 'Comma-separated list of modules that should be built natively'
         type: string
-        required: true
+        required: false
         default: 'integration-tests,samples'
 
 concurrency:
