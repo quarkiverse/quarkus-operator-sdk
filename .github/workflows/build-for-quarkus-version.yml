@@ -301,9 +301,17 @@ jobs:
         run: |
           echo "Pod statuses in olm namespace:"
           kubectl get pod -n olm
+          echo "" 
+          echo "------------------------------"
           echo "Subscriptions:"
           kubectl get subs -n operators -o yaml
+          echo "" 
+          echo "------------------------------"
           echo "Controllers:"
           kubectl get pod -n operators
-          echo "Events:
+          echo "" 
+          echo "------------------------------"
+          echo "Events:"
           kubectl get events
+          echo "" 
+          echo "------------------------------"
