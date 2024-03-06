@@ -236,6 +236,7 @@ jobs:
         run: mvn -B install -Dnative --file pom.xml -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -pl '${{inputs.native-modules}}' -amd
 
       - name: Run Joke sample in native mode
+        if: ${{ contains(inputs.native-modules, 'samples') }}
         run: |
           SCRIPTS=$(pwd)/.github/scripts
           K8S_NAMESPACE=native
