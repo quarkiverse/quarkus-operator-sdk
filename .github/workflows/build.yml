@@ -69,7 +69,6 @@ jobs:
       quarkus-version: ${{ needs.extract-project-metadata.outputs.qosdk_quarkus_version }}
       java-version: ${{ matrix.java-version }}
       branch: ${{ needs.extract-project-metadata.outputs.branch_name }}
-      native-modules: "integration-tests"
       repository: ${{ github.event.pull_request.head.repo.full_name }}
 
   build-with-latest-stable-quarkus-version:
