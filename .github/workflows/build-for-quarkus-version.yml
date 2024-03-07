@@ -209,16 +209,9 @@ jobs:
           PID=$(echo $!)
           cd $CURRENT_PWD
 
-          ERROR=0
-          # Wait until the app installed the jokerequest custom resource definition
-          if ! $SCRIPTS/waitFor.sh crd $K8S_NAMESPACE jokerequests.samples.javaoperatorsdk.io; then
-            echo "CRD not installed"
-            ERROR=1
-          fi
-
           # test joke sample
+          ERROR=0
           if ! $SCRIPTS/testJokeSample.sh $K8S_NAMESPACE; then
-            echo "Failed to interact with operator"
             ERROR=1
           fi
           
@@ -261,15 +254,7 @@ jobs:
           cd $CURRENT_PWD
 
           ERROR=0
-          # Wait until the app installed the jokerequest custom resource definition
-          if ! $SCRIPTS/waitFor.sh crd $K8S_NAMESPACE jokerequests.samples.javaoperatorsdk.io; then
-            echo "CRD not installed"
-            ERROR=1
-          fi
-
-          # test joke sample
-          if [ ERROR = 0 ] && ! $SCRIPTS/testJokeSample.sh $K8S_NAMESPACE; then
-            echo "Failed to interact with operator"
+          if ! $SCRIPTS/testJokeSample.sh $K8S_NAMESPACE; then
             ERROR=1
           fi
           
