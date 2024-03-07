@@ -63,13 +63,23 @@ If, for some reason, you need that label to be added to the selectors, just set 
 
 While the extension attempts to infer a lot of the required information from your project itself and it is possible to generate valid bundles without providing extra information, it might still be useful or needed to specify additional metadata to help the generation process or provide data that cannot be inferred.
 
-The way this is accomplished is using the `CSVMetadata` and its associated annotations.
+This is accomplished is using the `io.quarkiverse.operatorsdk.annotations.CSVMetadata` and its associated annotations from the `quarkus-operator-sdk-annotations` module. `CSVMetadata` is meant to annotate your reconciler instances.
 
------ TODO: add more details on CSVMetadata ------
+By default, manifests for all reconcilers in a given operator will be generated as part of the same bundle, using a name automatically inferred from the project's name.
+It is, however, possible to split the reconcilers among several bundles by assigning reconcilers to different bundle names.
+One bundle will be created per specified bundle name.
+To associate a reconciler with a bundle name, you need to put the shared metadata (in the form of `CSVMetadata` annotation) on a class implementing the `io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata` marker interface, specifying the desired bundle name on the associated `CSVMetadata` annotation.
+All reconcilers annotated with `CSVMetadata` using the same name as one of the `SharedCSVMetadata` classes will be assigned to the same bundle and share the associated metadata. Any value specified on `CSVMetadata` annotations that designate a reconciler as sharing metadata coming from a `SharedCSVMetadata` source will be **ignored**.
+
+You can see this behavior in action in the tests of the `quarkus-operator-sdk-bundle-generator-deployment` module.
+
+Note:
+If you provide a `SharedCSVMetadata` implementation without specifying a bundle name, then the specified metadata will be shared among all reconcilers that don't specify an explicit bundle name.
 
 === Validating the generated bundle
 
-It is recommended that you validate your bundle before proceeding further. The recommended way to do so is to run the following command:
+It is recommended that you validate your bundle before proceeding further.
+The recommended way to do so is to run the following command:
 
 [source,shell script]
 ----
