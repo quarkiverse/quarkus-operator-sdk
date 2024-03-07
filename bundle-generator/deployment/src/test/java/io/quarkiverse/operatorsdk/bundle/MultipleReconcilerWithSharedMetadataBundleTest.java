@@ -1,6 +1,8 @@
 package io.quarkiverse.operatorsdk.bundle;
 
 import static io.quarkiverse.operatorsdk.bundle.Utils.checkBundleFor;
+import static io.quarkiverse.operatorsdk.bundle.Utils.getCSVFor;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 
@@ -29,8 +31,11 @@ public class MultipleReconcilerWithSharedMetadataBundleTest {
     @Test
     public void shouldWriteBundleForTheOperators() throws IOException {
         final var bundle = prodModeTestResults.getBuildDir().resolve(Utils.BUNDLE);
-        checkBundleFor(bundle, "shared", null);
+        checkBundleFor(bundle, AReconciler.SHARED, null);
         // reconcilers with no csv metadata should use the application name
         checkBundleFor(bundle, APPLICATION_NAME, null);
+
+        final var csv = getCSVFor(bundle, AReconciler.SHARED);
+        assertEquals(AReconciler.SHARED_VERSION, csv.getSpec().getVersion());
     }
 }
