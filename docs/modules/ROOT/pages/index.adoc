@@ -88,8 +88,3 @@ If you want to use the Bundle generator, you will first need to use Quarkus 2.3.
     <version>{project-version}</version>
 </dependency>
 ----
-
-[[extension-configuration-reference]]
-== Extension Configuration Reference
-
-include::includes/quarkus-operator-sdk.adoc[leveloffset=+1,opts=optional]

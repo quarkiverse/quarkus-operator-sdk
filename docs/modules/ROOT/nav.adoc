@@ -1,1 +1,3 @@
-* xref:index.adoc[Quarkiverse Operator SDK]
+* xref:index.adoc[Quarkus Operator SDK (QOSDK)]
+* xref:deploy-with-olm.adoc[Deploying with OLM]
+* xref:includes/quarkus-operator-sdk.adoc[Config Reference]
