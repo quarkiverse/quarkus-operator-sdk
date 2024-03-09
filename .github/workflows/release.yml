@@ -116,7 +116,8 @@ jobs:
     needs:
       - release
     uses: ./.github/workflows/release-update-java-operator-plugins.yml
-    if: "${{ needs.release.outputs.released }}"
+#    only update java-operator-plugins if we are releasing the latest version of QOSDK
+    if: "${{ needs.release.outputs.released && needs.release.outputs.needs-quarkus-platform-main-pr == 'true' }}"
     with:
       qosdk-version: ${{needs.release.outputs.qosdk-version}}
       quarkus-version: ${{needs.release.outputs.quarkus-version}}
