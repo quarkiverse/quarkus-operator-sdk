@@ -76,9 +76,8 @@ jobs:
           else
             echo "quarkus-platform update will target ${quarkus_platform_branch}"
             echo "Check if quarkus-platform also needs to be updated on main"
-            qosdk_latest=$(curl -sL https://api.github.com/repos/quarkiverse/quarkus-operator-sdk/releases/latest | jq -r ".tag_name")
-            echo "Latest QOSDK release: ${qosdk_latest}"
-            if [ "${{steps.metadata.outputs.current-version}}" = "${qosdk_latest}" ]; then
+            if [ "${{ github.base_ref }}" = "main" ]; then
+#          assume that if the PR targets main, then we also need to update quarkus-platform main
               echo "need_main_pr=true" >> $GITHUB_OUTPUT
             else
               echo "No need for PR on quarkus-platform main"
