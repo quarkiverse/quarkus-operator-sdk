@@ -23,12 +23,13 @@ import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder.RequiredCRD;
 import io.quarkiverse.operatorsdk.common.*;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
+import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 
 public class CsvManifestsBuilder extends ManifestsBuilder {
 
     private static final Logger log = Logger.getLogger(CsvManifestsBuilder.class);
 
-    private static final String DEFAULT_INSTALL_MODE = "AllNamespaces";
+    private static final String ALL_NAMESPACES = "AllNamespaces";
     private static final String DEPLOYMENT = "deployment";
     private static final String SERVICE_ACCOUNT_KIND = "ServiceAccount";
     private static final String CLUSTER_ROLE_KIND = "ClusterRole";
@@ -37,6 +38,9 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     private static final Logger LOGGER = Logger.getLogger(CsvManifestsBuilder.class.getName());
     private static final String IMAGE_PNG = "image/png";
     public static final String OLM_TARGET_NAMESPACES = "metadata.annotations['olm.targetNamespaces']";
+    public static final String OWN_NAMESPACE = "OwnNamespace";
+    public static final String SINGLE_NAMESPACE = "SingleNamespace";
+    public static final String MULTI_NAMESPACE = "MultiNamespace";
     private ClusterServiceVersionBuilder csvBuilder;
     private final Set<CRDDescription> ownedCRs = new HashSet<>();
     private final Set<CRDDescription> requiredCRs = new HashSet<>();
@@ -44,9 +48,10 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     private final String deploymentName;
     private final List<ReconcilerAugmentedClassInfo> controllers;
 
+    @SuppressWarnings("rawtypes")
     public CsvManifestsBuilder(CSVMetadataHolder metadata, BuildTimeOperatorConfiguration operatorConfiguration,
             List<ReconcilerAugmentedClassInfo> controllers,
-            Path mainSourcesRoot, String deploymentName) {
+            Path mainSourcesRoot, String deploymentName, Map<String, QuarkusControllerConfiguration> controllerConfigs) {
         super(metadata);
         this.deploymentName = deploymentName;
         this.controllers = controllers;
@@ -54,7 +59,8 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
 
         csvBuilder = new ClusterServiceVersionBuilder();
 
-        final var metadataBuilder = csvBuilder.withNewMetadata().withName(getName());
+        final var name = getName();
+        final var metadataBuilder = csvBuilder.withNewMetadata().withName(name);
         if (metadata.annotations != null) {
             metadataBuilder.addToAnnotations("olm.skipRange", metadata.annotations.skipRange);
             metadataBuilder.addToAnnotations("containerImage", metadata.annotations.containerImage);
@@ -72,7 +78,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         final var csvSpecBuilder = csvBuilder
                 .editOrNewSpec()
                 .withDescription(metadata.description)
-                .withDisplayName(defaultIfEmpty(metadata.displayName, getName()))
+                .withDisplayName(defaultIfEmpty(metadata.displayName, name))
                 .withKeywords(metadata.keywords)
                 .withReplaces(metadata.replaces)
                 .withVersion(metadata.version)
@@ -135,14 +141,6 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             }
         }
 
-        if (metadata.installModes == null || metadata.installModes.length == 0) {
-            csvSpecBuilder.addNewInstallMode(true, DEFAULT_INSTALL_MODE);
-        } else {
-            for (CSVMetadataHolder.InstallMode installMode : metadata.installModes) {
-                csvSpecBuilder.addNewInstallMode(installMode.supported, installMode.type);
-            }
-        }
-
         // add owned and required CRD, also collect them
         final var nativeApis = new ArrayList<GroupVersionKind>();
         controllers.forEach(raci -> {
@@ -180,6 +178,29 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                                         secondaryResource.version()));
                             }
                         });
+            }
+
+            // deal with install modes
+            // use watched namespaces information for default install mode
+            // fixme: multiple, incompatible controller configurations in the same bundle will result in inconsistent runs
+            final var config = controllerConfigs.get(raci.nameOrFailIfUnset());
+            if (config.watchAllNamespaces()) {
+                csvSpecBuilder.withInstallModes(new InstallMode(true, ALL_NAMESPACES));
+            } else if (config.watchCurrentNamespace()) {
+                csvSpecBuilder.withInstallModes(new InstallMode(true, OWN_NAMESPACE));
+            } else {
+                final var namespaces = config.getNamespaces();
+                if (namespaces.size() == 1) {
+                    csvSpecBuilder.withInstallModes(new InstallMode(true, SINGLE_NAMESPACE));
+                } else {
+                    csvSpecBuilder.withInstallModes(new InstallMode(true, MULTI_NAMESPACE));
+                }
+            }
+            // then process metadata
+            if (metadata.installModes != null) {
+                for (CSVMetadataHolder.InstallMode installMode : metadata.installModes) {
+                    csvSpecBuilder.addNewInstallMode(installMode.supported, installMode.type);
+                }
             }
         });
 
