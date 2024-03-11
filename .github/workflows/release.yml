@@ -77,7 +77,7 @@ jobs:
             echo "quarkus-platform update will target ${quarkus_platform_branch}"
             echo "Check if quarkus-platform also needs to be updated on main"
             if [ "${{ github.base_ref }}" = "main" ]; then
-#          assume that if the PR targets main, then we also need to update quarkus-platform main
+              echo "PR targes main so assume quarkus-platform main also needs to be updated"
               echo "need_main_pr=true" >> $GITHUB_OUTPUT
             else
               echo "No need for PR on quarkus-platform main"
