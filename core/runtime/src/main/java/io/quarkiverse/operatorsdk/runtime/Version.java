@@ -77,8 +77,14 @@ public class Version extends io.javaoperatorsdk.operator.api.config.Version {
 
         Date builtTime;
         try {
-            builtTime = (new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")).parse(properties.getProperty("git.build.time"));
-        } catch (ParseException var4) {
+            String time = properties.getProperty("git.build.time");
+            if (time != null) {
+                builtTime = Date.from(Instant.parse(time));
+            } else {
+                builtTime = Date.from(Instant.EPOCH);
+            }
+        } catch (Exception e) {
+            log.debug("Couldn't parse git.build.time property", e);
             builtTime = Date.from(Instant.EPOCH);
         }
 
