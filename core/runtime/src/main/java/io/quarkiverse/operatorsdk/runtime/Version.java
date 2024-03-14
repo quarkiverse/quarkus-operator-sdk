@@ -2,8 +2,6 @@ package io.quarkiverse.operatorsdk.runtime;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Properties;
@@ -37,6 +35,7 @@ public class Version extends io.javaoperatorsdk.operator.api.config.Version {
         return extensionVersion;
     }
 
+    @SuppressWarnings("unused")
     public String getExtensionBranch() {
         return extensionBranch;
     }
@@ -45,6 +44,7 @@ public class Version extends io.javaoperatorsdk.operator.api.config.Version {
         return extensionCommit;
     }
 
+    @SuppressWarnings("unused")
     public Date getExtensionBuildTime() {
         return extensionBuildTime;
     }
