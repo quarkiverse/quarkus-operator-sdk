@@ -4,7 +4,10 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 
+import org.jboss.logging.Logger;
+
 public class CSVMetadataHolder {
+    private static final Logger log = Logger.getLogger(CSVMetadataHolder.class.getName());
     public final String name;
     private final String origin;
     public final String description;
@@ -117,8 +120,9 @@ public class CSVMetadataHolder {
 
     }
 
-    public CSVMetadataHolder(String name, String version, String replaces, String origin) {
-        this(name, null, null, null, null, null, null, replaces, null, version, null, null, null, null, null, null, null, null,
+    public CSVMetadataHolder(String name, String version, String replaces, String providerURL, String origin) {
+        this(name, null, null, null, null, null, providerURL, replaces, null, version, null, null, null, null, null, null, null,
+                null,
                 origin);
     }
 
@@ -133,7 +137,6 @@ public class CSVMetadataHolder {
         this.displayName = displayName;
         this.annotations = annotations;
         this.keywords = keywords;
-        this.providerName = providerName;
         this.providerURL = providerURL;
         this.replaces = replaces;
         this.skips = skips;
@@ -147,6 +150,18 @@ public class CSVMetadataHolder {
         this.permissionRules = permissionRules;
         this.requiredCRDs = requiredCRDs;
         this.origin = origin;
+
+        // provide a default provider name and output warning if none is provided
+        if (providerName == null) {
+            String msg = "";
+            final var userName = System.getProperty("user.name");
+            if (userName != null) {
+                providerName = userName;
+                msg = ". Using user name " + userName + " as default.";
+            }
+            log.warnv("It is recommended that you provide a provider name provided for {0}{1}", name, msg);
+        }
+        this.providerName = providerName;
     }
 
     @Override
