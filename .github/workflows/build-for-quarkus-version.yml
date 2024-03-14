@@ -187,10 +187,11 @@ jobs:
       - name: Install Operator Lifecycle Manager and Operator SDK into Kind
         run: operator-sdk olm install --version v0.23.0
 
-      - name: Validate OLM ExposedApp bundle
+# Joke sample currently doesn't validate with OLM v1 because it bundles required Joke CRD, which v1 thinks should be owned
+      - name: Validate OLM bundles (excluding Joke sample)
         run: |
-          cd samples/exposedapp
-          operator-sdk bundle validate  target/bundle/quarkus-operator-sdk-samples-exposedapp/ --select-optional suite=operatorframework 
+          cd samples/
+          find . -type d -name bundle | grep -v joke | xargs -I {} find {} -type d -maxdepth 1 -mindepth 1 | xargs -I {} operator-sdk bundle validate {} --select-optional suite=operatorframework      
 
       - name: Run Joke sample using Quarkus DEV mode
         run: |
