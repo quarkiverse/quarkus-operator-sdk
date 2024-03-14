@@ -41,7 +41,9 @@ import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.GeneratedFileSystemResourceBuildItem;
+import io.quarkus.deployment.pkg.builditem.JarBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
+import io.quarkus.kubernetes.deployment.KubernetesCommonHelper;
 import io.quarkus.kubernetes.deployment.KubernetesConfig;
 import io.quarkus.kubernetes.deployment.ResourceNameUtil;
 
@@ -69,7 +71,8 @@ public class BundleProcessor {
     CSVMetadataBuildItem gatherCSVMetadata(KubernetesConfig kubernetesConfig,
             ApplicationInfoBuildItem appConfiguration,
             BundleGenerationConfiguration bundleConfiguration,
-            CombinedIndexBuildItem combinedIndexBuildItem) {
+            CombinedIndexBuildItem combinedIndexBuildItem,
+            JarBuildItem jarBuildItem) {
         final var index = combinedIndexBuildItem.getIndex();
         final var defaultName = bundleConfiguration.packageName
                 .orElse(ResourceNameUtil.getResourceName(kubernetesConfig, appConfiguration));
@@ -82,7 +85,8 @@ public class BundleProcessor {
 
         final var defaultReplaces = bundleConfiguration.replaces.orElse(null);
 
-        final var sharedMetadataHolders = getSharedMetadataHolders(defaultName, defaultVersion, defaultReplaces, index);
+        final var vcsUrl = getDefaultProviderURLFromSCMInfo(appConfiguration, jarBuildItem);
+        final var sharedMetadataHolders = getSharedMetadataHolders(defaultName, defaultVersion, defaultReplaces, index, vcsUrl);
         final var csvGroups = new HashMap<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>>();
 
         ClassUtils.getKnownReconcilers(index, log)
@@ -114,7 +118,7 @@ public class BundleProcessor {
                             }
                         }
                         csvMetadata = createMetadataHolder(csvMetadataAnnotation,
-                                new CSVMetadataHolder(csvMetadataName, defaultVersion, defaultReplaces, origin));
+                                new CSVMetadataHolder(csvMetadataName, defaultVersion, defaultReplaces, vcsUrl, origin));
                     }
                     log.infov("Assigning ''{0}'' reconciler to {1}",
                             reconcilerInfo.nameOrFailIfUnset(),
@@ -125,6 +129,33 @@ public class BundleProcessor {
                 });
 
         return new CSVMetadataBuildItem(csvGroups);
+    }
+
+    private static String getDefaultProviderURLFromSCMInfo(ApplicationInfoBuildItem appConfiguration,
+            JarBuildItem jarBuildItem) {
+        final var maybeProject = KubernetesCommonHelper.createProject(appConfiguration, Optional.empty(),
+                jarBuildItem.getPath());
+        return maybeProject.map(project -> {
+            final var scmInfo = project.getScmInfo();
+            if (scmInfo != null) {
+                var origin = scmInfo.getRemote().get("origin");
+                if (origin != null) {
+                    int atSign = origin.indexOf('@');
+                    if (atSign > 0) {
+                        origin = origin.substring(atSign + 1);
+                        origin = origin.replaceFirst(":", "/");
+                        origin = "https://" + origin;
+                    }
+
+                    int dotGit = origin.indexOf(".git");
+                    if (dotGit < origin.length() - 1) {
+                        origin = origin.substring(0, dotGit);
+                    }
+                    return origin;
+                }
+            }
+            return null;
+        }).orElse(null);
     }
 
     private static ReconcilerAugmentedClassInfo augmentReconcilerInfo(
@@ -255,8 +286,8 @@ public class BundleProcessor {
     }
 
     private Map<String, CSVMetadataHolder> getSharedMetadataHolders(String name, String version, String defaultReplaces,
-            IndexView index) {
-        CSVMetadataHolder csvMetadata = new CSVMetadataHolder(name, version, defaultReplaces, "default");
+            IndexView index, String vcsUrl) {
+        CSVMetadataHolder csvMetadata = new CSVMetadataHolder(name, version, defaultReplaces, vcsUrl, "default");
         final var sharedMetadataImpls = index.getAllKnownImplementors(SHARED_CSV_METADATA);
         final var result = new HashMap<String, CSVMetadataHolder>(sharedMetadataImpls.size() + 1);
         sharedMetadataImpls.forEach(sharedMetadataImpl -> {
