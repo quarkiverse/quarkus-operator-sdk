@@ -53,6 +53,7 @@ public class BundleProcessor {
     private static final DotName SHARED_CSV_METADATA = DotName.createSimple(SharedCSVMetadata.class.getName());
     private static final DotName CSV_METADATA = DotName.createSimple(CSVMetadata.class.getName());
     private static final String BUNDLE = "bundle";
+    private static final String DEFAULT_PROVIDER_NAME = System.getProperty("user.name");
     public static final String CRD_DISPLAY_NAME = "CRD_DISPLAY_NAME";
     public static final String CRD_DESCRIPTION = "CRD_DESCRIPTION";
 
@@ -85,8 +86,9 @@ public class BundleProcessor {
 
         final var defaultReplaces = bundleConfiguration.replaces.orElse(null);
 
-        final var vcsUrl = getDefaultProviderURLFromSCMInfo(appConfiguration, jarBuildItem);
-        final var sharedMetadataHolders = getSharedMetadataHolders(defaultName, defaultVersion, defaultReplaces, index, vcsUrl);
+        final var defaultProviderURL = getDefaultProviderURLFromSCMInfo(appConfiguration, jarBuildItem);
+        final var sharedMetadataHolders = getSharedMetadataHolders(defaultName, defaultVersion, defaultReplaces, index,
+                defaultProviderURL);
         final var csvGroups = new HashMap<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>>();
 
         ClassUtils.getKnownReconcilers(index, log)
@@ -118,7 +120,13 @@ public class BundleProcessor {
                             }
                         }
                         csvMetadata = createMetadataHolder(csvMetadataAnnotation,
-                                new CSVMetadataHolder(sharedMetadataName, defaultVersion, defaultReplaces, vcsUrl, origin));
+                                new CSVMetadataHolder(sharedMetadataName, defaultVersion, defaultReplaces,
+                                        DEFAULT_PROVIDER_NAME, defaultProviderURL, origin));
+                        if (DEFAULT_PROVIDER_NAME.equals(csvMetadata.providerName)) {
+                            log.warnv(
+                                    "It is recommended that you provide a provider name provided for {0}: ''{1}'' was used as default value.",
+                                    origin, DEFAULT_PROVIDER_NAME);
+                        }
                     }
                     log.infov("Assigning ''{0}'' reconciler to {1}",
                             reconcilerInfo.nameOrFailIfUnset(),
@@ -140,7 +148,6 @@ public class BundleProcessor {
             if (scmInfo != null) {
                 var origin = scmInfo.getRemote().get("origin");
                 if (origin != null) {
-                    System.out.println(origin);
                     try {
                         int atSign = origin.indexOf('@');
                         if (atSign > 0) {
@@ -292,7 +299,8 @@ public class BundleProcessor {
 
     private Map<String, CSVMetadataHolder> getSharedMetadataHolders(String name, String version, String defaultReplaces,
             IndexView index, String vcsUrl) {
-        CSVMetadataHolder csvMetadata = new CSVMetadataHolder(name, version, defaultReplaces, vcsUrl, "default");
+        CSVMetadataHolder csvMetadata = new CSVMetadataHolder(name, version, defaultReplaces, vcsUrl, DEFAULT_PROVIDER_NAME,
+                "default");
         final var sharedMetadataImpls = index.getAllKnownImplementors(SHARED_CSV_METADATA);
         final var result = new HashMap<String, CSVMetadataHolder>(sharedMetadataImpls.size() + 1);
         sharedMetadataImpls.forEach(sharedMetadataImpl -> {
