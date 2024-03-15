@@ -54,7 +54,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
 
         csvBuilder = new ClusterServiceVersionBuilder();
 
-        final var metadataBuilder = csvBuilder.withNewMetadata().withName(getName());
+        final var metadataBuilder = csvBuilder.withNewMetadata().withName(metadata.csvName);
         if (metadata.annotations != null) {
             metadataBuilder.addToAnnotations("olm.skipRange", metadata.annotations.skipRange);
             metadataBuilder.addToAnnotations("containerImage", metadata.annotations.containerImage);
@@ -72,7 +72,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         final var csvSpecBuilder = csvBuilder
                 .editOrNewSpec()
                 .withDescription(metadata.description)
-                .withDisplayName(defaultIfEmpty(metadata.displayName, getName()))
+                .withDisplayName(defaultIfEmpty(metadata.displayName, metadata.csvName))
                 .withKeywords(metadata.keywords)
                 .withReplaces(metadata.replaces)
                 .withVersion(metadata.version)

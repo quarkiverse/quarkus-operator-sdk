@@ -21,8 +21,28 @@ public @interface CSVMetadata {
      * gradle) name. This name can be used to assign reconcilers to the same bundle by creating a {@link SharedCSVMetadata}
      * implementation bearing a {@link CSVMetadata} annotation specifying the CSV metadata to be shared among reconcilers
      * assigned to that named bundle.
+     *
+     * @deprecated Use {@link #bundleName()} and {@link #csvName()} instead as previously this method was being used for both
+     *             values resulting in confusion or even problems setting the correct CSV name as recommended by OLM. See
+     *             <a href='https://github.com/quarkiverse/quarkus-operator-sdk/issues/738'>this issue</a> for a more detailed
+     *             discussion.
      */
+    @Deprecated
     String name() default "";
+
+    /**
+     * The name which should be used for the generated bundle. If not provided, the name is derived from the project's (maven or
+     * gradle) name. This name can be used to assign reconcilers to the same bundle by creating a {@link SharedCSVMetadata}
+     * implementation bearing a {@link CSVMetadata} annotation specifying the CSV metadata to be shared among reconcilers
+     * assigned to that named bundle.
+     */
+    String bundleName() default "";
+
+    /**
+     * The name used in the CSV metadata stanza. If not provided, this will default to {@code <bundle name>.v<version>}
+     * as recommended by OLM.
+     */
+    String csvName() default "";
 
     /**
      * Extra annotations that should be added to the CSV metadata.

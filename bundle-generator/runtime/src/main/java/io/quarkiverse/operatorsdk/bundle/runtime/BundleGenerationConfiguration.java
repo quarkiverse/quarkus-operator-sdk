@@ -3,6 +3,7 @@ package io.quarkiverse.operatorsdk.bundle.runtime;
 import java.util.List;
 import java.util.Optional;
 
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 import io.quarkus.runtime.annotations.ConfigItem;
 import io.quarkus.runtime.annotations.ConfigRoot;
 
@@ -28,7 +29,10 @@ public class BundleGenerationConfiguration {
 
     /**
      * The name of the package that bundle belongs to.
+     *
+     * @deprecated Use {@link CSVMetadata#bundleName()} instead
      */
+    @Deprecated(forRemoval = true)
     @ConfigItem
     public Optional<String> packageName;
 
