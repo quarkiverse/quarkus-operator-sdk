@@ -138,7 +138,7 @@ public class CSVMetadataHolder {
         this.bundleName = bundleName;
         assert version != null;
         this.version = version;
-        this.csvName = csvName == null ? bundleName + ".v" + version : csvName;
+        this.csvName = csvName == null ? bundleName + ".v" + version.toLowerCase() : csvName;
         this.description = description;
         this.displayName = displayName;
         this.annotations = annotations;
