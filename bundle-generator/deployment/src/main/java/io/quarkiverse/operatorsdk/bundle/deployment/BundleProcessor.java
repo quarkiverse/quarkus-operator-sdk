@@ -140,18 +140,22 @@ public class BundleProcessor {
             if (scmInfo != null) {
                 var origin = scmInfo.getRemote().get("origin");
                 if (origin != null) {
-                    int atSign = origin.indexOf('@');
-                    if (atSign > 0) {
-                        origin = origin.substring(atSign + 1);
-                        origin = origin.replaceFirst(":", "/");
-                        origin = "https://" + origin;
-                    }
+                    try {
+                        int atSign = origin.indexOf('@');
+                        if (atSign > 0) {
+                            origin = origin.substring(atSign + 1);
+                            origin = origin.replaceFirst(":", "/");
+                            origin = "https://" + origin;
+                        }
 
-                    int dotGit = origin.indexOf(".git");
-                    if (dotGit < origin.length() - 1) {
-                        origin = origin.substring(0, dotGit);
+                        int dotGit = origin.indexOf(".git");
+                        if (dotGit < origin.length() - 1) {
+                            origin = origin.substring(0, dotGit);
+                        }
+                        return origin;
+                    } catch (Exception e) {
+                        log.warnv("Couldn't parse SCM information: {0}", origin);
                     }
-                    return origin;
                 }
             }
             return null;
