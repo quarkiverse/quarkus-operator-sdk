@@ -140,6 +140,7 @@ public class BundleProcessor {
             if (scmInfo != null) {
                 var origin = scmInfo.getRemote().get("origin");
                 if (origin != null) {
+                    System.out.println(origin);
                     try {
                         int atSign = origin.indexOf('@');
                         if (atSign > 0) {
@@ -149,7 +150,7 @@ public class BundleProcessor {
                         }
 
                         int dotGit = origin.indexOf(".git");
-                        if (dotGit < origin.length() - 1) {
+                        if (dotGit > 0 && dotGit < origin.length() - 1) {
                             origin = origin.substring(0, dotGit);
                         }
                         return origin;
