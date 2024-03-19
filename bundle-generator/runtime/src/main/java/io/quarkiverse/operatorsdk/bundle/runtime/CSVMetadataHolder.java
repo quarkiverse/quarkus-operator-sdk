@@ -118,9 +118,8 @@ public class CSVMetadataHolder {
 
     }
 
-    public CSVMetadataHolder(String bundleName, String version, String replaces, String providerName, String providerURL,
-            String origin) {
-        this(bundleName, null, null, null, null, null, providerName, providerURL, replaces, null, version, null, null, null,
+    public CSVMetadataHolder(String bundleName, String version, String replaces, String providerName, String origin) {
+        this(bundleName, null, null, null, null, null, providerName, null, replaces, null, version, null, null, null,
                 null, null,
                 null, null,
                 null,

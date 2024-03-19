@@ -86,9 +86,7 @@ public class BundleProcessor {
 
         final var defaultReplaces = bundleConfiguration.replaces.orElse(null);
 
-        final var defaultProviderURL = getDefaultProviderURLFromSCMInfo(appConfiguration, jarBuildItem);
-        final var sharedMetadataHolders = getSharedMetadataHolders(defaultName, defaultVersion, defaultReplaces, index,
-                defaultProviderURL);
+        final var sharedMetadataHolders = getSharedMetadataHolders(defaultName, defaultVersion, defaultReplaces, index);
         final var csvGroups = new HashMap<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>>();
 
         ClassUtils.getKnownReconcilers(index, log)
@@ -121,7 +119,7 @@ public class BundleProcessor {
                         }
                         csvMetadata = createMetadataHolder(csvMetadataAnnotation,
                                 new CSVMetadataHolder(sharedMetadataName, defaultVersion, defaultReplaces,
-                                        DEFAULT_PROVIDER_NAME, defaultProviderURL, origin));
+                                        DEFAULT_PROVIDER_NAME, origin));
                         if (DEFAULT_PROVIDER_NAME.equals(csvMetadata.providerName)) {
                             log.warnv(
                                     "It is recommended that you provide a provider name provided for {0}: ''{1}'' was used as default value.",
@@ -298,8 +296,8 @@ public class BundleProcessor {
     }
 
     private Map<String, CSVMetadataHolder> getSharedMetadataHolders(String name, String version, String defaultReplaces,
-            IndexView index, String vcsUrl) {
-        CSVMetadataHolder csvMetadata = new CSVMetadataHolder(name, version, defaultReplaces, vcsUrl, DEFAULT_PROVIDER_NAME,
+            IndexView index) {
+        CSVMetadataHolder csvMetadata = new CSVMetadataHolder(name, version, defaultReplaces, DEFAULT_PROVIDER_NAME,
                 "default");
         final var sharedMetadataImpls = index.getAllKnownImplementors(SHARED_CSV_METADATA);
         final var result = new HashMap<String, CSVMetadataHolder>(sharedMetadataImpls.size() + 1);

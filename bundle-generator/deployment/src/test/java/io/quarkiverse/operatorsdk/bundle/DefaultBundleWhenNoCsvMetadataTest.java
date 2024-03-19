@@ -38,7 +38,6 @@ public class DefaultBundleWhenNoCsvMetadataTest {
         // by default, we shouldn't output the version label in the selector match labels as the default controlling this should be overridden by KubernetesLabelConfigOverrider
         assertNull(deployment.getSpec().getSelector().getMatchLabels().get("app.kubernetes.io/version"));
         assertEquals(System.getProperty("user.name"), csv.getSpec().getProvider().getName());
-        assertNotNull(csv.getSpec().getProvider().getUrl());
     }
 
 }
