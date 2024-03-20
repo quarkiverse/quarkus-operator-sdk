@@ -58,12 +58,6 @@ public class HelmChartProcessor {
     public static final String CRD_DIR = "crds";
     public static final String CRD_ROLE_BINDING_TEMPLATE_PATH = "/helm/crd-role-binding-template.yaml";
 
-    @BuildStep(onlyIfNot = HelmGenerationEnabled.class)
-    @Produce(ArtifactResultBuildItem.class)
-    void outputHelmGenerationDisabled() {
-        log.debug("Generating Helm chart is disabled");
-    }
-
     @BuildStep
     HelmTargetDirectoryBuildItem createRelatedDirectories(OutputTargetBuildItem outputTarget) {
         final var helmDir = outputTarget.getOutputDirectory().resolve("helm").toFile();
