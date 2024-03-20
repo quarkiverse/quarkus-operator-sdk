@@ -15,11 +15,12 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 
-@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE, name = "exposedapp", dependents = {
+@Workflow(dependents = {
         @Dependent(type = DeploymentDependent.class),
         @Dependent(name = "service", type = ServiceDependent.class),
         @Dependent(type = IngressDependent.class, readyPostcondition = IngressDependent.class)
 })
+@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE, name = "exposedapp")
 @CSVMetadata(displayName = "ExposedApp operator", description = "A sample operator that shows how to use JOSDK's main features with the Quarkus extension")
 public class ExposedAppReconciler implements Reconciler<ExposedApp>,
         ContextInitializer<ExposedApp> {
@@ -34,14 +35,14 @@ public class ExposedAppReconciler implements Reconciler<ExposedApp>,
     @Override
     public void initContext(ExposedApp exposedApp, Context context) {
         final var labels = Map.of(APP_LABEL, exposedApp.getMetadata().getName());
-        context.managedDependentResourceContext().put(LABELS_CONTEXT_KEY, labels);
+        context.managedWorkflowAndDependentResourceContext().put(LABELS_CONTEXT_KEY, labels);
     }
 
     @Override
     public UpdateControl<ExposedApp> reconcile(ExposedApp exposedApp, Context<ExposedApp> context) {
         final var name = exposedApp.getMetadata().getName();
         // retrieve the workflow reconciliation result and re-schedule if we have dependents that are not yet ready
-        final var wrs = context.managedDependentResourceContext().getWorkflowReconcileResult();
+        final var wrs = context.managedWorkflowAndDependentResourceContext().getWorkflowReconcileResult();
         if (wrs.allDependentResourcesReady()) {
 
             final var url = IngressDependent.getExposedURL(

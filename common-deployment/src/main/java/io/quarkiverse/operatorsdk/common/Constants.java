@@ -9,6 +9,7 @@ import io.javaoperatorsdk.operator.api.config.dependent.Configured;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesDependentResource;
 import io.quarkiverse.operatorsdk.annotations.AdditionalRBACRoleRefs;
@@ -25,6 +26,7 @@ public class Constants {
     public static final DotName CUSTOM_RESOURCE = DotName.createSimple(CustomResource.class.getName());
     public static final DotName HAS_METADATA = DotName.createSimple(HasMetadata.class.getName());
     public static final DotName CONTROLLER_CONFIGURATION = DotName.createSimple(ControllerConfiguration.class.getName());
+    public static final DotName WORKFLOW = DotName.createSimple(Workflow.class.getName());
     public static final DotName DEPENDENT_RESOURCE = DotName.createSimple(DependentResource.class.getName());
     public static final DotName GENERIC_KUBERNETES_DEPENDENT_RESOURCE = DotName
             .createSimple(GenericKubernetesDependentResource.class.getName());
