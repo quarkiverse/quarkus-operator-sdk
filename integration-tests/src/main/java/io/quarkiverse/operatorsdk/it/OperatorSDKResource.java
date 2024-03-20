@@ -2,6 +2,7 @@ package io.quarkiverse.operatorsdk.it;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -23,6 +24,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
@@ -210,7 +212,8 @@ public class OperatorSDKResource {
         }
 
         public List<JSONDependentResourceSpec> getDependents() {
-            final var dependents = conf.getDependentResources();
+            final var dependents = conf.getWorkflowSpec().map(WorkflowSpec::getDependentResourceSpecs)
+                    .orElse(Collections.emptyList());
             final var result = new ArrayList<JSONDependentResourceSpec>(dependents.size());
             return dependents.stream()
                     .map(spec -> new JSONDependentResourceSpec(spec, conf))
