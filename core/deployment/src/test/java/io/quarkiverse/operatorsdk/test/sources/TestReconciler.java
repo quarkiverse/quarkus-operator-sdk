@@ -4,16 +4,18 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
 
-@ControllerConfiguration(name = TestReconciler.NAME, dependents = {
+@Workflow(dependents = {
         @Dependent(type = CRUDConfigMap.class),
         @Dependent(type = ReadOnlySecret.class),
         @Dependent(type = CreateOnlyService.class),
         @Dependent(type = NonKubeResource.class)
 })
+@ControllerConfiguration(name = TestReconciler.NAME)
 @RBACRule(verbs = RBACVerbs.UPDATE, apiGroups = RBACRule.ALL, resources = RBACRule.ALL)
 public class TestReconciler implements Reconciler<TestCR> {
 

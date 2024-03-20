@@ -243,15 +243,18 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         return controllerName + "#" + dependentName;
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "rawtypes" })
     public DependentResourceSpecMetadata getDependentByName(String controllerName, String dependentName) {
-        return (DependentResourceSpecMetadata) controllerConfigurations()
-                .filter(cc -> controllerName.equals(cc.getName()))
-                .findFirst()
-                .flatMap(cc -> cc.getDependentResources().stream()
-                        .filter(drs -> dependentName.equals(((DependentResourceSpec) drs).getName()))
-                        .findFirst())
-                .orElse(null);
+        final ControllerConfiguration<?> cc = getFor(controllerName);
+        if (cc == null) {
+            return null;
+        } else {
+            return cc.getWorkflowSpec().flatMap(spec -> spec.getDependentResourceSpecs().stream()
+                    .filter(r -> r.getName().equals(dependentName) && r instanceof DependentResourceSpecMetadata<?, ?, ?>)
+                    .map(DependentResourceSpecMetadata.class::cast)
+                    .findFirst())
+                    .orElse(null);
+        }
     }
 
     @SuppressWarnings("rawtypes")

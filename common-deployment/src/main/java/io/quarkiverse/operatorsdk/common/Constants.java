@@ -9,6 +9,7 @@ import io.javaoperatorsdk.operator.api.config.dependent.Configured;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.quarkiverse.operatorsdk.annotations.AdditionalRBACRoleRefs;
 import io.quarkiverse.operatorsdk.annotations.AdditionalRBACRules;
@@ -24,6 +25,7 @@ public class Constants {
     public static final DotName CUSTOM_RESOURCE = DotName.createSimple(CustomResource.class.getName());
     public static final DotName HAS_METADATA = DotName.createSimple(HasMetadata.class.getName());
     public static final DotName CONTROLLER_CONFIGURATION = DotName.createSimple(ControllerConfiguration.class.getName());
+    public static final DotName WORKFLOW = DotName.createSimple(Workflow.class.getName());
     public static final DotName DEPENDENT_RESOURCE = DotName.createSimple(DependentResource.class.getName());
     public static final DotName CONFIGURED = DotName.createSimple(Configured.class.getName());
     public static final DotName ANNOTATION_CONFIGURABLE = DotName.createSimple(AnnotationConfigurable.class.getName());
