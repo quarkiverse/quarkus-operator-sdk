@@ -15,8 +15,8 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
@@ -70,10 +70,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private Set<String> namespaces;
     private boolean wereNamespacesSet;
     private String labelSelector;
-    private final Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata;
     private Retry retry;
     private RateLimiter rateLimiter;
-    private ManagedWorkflow<R> workflow;
+    private QuarkusManagedWorkflow<R> workflow;
     private ConfigurationService parent;
     private ExternalGradualRetryConfiguration gradualRetry;
 
@@ -94,7 +93,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             OnAddFilter<R> onAddFilter, OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter,
             Class<? extends Retry> retryClass, Class<? extends Annotation> retryConfigurationClass,
             Class<? extends RateLimiter> rateLimiterClass, Class<? extends Annotation> rateLimiterConfigurationClass,
-            Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata, ManagedWorkflow<R> workflow,
             List<PolicyRule> additionalRBACRules, List<RoleRef> additionalRBACRoleRefs, String fieldManager,
             ItemStore<R> nullableItemStore) {
         this.associatedReconcilerClassName = associatedReconcilerClassName;
@@ -106,8 +104,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.informerListLimit = Optional.ofNullable(nullableInformerListLimit);
         this.additionalRBACRules = additionalRBACRules;
         this.additionalRBACRoleRefs = additionalRBACRoleRefs;
-        this.dependentsMetadata = dependentsMetadata;
-        this.workflow = workflow;
         setNamespaces(namespaces);
         this.wereNamespacesSet = wereNamespacesSet;
         setFinalizer(finalizerName);
@@ -198,13 +194,30 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return namespaces;
     }
 
-    @SuppressWarnings("unchecked")
-    void setNamespaces(Collection<String> namespaces) {
+    void setNamespaces(Set<String> namespaces) {
         if (!namespaces.equals(this.namespaces)) {
-            this.namespaces = namespaces.stream().map(String::trim).collect(Collectors.toSet());
+            this.namespaces = sanitizeNamespaces(namespaces);
             wereNamespacesSet = true;
             // propagate namespace changes to the dependents' config if needed
-            this.dependentsMetadata.forEach((name, spec) -> {
+            propagateNamespacesToDependents();
+        }
+    }
+
+    private static Set<String> sanitizeNamespaces(Set<String> namespaces) {
+        return namespaces.stream().map(String::trim).collect(Collectors.toSet());
+    }
+
+    /**
+     * Record potentially user-set namespaces, updating the dependent resources, which should have been set before this method
+     * is called. Note that this method won't affect the status of whether the namespaces were set by the user or not, as this
+     * should have been recorded already when the instance was created.
+     * This method, while public for visibility purpose from the deployment module, should be considered internal and *NOT* be
+     * called from user code.
+     */
+    @SuppressWarnings("unchecked")
+    public void propagateNamespacesToDependents() {
+        if (workflow != null) {
+            dependentsMetadata().forEach((unused, spec) -> {
                 final var config = spec.getDependentResourceConfig();
                 if (config instanceof QuarkusKubernetesDependentResourceConfig qConfig) {
                     qConfig.setNamespaces(this.namespaces);
@@ -237,18 +250,19 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     }
 
     public boolean areDependentsImpactedBy(Set<String> changedClasses) {
-        return dependentsMetadata.keySet().parallelStream().anyMatch(changedClasses::contains);
+        return dependentsMetadata().keySet().parallelStream().anyMatch(changedClasses::contains);
     }
 
     public boolean needsDependentBeansCreation() {
+        final var dependentsMetadata = dependentsMetadata();
         return dependentsMetadata != null && !dependentsMetadata.isEmpty();
     }
 
-    public ManagedWorkflow<R> getWorkflow() {
+    public QuarkusManagedWorkflow<R> getWorkflow() {
         return workflow;
     }
 
-    public void setWorkflow(ManagedWorkflow<R> workflow) {
+    public void setWorkflow(QuarkusManagedWorkflow<R> workflow) {
         this.workflow = workflow;
     }
 
@@ -258,8 +272,8 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     }
 
     @Override
-    public List<DependentResourceSpec> getDependentResources() {
-        return dependentsMetadata.values().parallelStream().collect(Collectors.toList());
+    public Optional<WorkflowSpec> getWorkflowSpec() {
+        return workflow.getGenericSpec();
     }
 
     @Override
@@ -335,10 +349,8 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return rateLimiterClass;
     }
 
-    // for Quarkus' RecordableConstructor
-    @SuppressWarnings("unused")
-    public Map<String, DependentResourceSpecMetadata<?, ?, ?>> getDependentsMetadata() {
-        return dependentsMetadata;
+    public Map<String, DependentResourceSpecMetadata> dependentsMetadata() {
+        return workflow.getSpec().map(QuarkusWorkflowSpec::getDependentResourceSpecMetadata).orElse(Collections.emptyMap());
     }
 
     void initAnnotationConfigurables(Reconciler<R> reconciler) {
