@@ -1,9 +1,6 @@
 package io.quarkiverse.operatorsdk.common;
 
-import static io.quarkiverse.operatorsdk.common.Constants.CONTROLLER_CONFIGURATION;
-import static io.quarkiverse.operatorsdk.common.Constants.CUSTOM_RESOURCE;
-import static io.quarkiverse.operatorsdk.common.Constants.HAS_METADATA;
-import static io.quarkiverse.operatorsdk.common.Constants.RECONCILER;
+import static io.quarkiverse.operatorsdk.common.Constants.*;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -48,10 +45,10 @@ public class ReconcilerAugmentedClassInfo extends ResourceAssociatedAugmentedCla
 
         // extract dependent information
         final var reconciler = classInfo();
-        final var controllerAnnotation = reconciler.declaredAnnotation(CONTROLLER_CONFIGURATION);
+        final var workflow = reconciler.declaredAnnotation(WORKFLOW);
         dependentResourceInfos = Collections.emptyList();
-        if (controllerAnnotation != null) {
-            final var dependents = controllerAnnotation.value("dependents");
+        if (workflow != null) {
+            final var dependents = workflow.value("dependents");
             if (dependents != null) {
                 final var dependentAnnotations = dependents.asNestedArray();
                 var dependentResources = Collections.<String, DependentResourceAugmentedClassInfo> emptyMap();
