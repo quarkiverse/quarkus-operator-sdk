@@ -12,6 +12,11 @@ public final class DeserializedKubernetesResourcesBuildItem extends SimpleBuildI
         this.resources = resources;
     }
 
+    /**
+     * Note that these resources are "live" so any modification made to them will be propagated anywhere this method is called
+     * and a reference on the result is kept so if you don't want local changes to be propagated, make a copy of the resources
+     * you interact with, first.
+     */
     public List<HasMetadata> getResources() {
         return resources;
     }

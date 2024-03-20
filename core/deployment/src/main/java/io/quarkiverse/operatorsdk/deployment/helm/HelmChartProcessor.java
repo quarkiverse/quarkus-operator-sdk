@@ -36,6 +36,7 @@ import io.quarkus.kubernetes.deployment.KubernetesConfig;
 import io.quarkus.kubernetes.deployment.ResourceNameUtil;
 import io.quarkus.qute.Qute;
 
+// Note that steps of this processor won't be run in dev mode because ArtifactResultBuildItems are only considered in NORMAL mode
 @BuildSteps(onlyIf = HelmGenerationEnabled.class)
 public class HelmChartProcessor {
 
@@ -154,7 +155,7 @@ public class HelmChartProcessor {
                 return !r.getMetadata().getName().equals(operatorName);
             }
             return true;
-        }).collect(Collectors.toList());
+        }).toList();
     }
 
     @BuildStep
@@ -170,13 +171,16 @@ public class HelmChartProcessor {
             ControllerConfigurationsBuildItem controllerConfigurations,
             ApplicationInfoBuildItem appInfo) {
         // add an env var for each reconciler's watch namespace in the operator's deployment
-        final var deployment = (Deployment) deserializedKubernetesResources.getResources().stream()
+        var deployment = (Deployment) deserializedKubernetesResources.getResources().stream()
                 .filter(Deployment.class::isInstance).findFirst()
                 .orElseThrow();
-        final var envs = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        // copy the deployment so that changes are not propagated outside of this method
+        final var firstContainer = deployment.edit().editSpec().editTemplate().editSpec().editFirstContainer();
         controllerConfigurations.getControllerConfigs()
-                .forEach((name, unused) -> envs.add(new EnvVar(ConfigurationUtils.getNamespacesPropertyName(name, true),
-                        "{watchNamespaces}", null)));
+                .forEach((name, unused) -> firstContainer.addNewEnv()
+                        .withName(ConfigurationUtils.getNamespacesPropertyName(name, true))
+                        .withValue("{watchNamespaces}").endEnv());
+        deployment = firstContainer.endContainer().endSpec().endTemplate().endSpec().build();
 
         // a bit hacky solution to get the exact placeholder without brackets
         final var template = FileUtils.asYaml(deployment);
@@ -194,7 +198,7 @@ public class HelmChartProcessor {
     private void addCRDs(HelmTargetDirectoryBuildItem helmDirBI, GeneratedCRDInfoBuildItem generatedCRDInfoBuildItem) {
         var crdInfos = generatedCRDInfoBuildItem.getCRDGenerationInfo().getCrds().values().stream()
                 .flatMap(m -> m.values().stream())
-                .collect(Collectors.toList());
+                .toList();
 
         final var crdDir = helmDirBI.getPathToHelmDir().resolve(CRD_DIR);
         crdInfos.forEach(crdInfo -> {
