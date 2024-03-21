@@ -6,7 +6,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 
-@CSVMetadata(name = AReconciler.SHARED, version = "0.0.2")
+@CSVMetadata(bundleName = AReconciler.SHARED, version = "0.0.2")
 public class BReconciler implements Reconciler<Service> {
 
     @Override

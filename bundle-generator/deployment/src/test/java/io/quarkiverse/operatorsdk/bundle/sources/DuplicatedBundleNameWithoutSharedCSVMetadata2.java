@@ -6,12 +6,11 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 
-@CSVMetadata(name = "illegal")
+@CSVMetadata(bundleName = "illegal")
 public class DuplicatedBundleNameWithoutSharedCSVMetadata2 implements Reconciler<RoleBinding> {
 
     @Override
-    public UpdateControl<RoleBinding> reconcile(RoleBinding roleBinding, Context<RoleBinding> context)
-            throws Exception {
+    public UpdateControl<RoleBinding> reconcile(RoleBinding roleBinding, Context<RoleBinding> context) {
         return null;
     }
 }
