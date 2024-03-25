@@ -3,7 +3,6 @@ package io.quarkiverse.operatorsdk.runtime;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
@@ -17,13 +16,12 @@ public class QuarkusKubernetesDependentResourceConfig<R extends HasMetadata> ext
     public QuarkusKubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector,
             boolean configuredNS,
             boolean createResourceOnlyIfNotExistingWithSSA,
-            ResourceDiscriminator<R, ?> resourceDiscriminator,
             Boolean useSSA,
             OnAddFilter<R> onAddFilter,
             OnUpdateFilter<R> onUpdateFilter,
             OnDeleteFilter<R> onDeleteFilter,
             GenericFilter<R> genericFilter) {
-        super(namespaces, labelSelector, configuredNS, createResourceOnlyIfNotExistingWithSSA, resourceDiscriminator,
+        super(namespaces, labelSelector, configuredNS, createResourceOnlyIfNotExistingWithSSA,
                 useSSA, onAddFilter, onUpdateFilter, onDeleteFilter, genericFilter);
     }
 
