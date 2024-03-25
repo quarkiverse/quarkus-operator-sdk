@@ -178,10 +178,7 @@ class OperatorSDKResourceTest {
                         "dependents.dependentConfig.labelSelector",
                         hasItems(ReadOnlyDependentResource.LABEL_SELECTOR, CRUDDependentResource.LABEL_SELECTOR),
                         "dependents.dependentConfig.onAddFilter",
-                        hasItem(CRUDDependentResource.TestOnAddFilter.class.getCanonicalName()),
-                        "dependents.dependentConfig.resourceDiscriminator",
-                        hasItems(ReadOnlyDependentResource.ReadOnlyResourceDiscriminator.class.getCanonicalName(),
-                                CRUDDependentResource.TestResourceDiscriminator.class.getCanonicalName()));
+                        hasItem(CRUDDependentResource.TestOnAddFilter.class.getCanonicalName()));
     }
 
     @Test
@@ -206,9 +203,8 @@ class OperatorSDKResourceTest {
                 .when()
                 .get("/operator/" + DependentDefiningReconciler.NAME + "/dependents/" + ReadOnlyDependentResource.NAME)
                 .then()
-                .statusCode(200).body(
-                        "resourceDiscriminator",
-                        is(ReadOnlyDependentResource.ReadOnlyResourceDiscriminator.class.getCanonicalName()));
+                .statusCode(200)
+                .body("labelSelector", equalTo(ReadOnlyDependentResource.LABEL_SELECTOR));
     }
 
     @Test

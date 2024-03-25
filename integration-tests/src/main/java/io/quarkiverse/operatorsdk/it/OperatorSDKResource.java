@@ -278,12 +278,6 @@ public class OperatorSDKResource {
                     .orElse(null);
         }
 
-        public String getResourceDiscriminator() {
-            return Optional.ofNullable(config.getResourceDiscriminator())
-                    .map(f -> f.getClass().getCanonicalName())
-                    .orElse(null);
-        }
-
         public String getLabelSelector() {
             return config.labelSelector();
         }
