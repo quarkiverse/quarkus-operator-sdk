@@ -1,22 +1,19 @@
 package io.quarkiverse.operatorsdk.it;
 
 import java.util.Collections;
-import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
-import io.quarkiverse.operatorsdk.it.ReadOnlyDependentResource.ReadOnlyResourceDiscriminator;
 
-@KubernetesDependent(labelSelector = ReadOnlyDependentResource.LABEL_SELECTOR, resourceDiscriminator = ReadOnlyResourceDiscriminator.class)
+@KubernetesDependent(labelSelector = ReadOnlyDependentResource.LABEL_SELECTOR)
 public class ReadOnlyDependentResource extends KubernetesDependentResource<Deployment, ConfigMap> implements
         SecondaryToPrimaryMapper<Deployment> {
 
@@ -41,12 +38,4 @@ public class ReadOnlyDependentResource extends KubernetesDependentResource<Deplo
         }
     }
 
-    public static class ReadOnlyResourceDiscriminator implements ResourceDiscriminator<Deployment, ConfigMap> {
-
-        @Override
-        public Optional<Deployment> distinguish(Class<Deployment> aClass, ConfigMap configMap,
-                Context<ConfigMap> context) {
-            return Optional.empty();
-        }
-    }
 }
