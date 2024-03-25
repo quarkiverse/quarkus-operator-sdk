@@ -51,9 +51,6 @@ public class SetOperatorLevelNamespacesTest {
                         "dependents.dependentConfig.labelSelector",
                         hasItems(ReadOnlyDependentResource.LABEL_SELECTOR, CRUDDependentResource.LABEL_SELECTOR),
                         "dependents.dependentConfig.onAddFilter",
-                        hasItem(CRUDDependentResource.TestOnAddFilter.class.getCanonicalName()),
-                        "dependents.dependentConfig.resourceDiscriminator",
-                        hasItems(ReadOnlyDependentResource.ReadOnlyResourceDiscriminator.class.getCanonicalName(),
-                                CRUDDependentResource.TestResourceDiscriminator.class.getCanonicalName()));
+                        hasItem(CRUDDependentResource.TestOnAddFilter.class.getCanonicalName()));
     }
 }
