@@ -361,7 +361,7 @@ a| [[quarkus-operator-sdk_quarkus-operator-sdk-termination-timeout-seconds]] [.p
 
 [.description]
 --
-Amount of seconds the SDK waits for reconciliation threads to terminate before shutting down.
+Amount of seconds the SDK waits for reconciliation threads to terminate before shutting down. Setting this value will install a shutdown hook to wait for termination (causing `io.javaoperatorsdk.operator.Operator++#++installShutdownHook(Duration)` to be called with `Duration.ofSeconds(terminationTimeoutSeconds)`).
 
 
 ifdef::add-copy-button-to-env-var[]
