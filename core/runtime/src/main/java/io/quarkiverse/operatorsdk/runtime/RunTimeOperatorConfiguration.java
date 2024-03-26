@@ -42,7 +42,10 @@ public interface RunTimeOperatorConfiguration {
     Optional<Integer> concurrentReconciliationThreads();
 
     /**
-     * Amount of seconds the SDK waits for reconciliation threads to terminate before shutting down.
+     * Amount of seconds the SDK waits for reconciliation threads to terminate before shutting down. Setting this value will
+     * install a shutdown hook to wait for termination (causing
+     * {@link io.javaoperatorsdk.operator.Operator#installShutdownHook(Duration)} to be called with
+     * `Duration.ofSeconds(terminationTimeoutSeconds)`).
      */
     Optional<Integer> terminationTimeoutSeconds();
 

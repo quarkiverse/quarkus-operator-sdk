@@ -34,6 +34,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         DependentResourceFactory<QuarkusControllerConfiguration<?>>,
         ManagedWorkflowFactory<QuarkusControllerConfiguration<?>> {
     private static final Logger log = LoggerFactory.getLogger(QuarkusConfigurationService.class);
+    public static final int UNSET_TERMINATION_TIMEOUT_SECONDS = -1;
     private final CRDGenerationInfo crdInfo;
     private final int concurrentReconciliationThreads;
     private final int terminationTimeout;
@@ -128,7 +129,6 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         return this.concurrentReconciliationThreads;
     }
 
-    @Override
     public int getTerminationTimeoutSeconds() {
         return terminationTimeout;
     }
