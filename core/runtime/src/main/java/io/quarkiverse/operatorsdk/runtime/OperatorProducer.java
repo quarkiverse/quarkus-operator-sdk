@@ -2,6 +2,8 @@ package io.quarkiverse.operatorsdk.runtime;
 
 import static io.quarkiverse.operatorsdk.runtime.CRDUtils.applyCRD;
 
+import java.time.Duration;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
@@ -34,8 +36,7 @@ public class OperatorProducer {
     @DefaultBean
     @ApplicationScoped
     Operator operator(QuarkusConfigurationService configuration, Instance<Reconciler<? extends HasMetadata>> reconcilers) {
-        if (configuration.getVersion() instanceof Version) {
-            final var version = ((Version) configuration.getVersion());
+        if (configuration.getVersion() instanceof Version version) {
             log.info("Quarkus Java Operator SDK extension {}", version.getExtensionCompleteVersion());
         }
 
@@ -50,6 +51,12 @@ public class OperatorProducer {
         Operator operator = new Operator(configuration);
         for (Reconciler<? extends HasMetadata> reconciler : reconcilers) {
             operator.register(reconciler);
+        }
+
+        // if we set a termination timeout, install a shutdown hook
+        final var terminationTimeoutSeconds = configuration.getTerminationTimeoutSeconds();
+        if (QuarkusConfigurationService.UNSET_TERMINATION_TIMEOUT_SECONDS != terminationTimeoutSeconds) {
+            operator.installShutdownHook(Duration.ofSeconds(terminationTimeoutSeconds));
         }
 
         return operator;
