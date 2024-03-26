@@ -32,7 +32,7 @@ public class ConfigurationServiceRecorder {
         final var maxThreads = runTimeConfiguration.concurrentReconciliationThreads
                 .orElse(ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
         final var timeout = runTimeConfiguration.terminationTimeoutSeconds
-                .orElse(ConfigurationService.DEFAULT_TERMINATION_TIMEOUT_SECONDS);
+                .orElse(QuarkusConfigurationService.UNSET_TERMINATION_TIMEOUT_SECONDS);
         final var workflowThreads = runTimeConfiguration.concurrentWorkflowThreads
                 .orElse(ConfigurationService.DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER);
         final var cacheSyncTimeout = runTimeConfiguration.cacheSyncTimeout;
