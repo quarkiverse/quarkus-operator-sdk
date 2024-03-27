@@ -13,7 +13,7 @@
   <name>Quarkus - Operator SDK - Parent</name>
   <properties>
     <quarkus.version>3.8.3</quarkus.version>
-    <java-operator-sdk.version>4.8.1</java-operator-sdk.version>
+    <java-operator-sdk.version>4.8.2</java-operator-sdk.version>
   </properties>
   <scm>
     <connection>:git:git@github.com:quarkiverse/quarkus-operator-sdk.git</connection>
