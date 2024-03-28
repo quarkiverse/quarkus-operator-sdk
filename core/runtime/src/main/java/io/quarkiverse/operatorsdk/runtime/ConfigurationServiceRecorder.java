@@ -25,7 +25,7 @@ public class ConfigurationServiceRecorder {
 
     static final Logger log = Logger.getLogger(ConfigurationServiceRecorder.class.getName());
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({ "rawtypes" })
     public Supplier<QuarkusConfigurationService> configurationServiceSupplier(Version version,
             Map<String, QuarkusControllerConfiguration> configurations,
             CRDGenerationInfo crdInfo, RunTimeOperatorConfiguration runTimeConfiguration,
@@ -33,7 +33,7 @@ public class ConfigurationServiceRecorder {
         final var maxThreads = runTimeConfiguration.concurrentReconciliationThreads
                 .orElse(ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
         final var timeout = runTimeConfiguration.terminationTimeoutSeconds
-                .orElse(ConfigurationService.DEFAULT_TERMINATION_TIMEOUT_SECONDS);
+                .orElse(QuarkusConfigurationService.UNSET_TERMINATION_TIMEOUT_SECONDS);
         final var workflowThreads = runTimeConfiguration.concurrentWorkflowThreads
                 .orElse(ConfigurationService.DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER);
         final var cacheSyncTimeout = runTimeConfiguration.cacheSyncTimeout;
@@ -45,17 +45,9 @@ public class ConfigurationServiceRecorder {
             if (extConfig != null) {
                 extConfig.finalizer.ifPresent(c::setFinalizer);
                 extConfig.selector.ifPresent(c::setLabelSelector);
-                c.setRetryConfiguration(RetryConfigurationResolver.resolve(extConfig.retry));
+                GradualRetryResolver.gradualRetryIfConfigurationExists(c, extConfig.retry)
+                        .ifPresent(c::setGradualRetryConfiguration);
                 setNamespacesFromRuntime(c, extConfig.namespaces);
-            }
-
-            // set retry to default if it hasn't been set already
-            // note that this is a little hackish but we can't set the default version at built time
-            // because it will get recorded in the byte code and this would make it harder to
-            // override it using the old style (i.e. using setRetryConfiguration) at runtime
-            final var retry = c.getRetry();
-            if (retry == null) {
-                c.setRetryConfiguration(null);
             }
 
             // if the namespaces weren't set on controller level or as an annotation, use the operator-level configuration if it exists

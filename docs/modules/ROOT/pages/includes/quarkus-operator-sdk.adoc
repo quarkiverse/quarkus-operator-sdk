@@ -344,7 +344,7 @@ a| [[quarkus-operator-sdk_quarkus-operator-sdk-termination-timeout-seconds]]`lin
 
 [.description]
 --
-Amount of seconds the SDK waits for reconciliation threads to terminate before shutting down.
+Amount of seconds the SDK waits for reconciliation threads to terminate before shutting down. Setting this value will install a shutdown hook to wait for termination (causing `io.javaoperatorsdk.operator.Operator++#++installShutdownHook(Duration)` to be called with `Duration.ofSeconds(terminationTimeoutSeconds)`).
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_TERMINATION_TIMEOUT_SECONDS+++[]
@@ -534,7 +534,7 @@ ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_INTERVAL_INITIAL+++`
 endif::add-copy-button-to-env-var[]
 --|long 
-|`2000`
+|
 
 
 a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-multiplier]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-multiplier[quarkus.operator-sdk.controllers."controllers".retry.interval.multiplier]`
@@ -551,7 +551,7 @@ ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_INTERVAL_MULTIPLIER+++`
 endif::add-copy-button-to-env-var[]
 --|double 
-|`1.5`
+|
 
 
 a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-max]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-max[quarkus.operator-sdk.controllers."controllers".retry.interval.max]`

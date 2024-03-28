@@ -12,6 +12,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.quarkiverse.operatorsdk.samples.mysqlschema.dependent.SchemaDependentResource;
 import io.quarkiverse.operatorsdk.samples.mysqlschema.dependent.SecretDependentResource;
@@ -19,10 +20,12 @@ import io.quarkiverse.operatorsdk.samples.mysqlschema.schema.Schema;
 import io.quarkiverse.operatorsdk.samples.mysqlschema.schema.SchemaService;
 import io.quarkus.logging.Log;
 
-@ControllerConfiguration(dependents = {
+@Workflow(dependents = {
         @Dependent(type = SecretDependentResource.class),
         @Dependent(type = SchemaDependentResource.class, name = SchemaDependentResource.NAME)
 })
+@ControllerConfiguration
+@SuppressWarnings("unused")
 public class MySQLSchemaReconciler
         implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema> {
 
@@ -33,14 +36,15 @@ public class MySQLSchemaReconciler
     public UpdateControl<MySQLSchema> reconcile(MySQLSchema schema, Context<MySQLSchema> context) {
         // we only need to update the status if we just built the schema, i.e. when it's
         // present in the context
-        return context.getSecondaryResource(Secret.class).map(secret -> {
-            return context.getSecondaryResource(Schema.class, SchemaDependentResource.NAME).map(s -> {
-                updateStatusPojo(schema, secret.getMetadata().getName(),
-                        decode(secret.getData().get(MYSQL_SECRET_USERNAME)));
-                Log.infof("Schema %s created - updating CR status", s.getName());
-                return UpdateControl.updateStatus(schema);
-            }).orElse(UpdateControl.noUpdate());
-        }).orElse(UpdateControl.noUpdate());
+        return context.getSecondaryResource(Secret.class)
+                .map(secret -> context.getSecondaryResource(Schema.class, SchemaDependentResource.NAME)
+                        .map(s -> {
+                            updateStatusPojo(schema, secret.getMetadata().getName(),
+                                    decode(secret.getData().get(MYSQL_SECRET_USERNAME)));
+                            Log.infof("Schema %s created - updating CR status", s.getName());
+                            return UpdateControl.updateStatus(schema);
+                        }).orElse(UpdateControl.noUpdate()))
+                .orElse(UpdateControl.noUpdate());
     }
 
     @Override

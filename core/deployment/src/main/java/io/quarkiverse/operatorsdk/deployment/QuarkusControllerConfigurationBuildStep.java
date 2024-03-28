@@ -1,6 +1,5 @@
 package io.quarkiverse.operatorsdk.deployment;
 
-import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.instantiate;
 import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.loadClass;
 import static io.quarkiverse.operatorsdk.common.Constants.*;
 
@@ -26,10 +25,8 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowSupport;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
@@ -54,6 +51,7 @@ import io.quarkus.deployment.util.JandexUtil;
 class QuarkusControllerConfigurationBuildStep {
 
     static final Logger log = Logger.getLogger(QuarkusControllerConfigurationBuildStep.class.getName());
+    private static final ManagedWorkflowSupport workflowSupport = new ManagedWorkflowSupport();
 
     private static final KubernetesDependentConverter KUBERNETES_DEPENDENT_CONVERTER = new KubernetesDependentConverter() {
         @Override
@@ -66,7 +64,7 @@ class QuarkusControllerConfigurationBuildStep {
             return new QuarkusKubernetesDependentResourceConfig(original.namespaces(),
                     original.labelSelector(),
                     original.wereNamespacesConfigured(),
-                    original.createResourceOnlyIfNotExistingWithSSA(), original.getResourceDiscriminator(),
+                    original.createResourceOnlyIfNotExistingWithSSA(),
                     (Boolean) original.useSSA().orElse(null),
                     original.onAddFilter(),
                     original.onUpdateFilter(), original.onDeleteFilter(), original.genericFilter());
@@ -149,17 +147,6 @@ class QuarkusControllerConfigurationBuildStep {
         final var configExtractor = new BuildTimeHybridControllerConfiguration(buildTimeConfiguration,
                 externalConfiguration,
                 controllerAnnotation);
-
-        // deal with event filters
-        ResourceEventFilter finalFilter = null;
-        final var eventFilterTypes = ConfigurationUtils.annotationValueOrDefault(
-                controllerAnnotation, "eventFilters",
-                AnnotationValue::asClassArray, () -> new Type[0]);
-        for (Type filterType : eventFilterTypes) {
-            final var filterClass = loadClass(filterType.name().toString(), ResourceEventFilter.class);
-            final var filter = instantiate(filterClass);
-            finalFilter = finalFilter == null ? filter : finalFilter.and(filter);
-        }
 
         Duration maxReconciliationInterval = null;
         OnAddFilter onAddFilter = null;
@@ -248,15 +235,7 @@ class QuarkusControllerConfigurationBuildStep {
         final var primaryAsResource = primaryInfo.asResourceTargeting();
         final var resourceClass = primaryInfo.loadAssociatedClass();
         final String resourceFullName = primaryAsResource.fullResourceName();
-        // initialize dependent specs
-        final Map<String, DependentResourceSpecMetadata> dependentResources;
-        final var dependentResourceInfos = reconcilerInfo.getDependentResourceInfos();
-        final var hasDependents = !dependentResourceInfos.isEmpty();
-        if (hasDependents) {
-            dependentResources = new HashMap<>(dependentResourceInfos.size());
-        } else {
-            dependentResources = Collections.emptyMap();
-        }
+
         configuration = new QuarkusControllerConfiguration(
                 reconcilerClassName,
                 name,
@@ -270,35 +249,48 @@ class QuarkusControllerConfigurationBuildStep {
                 getFinalizer(controllerAnnotation, resourceFullName),
                 getLabelSelector(controllerAnnotation),
                 primaryAsResource.hasNonVoidStatus(),
-                finalFilter,
                 maxReconciliationInterval,
                 onAddFilter, onUpdateFilter, genericFilter, retryClass, retryConfigurationClass, rateLimiterClass,
-                rateLimiterConfigurationClass, dependentResources, null, additionalRBACRules, fieldManager, itemStore);
+                rateLimiterConfigurationClass, additionalRBACRules, fieldManager, itemStore);
 
-        if (hasDependents) {
-            dependentResourceInfos.forEach(dependent -> {
-                final var spec = createDependentResourceSpec(dependent, index, configuration);
-                final var dependentName = dependent.classInfo().name();
-                dependentResources.put(dependentName.toString(), spec);
-            });
-        }
+        // compute workflow and set it
+        initializeWorkflowIfNeeded(configuration, reconcilerInfo, index);
 
-        // compute workflow and set it (originally set to null in constructor)
-        final ManagedWorkflow workflow;
-        if (hasDependents) {
-            // make workflow bytecode serializable
-            final var original = ManagedWorkflowFactory.DEFAULT.workflowFor(configuration);
-            workflow = new QuarkusManagedWorkflow<>(original.getOrderedSpecs(),
-                    original.hasCleaner());
-        } else {
-            workflow = QuarkusManagedWorkflow.noOpManagedWorkflow;
-        }
-        configuration.setWorkflow(workflow);
+        // need to set the namespaces after the dependents have been set so that they can be properly updated if needed
+        // however, we need to do it in a way that doesn't reset whether the namespaces were set by the user or not
+        configuration.propagateNamespacesToDependents();
 
         log.infov(
                 "Processed ''{0}'' reconciler named ''{1}'' for ''{2}'' resource (version ''{3}'')",
                 reconcilerClassName, name, resourceFullName, HasMetadata.getApiVersion(resourceClass));
         return configuration;
+    }
+
+    private static <R extends HasMetadata> void initializeWorkflowIfNeeded(QuarkusControllerConfiguration<R> configuration,
+            ReconcilerAugmentedClassInfo reconcilerInfo, IndexView index) {
+        final var workflowAnnotation = reconcilerInfo.classInfo().declaredAnnotation(WORKFLOW);
+        @SuppressWarnings("unchecked")
+        QuarkusManagedWorkflow<R> workflow = QuarkusManagedWorkflow.noOpManagedWorkflow;
+        if (workflowAnnotation != null) {
+            final var dependentResourceInfos = reconcilerInfo.getDependentResourceInfos();
+            if (!dependentResourceInfos.isEmpty()) {
+                Map<String, DependentResourceSpecMetadata> dependentResources = new HashMap<>(dependentResourceInfos.size());
+                dependentResourceInfos.forEach(dependent -> {
+                    final var spec = createDependentResourceSpec(dependent, index, configuration);
+                    final var dependentName = dependent.classInfo().name();
+                    dependentResources.put(dependentName.toString(), spec);
+                });
+
+                final var explicitInvocation = ConfigurationUtils.annotationValueOrDefault(
+                        workflowAnnotation, "explicitInvocation", AnnotationValue::asBoolean,
+                        () -> false);
+                // make workflow bytecode serializable
+                final var spec = new QuarkusWorkflowSpec(dependentResources, explicitInvocation);
+                final var original = workflowSupport.createWorkflow(spec);
+                workflow = new QuarkusManagedWorkflow<>(spec, original.getOrderedSpecs(), original.hasCleaner());
+            }
+        }
+        configuration.setWorkflow(workflow);
     }
 
     private static List<PolicyRule> extractAdditionalRBACRules(ClassInfo info) {

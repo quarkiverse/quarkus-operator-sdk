@@ -12,15 +12,12 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.processing.Controller;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
@@ -33,19 +30,6 @@ import io.quarkus.runtime.annotations.RecordableConstructor;
 @SuppressWarnings("rawtypes")
 public class QuarkusControllerConfiguration<R extends HasMetadata> implements ControllerConfiguration<R>,
         DependentResourceConfigurationProvider {
-    // we need to create this class because Quarkus cannot reference the default implementation that
-    // JOSDK provides as it doesn't like lambdas at build time. The class also needs to be public
-    // because otherwise Quarkus isn't able to access it… :(
-    public final static class PassthroughResourceEventFilter implements ResourceEventFilter {
-
-        @Override
-        public boolean acceptChange(Controller controller, HasMetadata hasMetadata,
-                HasMetadata p1) {
-            return true;
-        }
-    }
-
-    private final static ResourceEventFilter DEFAULT = new PassthroughResourceEventFilter();
 
     // Needed by Quarkus because LinearRateLimiter doesn't expose setters for byte recording
     public final static class DefaultRateLimiter extends LinearRateLimiter {
@@ -69,7 +53,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final boolean statusPresentAndNotVoid;
     private final Class<R> resourceClass;
     private final Optional<Long> informerListLimit;
-    private final ResourceEventFilter<R> eventFilter;
     private final Optional<Duration> maxReconciliationInterval;
     private final Optional<OnAddFilter<? super R>> onAddFilter;
     private final Optional<OnUpdateFilter<? super R>> onUpdateFilter;
@@ -84,13 +67,12 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private String finalizer;
     private Set<String> namespaces;
     private boolean wereNamespacesSet;
-    private RetryConfiguration retryConfiguration;
     private String labelSelector;
-    private final Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata;
     private Retry retry;
     private RateLimiter rateLimiter;
-    private ManagedWorkflow<R> workflow;
+    private QuarkusManagedWorkflow<R> workflow;
     private QuarkusConfigurationService parent;
+    private ExternalGradualRetryConfiguration gradualRetry;
 
     @RecordableConstructor
     @SuppressWarnings("unchecked")
@@ -104,12 +86,11 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             Set<String> namespaces,
             boolean wereNamespacesSet,
             String finalizerName, String labelSelector,
-            boolean statusPresentAndNotVoid, ResourceEventFilter eventFilter,
+            boolean statusPresentAndNotVoid,
             Duration maxReconciliationInterval,
             OnAddFilter<R> onAddFilter, OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter,
             Class<? extends Retry> retryClass, Class<? extends Annotation> retryConfigurationClass,
             Class<? extends RateLimiter> rateLimiterClass, Class<? extends Annotation> rateLimiterConfigurationClass,
-            Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata, ManagedWorkflow<R> workflow,
             List<PolicyRule> additionalRBACRules, String fieldManager, ItemStore<R> nullableItemStore) {
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
@@ -119,15 +100,11 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.resourceClass = resourceClass;
         this.informerListLimit = Optional.ofNullable(nullableInformerListLimit);
         this.additionalRBACRules = additionalRBACRules;
-        this.dependentsMetadata = dependentsMetadata;
-        this.workflow = workflow;
-        this.retryConfiguration = ControllerConfiguration.super.getRetryConfiguration();
         setNamespaces(namespaces);
         this.wereNamespacesSet = wereNamespacesSet;
         setFinalizer(finalizerName);
         this.labelSelector = labelSelector;
         this.statusPresentAndNotVoid = statusPresentAndNotVoid;
-        this.eventFilter = eventFilter != null ? eventFilter : DEFAULT;
         this.maxReconciliationInterval = maxReconciliationInterval != null ? Optional.of(maxReconciliationInterval)
                 : ControllerConfiguration.super.maxReconciliationInterval();
         this.onAddFilter = Optional.ofNullable(onAddFilter);
@@ -135,7 +112,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.genericFilter = Optional.ofNullable(genericFilter);
 
         this.retryClass = retryClass;
-        this.retry = GenericRetry.class.equals(retryClass) ? ControllerConfiguration.super.getRetry() : null;
+        this.retry = GenericRetry.class.equals(retryClass) ? new GenericRetry() : null;
         this.retryConfigurationClass = retryConfigurationClass;
 
         this.rateLimiterClass = rateLimiterClass;
@@ -213,17 +190,34 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return namespaces;
     }
 
-    @SuppressWarnings("unchecked")
-    void setNamespaces(Collection<String> namespaces) {
+    void setNamespaces(Set<String> namespaces) {
         if (!namespaces.equals(this.namespaces)) {
-            this.namespaces = namespaces.stream().map(String::trim).collect(Collectors.toSet());
+            this.namespaces = sanitizeNamespaces(namespaces);
             wereNamespacesSet = true;
             // propagate namespace changes to the dependents' config if needed
-            this.dependentsMetadata.forEach((name, spec) -> {
+            propagateNamespacesToDependents();
+        }
+    }
+
+    private static Set<String> sanitizeNamespaces(Set<String> namespaces) {
+        return namespaces.stream().map(String::trim).collect(Collectors.toSet());
+    }
+
+    /**
+     * Record potentially user-set namespaces, updating the dependent resources, which should have been set before this method
+     * is called. Note that this method won't affect the status of whether the namespaces were set by the user or not, as this
+     * should have been recorded already when the instance was created.
+     * This method, while public for visibility purpose from the deployment module, should be considered internal and *NOT* be
+     * called from user code.
+     */
+    @SuppressWarnings("unchecked")
+    public void propagateNamespacesToDependents() {
+        if (workflow != null) {
+            dependentsMetadata().forEach((unused, spec) -> {
                 final var config = spec.getDependentResourceConfig();
                 if (config instanceof QuarkusKubernetesDependentResourceConfig) {
                     final var qConfig = (QuarkusKubernetesDependentResourceConfig) config;
-                    qConfig.setNamespaces(this.namespaces);
+                    qConfig.setNamespaces(namespaces);
                 }
             });
         }
@@ -231,20 +225,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     public boolean isWereNamespacesSet() {
         return wereNamespacesSet;
-    }
-
-    @Override
-    public RetryConfiguration getRetryConfiguration() {
-        return retryConfiguration;
-    }
-
-    void setRetryConfiguration(RetryConfiguration retryConfiguration) {
-        this.retryConfiguration = retryConfiguration != null ? retryConfiguration
-                : ControllerConfiguration.super.getRetryConfiguration();
-        // reset retry if needed
-        if (retry == null || retry instanceof GenericRetry) {
-            retry = GenericRetry.fromConfiguration(retryConfiguration);
-        }
     }
 
     @IgnoreProperty
@@ -267,18 +247,19 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     }
 
     public boolean areDependentsImpactedBy(Set<String> changedClasses) {
-        return dependentsMetadata.keySet().parallelStream().anyMatch(changedClasses::contains);
+        return dependentsMetadata().keySet().parallelStream().anyMatch(changedClasses::contains);
     }
 
     public boolean needsDependentBeansCreation() {
+        final var dependentsMetadata = dependentsMetadata();
         return dependentsMetadata != null && !dependentsMetadata.isEmpty();
     }
 
-    public ManagedWorkflow<R> getWorkflow() {
+    public QuarkusManagedWorkflow<R> getWorkflow() {
         return workflow;
     }
 
-    public void setWorkflow(ManagedWorkflow<R> workflow) {
+    public void setWorkflow(QuarkusManagedWorkflow<R> workflow) {
         this.workflow = workflow;
     }
 
@@ -288,8 +269,8 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     }
 
     @Override
-    public List<DependentResourceSpec> getDependentResources() {
-        return dependentsMetadata.values().parallelStream().collect(Collectors.toList());
+    public Optional<WorkflowSpec> getWorkflowSpec() {
+        return workflow.getGenericSpec();
     }
 
     @Override
@@ -300,11 +281,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     @Override
     public RateLimiter getRateLimiter() {
         return rateLimiter;
-    }
-
-    @Override
-    public ResourceEventFilter<R> getEventFilter() {
-        return eventFilter;
     }
 
     public Optional<Duration> maxReconciliationInterval() {
@@ -356,25 +332,36 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return retryClass;
     }
 
+    void setGradualRetryConfiguration(ExternalGradualRetryConfiguration gradualRetry) {
+        this.gradualRetry = gradualRetry;
+    }
+
     // for Quarkus' RecordableConstructor
     @SuppressWarnings("unused")
     public Class<? extends RateLimiter> getRateLimiterClass() {
         return rateLimiterClass;
     }
 
-    // for Quarkus' RecordableConstructor
-    @SuppressWarnings("unused")
-    public Map<String, DependentResourceSpecMetadata<?, ?, ?>> getDependentsMetadata() {
-        return dependentsMetadata;
+    public Map<String, DependentResourceSpecMetadata> dependentsMetadata() {
+        return workflow.getSpec().map(QuarkusWorkflowSpec::getDependentResourceSpecMetadata).orElse(Collections.emptyMap());
     }
 
     void initAnnotationConfigurables(Reconciler<R> reconciler) {
         final Class<? extends Reconciler> reconcilerClass = reconciler.getClass();
-        if (retryConfigurationClass != null) {
+        if (retryConfigurationClass != null || gradualRetry != null) {
             if (retry == null) {
                 retry = ClassLoadingUtils.instantiate(retryClass);
             }
             configure(reconcilerClass, retryConfigurationClass, (AnnotationConfigurable) retry);
+            // override with configuration from application.properties (if it exists) for GradualRetry
+            if (gradualRetry != null) {
+                // configurable should be a GenericRetry as validated by RetryResolver
+                final var genericRetry = (GenericRetry) retry;
+                gradualRetry.maxAttempts.ifPresent(genericRetry::setMaxAttempts);
+                gradualRetry.interval.initial.ifPresent(genericRetry::setInitialInterval);
+                gradualRetry.interval.max.ifPresent(genericRetry::setMaxInterval);
+                gradualRetry.interval.multiplier.ifPresent(genericRetry::setIntervalMultiplier);
+            }
             retryClass = null;
             retryConfigurationClass = null;
         }

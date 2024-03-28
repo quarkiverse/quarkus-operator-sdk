@@ -28,7 +28,7 @@ public class SetOperatorLevelNamespacesTest {
                         "name", equalTo(TestReconciler.NAME),
                         "watchCurrentNamespace", is(false),
                         "namespaces", hasSize(1),
-                        "namespaces", hasItem("operator-level"),
+                        "namespaces", hasItem("operator-level"), // namespace is set at the operator level by the TestProfile, so the namespace value should match what was set there
                         "retry.maxAttempts", equalTo(1),
                         "generationAware", equalTo(false),
                         "maxReconciliationIntervalSeconds", equalTo(TestReconciler.INTERVAL));
@@ -51,9 +51,6 @@ public class SetOperatorLevelNamespacesTest {
                         "dependents.dependentConfig.labelSelector",
                         hasItems(ReadOnlyDependentResource.LABEL_SELECTOR, CRUDDependentResource.LABEL_SELECTOR),
                         "dependents.dependentConfig.onAddFilter",
-                        hasItem(CRUDDependentResource.TestOnAddFilter.class.getCanonicalName()),
-                        "dependents.dependentConfig.resourceDiscriminator",
-                        hasItems(ReadOnlyDependentResource.ReadOnlyResourceDiscriminator.class.getCanonicalName(),
-                                CRUDDependentResource.TestResourceDiscriminator.class.getCanonicalName()));
+                        hasItem(CRUDDependentResource.TestOnAddFilter.class.getCanonicalName()));
     }
 }

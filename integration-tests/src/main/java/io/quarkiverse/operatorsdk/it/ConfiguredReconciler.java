@@ -10,7 +10,7 @@ import io.javaoperatorsdk.operator.processing.event.rate.RateLimited;
 import io.javaoperatorsdk.operator.processing.retry.GradualRetry;
 
 @ControllerConfiguration(name = ConfiguredReconciler.NAME, namespaces = "foo")
-@GradualRetry(maxAttempts = ConfiguredReconciler.MAX_ATTEMPTS)
+@GradualRetry(maxAttempts = ConfiguredReconciler.MAX_ATTEMPTS, initialInterval = 1000)
 @RateLimited(maxReconciliations = 1, within = 1, unit = TimeUnit.MINUTES)
 public class ConfiguredReconciler implements Reconciler<ChildTestResource2> {
 
