@@ -19,6 +19,8 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
+import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 
@@ -74,6 +76,10 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
         if (controllerConfiguration.watchCurrentNamespace()) {
             // create a RoleBinding that will be applied in the current namespace if watching only the current NS
             itemsToAdd.add(createRoleBinding(roleBindingName, controllerName, serviceAccountName, null));
+            //add additional Role Bindings
+            controllerConfiguration.getAdditionalRBACRoleRefs().forEach(
+                    roleRef -> createRoleBinding(roleBindingName, controllerName, serviceAccountName,
+                            null, roleRef));
         } else if (controllerConfiguration.watchAllNamespaces()) {
             itemsToAdd.add(createClusterRoleBinding(serviceAccountName, controllerName,
                     controllerName + "-cluster-role-binding", "watch all namespaces",
@@ -81,7 +87,13 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
         } else {
             // create a RoleBinding using either the provided deployment namespace or the desired watched namespace name
             desiredWatchedNamespaces
-                    .forEach(ns -> itemsToAdd.add(createRoleBinding(roleBindingName, controllerName, serviceAccountName, ns)));
+                    .forEach(ns -> {
+                        itemsToAdd.add(createRoleBinding(roleBindingName, controllerName, serviceAccountName, ns));
+                        //add additional Role Bindings
+                        controllerConfiguration.getAdditionalRBACRoleRefs()
+                                .forEach(roleRef -> createRoleBinding(roleBindingName, controllerName, serviceAccountName,
+                                        null, roleRef));
+                    });
         }
 
         return itemsToAdd;
@@ -93,6 +105,13 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
 
     private static RoleBinding createRoleBinding(String roleBindingName, String controllerName,
             String serviceAccountName, String namespace) {
+        return createRoleBinding(roleBindingName, controllerName, serviceAccountName, namespace, new RoleRefBuilder()
+                .withApiGroup(RBAC_AUTHORIZATION_GROUP).withKind(CLUSTER_ROLE).withName(getClusterRoleName(controllerName))
+                .build());
+    }
+
+    private static RoleBinding createRoleBinding(String roleBindingName, String controllerName,
+            String serviceAccountName, String namespace, RoleRef roleRef) {
         final var nsMsg = (namespace == null ? "current" : "'" + namespace + "'") + " namespace";
         log.infov("Creating ''{0}'' RoleBinding to be applied to {1}", roleBindingName, nsMsg);
         return new RoleBindingBuilder()

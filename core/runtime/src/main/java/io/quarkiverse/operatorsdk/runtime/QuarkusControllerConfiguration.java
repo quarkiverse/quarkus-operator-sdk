@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
@@ -75,6 +76,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final Optional<OnUpdateFilter<? super R>> onUpdateFilter;
     private final Optional<GenericFilter<? super R>> genericFilter;
     private final List<PolicyRule> additionalRBACRules;
+    private final List<RoleRef> additionalRBACRoleRefs;
     private final String fieldManager;
     private final Optional<ItemStore<R>> itemStore;
     private Class<? extends Annotation> retryConfigurationClass;
@@ -110,7 +112,8 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             Class<? extends Retry> retryClass, Class<? extends Annotation> retryConfigurationClass,
             Class<? extends RateLimiter> rateLimiterClass, Class<? extends Annotation> rateLimiterConfigurationClass,
             Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata, ManagedWorkflow<R> workflow,
-            List<PolicyRule> additionalRBACRules, String fieldManager, ItemStore<R> nullableItemStore) {
+            List<PolicyRule> additionalRBACRules, List<RoleRef> additionalRBACRoleRefs, String fieldManager,
+            ItemStore<R> nullableItemStore) {
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
         this.resourceTypeName = resourceTypeName;
@@ -119,6 +122,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.resourceClass = resourceClass;
         this.informerListLimit = Optional.ofNullable(nullableInformerListLimit);
         this.additionalRBACRules = additionalRBACRules;
+        this.additionalRBACRoleRefs = additionalRBACRoleRefs;
         this.dependentsMetadata = dependentsMetadata;
         this.workflow = workflow;
         this.retryConfiguration = ControllerConfiguration.super.getRetryConfiguration();
@@ -414,6 +418,10 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     public List<PolicyRule> getAdditionalRBACRules() {
         return additionalRBACRules;
+    }
+
+    public List<RoleRef> getAdditionalRBACRoleRefs() {
+        return additionalRBACRoleRefs;
     }
 
     @SuppressWarnings("unused")

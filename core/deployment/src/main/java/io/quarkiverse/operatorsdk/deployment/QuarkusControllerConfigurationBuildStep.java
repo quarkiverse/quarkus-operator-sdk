@@ -15,6 +15,8 @@ import org.jboss.logging.Logger;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
+import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -219,6 +221,9 @@ class QuarkusControllerConfigurationBuildStep {
         // check if we have additional RBAC rules to handle
         final var additionalRBACRules = extractAdditionalRBACRules(info);
 
+        // check if we have additional RBAC role refs to handle
+        final var additionalRBACRoleRefs = extractAdditionalRBACRoleRefs(info);
+
         // extract the namespaces
         // first check if we explicitly set the namespaces via the annotations
         Set<String> namespaces = null;
@@ -273,7 +278,8 @@ class QuarkusControllerConfigurationBuildStep {
                 finalFilter,
                 maxReconciliationInterval,
                 onAddFilter, onUpdateFilter, genericFilter, retryClass, retryConfigurationClass, rateLimiterClass,
-                rateLimiterConfigurationClass, dependentResources, null, additionalRBACRules, fieldManager, itemStore);
+                rateLimiterConfigurationClass, dependentResources, null, additionalRBACRules, additionalRBACRoleRefs,
+                fieldManager, itemStore);
 
         if (hasDependents) {
             dependentResourceInfos.forEach(dependent -> {
@@ -323,6 +329,32 @@ class QuarkusControllerConfigurationBuildStep {
         }
 
         return additionalRBACRules;
+    }
+
+    private static List<RoleRef> extractAdditionalRBACRoleRefs(ClassInfo info) {
+        final List<RoleRef> additionalRBACRRoleRefs = Collections.emptyList();
+        final var rbacRoleRefAnnotation = info.declaredAnnotation(RBAC_ROLE_REF);
+        if (rbacRoleRefAnnotation != null) {
+            final var builder = new RoleRefBuilder();
+
+            builder.withApiGroup(ConfigurationUtils.annotationValueOrDefault(rbacRoleRefAnnotation,
+                    "apiGroup",
+                    AnnotationValue::asString,
+                    () -> null));
+            builder.withKind(ConfigurationUtils.annotationValueOrDefault(rbacRoleRefAnnotation,
+                    "kind",
+                    AnnotationValue::asString,
+                    () -> null));
+
+            builder.withName(ConfigurationUtils.annotationValueOrDefault(rbacRoleRefAnnotation,
+                    "name",
+                    AnnotationValue::asString,
+                    () -> null));
+
+            additionalRBACRRoleRefs.add(builder.build());
+        }
+
+        return additionalRBACRRoleRefs;
     }
 
     private static PolicyRule extractRule(AnnotationInstance ruleAnnotation) {
