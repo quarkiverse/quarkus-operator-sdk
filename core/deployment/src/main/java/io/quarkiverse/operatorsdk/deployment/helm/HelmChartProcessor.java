@@ -19,10 +19,12 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.DeserializedKubernetesResourcesBuildItem;
 import io.quarkiverse.operatorsdk.common.FileUtils;
 import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
+import io.quarkiverse.operatorsdk.deployment.AddRoleBindingsDecorator;
 import io.quarkiverse.operatorsdk.deployment.ControllerConfigurationsBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.deployment.helm.model.Chart;
@@ -58,6 +60,7 @@ public class HelmChartProcessor {
     public static final String VALUES_YAML_FILENAME = "values.yaml";
     public static final String CRD_DIR = "crds";
     public static final String CRD_ROLE_BINDING_TEMPLATE_PATH = "/helm/crd-role-binding-template.yaml";
+    public static final String CRD_SECONDARY_ROLE_BINDING_TEMPLATE_PATH = "/helm/secondary-crd-role-binding-template.yaml";
 
     @BuildStep
     HelmTargetDirectoryBuildItem createRelatedDirectories(OutputTargetBuildItem outputTarget) {
@@ -98,6 +101,47 @@ public class HelmChartProcessor {
                 throw new IllegalStateException(e);
             }
         });
+    }
+
+    @BuildStep
+    @Produce(ArtifactResultBuildItem.class)
+    void addSecondaryClusterRoleBindings(HelmTargetDirectoryBuildItem helmTargetDirectoryBuildItem,
+            ControllerConfigurationsBuildItem controllerConfigurations) {
+        final var controllerConfigs = controllerConfigurations.getControllerConfigs().values();
+
+        if (!controllerConfigs.isEmpty()) {
+            final String template;
+            try (InputStream file = Thread.currentThread().getContextClassLoader()
+                    .getResourceAsStream(CRD_SECONDARY_ROLE_BINDING_TEMPLATE_PATH)) {
+                if (file == null) {
+                    throw new IllegalArgumentException(
+                            "Template file " + CRD_SECONDARY_ROLE_BINDING_TEMPLATE_PATH + " doesn't exist");
+                }
+                template = new String(file.readAllBytes(), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+
+            final var templatesDir = helmTargetDirectoryBuildItem.getPathToTemplatesDir();
+
+            controllerConfigs.forEach(cc -> {
+                final String bindingName = AddRoleBindingsDecorator.getRandomBindingName(cc.getName());
+                final List<RoleRef> roleRefs = cc.getAdditionalRBACRoleRefs();
+                roleRefs
+                        .forEach(roleRef -> {
+                            try {
+                                String res = Qute.fmt(template, Map.of(
+                                        "role-binding-name", bindingName,
+                                        "role-ref-kind", roleRef.getKind(),
+                                        "role-ref-api-group", roleRef.getApiGroup(),
+                                        "role-ref-name", roleRef.getName()));
+                                Files.writeString(templatesDir.resolve(bindingName + "-secondary-crd-role-binding.yaml"), res);
+                            } catch (IOException e) {
+                                throw new IllegalStateException(e);
+                            }
+                        });
+            });
+        }
     }
 
     @BuildStep

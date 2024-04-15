@@ -2,7 +2,9 @@ package io.quarkiverse.operatorsdk.deployment;
 
 import static io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator.getClusterRoleName;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -78,12 +80,18 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
             itemsToAdd.add(createRoleBinding(roleBindingName, controllerName, serviceAccountName, null));
             //add additional Role Bindings
             controllerConfiguration.getAdditionalRBACRoleRefs().forEach(
-                    roleRef -> itemsToAdd.add(createRoleBinding(roleBindingName, controllerName, serviceAccountName,
-                            null, roleRef)));
+                    roleRef -> itemsToAdd
+                            .add(createRoleBinding(getRandomBindingName(roleBindingName), controllerName, serviceAccountName,
+                                    null, roleRef)));
         } else if (controllerConfiguration.watchAllNamespaces()) {
             itemsToAdd.add(createClusterRoleBinding(serviceAccountName, controllerName,
                     controllerName + "-cluster-role-binding", "watch all namespaces",
                     getClusterRoleName(controllerName)));
+            //add additional Role Bindings
+            controllerConfiguration.getAdditionalRBACRoleRefs().forEach(
+                    roleRef -> itemsToAdd.add(createClusterRoleBinding(serviceAccountName, controllerName,
+                            getRandomBindingName(controllerName + "-cluster-role-binding"),
+                            "watch all namespaces", getClusterRoleName(controllerName), roleRef)));
         } else {
             // create a RoleBinding using either the provided deployment namespace or the desired watched namespace name
             desiredWatchedNamespaces
@@ -92,7 +100,8 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
                         //add additional Role Bindings
                         controllerConfiguration.getAdditionalRBACRoleRefs()
                                 .forEach(roleRef -> itemsToAdd
-                                        .add(createRoleBinding(roleBindingName, controllerName, serviceAccountName,
+                                        .add(createRoleBinding(getRandomBindingName(roleBindingName), controllerName,
+                                                serviceAccountName,
                                                 null, roleRef)));
                     });
         }
@@ -102,6 +111,15 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
 
     public static String getRoleBindingName(String controllerName) {
         return controllerName + "-role-binding";
+    }
+
+    public static String getRandomBindingName(String name) {
+        SecureRandom random = new SecureRandom();
+        byte bytes[] = new byte[8];
+        random.nextBytes(bytes);
+        Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+        String token = encoder.encodeToString(bytes);
+        return token + "-" + name;
     }
 
     private static RoleBinding createRoleBinding(String roleBindingName, String controllerName,
@@ -120,7 +138,7 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
                 .withName(roleBindingName)
                 .withNamespace(deployNamespace.orElse(namespace))
                 .endMetadata()
-                .withNewRoleRef(RBAC_AUTHORIZATION_GROUP, CLUSTER_ROLE, getClusterRoleName(controllerName))
+                .withRoleRef(roleRef)
                 .addNewSubject(null, SERVICE_ACCOUNT, serviceAccountName,
                         deployNamespace.orElse(null))
                 .build();
@@ -128,18 +146,27 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
 
     private static ClusterRoleBinding createClusterRoleBinding(String serviceAccountName,
             String controllerName, String bindingName, String controllerConfMessage,
-            String clusterRoleName) {
+            String clusterRoleName, RoleRef roleRef) {
         outputWarningIfNeeded(controllerName, bindingName, controllerConfMessage);
         final var ns = deployNamespace.orElse(null);
         log.infov("Creating ''{0}'' ClusterRoleBinding to be applied to ''{1}'' namespace", bindingName, ns);
         return new ClusterRoleBindingBuilder()
                 .withNewMetadata().withName(bindingName)
                 .endMetadata()
-                .withNewRoleRef(RBAC_AUTHORIZATION_GROUP, CLUSTER_ROLE, clusterRoleName)
+                .withRoleRef(roleRef)
                 .addNewSubject()
                 .withKind(SERVICE_ACCOUNT).withName(serviceAccountName).withNamespace(ns)
                 .endSubject()
                 .build();
+    }
+
+    private static ClusterRoleBinding createClusterRoleBinding(String serviceAccountName,
+            String controllerName, String bindingName, String controllerConfMessage,
+            String clusterRoleName) {
+        return createClusterRoleBinding(serviceAccountName, controllerName, bindingName, controllerConfMessage,
+                clusterRoleName, new RoleRefBuilder()
+                        .withApiGroup(RBAC_AUTHORIZATION_GROUP).withKind(CLUSTER_ROLE).withName(clusterRoleName)
+                        .build());
     }
 
     private static void outputWarningIfNeeded(String controllerName, String crBindingName, String controllerConfMessage) {
