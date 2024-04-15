@@ -78,8 +78,8 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
             itemsToAdd.add(createRoleBinding(roleBindingName, controllerName, serviceAccountName, null));
             //add additional Role Bindings
             controllerConfiguration.getAdditionalRBACRoleRefs().forEach(
-                    roleRef -> createRoleBinding(roleBindingName, controllerName, serviceAccountName,
-                            null, roleRef));
+                    roleRef -> itemsToAdd.add(createRoleBinding(roleBindingName, controllerName, serviceAccountName,
+                            null, roleRef)));
         } else if (controllerConfiguration.watchAllNamespaces()) {
             itemsToAdd.add(createClusterRoleBinding(serviceAccountName, controllerName,
                     controllerName + "-cluster-role-binding", "watch all namespaces",
@@ -91,8 +91,9 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
                         itemsToAdd.add(createRoleBinding(roleBindingName, controllerName, serviceAccountName, ns));
                         //add additional Role Bindings
                         controllerConfiguration.getAdditionalRBACRoleRefs()
-                                .forEach(roleRef -> createRoleBinding(roleBindingName, controllerName, serviceAccountName,
-                                        null, roleRef));
+                                .forEach(roleRef -> itemsToAdd
+                                        .add(createRoleBinding(roleBindingName, controllerName, serviceAccountName,
+                                                null, roleRef)));
                     });
         }
 

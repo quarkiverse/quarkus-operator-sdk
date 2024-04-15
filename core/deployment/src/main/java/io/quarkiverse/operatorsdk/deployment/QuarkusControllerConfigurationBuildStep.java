@@ -332,7 +332,7 @@ class QuarkusControllerConfigurationBuildStep {
     }
 
     private static List<RoleRef> extractAdditionalRBACRoleRefs(ClassInfo info) {
-        final List<RoleRef> additionalRBACRRoleRefs = Collections.emptyList();
+        final List<RoleRef> additionalRBACRRoleRefs = new ArrayList<>();
         final var rbacRoleRefAnnotation = info.declaredAnnotation(RBAC_ROLE_REF);
         if (rbacRoleRefAnnotation != null) {
             final var builder = new RoleRefBuilder();
