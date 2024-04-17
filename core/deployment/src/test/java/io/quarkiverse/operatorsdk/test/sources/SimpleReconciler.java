@@ -11,7 +11,7 @@ import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
 @ControllerConfiguration(name = SimpleReconciler.NAME)
 @RBACRule(verbs = RBACVerbs.UPDATE, apiGroups = SimpleReconciler.CERTIFICATES_K8S_IO_GROUP, resources = SimpleReconciler.ADDITIONAL_UPDATE_RESOURCE)
 @RBACRule(verbs = SimpleReconciler.SIGNERS_VERB, apiGroups = SimpleReconciler.CERTIFICATES_K8S_IO_GROUP, resources = SimpleReconciler.SIGNERS_RESOURCE, resourceNames = SimpleReconciler.SIGNERS_RESOURCE_NAMES)
-@RBACCRoleRef(name = SimpleReconciler.ROLE_REF_NAME, apiGroup = SimpleReconciler.RBAC_AUTHORIZATION_GROUP, kind = SimpleReconciler.ROLE_REF_KIND)
+@RBACCRoleRef(name = SimpleReconciler.ROLE_REF_NAME, kind = RBACCRoleRef.RoleKind.ClusterRole)
 public class SimpleReconciler implements Reconciler<SimpleCR> {
 
     public static final String NAME = "simple";
@@ -20,9 +20,7 @@ public class SimpleReconciler implements Reconciler<SimpleCR> {
     public static final String SIGNERS_VERB = "approve";
     public static final String SIGNERS_RESOURCE = "signers";
     public static final String SIGNERS_RESOURCE_NAMES = "kubernetes.io/kubelet-serving";
-    public static final String RBAC_AUTHORIZATION_GROUP = "rbac.authorization.k8s.io";
     public static final String ROLE_REF_NAME = "system:auth-delegator";
-    public static final String ROLE_REF_KIND = "ClusterRole";
 
     @Override
     public UpdateControl<SimpleCR> reconcile(SimpleCR simpleCR, Context<SimpleCR> context) {

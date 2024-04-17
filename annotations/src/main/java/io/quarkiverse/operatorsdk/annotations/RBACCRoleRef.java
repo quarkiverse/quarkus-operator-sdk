@@ -8,9 +8,16 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE })
 public @interface RBACCRoleRef {
-    String apiGroup() default "";
+    String RBAC_API_GROUP = "rbac.authorization.k8s.io";
 
-    String kind() default "";
+    RoleKind kind() default RoleKind.Role;
 
     String name() default "";
+
+    enum RoleKind {
+
+        ClusterRole,
+        Role;
+
+    }
 }

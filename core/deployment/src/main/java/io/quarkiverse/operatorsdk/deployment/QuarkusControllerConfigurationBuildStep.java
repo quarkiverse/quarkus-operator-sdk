@@ -37,6 +37,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
+import io.quarkiverse.operatorsdk.annotations.RBACCRoleRef;
 import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ClassLoadingUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
@@ -337,13 +338,10 @@ class QuarkusControllerConfigurationBuildStep {
         if (rbacRoleRefAnnotation != null) {
             final var builder = new RoleRefBuilder();
 
-            builder.withApiGroup(ConfigurationUtils.annotationValueOrDefault(rbacRoleRefAnnotation,
-                    "apiGroup",
-                    AnnotationValue::asString,
-                    () -> null));
+            builder.withApiGroup(RBACCRoleRef.RBAC_API_GROUP);
             builder.withKind(ConfigurationUtils.annotationValueOrDefault(rbacRoleRefAnnotation,
                     "kind",
-                    AnnotationValue::asString,
+                    AnnotationValue::asEnum,
                     () -> null));
 
             builder.withName(ConfigurationUtils.annotationValueOrDefault(rbacRoleRefAnnotation,
