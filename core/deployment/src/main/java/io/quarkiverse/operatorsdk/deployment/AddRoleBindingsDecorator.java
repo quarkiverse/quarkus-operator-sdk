@@ -146,7 +146,7 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
 
     private static ClusterRoleBinding createClusterRoleBinding(String serviceAccountName,
             String controllerName, String bindingName, String controllerConfMessage,
-            String clusterRoleName, RoleRef roleRef) {
+            RoleRef roleRef) {
         outputWarningIfNeeded(controllerName, bindingName, controllerConfMessage);
         final var ns = deployNamespace.orElse(null);
         log.infov("Creating ''{0}'' ClusterRoleBinding to be applied to ''{1}'' namespace", bindingName, ns);
