@@ -4,9 +4,68 @@
 [![All Contributors](https://img.shields.io/badge/all_contributors-3-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-See [samples](samples) to get quickly started using an example
+This extension integrates the [Java Operator SDK](https://javaoperatorsdk.io) project (JOSDK) with Quarkus, making it
+even
+easier to use both. We often refer to this extension as `QOSDK` for Quarkus extension for the java Operator SDK.
 
-## [Documentation](https://quarkiverse.github.io/quarkiverse-docs/quarkus-operator-sdk/dev/index.html)
+## Getting started with QOSDK
+
+### Bootstrapping a project
+
+The easiest way to get started with QOSDK is to use the [`quarkus` CLI](https://quarkus.io/guides/cli-tooling):
+
+```shell
+quarkus create app org.acme:qosdk-test -x='qosdk'
+cd qosdk-test
+```
+
+Alternatively, you can use the Quarkus Maven plugin to bootstrap a project using the extension.
+
+```shell
+mvn io.quarkus.platform:quarkus-maven-plugin:3.9.4:create \
+    -DprojectGroupId=org.acme \
+    -DprojectArtifactId=qosdk-test \
+    -Dextensions='qosdk'
+cd qoskd-test
+```
+
+If you also want to use the OLM bundle generation extension, you can add the `olm` extension to the extension list as
+in:
+
+```shell
+quarkus create app org.acme:qosdk-test -x='qosdk,olm'
+```
+
+For reference, please refer to the [Quarkus getting started](https://quarkus.io/guides/getting-started) guide.
+
+### Interactive operator development
+
+The easiest way to iterate faster on developing your operator is to use the Quarkus Dev Mode to write your operator as
+it's running.
+
+Start the dev mode (`quarkus dev` or `mvn quarkus:dev`). Once the QOSDK extension is installed for a project, you get
+access to dev mode commands provided by QOSDK to help you in moving faster. In the dev mode console, press `:` (column),
+you'll get a terminal prompt. If you then press tab, you'll see a list of available commands, among which should be one
+named `qosdk`, which, in turn, provides several sub-commands (`versions` and `api` at this time).
+
+You can type `qosdk api --help` or `qosdk versions --help` to get more information about these commands.
+
+The `qosdk api` command helps you quickly add a custom resource (an API in Kubernetes parlance) along with associated
+spec, status and reconciler classes while your operator is running.
+
+## Documentation
+
+To go deeper on what you can accomplish with QOSDK and JOSDK, please read
+the [blog series](https://developers.redhat.com/articles/2022/02/15/write-kubernetes-java-java-operator-sdk) that we
+wrote
+on how to write operators in Java with Quarkus. Note, however, that some information might be outdated since this series
+was written a while ago. It should still provide a good idea of what can be achieved.
+
+Please also refer to the [JOSDK documentation](https://javaoperatorsdk.io/docs/getting-started) for more details.
+
+You can also take a look at the [samples](samples) to get quickly started using examples.
+
+[QOSDK Documentation](https://quarkiverse.github.io/quarkiverse-docs/quarkus-operator-sdk/dev/index.html)
 
 ### Maintaining the documentation
 
@@ -32,16 +91,17 @@ snapshots, please add the following repository definition to your POM file (in t
 section) or, preferably, to your `settings.xml` file:
 
 ```xml
-    <repositories>
-        ...
-        <repository>
-            <id>s01.oss.sonatype</id>
-            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
+
+<repositories>
+    ...
+    <repository>
+        <id>s01.oss.sonatype</id>
+        <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
+    </repository>
+</repositories>
 ```
 
 ## Contributors ✨
