@@ -8,5 +8,9 @@ metadata:
   categories:
   - "cloud"
   short-name: "qosdk"
+  status: "stable"
+  guide: "https://docs.quarkiverse.io/quarkus-operator-sdk/dev/index.html"
+  config:
+    - "quarkus.operator-sdk."
   cli-plugins:
   - "${project.groupId}:quarkus-operator-sdk-cli:${project.version}"

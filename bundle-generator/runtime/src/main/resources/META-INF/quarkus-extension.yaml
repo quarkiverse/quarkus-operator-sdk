@@ -11,3 +11,6 @@ metadata:
   categories:
     - cloud
   short-name: "olm"
+  status: "stable"
+  config:
+    - "quarkus.operator-sdk.bundle."

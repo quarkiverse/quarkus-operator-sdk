@@ -1,11 +1,8 @@
-= Quarkiverse Java Operator SDK
+= Quarkus extension for the Java Operator SDK (QOSDK)
 
 include::./includes/attributes.adoc[]
 
-This extension integrates the https://javaoperatorsdk.io[Java Operator SDK] project (JOSDK) with Quarkus, making it even easier to use both.
-
-For an introduction to this project, please read the https://developers.redhat.com/articles/2022/02/15/write-kubernetes-java-java-operator-sdk[blog series] that we wrote on how to write operators in Java with Quarkus.
-Please also refer to the https://javaoperatorsdk.io/docs/getting-started[JOSDK documentation] for more details.
+Please refer to the https://github.com/quarkiverse/quarkus-operator-sdk/blob/main/README.md[QOSDK Readme] for information on how getting started with QOSDK.
 
 == Features
 
