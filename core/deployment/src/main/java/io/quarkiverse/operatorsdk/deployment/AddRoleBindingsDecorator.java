@@ -129,7 +129,7 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
                 .build());
     }
 
-    private static RoleBinding createRoleBinding(String roleBindingName, String controllerName,
+    private static RoleBinding createRoleBinding(String roleBindingName,
             String serviceAccountName, String namespace, RoleRef roleRef) {
         final var nsMsg = (namespace == null ? "current" : "'" + namespace + "'") + " namespace";
         log.infov("Creating ''{0}'' RoleBinding to be applied to {1}", roleBindingName, nsMsg);
