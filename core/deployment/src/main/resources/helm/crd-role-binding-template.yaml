@@ -3,6 +3,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: {reconciler-name}-role-binding
+  namespace: {{ $.Release.Namespace }}
   labels:
     app.kubernetes.io/name: {{ .Chart.Name }}
     app.kubernetes.io/version: {{ .Chart.AppVersion }}
@@ -14,6 +15,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ $.Chart.Name }}
+    namespace: {{ $.Release.Namespace }}
 {{ else if eq $.Values.watchNamespaces "JOSDK_ALL_NAMESPACES" }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

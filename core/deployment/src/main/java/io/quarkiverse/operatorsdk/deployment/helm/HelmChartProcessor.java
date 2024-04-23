@@ -60,7 +60,8 @@ public class HelmChartProcessor {
     public static final String VALUES_YAML_FILENAME = "values.yaml";
     public static final String CRD_DIR = "crds";
     public static final String CRD_ROLE_BINDING_TEMPLATE_PATH = "/helm/crd-role-binding-template.yaml";
-    public static final String CRD_SECONDARY_ROLE_BINDING_TEMPLATE_PATH = "/helm/secondary-crd-role-binding-template.yaml";
+    public static final String CRD_ADDITIONAL_ROLE_BINDING_TEMPLATE_PATH = "/helm/additional-crd-role-binding-template.yaml";
+    public static final String ADDITIONAL_CRD_ROLE_BINDING_YAML = "additional-crd-role-binding.yaml";
 
     @BuildStep
     HelmTargetDirectoryBuildItem createRelatedDirectories(OutputTargetBuildItem outputTarget) {
@@ -110,37 +111,34 @@ public class HelmChartProcessor {
         final var controllerConfigs = controllerConfigurations.getControllerConfigs().values();
 
         if (!controllerConfigs.isEmpty()) {
-            final String template;
             try (InputStream file = Thread.currentThread().getContextClassLoader()
-                    .getResourceAsStream(CRD_SECONDARY_ROLE_BINDING_TEMPLATE_PATH)) {
+                    .getResourceAsStream(CRD_ADDITIONAL_ROLE_BINDING_TEMPLATE_PATH)) {
                 if (file == null) {
                     throw new IllegalArgumentException(
-                            "Template file " + CRD_SECONDARY_ROLE_BINDING_TEMPLATE_PATH + " doesn't exist");
+                            "Template file " + CRD_ADDITIONAL_ROLE_BINDING_TEMPLATE_PATH + " doesn't exist");
                 }
-                template = new String(file.readAllBytes(), StandardCharsets.UTF_8);
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
-            }
+                final String template = new String(file.readAllBytes(), StandardCharsets.UTF_8);
 
-            final var templatesDir = helmTargetDirectoryBuildItem.getPathToTemplatesDir();
+                final var templatesDir = helmTargetDirectoryBuildItem.getPathToTemplatesDir();
 
-            controllerConfigs.forEach(cc -> {
-                final String bindingName = AddRoleBindingsDecorator.getRandomBindingName(cc.getName());
-                final List<RoleRef> roleRefs = cc.getAdditionalRBACRoleRefs();
-                roleRefs
-                        .forEach(roleRef -> {
-                            try {
-                                String res = Qute.fmt(template, Map.of(
+                StringBuilder stringBuilder = new StringBuilder();
+                controllerConfigs.forEach(cc -> {
+                    final List<RoleRef> roleRefs = cc.getAdditionalRBACRoleRefs();
+                    roleRefs
+                            .forEach(roleRef -> {
+                                final String bindingName = AddRoleBindingsDecorator.getSpecificRoleBindingName(cc.getName(),
+                                        roleRef);
+                                stringBuilder.append(Qute.fmt(template, Map.of(
                                         "role-binding-name", bindingName,
                                         "role-ref-kind", roleRef.getKind(),
                                         "role-ref-api-group", roleRef.getApiGroup(),
-                                        "role-ref-name", roleRef.getName()));
-                                Files.writeString(templatesDir.resolve(bindingName + "-secondary-crd-role-binding.yaml"), res);
-                            } catch (IOException e) {
-                                throw new IllegalStateException(e);
-                            }
-                        });
-            });
+                                        "role-ref-name", roleRef.getName())));
+                            });
+                });
+                Files.writeString(templatesDir.resolve(ADDITIONAL_CRD_ROLE_BINDING_YAML), stringBuilder.toString());
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
         }
     }
 

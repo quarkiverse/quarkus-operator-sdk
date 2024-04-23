@@ -162,15 +162,18 @@ public class OperatorSDKTest {
         assertTrue(kubeResources.stream().anyMatch(i -> simpleReconcilerBindingName.equals(i.getMetadata().getName())));
 
         kubeResources.stream()
-                .filter(i -> simpleReconcilerBindingName.equals(i.getMetadata().getName()))
+                .filter(i -> simpleReconcilerBindingName.startsWith(i.getMetadata().getName()))
                 .map(RoleBinding.class::cast)
                 .forEach(rb -> {
                     assertEquals("simple-ns", rb.getMetadata().getNamespace());
                     assertEquals(simpleReconcilerRoleName, rb.getRoleRef().getName());
                 });
 
+        assertTrue(kubeResources.stream().anyMatch(i -> i.getMetadata().getName().contains(SimpleReconciler.ROLE_REF_NAME)));
+
         // checks that CRDs are generated
         Assertions.assertTrue(Files.exists(kubernetesDir.resolve(CustomResource.getCRDName(TestCR.class) + "-v1.yml")));
+        Assertions.assertTrue(Files.exists(kubernetesDir.resolve(CustomResource.getCRDName(SimpleCR.class) + "-v1.yml")));
         Assertions.assertTrue(Files.exists(kubernetesDir.resolve(CustomResource.getCRDName(SimpleCR.class) + "-v1.yml")));
     }
 }

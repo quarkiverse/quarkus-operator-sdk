@@ -333,26 +333,26 @@ class QuarkusControllerConfigurationBuildStep {
     }
 
     private static List<RoleRef> extractAdditionalRBACRoleRefs(ClassInfo info) {
-        final List<RoleRef> additionalRBACRRoleRefs = new ArrayList<>();
-        final var rbacRoleRefAnnotation = info.declaredAnnotation(RBAC_ROLE_REF);
-        if (rbacRoleRefAnnotation != null) {
-            final var builder = new RoleRefBuilder();
-
-            builder.withApiGroup(RBACCRoleRef.RBAC_API_GROUP);
-            builder.withKind(ConfigurationUtils.annotationValueOrDefault(rbacRoleRefAnnotation,
-                    "kind",
-                    AnnotationValue::asEnum,
-                    () -> null));
-
-            builder.withName(ConfigurationUtils.annotationValueOrDefault(rbacRoleRefAnnotation,
-                    "name",
-                    AnnotationValue::asString,
-                    () -> null));
-
-            additionalRBACRRoleRefs.add(builder.build());
+        // if there are multiple annotations they should be found under an automatically generated AdditionalRBACRules
+        final var additionalRoleRefAnnotations = ConfigurationUtils.annotationValueOrDefault(
+                info.declaredAnnotation(ADDITIONAL_RBAC_ROLE_REFS),
+                "value",
+                AnnotationValue::asNestedArray,
+                () -> null);
+        List<RoleRef> additionalRBACRoleRefs = Collections.emptyList();
+        if (additionalRoleRefAnnotations != null && additionalRoleRefAnnotations.length > 0) {
+            additionalRBACRoleRefs = new ArrayList<>(additionalRoleRefAnnotations.length);
+            for (AnnotationInstance roleRefAnnotation : additionalRoleRefAnnotations) {
+                additionalRBACRoleRefs.add(extractRoleRef(roleRefAnnotation));
+            }
         }
 
-        return additionalRBACRRoleRefs;
+        // if there's only one, it will be found under RBACRoleRef annotation
+        final var rbacRoleRefAnnotation = info.declaredAnnotation(RBAC_ROLE_REF);
+        if (rbacRoleRefAnnotation != null) {
+            additionalRBACRoleRefs = List.of(extractRoleRef(rbacRoleRefAnnotation));
+        }
+        return additionalRBACRoleRefs;
     }
 
     private static PolicyRule extractRule(AnnotationInstance ruleAnnotation) {
@@ -381,6 +381,23 @@ class QuarkusControllerConfigurationBuildStep {
         builder.withNonResourceURLs(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
                 "nonResourceURLs",
                 AnnotationValue::asStringArray,
+                () -> null));
+
+        return builder.build();
+    }
+
+    private static RoleRef extractRoleRef(AnnotationInstance roleRefAnnotation) {
+        final var builder = new RoleRefBuilder();
+
+        builder.withApiGroup(RBACCRoleRef.RBAC_API_GROUP);
+        builder.withKind(ConfigurationUtils.annotationValueOrDefault(roleRefAnnotation,
+                "kind",
+                AnnotationValue::asEnum,
+                () -> null));
+
+        builder.withName(ConfigurationUtils.annotationValueOrDefault(roleRefAnnotation,
+                "name",
+                AnnotationValue::asString,
                 () -> null));
 
         return builder.build();
