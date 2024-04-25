@@ -49,7 +49,7 @@ public class ExposedAppReconciler implements Reconciler<ExposedApp>,
                     context.getSecondaryResource(Ingress.class).orElseThrow());
             exposedApp.setStatus(new ExposedAppStatus(url, exposedApp.getSpec().getEndpoint()));
             log.info("App {} is exposed and ready to be used at {}", name, exposedApp.getStatus().getHost());
-            return UpdateControl.updateStatus(exposedApp);
+            return UpdateControl.patchStatus(exposedApp);
         } else {
             final var duration = Duration.ofSeconds(1);
             log.info("App {} is not ready yet, rescheduling reconciliation after {}s", name, duration.toSeconds());

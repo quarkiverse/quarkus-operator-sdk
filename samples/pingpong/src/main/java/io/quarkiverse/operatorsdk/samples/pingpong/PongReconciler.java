@@ -36,6 +36,6 @@ public class PongReconciler implements Reconciler<Pong> {
         }
 
         pong.setStatus(new Status(Status.State.PROCESSED));
-        return UpdateControl.updateStatus(pong);
+        return UpdateControl.patchStatus(pong);
     }
 }
