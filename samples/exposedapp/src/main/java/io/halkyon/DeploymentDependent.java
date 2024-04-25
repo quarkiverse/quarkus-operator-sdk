@@ -17,8 +17,15 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 public class DeploymentDependent extends CRUDKubernetesDependentResource<Deployment, ExposedApp>
         implements Matcher<Deployment, ExposedApp> {
 
+    // todo: automatically generate
     public DeploymentDependent() {
         super(Deployment.class);
+    }
+
+    // todo: automatically generate
+    @Override
+    protected Class<ExposedApp> getPrimaryResourceType() {
+        return ExposedApp.class;
     }
 
     @SuppressWarnings("unchecked")
