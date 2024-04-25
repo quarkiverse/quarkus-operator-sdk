@@ -21,6 +21,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
+@SuppressWarnings("unused")
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
 public class PongReconciler implements Reconciler<Pong> {
 
@@ -32,6 +33,6 @@ public class PongReconciler implements Reconciler<Pong> {
         }
 
         pong.setStatus(new Status(Status.State.PROCESSED));
-        return UpdateControl.updateStatus(pong);
+        return UpdateControl.patchStatus(pong);
     }
 }
