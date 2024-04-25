@@ -18,14 +18,21 @@ import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 
 public class AddClusterRolesDecorator extends ResourceProvidingDecorator<KubernetesListBuilder> {
 
-    static final String JOSDK_CRD_VALIDATING_CLUSTER_ROLE = "josdk-crd-validating-cluster-role";
-    @SuppressWarnings("rawtypes")
-    private final Collection<QuarkusControllerConfiguration> configs;
+    public static final String JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME = "josdk-crd-validating-cluster-role";
+    private static final ClusterRoleBuilder CRD_VALIDATING_CLUSTER_ROLE_BUILDER = new ClusterRoleBuilder().withNewMetadata()
+            .withName(JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME).endMetadata()
+            .addToRules(new PolicyRuleBuilder()
+                    .addToApiGroups("apiextensions.k8s.io")
+                    .addToResources("customresourcedefinitions")
+                    .addToVerbs("get", "list")
+                    .build());
+    private static final String CR_API_VERSION = HasMetadata.getApiVersion(ClusterRole.class);
+    private static final String CR_KIND = HasMetadata.getKind(ClusterRole.class);
+    private final Collection<QuarkusControllerConfiguration<?>> configs;
 
     private final boolean validateCRDs;
 
-    @SuppressWarnings("rawtypes")
-    public AddClusterRolesDecorator(Collection<QuarkusControllerConfiguration> configs, boolean validateCRDs) {
+    public AddClusterRolesDecorator(Collection<QuarkusControllerConfiguration<?>> configs, boolean validateCRDs) {
         this.configs = configs;
         this.validateCRDs = validateCRDs;
     }
@@ -39,15 +46,8 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
 
         // if we're asking to validate the CRDs, also add CRDs permissions, once
         if (validateCRDs) {
-            final var crName = JOSDK_CRD_VALIDATING_CLUSTER_ROLE;
-
-            if (!contains(list, HasMetadata.getApiVersion(ClusterRole.class), HasMetadata.getKind(ClusterRole.class), crName)) {
-                list.addToItems(new ClusterRoleBuilder().withNewMetadata().withName(crName).endMetadata()
-                        .addToRules(new PolicyRuleBuilder()
-                                .addToApiGroups("apiextensions.k8s.io")
-                                .addToResources("customresourcedefinitions")
-                                .addToVerbs("get", "list")
-                                .build()));
+            if (!contains(list, CR_API_VERSION, CR_KIND, JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME)) {
+                list.addToItems(CRD_VALIDATING_CLUSTER_ROLE_BUILDER);
             }
         }
     }

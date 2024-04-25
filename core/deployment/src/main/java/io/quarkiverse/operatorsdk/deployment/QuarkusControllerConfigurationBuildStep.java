@@ -7,6 +7,7 @@ import static io.quarkiverse.operatorsdk.common.Constants.*;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.jboss.jandex.*;
@@ -309,50 +310,38 @@ class QuarkusControllerConfigurationBuildStep {
     }
 
     private static List<PolicyRule> extractAdditionalRBACRules(ClassInfo info) {
-        // if there are multiple annotations they should be found under an automatically generated AdditionalRBACRules
-        final var additionalRuleAnnotations = ConfigurationUtils.annotationValueOrDefault(
-                info.declaredAnnotation(ADDITIONAL_RBAC_RULES),
+        return extractRepeatableAnnotations(info, RBAC_RULE, ADDITIONAL_RBAC_RULES,
+                QuarkusControllerConfigurationBuildStep::extractRule);
+    }
+
+    private static <T> List<T> extractRepeatableAnnotations(ClassInfo info, DotName singleAnnotationName,
+            DotName repeatableHolderName, Function<AnnotationInstance, T> extractor) {
+        // if there are multiple annotations they should be found under an automatically generated repeatable holder annotation
+        final var additionalAnnotations = ConfigurationUtils.annotationValueOrDefault(
+                info.declaredAnnotation(repeatableHolderName),
                 "value",
                 AnnotationValue::asNestedArray,
                 () -> null);
-        List<PolicyRule> additionalRBACRules = Collections.emptyList();
-        if (additionalRuleAnnotations != null && additionalRuleAnnotations.length > 0) {
-            additionalRBACRules = new ArrayList<>(additionalRuleAnnotations.length);
-            for (AnnotationInstance ruleAnnotation : additionalRuleAnnotations) {
-                additionalRBACRules.add(extractRule(ruleAnnotation));
+        List<T> repeatables = Collections.emptyList();
+        if (additionalAnnotations != null && additionalAnnotations.length > 0) {
+            repeatables = new ArrayList<>(additionalAnnotations.length);
+            for (AnnotationInstance annotation : additionalAnnotations) {
+                repeatables.add(extractor.apply(annotation));
             }
         }
 
         // if there's only one, it will be found under RBACRule annotation
-        final var rbacRuleAnnotation = info.declaredAnnotation(RBAC_RULE);
-        if (rbacRuleAnnotation != null) {
-            additionalRBACRules = List.of(extractRule(rbacRuleAnnotation));
+        final var singleAnnotation = info.declaredAnnotation(singleAnnotationName);
+        if (singleAnnotation != null) {
+            repeatables = List.of(extractor.apply(singleAnnotation));
         }
 
-        return additionalRBACRules;
+        return repeatables;
     }
 
     private static List<RoleRef> extractAdditionalRBACRoleRefs(ClassInfo info) {
-        // if there are multiple annotations they should be found under an automatically generated AdditionalRBACRules
-        final var additionalRoleRefAnnotations = ConfigurationUtils.annotationValueOrDefault(
-                info.declaredAnnotation(ADDITIONAL_RBAC_ROLE_REFS),
-                "value",
-                AnnotationValue::asNestedArray,
-                () -> null);
-        List<RoleRef> additionalRBACRoleRefs = Collections.emptyList();
-        if (additionalRoleRefAnnotations != null && additionalRoleRefAnnotations.length > 0) {
-            additionalRBACRoleRefs = new ArrayList<>(additionalRoleRefAnnotations.length);
-            for (AnnotationInstance roleRefAnnotation : additionalRoleRefAnnotations) {
-                additionalRBACRoleRefs.add(extractRoleRef(roleRefAnnotation));
-            }
-        }
-
-        // if there's only one, it will be found under RBACRoleRef annotation
-        final var rbacRoleRefAnnotation = info.declaredAnnotation(RBAC_ROLE_REF);
-        if (rbacRoleRefAnnotation != null) {
-            additionalRBACRoleRefs = List.of(extractRoleRef(rbacRoleRefAnnotation));
-        }
-        return additionalRBACRoleRefs;
+        return extractRepeatableAnnotations(info, RBAC_ROLE_REF, ADDITIONAL_RBAC_ROLE_REFS,
+                QuarkusControllerConfigurationBuildStep::extractRoleRef);
     }
 
     private static PolicyRule extractRule(AnnotationInstance ruleAnnotation) {

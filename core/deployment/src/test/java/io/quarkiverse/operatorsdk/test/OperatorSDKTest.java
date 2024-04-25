@@ -18,7 +18,9 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.utils.Serialization;
@@ -43,10 +45,11 @@ import io.quarkus.test.QuarkusProdModeTest;
 
 public class OperatorSDKTest {
 
+    private static final String APPLICATION_NAME = "test";
     // Start unit test with your extension loaded
     @RegisterExtension
     static final QuarkusProdModeTest config = new QuarkusProdModeTest()
-            .setApplicationName("test")
+            .setApplicationName(APPLICATION_NAME)
             .withApplicationRoot((jar) -> jar
                     .addClasses(TestReconciler.class, TestCR.class, CRUDConfigMap.class, ReadOnlySecret.class,
                             CreateOnlyService.class, NonKubeResource.class, Foo.class,
@@ -107,10 +110,9 @@ public class OperatorSDKTest {
                                     && rule.getApiGroups().equals(List.of(RBACRule.ALL))));
                 });
 
-        // check that we have a role binding for TestReconciler using the operator-level specified namespace
+        // check that we have a role binding for TestReconciler and that it uses the operator-level specified namespace
         final var testReconcilerBindingName = AddRoleBindingsDecorator.getRoleBindingName(TestReconciler.NAME);
         assertTrue(kubeResources.stream().anyMatch(i -> testReconcilerBindingName.equals(i.getMetadata().getName())));
-
         kubeResources.stream()
                 .filter(i -> testReconcilerBindingName.equals(i.getMetadata().getName()))
                 .map(RoleBinding.class::cast)
@@ -157,23 +159,52 @@ public class OperatorSDKTest {
                     assertTrue(rule.getNonResourceURLs().isEmpty());
                 });
 
-        // check that we have a role binding for TestReconciler using the operator-level specified namespace
+        // check that we have a role binding for SimpleReconciler and that it uses the watched namespace defined in application.properties
+        // since generate-with-watched-namespaces only specifies one namespace, this should be a role binding, not a cluster role binding
         final var simpleReconcilerBindingName = AddRoleBindingsDecorator.getRoleBindingName(SimpleReconciler.NAME);
         assertTrue(kubeResources.stream().anyMatch(i -> simpleReconcilerBindingName.equals(i.getMetadata().getName())));
-
         kubeResources.stream()
-                .filter(i -> simpleReconcilerBindingName.startsWith(i.getMetadata().getName()))
+                .filter(i -> simpleReconcilerBindingName.equals(i.getMetadata().getName()))
                 .map(RoleBinding.class::cast)
                 .forEach(rb -> {
                     assertEquals("simple-ns", rb.getMetadata().getNamespace());
                     assertEquals(simpleReconcilerRoleName, rb.getRoleRef().getName());
                 });
 
-        assertTrue(kubeResources.stream().anyMatch(i -> i.getMetadata().getName().contains(SimpleReconciler.ROLE_REF_NAME)));
+        // check that we have an additional role binding (again, single watched namespace) as specified by annotation on SimpleReconciler
+        final var additionalRBName = AddRoleBindingsDecorator.getSpecificRoleBindingName(SimpleReconciler.NAME,
+                SimpleReconciler.ROLE_REF_NAME);
+        assertTrue(kubeResources.stream().anyMatch(i -> additionalRBName.equals(i.getMetadata().getName())));
+        kubeResources.stream()
+                .filter(i -> additionalRBName.equals(i.getMetadata().getName()))
+                .map(RoleBinding.class::cast)
+                .forEach(rb -> {
+                    assertEquals("simple-ns", rb.getMetadata().getNamespace());
+                    assertEquals(SimpleReconciler.ROLE_REF_NAME, rb.getRoleRef().getName());
+                });
+
+        // CRD validation is activated by default and there should therefore be a cluster role and 2 associated bindings to access CRDs (one per reconciler)
+        assertTrue(kubeResources.stream()
+                .anyMatch(i -> AddClusterRolesDecorator.JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME.equals(i.getMetadata().getName())
+                        && i instanceof ClusterRole));
+        final var simpleCRDValidatingCRBName = AddRoleBindingsDecorator.getCRDValidatingBindingName(SimpleReconciler.NAME);
+        final var testCRDValidatingCRBName = AddRoleBindingsDecorator.getCRDValidatingBindingName(TestReconciler.NAME);
+        kubeResources.stream()
+                .filter(ClusterRoleBinding.class::isInstance)
+                .map(ClusterRoleBinding.class::cast)
+                .forEach(crb -> {
+                    final var name = crb.getMetadata().getName();
+                    assertTrue(simpleCRDValidatingCRBName.equals(name) || testCRDValidatingCRBName.equals(name));
+                    // the bindings should bind the CRD validating CR to the operator's service account
+                    final var roleRef = crb.getRoleRef();
+                    assertEquals(AddRoleBindingsDecorator.CRD_VALIDATING_ROLE_REF, roleRef);
+                    assertEquals(1, crb.getSubjects().size());
+                    assertEquals(APPLICATION_NAME, crb.getSubjects().get(0).getName());
+                    assertEquals(HasMetadata.getKind(ServiceAccount.class), crb.getSubjects().get(0).getKind());
+                });
 
         // checks that CRDs are generated
         Assertions.assertTrue(Files.exists(kubernetesDir.resolve(CustomResource.getCRDName(TestCR.class) + "-v1.yml")));
-        Assertions.assertTrue(Files.exists(kubernetesDir.resolve(CustomResource.getCRDName(SimpleCR.class) + "-v1.yml")));
         Assertions.assertTrue(Files.exists(kubernetesDir.resolve(CustomResource.getCRDName(SimpleCR.class) + "-v1.yml")));
     }
 }

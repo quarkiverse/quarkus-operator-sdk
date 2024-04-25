@@ -10,7 +10,7 @@ import io.quarkus.builder.item.SimpleBuildItem;
 @SuppressWarnings("rawtypes")
 public final class ControllerConfigurationsBuildItem extends SimpleBuildItem {
 
-    private final Map<String, QuarkusControllerConfiguration> controllerConfigs;
+    private final Map<String, QuarkusControllerConfiguration<?>> controllerConfigs;
 
     public ControllerConfigurationsBuildItem(List<QuarkusControllerConfiguration> controllerConfigs) {
         this.controllerConfigs = new HashMap<>(controllerConfigs.size());
@@ -18,7 +18,7 @@ public final class ControllerConfigurationsBuildItem extends SimpleBuildItem {
         controllerConfigs.forEach(c -> this.controllerConfigs.put(c.getName(), c));
     }
 
-    public Map<String, QuarkusControllerConfiguration> getControllerConfigs() {
+    public Map<String, QuarkusControllerConfiguration<?>> getControllerConfigs() {
         return controllerConfigs;
     }
 }

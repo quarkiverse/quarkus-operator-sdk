@@ -25,9 +25,8 @@ public class ConfigurationServiceRecorder {
 
     static final Logger log = Logger.getLogger(ConfigurationServiceRecorder.class.getName());
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     public Supplier<QuarkusConfigurationService> configurationServiceSupplier(Version version,
-            Map<String, QuarkusControllerConfiguration> configurations,
+            Map<String, QuarkusControllerConfiguration<?>> configurations,
             CRDGenerationInfo crdInfo, RunTimeOperatorConfiguration runTimeConfiguration,
             BuildTimeOperatorConfiguration buildTimeConfiguration) {
         final var maxThreads = runTimeConfiguration.concurrentReconciliationThreads

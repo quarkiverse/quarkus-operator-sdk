@@ -19,7 +19,6 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.DeserializedKubernetesResourcesBuildItem;
 import io.quarkiverse.operatorsdk.common.FileUtils;
@@ -78,30 +77,31 @@ public class HelmChartProcessor {
     void addPrimaryClusterRoleBindings(HelmTargetDirectoryBuildItem helmTargetDirectoryBuildItem,
             ControllerConfigurationsBuildItem controllerConfigurations) {
         final var controllerConfigs = controllerConfigurations.getControllerConfigs().values();
-
-        final String template;
-        try (InputStream file = Thread.currentThread().getContextClassLoader()
-                .getResourceAsStream(CRD_ROLE_BINDING_TEMPLATE_PATH)) {
-            if (file == null) {
-                throw new IllegalArgumentException("Template file " + CRD_ROLE_BINDING_TEMPLATE_PATH + " doesn't exist");
-            }
-            template = new String(file.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-
-        final var templatesDir = helmTargetDirectoryBuildItem.getPathToTemplatesDir();
-
-        controllerConfigs.forEach(cc -> {
-            try {
-                final var name = cc.getName();
-                String res = Qute.fmt(template, Map.of("reconciler-name", name));
-                Files.writeString(templatesDir.resolve(name + "-crd-role-binding.yaml"), res);
-
+        if (!controllerConfigs.isEmpty()) {
+            final String template;
+            try (InputStream file = Thread.currentThread().getContextClassLoader()
+                    .getResourceAsStream(CRD_ROLE_BINDING_TEMPLATE_PATH)) {
+                if (file == null) {
+                    throw new IllegalArgumentException("Template file " + CRD_ROLE_BINDING_TEMPLATE_PATH + " doesn't exist");
+                }
+                template = new String(file.readAllBytes(), StandardCharsets.UTF_8);
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
-        });
+
+            final var templatesDir = helmTargetDirectoryBuildItem.getPathToTemplatesDir();
+
+            controllerConfigs.forEach(cc -> {
+                try {
+                    final var name = cc.getName();
+                    String res = Qute.fmt(template, Map.of("reconciler-name", name));
+                    Files.writeString(templatesDir.resolve(name + "-crd-role-binding.yaml"), res);
+
+                } catch (IOException e) {
+                    throw new IllegalStateException(e);
+                }
+            });
+        }
     }
 
     @BuildStep
@@ -109,7 +109,6 @@ public class HelmChartProcessor {
     void addSecondaryClusterRoleBindings(HelmTargetDirectoryBuildItem helmTargetDirectoryBuildItem,
             ControllerConfigurationsBuildItem controllerConfigurations) {
         final var controllerConfigs = controllerConfigurations.getControllerConfigs().values();
-
         if (!controllerConfigs.isEmpty()) {
             try (InputStream file = Thread.currentThread().getContextClassLoader()
                     .getResourceAsStream(CRD_ADDITIONAL_ROLE_BINDING_TEMPLATE_PATH)) {
@@ -117,24 +116,18 @@ public class HelmChartProcessor {
                     throw new IllegalArgumentException(
                             "Template file " + CRD_ADDITIONAL_ROLE_BINDING_TEMPLATE_PATH + " doesn't exist");
                 }
+
                 final String template = new String(file.readAllBytes(), StandardCharsets.UTF_8);
-
                 final var templatesDir = helmTargetDirectoryBuildItem.getPathToTemplatesDir();
-
-                StringBuilder stringBuilder = new StringBuilder();
-                controllerConfigs.forEach(cc -> {
-                    final List<RoleRef> roleRefs = cc.getAdditionalRBACRoleRefs();
-                    roleRefs
-                            .forEach(roleRef -> {
-                                final String bindingName = AddRoleBindingsDecorator.getSpecificRoleBindingName(cc.getName(),
-                                        roleRef);
-                                stringBuilder.append(Qute.fmt(template, Map.of(
-                                        "role-binding-name", bindingName,
-                                        "role-ref-kind", roleRef.getKind(),
-                                        "role-ref-api-group", roleRef.getApiGroup(),
-                                        "role-ref-name", roleRef.getName())));
-                            });
-                });
+                final var stringBuilder = new StringBuilder();
+                controllerConfigs.forEach(cc -> cc.getAdditionalRBACRoleRefs().forEach(roleRef -> {
+                    final String bindingName = AddRoleBindingsDecorator.getSpecificRoleBindingName(cc.getName(), roleRef);
+                    stringBuilder.append(Qute.fmt(template, Map.of(
+                            "role-binding-name", bindingName,
+                            "role-ref-kind", roleRef.getKind(),
+                            "role-ref-api-group", roleRef.getApiGroup(),
+                            "role-ref-name", roleRef.getName())));
+                }));
                 Files.writeString(templatesDir.resolve(ADDITIONAL_CRD_ROLE_BINDING_YAML), stringBuilder.toString());
             } catch (Exception e) {
                 throw new IllegalStateException(e);
