@@ -51,6 +51,6 @@ public class PingReconciler implements Reconciler<Ping> {
         }
 
         ping.setStatus(new Status(Status.State.PROCESSED));
-        return UpdateControl.updateStatus(ping);
+        return UpdateControl.patchStatus(ping);
     }
 }
