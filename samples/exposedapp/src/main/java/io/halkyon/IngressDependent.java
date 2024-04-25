@@ -15,8 +15,15 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 public class IngressDependent extends CRUDKubernetesDependentResource<Ingress, ExposedApp> implements
         Condition<Ingress, ExposedApp> {
 
+    // todo: automatically generate
     public IngressDependent() {
         super(Ingress.class);
+    }
+
+    // todo: automatically generate
+    @Override
+    protected Class<ExposedApp> getPrimaryResourceType() {
+        return ExposedApp.class;
     }
 
     @Override
