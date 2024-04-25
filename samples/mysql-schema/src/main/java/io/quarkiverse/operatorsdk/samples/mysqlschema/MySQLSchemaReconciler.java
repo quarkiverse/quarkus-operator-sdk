@@ -42,7 +42,7 @@ public class MySQLSchemaReconciler
                             updateStatusPojo(schema, secret.getMetadata().getName(),
                                     decode(secret.getData().get(MYSQL_SECRET_USERNAME)));
                             Log.infof("Schema %s created - updating CR status", s.getName());
-                            return UpdateControl.updateStatus(schema);
+                            return UpdateControl.patchStatus(schema);
                         }).orElse(UpdateControl.noUpdate()))
                 .orElse(UpdateControl.noUpdate());
     }
@@ -58,7 +58,7 @@ public class MySQLSchemaReconciler
         status.setStatus("ERROR: " + e.getMessage());
         schema.setStatus(status);
 
-        return ErrorStatusUpdateControl.updateStatus(schema);
+        return ErrorStatusUpdateControl.patchStatus(schema);
     }
 
     private void updateStatusPojo(MySQLSchema schema, String secretName, String userName) {
