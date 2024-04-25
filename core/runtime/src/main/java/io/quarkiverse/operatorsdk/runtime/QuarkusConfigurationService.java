@@ -50,10 +50,9 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     private final Map<String, DependentResource> knownDependents = new ConcurrentHashMap<>();
     private final boolean useSSA;
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     public QuarkusConfigurationService(
             Version version,
-            Collection<QuarkusControllerConfiguration> configurations,
+            Collection<QuarkusControllerConfiguration<?>> configurations,
             KubernetesClient kubernetesClient,
             CRDGenerationInfo crdInfo, int maxThreads, int maxWorflowThreads,
             int timeout, Duration cacheSyncTimeout, Metrics metrics, boolean startOperator,

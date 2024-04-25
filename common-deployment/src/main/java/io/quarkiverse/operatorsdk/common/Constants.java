@@ -10,7 +10,9 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Ignore;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.quarkiverse.operatorsdk.annotations.AdditionalRBACRoleRefs;
 import io.quarkiverse.operatorsdk.annotations.AdditionalRBACRules;
+import io.quarkiverse.operatorsdk.annotations.RBACCRoleRef;
 import io.quarkiverse.operatorsdk.annotations.RBACRule;
 
 public class Constants {
@@ -28,4 +30,7 @@ public class Constants {
     public static final DotName OBJECT = DotName.createSimple(Object.class.getName());
     public static final DotName ADDITIONAL_RBAC_RULES = DotName.createSimple(AdditionalRBACRules.class.getName());
     public static final DotName RBAC_RULE = DotName.createSimple(RBACRule.class.getName());
+    public static final DotName RBAC_ROLE_REF = DotName.createSimple(RBACCRoleRef.class.getName());
+    public static final DotName ADDITIONAL_RBAC_ROLE_REFS = DotName.createSimple(AdditionalRBACRoleRefs.class.getName());
+
 }

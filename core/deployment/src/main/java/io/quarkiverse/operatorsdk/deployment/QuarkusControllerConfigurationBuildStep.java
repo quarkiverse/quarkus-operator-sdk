@@ -7,6 +7,7 @@ import static io.quarkiverse.operatorsdk.common.Constants.*;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.jboss.jandex.*;
@@ -15,6 +16,8 @@ import org.jboss.logging.Logger;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
+import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
@@ -35,6 +38,7 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
+import io.quarkiverse.operatorsdk.annotations.RBACCRoleRef;
 import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ClassLoadingUtils;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
@@ -219,6 +223,9 @@ class QuarkusControllerConfigurationBuildStep {
         // check if we have additional RBAC rules to handle
         final var additionalRBACRules = extractAdditionalRBACRules(info);
 
+        // check if we have additional RBAC role refs to handle
+        final var additionalRBACRoleRefs = extractAdditionalRBACRoleRefs(info);
+
         // extract the namespaces
         // first check if we explicitly set the namespaces via the annotations
         Set<String> namespaces = null;
@@ -273,7 +280,8 @@ class QuarkusControllerConfigurationBuildStep {
                 finalFilter,
                 maxReconciliationInterval,
                 onAddFilter, onUpdateFilter, genericFilter, retryClass, retryConfigurationClass, rateLimiterClass,
-                rateLimiterConfigurationClass, dependentResources, null, additionalRBACRules, fieldManager, itemStore);
+                rateLimiterConfigurationClass, dependentResources, null, additionalRBACRules, additionalRBACRoleRefs,
+                fieldManager, itemStore);
 
         if (hasDependents) {
             dependentResourceInfos.forEach(dependent -> {
@@ -302,27 +310,38 @@ class QuarkusControllerConfigurationBuildStep {
     }
 
     private static List<PolicyRule> extractAdditionalRBACRules(ClassInfo info) {
-        // if there are multiple annotations they should be found under an automatically generated AdditionalRBACRules
-        final var additionalRuleAnnotations = ConfigurationUtils.annotationValueOrDefault(
-                info.declaredAnnotation(ADDITIONAL_RBAC_RULES),
+        return extractRepeatableAnnotations(info, RBAC_RULE, ADDITIONAL_RBAC_RULES,
+                QuarkusControllerConfigurationBuildStep::extractRule);
+    }
+
+    private static <T> List<T> extractRepeatableAnnotations(ClassInfo info, DotName singleAnnotationName,
+            DotName repeatableHolderName, Function<AnnotationInstance, T> extractor) {
+        // if there are multiple annotations they should be found under an automatically generated repeatable holder annotation
+        final var additionalAnnotations = ConfigurationUtils.annotationValueOrDefault(
+                info.declaredAnnotation(repeatableHolderName),
                 "value",
                 AnnotationValue::asNestedArray,
                 () -> null);
-        List<PolicyRule> additionalRBACRules = Collections.emptyList();
-        if (additionalRuleAnnotations != null && additionalRuleAnnotations.length > 0) {
-            additionalRBACRules = new ArrayList<>(additionalRuleAnnotations.length);
-            for (AnnotationInstance ruleAnnotation : additionalRuleAnnotations) {
-                additionalRBACRules.add(extractRule(ruleAnnotation));
+        List<T> repeatables = Collections.emptyList();
+        if (additionalAnnotations != null && additionalAnnotations.length > 0) {
+            repeatables = new ArrayList<>(additionalAnnotations.length);
+            for (AnnotationInstance annotation : additionalAnnotations) {
+                repeatables.add(extractor.apply(annotation));
             }
         }
 
         // if there's only one, it will be found under RBACRule annotation
-        final var rbacRuleAnnotation = info.declaredAnnotation(RBAC_RULE);
-        if (rbacRuleAnnotation != null) {
-            additionalRBACRules = List.of(extractRule(rbacRuleAnnotation));
+        final var singleAnnotation = info.declaredAnnotation(singleAnnotationName);
+        if (singleAnnotation != null) {
+            repeatables = List.of(extractor.apply(singleAnnotation));
         }
 
-        return additionalRBACRules;
+        return repeatables;
+    }
+
+    private static List<RoleRef> extractAdditionalRBACRoleRefs(ClassInfo info) {
+        return extractRepeatableAnnotations(info, RBAC_ROLE_REF, ADDITIONAL_RBAC_ROLE_REFS,
+                QuarkusControllerConfigurationBuildStep::extractRoleRef);
     }
 
     private static PolicyRule extractRule(AnnotationInstance ruleAnnotation) {
@@ -351,6 +370,23 @@ class QuarkusControllerConfigurationBuildStep {
         builder.withNonResourceURLs(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
                 "nonResourceURLs",
                 AnnotationValue::asStringArray,
+                () -> null));
+
+        return builder.build();
+    }
+
+    private static RoleRef extractRoleRef(AnnotationInstance roleRefAnnotation) {
+        final var builder = new RoleRefBuilder();
+
+        builder.withApiGroup(RBACCRoleRef.RBAC_API_GROUP);
+        builder.withKind(ConfigurationUtils.annotationValueOrDefault(roleRefAnnotation,
+                "kind",
+                AnnotationValue::asEnum,
+                () -> null));
+
+        builder.withName(ConfigurationUtils.annotationValueOrDefault(roleRefAnnotation,
+                "name",
+                AnnotationValue::asString,
                 () -> null));
 
         return builder.build();
