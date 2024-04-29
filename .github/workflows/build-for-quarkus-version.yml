@@ -37,11 +37,11 @@ on:
       quarkus-pr:
         description: 'Quarkus PR number to use to run a QOSDK build with'
         type: string
-        required: true
+        required: false
       fkc-pr:
         description: 'Fabric8 client PR number to use to run a QOSDK build with'
         type: string
-        required: true
+        required: false
       java-version:
         description: 'Java version to build with'
         type: string
