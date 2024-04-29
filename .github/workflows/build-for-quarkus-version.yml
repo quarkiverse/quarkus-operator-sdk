@@ -38,6 +38,10 @@ on:
         description: 'Quarkus PR number to use to run a QOSDK build with'
         type: string
         required: true
+      fkc-pr:
+        description: 'Fabric8 client PR number to use to run a QOSDK build with'
+        type: string
+        required: true
       java-version:
         description: 'Java version to build with'
         type: string
@@ -123,6 +127,25 @@ jobs:
           mvn -Dquickly
           cd -
 
+      - name: Check-out Fabric8 client PR if requested
+        uses: actions/checkout@v4
+        if: "${{ inputs.fkc-pr != '' }}"
+        with:
+          repository: fabric8io/kubernetes-client
+          path: fkc
+
+      - name: Build Quarkus PR if requested
+        if: "${{ inputs.fkc-pr != '' }}"
+        id: build-fkc-pr
+        run: |
+          cd fkc
+          git fetch origin pull/${{ github.event.inputs.fkc-pr }}/head:pr-to-check
+          git switch pr-to-check
+          ./update-version.sh 999.${{ github.event.inputs.fkc-pr }}-SNAPSHOT
+          echo "f8_pr_version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+          mvn clean install -DskipTests
+          cd -
+
       - name: Retrieve Quarkus version from platform
         if: "${{ inputs.quarkus-version == '' && inputs.quarkus-pr == ''}}"
         id: get-quarkus-version
@@ -159,6 +182,12 @@ jobs:
         run: |
           echo "Using Quarkus ${{ steps.quarkus-version.outputs.quarkus_version }}"
           mvn versions:set-property -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dproperty=quarkus.version -DnewVersion=${{ steps.quarkus-version.outputs.quarkus_version }}
+
+      - name: Change Fabric8 client version
+        if: "${{ inputs.fkc-pr != '' }}"
+        run: |
+          echo "Using Fabric8 ${{ steps.build-fkc-pr.outputs.f8_pr_version }}"
+          mvn versions:set-property -Dproperty=fabric8-client.version -DnewVersion=${{ steps.build-fkc-pr.outputs.f8_pr_version }}
 
       - name: Output versions being used
         run: |
