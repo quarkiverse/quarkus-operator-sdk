@@ -4,6 +4,7 @@ on:
   workflow_call:
     inputs:
       quarkus-version-jq-cmd:
+        description: 'jq command to extract which Quarkus version to use from https://registry.quarkus.io/client/platforms'
         type: string
         required: false
       quarkus-version:
@@ -30,6 +31,11 @@ on:
         default: 'default'
   workflow_dispatch:
     inputs:
+      quarkus-version-jq-cmd:
+        description: 'jq command to extract which Quarkus version to use from https://registry.quarkus.io/client/platforms'
+        type: string
+        required: false
+        default: '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current) | .releases[0].version'
       josdk-pr:
         description: 'JOSDK PR number (or main) to use to build QOSDK with'
         type: string
