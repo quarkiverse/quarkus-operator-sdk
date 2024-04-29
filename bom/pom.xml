@@ -38,12 +38,16 @@
     <url>https://github.com/quarkiverse/quarkus-operator-sdk/issues/</url>
   </issueManagement>
 
+  <properties>
+    <fabric8-client.version>6.12-SNAPSHOT</fabric8-client.version>
+  </properties>
+
   <dependencyManagement>
     <dependencies>
       <dependency>
         <groupId>io.fabric8</groupId>
         <artifactId>kubernetes-client-bom</artifactId>
-        <version>6.12-SNAPSHOT</version>
+        <version>${fabric8-client.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
