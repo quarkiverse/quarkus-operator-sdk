@@ -134,14 +134,14 @@ jobs:
           repository: fabric8io/kubernetes-client
           path: fkc
 
-      - name: Build Quarkus PR if requested
+      - name: Build Fabrtic8 client PR if requested
         if: "${{ inputs.fkc-pr != '' }}"
         id: build-fkc-pr
         run: |
           cd fkc
           git fetch origin pull/${{ github.event.inputs.fkc-pr }}/head:pr-to-check
           git switch pr-to-check
-          ./update-version.sh 999.${{ github.event.inputs.fkc-pr }}-SNAPSHOT
+          mvn versions:set -DnewVersion=999.${{ github.event.inputs.fkc-pr }}-SNAPSHOT versions:commit
           echo "f8_pr_version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_OUTPUT
           mvn clean install -DskipTests
           cd -
