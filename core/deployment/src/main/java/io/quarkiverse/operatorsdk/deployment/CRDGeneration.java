@@ -12,8 +12,8 @@ import java.util.Set;
 
 import org.jboss.logging.Logger;
 
-import io.fabric8.crd.generator.CRDGenerator;
-import io.fabric8.crd.generator.CustomResourceInfo;
+import io.fabric8.crdv2.generator.CRDGenerator;
+import io.fabric8.crdv2.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.quarkiverse.operatorsdk.common.CustomResourceAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.FileUtils;
