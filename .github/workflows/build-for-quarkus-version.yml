@@ -152,12 +152,6 @@ jobs:
           mvn clean install -DskipTests
           cd -
 
-      - name: Change Fabric8 client version
-        if: "${{ inputs.fkc-pr != '' }}"
-        run: |
-          echo "Using Fabric8 ${{ steps.build-fkc-pr.outputs.f8_pr_version }}"
-          mvn versions:set-property -Dproperty=fabric8-client.version -DnewVersion=${{ steps.build-fkc-pr.outputs.f8_pr_version }}
-
       - name: Retrieve Quarkus version from platform
         if: "${{ inputs.quarkus-version == '' && inputs.quarkus-pr == ''}}"
         id: get-quarkus-version
@@ -194,6 +188,12 @@ jobs:
         run: |
           echo "Using Quarkus ${{ steps.quarkus-version.outputs.quarkus_version }}"
           mvn versions:set-property -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dproperty=quarkus.version -DnewVersion=${{ steps.quarkus-version.outputs.quarkus_version }}
+
+      - name: Change Fabric8 client version
+        if: "${{ inputs.fkc-pr != '' }}"
+        run: |
+          echo "Using Fabric8 ${{ steps.build-fkc-pr.outputs.f8_pr_version }}"
+          mvn versions:set-property -Dproperty=fabric8-client.version -DnewVersion=${{ steps.build-fkc-pr.outputs.f8_pr_version }}
 
       - name: Output versions being used
         run: |
