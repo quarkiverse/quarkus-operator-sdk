@@ -188,7 +188,7 @@ jobs:
         if: "${{ inputs.fkc-pr != '' }}"
         run: |
           echo "Using Fabric8 ${{ steps.build-fkc-pr.outputs.f8_pr_version }}"
-          mvn versions:set-property -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dproperty=fabric8-client.version -DnewVersion=${{ steps.build-fkc-pr.outputs.f8_pr_version }}
+          sed -r -i "s@<fabric8-client.version>[^<]+</fabric8-client.version>@<fabric8-client.version>${{ steps.build-fkc-pr.outputs.f8_pr_version }}</fabric8-client.version>@" bom/pom.xml
 
       - name: Change Quarkus version
         run: |
