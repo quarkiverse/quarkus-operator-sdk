@@ -17,7 +17,7 @@ public class ResourceControllerMapping {
         return infos;
     }
 
-    public void add(io.fabric8.crd.generator.CustomResourceInfo info, String crdName, String associatedControllerName) {
+    public void add(io.fabric8.crdv2.generator.CustomResourceInfo info, String crdName, String associatedControllerName) {
         final var version = info.version();
         final var versionsForCR = resourceFullNameToVersionToInfos.computeIfAbsent(crdName, s -> new HashMap<>());
         final var cri = versionsForCR.get(version);
@@ -41,7 +41,7 @@ public class ResourceControllerMapping {
         versionsForCR.put(version, converted);
     }
 
-    private static ResourceInfo augment(io.fabric8.crd.generator.CustomResourceInfo info,
+    private static ResourceInfo augment(io.fabric8.crdv2.generator.CustomResourceInfo info,
             String crdName, String associatedControllerName) {
         return new ResourceInfo(
                 info.group(), info.version(), info.kind(), info.singular(), info.plural(), info.shortNames(),
