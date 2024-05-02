@@ -44,13 +44,13 @@ public class QuarkusManagedWorkflow<P extends HasMetadata> extends DefaultManage
         this.spec = nullableSpec;
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings("unused")
     public boolean isHasCleaner() {
         return hasCleaner();
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings("unused")
     public QuarkusWorkflowSpec getNullableSpec() {
         return spec;
