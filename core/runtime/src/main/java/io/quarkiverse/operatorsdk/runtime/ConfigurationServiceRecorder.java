@@ -85,7 +85,8 @@ public class ConfigurationServiceRecorder {
                     container.instance(InformerStoppedHandler.class).orElse(null),
                     buildTimeConfigurationService.isCloseClientOnStop(),
                     buildTimeConfigurationService.isStopOnInformerErrorDuringStartup(),
-                    buildTimeConfigurationService.isEnableSSA());
+                    buildTimeConfigurationService.isEnableSSA(),
+                    buildTimeConfiguration.defensiveCloning());
         };
     }
 

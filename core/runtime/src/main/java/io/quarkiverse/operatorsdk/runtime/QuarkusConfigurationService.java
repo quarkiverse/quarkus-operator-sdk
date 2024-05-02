@@ -50,6 +50,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     @SuppressWarnings("rawtypes")
     private final Map<String, DependentResource> knownDependents = new ConcurrentHashMap<>();
     private final boolean useSSA;
+    private final boolean defensiveCloning;
 
     public QuarkusConfigurationService(
             Version version,
@@ -59,7 +60,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
             int timeout, Duration cacheSyncTimeout, Metrics metrics, boolean startOperator,
             LeaderElectionConfiguration leaderElectionConfiguration, InformerStoppedHandler informerStoppedHandler,
             boolean closeClientOnStop, boolean stopOnInformerErrorDuringStartup,
-            boolean useSSA) {
+            boolean useSSA, boolean defensiveCloning) {
         super(version);
         this.closeClientOnStop = closeClientOnStop;
         this.stopOnInformerErrorDuringStartup = stopOnInformerErrorDuringStartup;
@@ -86,6 +87,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         this.informerStoppedHandler = informerStoppedHandler;
         this.leaderElectionConfiguration = leaderElectionConfiguration;
         this.useSSA = useSSA;
+        this.defensiveCloning = defensiveCloning;
     }
 
     @Override
@@ -265,5 +267,15 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     @Override
     public boolean ssaBasedCreateUpdateMatchForDependentResources() {
         return useSSA;
+    }
+
+    @Override
+    public boolean useSSAToPatchPrimaryResource() {
+        return useSSA;
+    }
+
+    @Override
+    public boolean cloneSecondaryResourcesWhenGettingFromCache() {
+        return defensiveCloning;
     }
 }
