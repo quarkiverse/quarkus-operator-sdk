@@ -24,7 +24,7 @@ public class ControllerInfo<P extends HasMetadata> {
                 .map(spec -> new DependentInfo(spec))
                 .sorted()
                 .collect(Collectors.toCollection(LinkedHashSet::new));
-        eventSources = controller.getEventSourceManager().getNamedEventSourcesStream()
+        eventSources = controller.getEventSourceManager().getEventSourcesStream()
                 .map(EventSourceInfo::new)
                 .sorted()
                 .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -66,7 +66,7 @@ public class ControllerInfo<P extends HasMetadata> {
 
     @SuppressWarnings("unused")
     public List<P> getKnownResources() {
-        return controller.getEventSourceManager().getControllerResourceEventSource().list()
+        return controller.getEventSourceManager().getControllerEventSource().list()
                 .collect(Collectors.toList());
     }
 }
