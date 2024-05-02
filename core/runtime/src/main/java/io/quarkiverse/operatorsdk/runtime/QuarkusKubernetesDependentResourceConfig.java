@@ -25,7 +25,7 @@ public class QuarkusKubernetesDependentResourceConfig<R extends HasMetadata> ext
                 useSSA, onAddFilter, onUpdateFilter, onDeleteFilter, genericFilter);
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     public Set<String> getNamespaces() {
         return namespaces();
     }
@@ -34,49 +34,49 @@ public class QuarkusKubernetesDependentResourceConfig<R extends HasMetadata> ext
         super.setNamespaces(namespaces);
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings("unused")
     public String getLabelSelector() {
         return labelSelector();
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings({ "unchecked", "unused" })
     public OnAddFilter<R> getOnAddFilter() {
         return onAddFilter();
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings({ "unused" })
     public OnUpdateFilter<R> getOnUpdateFilter() {
         return onUpdateFilter();
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings({ "unused" })
     public OnDeleteFilter<R> getOnDeleteFilter() {
         return onDeleteFilter();
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings("unused")
     public GenericFilter<R> getGenericFilter() {
         return genericFilter();
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings("unused")
     public boolean getConfiguredNS() {
         return wereNamespacesConfigured();
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings("unused")
     public boolean isCreateResourceOnlyIfNotExistingWithSSA() {
         return createResourceOnlyIfNotExistingWithSSA();
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings("unused")
     public Boolean isUseSSA() {
         return useSSA().orElse(null);
