@@ -32,7 +32,7 @@ public class DependentResourceSpecMetadata<R, P extends HasMetadata, C> extends
         this.dependentTypeName = dependentTypeName;
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     public C getDependentResourceConfig() {
         return dependentResourceConfig;
     }
@@ -50,13 +50,13 @@ public class DependentResourceSpecMetadata<R, P extends HasMetadata, C> extends
         return dependentType;
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings("unused")
     public String getDependentTypeName() {
         return dependentTypeName;
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings("unused")
     public String getQuarkusUseEventSourceWithName() {
         return getUseEventSourceWithName().orElse(null);
