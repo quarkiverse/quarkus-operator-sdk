@@ -11,13 +11,15 @@ import io.quarkus.runtime.annotations.RecordableConstructor;
 @SuppressWarnings("rawtypes")
 public class QuarkusWorkflowSpec implements WorkflowSpec {
     private final boolean explicitInvocation;
+    private final boolean handleExceptionsInReconciler;
     private final Map<String, DependentResourceSpecMetadata> dependentResourceSpecMetadata;
 
     @RecordableConstructor
     public QuarkusWorkflowSpec(Map<String, DependentResourceSpecMetadata> dependentResourceSpecMetadata,
-            boolean explicitInvocation) {
+            boolean explicitInvocation, boolean handleExceptionsInReconciler) {
         this.dependentResourceSpecMetadata = dependentResourceSpecMetadata;
         this.explicitInvocation = explicitInvocation;
+        this.handleExceptionsInReconciler = handleExceptionsInReconciler;
     }
 
     @IgnoreProperty
@@ -33,5 +35,16 @@ public class QuarkusWorkflowSpec implements WorkflowSpec {
     @Override
     public boolean isExplicitInvocation() {
         return explicitInvocation;
+    }
+
+    @Override
+    public boolean handleExceptionsInReconciler() {
+        return false;
+    }
+
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
+    @SuppressWarnings("unused")
+    public boolean isHandleExceptionsInReconciler() {
+        return handleExceptionsInReconciler;
     }
 }
