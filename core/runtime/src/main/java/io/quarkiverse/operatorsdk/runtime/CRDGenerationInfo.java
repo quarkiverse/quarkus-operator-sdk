@@ -21,17 +21,17 @@ public class CRDGenerationInfo {
         this.generated = generated;
     }
 
-    // Needed by Quarkus: if this method isn't present, state is not properly set
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     public CRDInfos getCrds() {
         return crds;
     }
 
-    // Needed by Quarkus: if this method isn't present, state is not properly set
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     public Set<String> getGenerated() {
         return generated;
     }
 
-    // Needed by Quarkus: if this method isn't present, state is not properly set
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     public boolean isApplyCRDs() {
         return applyCRDs;
     }
@@ -41,6 +41,7 @@ public class CRDGenerationInfo {
         return crds.getOrCreateCRDSpecVersionToInfoMapping(crdName);
     }
 
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     public boolean isValidateCRDs() {
         return validateCRDs;
     }
