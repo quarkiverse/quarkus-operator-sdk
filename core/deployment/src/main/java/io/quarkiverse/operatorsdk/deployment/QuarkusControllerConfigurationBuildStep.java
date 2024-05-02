@@ -298,8 +298,11 @@ class QuarkusControllerConfigurationBuildStep {
                 final var explicitInvocation = ConfigurationUtils.annotationValueOrDefault(
                         workflowAnnotation, "explicitInvocation", AnnotationValue::asBoolean,
                         () -> false);
+                final var handleExceptionsInReconciler = ConfigurationUtils.annotationValueOrDefault(
+                        workflowAnnotation, "handleExceptionsInReconciler", AnnotationValue::asBoolean,
+                        () -> false);
                 // make workflow bytecode serializable
-                final var spec = new QuarkusWorkflowSpec(dependentResources, explicitInvocation);
+                final var spec = new QuarkusWorkflowSpec(dependentResources, explicitInvocation, handleExceptionsInReconciler);
                 final var original = workflowSupport.createWorkflow(spec);
                 workflow = new QuarkusManagedWorkflow<>(spec, original.getOrderedSpecs(), original.hasCleaner());
             }
