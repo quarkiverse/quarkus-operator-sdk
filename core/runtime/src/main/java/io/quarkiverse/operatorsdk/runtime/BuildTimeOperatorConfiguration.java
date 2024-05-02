@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.quarkus.runtime.annotations.ConfigItem;
 import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.runtime.annotations.ConfigRoot;
@@ -84,6 +85,19 @@ public class BuildTimeOperatorConfiguration {
      */
     @ConfigItem(name = "enable-ssa", defaultValue = "true")
     public boolean enableSSA;
+
+    /**
+     * Whether defensive cloning of resources retrieved from caches should be activated or not. With the prevalence of
+     * Server-Side Apply (SSA) use, defensively cloning resources, to prevent cached versions from being inadvertently modified,
+     * shouldn't be needed anymore. This should also allow for better performance. If you encounter cache corruption issues, you
+     * can always turn defensive cloning back on, however, you might first want to check that you're not unduly modifying
+     * resources retrieved from caches.
+     *
+     * @see ConfigurationService#cloneSecondaryResourcesWhenGettingFromCache()
+     * @since 7.0.0
+     */
+    @ConfigItem(defaultValue = "false")
+    public boolean defensiveCloning;
 
     /**
      * An optional list of comma-separated watched namespace names that will be used to generate manifests at build time if
