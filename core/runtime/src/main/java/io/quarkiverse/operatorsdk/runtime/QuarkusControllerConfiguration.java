@@ -383,13 +383,13 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         }
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings("unused")
     public Class<? extends Annotation> getRetryConfigurationClass() {
         return retryConfigurationClass;
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings("unused")
     public Class<? extends Annotation> getRateLimiterConfigurationClass() {
         return rateLimiterConfigurationClass;
