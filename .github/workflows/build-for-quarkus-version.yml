@@ -92,7 +92,7 @@ jobs:
             echo "Using JOSDK main branch"
           else
             echo "Checking out ${{ inputs.josdk-pr }} PR"
-            git fetch origin pull/${{ github.event.inputs.quarkus-pr }}/head:pr-to-check
+            git fetch origin pull/${{ github.event.inputs.josdk-pr }}/head:pr-to-check
             git switch pr-to-check
           fi
           mvn install -DskipTests
