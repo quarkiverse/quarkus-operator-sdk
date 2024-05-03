@@ -26,7 +26,7 @@ jobs:
       qosdk-bot-token: ${{ secrets.qosdk-bot-token }}
 
   update-quarkus-platform-main-if-needed:
-    if: ${{ inputs.needs-main-pr }}
+    if: ${{ inputs.needs-main-pr && inputs.quarkus-platform-branch != 'main' }}
     uses: ./.github/workflows/release-quarkus-platform-pr.yml
     with:
       qosdk-version: ${{inputs.qosdk-version}}
