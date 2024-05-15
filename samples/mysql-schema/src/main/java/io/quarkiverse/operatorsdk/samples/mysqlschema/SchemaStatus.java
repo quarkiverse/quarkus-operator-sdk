@@ -1,8 +1,6 @@
 package io.quarkiverse.operatorsdk.samples.mysqlschema;
 
-import io.javaoperatorsdk.operator.api.ObservedGenerationAwareStatus;
-
-public class SchemaStatus extends ObservedGenerationAwareStatus {
+public class SchemaStatus {
 
     private String url;
 
