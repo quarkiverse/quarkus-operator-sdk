@@ -44,6 +44,14 @@ on:
         description: 'Quarkus PR number to use to run a QOSDK build with'
         type: string
         required: false
+      fkc-pr:
+        description: 'Fabric8 client PR number to use to run a QOSDK build with'
+        type: string
+        required: false
+      fkc-version:
+        description: 'Fabric8 client version to run a QOSDK build with'
+        type: string
+        required: false
       java-version:
         description: 'Java version to build with'
         type: string
@@ -129,6 +137,25 @@ jobs:
           mvn -Dquickly
           cd -
 
+      - name: Check-out Fabric8 client PR if requested
+        uses: actions/checkout@v4
+        if: "${{ inputs.fkc-pr != '' }}"
+        with:
+          repository: fabric8io/kubernetes-client
+          path: fkc
+
+      - name: Build Fabric8 client PR if requested
+        if: "${{ inputs.fkc-pr != '' }}"
+        id: build-fkc-pr
+        run: |
+          cd fkc
+          git fetch origin pull/${{ github.event.inputs.fkc-pr }}/head:pr-to-check
+          git switch pr-to-check
+          mvn versions:set -DnewVersion=999.${{ github.event.inputs.fkc-pr }}-SNAPSHOT versions:commit
+          echo "f8_pr_version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+          mvn clean install -DskipTests
+          cd -
+
       - name: Retrieve Quarkus version from platform
         if: "${{ inputs.quarkus-version == '' && inputs.quarkus-pr == ''}}"
         id: get-quarkus-version
@@ -166,17 +193,36 @@ jobs:
           echo "Using Quarkus ${{ steps.quarkus-version.outputs.quarkus_version }}"
           mvn versions:set-property -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dproperty=quarkus.version -DnewVersion=${{ steps.quarkus-version.outputs.quarkus_version }}
 
+      - name: Change Fabric8 client version
+        id: fkc-version
+        if: "${{ inputs.fkc-pr != '' || inputs.fkc-version != '' }}"
+        run: |
+          if [[ -n "${{ inputs.fkc-version }}" ]]; then
+           fkc_version="${{ inputs.fkc-version }}" 
+          fi
+          if [[ -n "${{ inputs.fkc-pr }}" ]]; then
+           fkc_version=${{ steps.build-fkc-pr.outputs.f8_pr_version }}
+          fi
+          echo "Using Fabric8 ${fkc_version}"
+          mvn versions:set-property -Dproperty=fabric8-client.version -DnewVersion=${fkc_version}
+          echo "fkc_version=${fkc_version}" >> $GITHUB_OUTPUT
+
       - name: Output versions being used
         run: |
           echo "QOSDK version: $(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"
           echo "JOSDK version: $(mvn help:evaluate -Dexpression=java-operator-sdk.version -q -DforceStdout)"
           echo "JOSDK Fabric8 version: ${{ steps.build-josdk-pr.outputs.josdk_f8_version }}"
+          echo "JOSDK overridden Fabric8 version ${{ steps.fkc-version.outputs.fkc_version }}"
           echo "Quarkus version: $(mvn help:evaluate -Dexpression=quarkus.version -q -DforceStdout)"
           echo "Quarkus Fabric8 version: ${{ steps.build-quarkus-pr.outputs.quarkus_f8_version }}"
           echo "Effective Fabric8 version: $(mvn dependency:tree -Dincludes=io.fabric8:kubernetes-client-api -pl core/deployment | grep io.fabric8:kubernetes-client-api -m1 | cut -d ':' -f 4)"
 
       - name: Build with Maven (JVM)
         run: mvn -B formatter:validate install -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' --file pom.xml
+
+      - name: Dependency tree on failure
+        if: failure()
+        run: mvn -B dependency:tree -Dverbose
 
       - name: Kubernetes KinD Cluster
         uses: container-tools/kind-action@v2
@@ -193,7 +239,7 @@ jobs:
       - name: Install Operator Lifecycle Manager and Operator SDK into Kind
         run: operator-sdk olm install --version v0.23.0
 
-# Joke sample currently doesn't validate with OLM v1 because it bundles required Joke CRD, which v1 thinks should be owned
+      # Joke sample currently doesn't validate with OLM v1 because it bundles required Joke CRD, which v1 thinks should be owned
       - name: Validate OLM bundles (excluding Joke sample)
         run: |
           cd samples/
