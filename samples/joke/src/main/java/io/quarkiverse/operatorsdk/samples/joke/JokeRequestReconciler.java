@@ -92,6 +92,6 @@ public class JokeRequestReconciler implements Reconciler<JokeRequest> {
         }
 
         jr.setStatus(status);
-        return UpdateControl.updateStatus(jr);
+        return UpdateControl.patchStatus(jr);
     }
 }

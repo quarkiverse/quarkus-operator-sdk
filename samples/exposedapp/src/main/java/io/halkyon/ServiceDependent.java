@@ -12,14 +12,21 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 
 public class ServiceDependent extends CRUDKubernetesDependentResource<Service, ExposedApp> {
 
+    // todo: automatically generate
     public ServiceDependent() {
         super(Service.class);
+    }
+
+    // todo: automatically generate
+    @Override
+    protected Class<ExposedApp> getPrimaryResourceType() {
+        return ExposedApp.class;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public Service desired(ExposedApp exposedApp, Context context) {
-        final var labels = (Map<String, String>) context.managedDependentResourceContext()
+        final var labels = (Map<String, String>) context.managedWorkflowAndDependentResourceContext()
                 .getMandatory(LABELS_CONTEXT_KEY, Map.class);
 
         return new ServiceBuilder()

@@ -3,7 +3,6 @@ package io.quarkiverse.operatorsdk.runtime;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
@@ -17,17 +16,16 @@ public class QuarkusKubernetesDependentResourceConfig<R extends HasMetadata> ext
     public QuarkusKubernetesDependentResourceConfig(Set<String> namespaces, String labelSelector,
             boolean configuredNS,
             boolean createResourceOnlyIfNotExistingWithSSA,
-            ResourceDiscriminator<R, ?> resourceDiscriminator,
             Boolean useSSA,
             OnAddFilter<R> onAddFilter,
             OnUpdateFilter<R> onUpdateFilter,
             OnDeleteFilter<R> onDeleteFilter,
             GenericFilter<R> genericFilter) {
-        super(namespaces, labelSelector, configuredNS, createResourceOnlyIfNotExistingWithSSA, resourceDiscriminator,
+        super(namespaces, labelSelector, configuredNS, createResourceOnlyIfNotExistingWithSSA,
                 useSSA, onAddFilter, onUpdateFilter, onDeleteFilter, genericFilter);
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     public Set<String> getNamespaces() {
         return namespaces();
     }
@@ -36,49 +34,49 @@ public class QuarkusKubernetesDependentResourceConfig<R extends HasMetadata> ext
         super.setNamespaces(namespaces);
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings("unused")
     public String getLabelSelector() {
         return labelSelector();
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings({ "unchecked", "unused" })
     public OnAddFilter<R> getOnAddFilter() {
         return onAddFilter();
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings({ "unused" })
     public OnUpdateFilter<R> getOnUpdateFilter() {
         return onUpdateFilter();
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings({ "unused" })
     public OnDeleteFilter<R> getOnDeleteFilter() {
         return onDeleteFilter();
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings("unused")
     public GenericFilter<R> getGenericFilter() {
         return genericFilter();
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings("unused")
     public boolean getConfiguredNS() {
         return wereNamespacesConfigured();
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings("unused")
     public boolean isCreateResourceOnlyIfNotExistingWithSSA() {
         return createResourceOnlyIfNotExistingWithSSA();
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings("unused")
     public Boolean isUseSSA() {
         return useSSA().orElse(null);

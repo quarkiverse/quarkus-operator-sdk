@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.processing.Controller;
 
 public class ControllerInfo<P extends HasMetadata> {
@@ -17,11 +18,13 @@ public class ControllerInfo<P extends HasMetadata> {
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public ControllerInfo(Controller<P> controller) {
         this.controller = controller;
-        dependents = controller.getConfiguration().getDependentResources().stream()
+        dependents = controller.getConfiguration().getWorkflowSpec().stream()
+                .map(WorkflowSpec::getDependentResourceSpecs)
+                .flatMap(List::stream)
                 .map(spec -> new DependentInfo(spec))
                 .sorted()
                 .collect(Collectors.toCollection(LinkedHashSet::new));
-        eventSources = controller.getEventSourceManager().getNamedEventSourcesStream()
+        eventSources = controller.getEventSourceManager().getEventSourcesStream()
                 .map(EventSourceInfo::new)
                 .sorted()
                 .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -63,7 +66,7 @@ public class ControllerInfo<P extends HasMetadata> {
 
     @SuppressWarnings("unused")
     public List<P> getKnownResources() {
-        return controller.getEventSourceManager().getControllerResourceEventSource().list()
+        return controller.getEventSourceManager().getControllerEventSource().list()
                 .collect(Collectors.toList());
     }
 }

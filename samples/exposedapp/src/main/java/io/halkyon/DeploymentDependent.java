@@ -17,13 +17,20 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 public class DeploymentDependent extends CRUDKubernetesDependentResource<Deployment, ExposedApp>
         implements Matcher<Deployment, ExposedApp> {
 
+    // todo: automatically generate
     public DeploymentDependent() {
         super(Deployment.class);
     }
 
+    // todo: automatically generate
+    @Override
+    protected Class<ExposedApp> getPrimaryResourceType() {
+        return ExposedApp.class;
+    }
+
     @SuppressWarnings("unchecked")
     public Deployment desired(ExposedApp exposedApp, Context context) {
-        final var labels = (Map<String, String>) context.managedDependentResourceContext()
+        final var labels = (Map<String, String>) context.managedWorkflowAndDependentResourceContext()
                 .getMandatory(LABELS_CONTEXT_KEY, Map.class);
         final var name = exposedApp.getMetadata().getName();
         final var spec = exposedApp.getSpec();

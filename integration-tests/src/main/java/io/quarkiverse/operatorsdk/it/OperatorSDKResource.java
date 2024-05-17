@@ -2,6 +2,7 @@ package io.quarkiverse.operatorsdk.it;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,10 +21,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
@@ -202,10 +203,6 @@ public class OperatorSDKResource {
             return conf.watchCurrentNamespace();
         }
 
-        public RetryConfiguration getRetryConfiguration() {
-            return conf.getRetryConfiguration();
-        }
-
         public Retry getRetry() {
             return conf.getRetry();
         }
@@ -215,7 +212,8 @@ public class OperatorSDKResource {
         }
 
         public List<JSONDependentResourceSpec> getDependents() {
-            final var dependents = conf.getDependentResources();
+            final var dependents = conf.getWorkflowSpec().map(WorkflowSpec::getDependentResourceSpecs)
+                    .orElse(Collections.emptyList());
             final var result = new ArrayList<JSONDependentResourceSpec>(dependents.size());
             return dependents.stream()
                     .map(spec -> new JSONDependentResourceSpec(spec, conf))
@@ -276,12 +274,6 @@ public class OperatorSDKResource {
 
         public String getOnAddFilter() {
             return Optional.ofNullable(config.onAddFilter())
-                    .map(f -> f.getClass().getCanonicalName())
-                    .orElse(null);
-        }
-
-        public String getResourceDiscriminator() {
-            return Optional.ofNullable(config.getResourceDiscriminator())
                     .map(f -> f.getClass().getCanonicalName())
                     .orElse(null);
         }
