@@ -67,6 +67,11 @@ on:
         type: string
         required: false
         default: 'integration-tests,samples'
+      profiles:
+        description: 'Maven profiles to apply to build'
+        type: string
+        required: false
+        default: 'use-snapshots'
 
 concurrency:
   group: "${{ inputs.quarkus-version }}-${{inputs.java-version}}-${{ github.ref }}"
@@ -204,7 +209,7 @@ jobs:
            fkc_version=${{ steps.build-fkc-pr.outputs.f8_pr_version }}
           fi
           echo "Using Fabric8 ${fkc_version}"
-          mvn versions:set-property -Dproperty=fabric8-client.version -DnewVersion=${fkc_version}
+          mvn versions:set-property -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dproperty=fabric8-client.version -DnewVersion=${fkc_version}
           echo "fkc_version=${fkc_version}" >> $GITHUB_OUTPUT
 
       - name: Output versions being used
@@ -215,7 +220,7 @@ jobs:
           echo "JOSDK overridden Fabric8 version ${{ steps.fkc-version.outputs.fkc_version }}"
           echo "Quarkus version: $(mvn help:evaluate -Dexpression=quarkus.version -q -DforceStdout)"
           echo "Quarkus Fabric8 version: ${{ steps.build-quarkus-pr.outputs.quarkus_f8_version }}"
-          echo "Effective Fabric8 version: $(mvn dependency:tree -Dincludes=io.fabric8:kubernetes-client-api -pl core/deployment | grep io.fabric8:kubernetes-client-api -m1 | cut -d ':' -f 4)"
+          echo "Effective Fabric8 version: $(mvn dependency:tree -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dincludes=io.fabric8:kubernetes-client-api -pl core/deployment | grep io.fabric8:kubernetes-client-api -m1 | cut -d ':' -f 4)"
 
       - name: Build with Maven (JVM)
         run: mvn -B formatter:validate install -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' --file pom.xml
