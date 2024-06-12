@@ -22,12 +22,6 @@ public class DeploymentDependent extends CRUDKubernetesDependentResource<Deploym
         super(Deployment.class);
     }
 
-    // todo: automatically generate
-    @Override
-    protected Class<ExposedApp> getPrimaryResourceType() {
-        return ExposedApp.class;
-    }
-
     @SuppressWarnings("unchecked")
     public Deployment desired(ExposedApp exposedApp, Context context) {
         final var labels = (Map<String, String>) context.managedWorkflowAndDependentResourceContext()
