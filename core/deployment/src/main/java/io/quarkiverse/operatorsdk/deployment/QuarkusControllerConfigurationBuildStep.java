@@ -70,19 +70,13 @@ class QuarkusControllerConfigurationBuildStep {
             // make the configuration bytecode-serializable
             return new QuarkusKubernetesDependentResourceConfig(
                     original.useSSA(), original.createResourceOnlyIfNotExistingWithSSA(),
-                    original.informerConfigurationBuilder());
+                    new QuarkusKubernetesDependentInformerConfig(original.informerConfig()));
         }
     };
     static {
         // register Quarkus-specific converter for Kubernetes dependent resources
         DependentResourceConfigurationResolver.registerConverter(KubernetesDependentResource.class,
                 KUBERNETES_DEPENDENT_CONVERTER);
-    }
-
-    @BuildStep
-    void recordInformerConfigurationObjectSubstitution(BuildProducer<ObjectSubstitutionBuildItem> substitutions) {
-        substitutions.produce(new ObjectSubstitutionBuildItem(InformerConfiguration.class, InformerConfigurationProxy.class,
-                InformerConfigurationObjectSubstitution.class));
     }
 
     @BuildStep

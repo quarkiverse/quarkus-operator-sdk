@@ -17,12 +17,6 @@ public class ServiceDependent extends CRUDKubernetesDependentResource<Service, E
         super(Service.class);
     }
 
-    // todo: automatically generate
-    @Override
-    protected Class<ExposedApp> getPrimaryResourceType() {
-        return ExposedApp.class;
-    }
-
     @Override
     @SuppressWarnings("unchecked")
     public Service desired(ExposedApp exposedApp, Context context) {
