@@ -8,7 +8,6 @@ import jakarta.inject.Inject;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
@@ -26,8 +25,7 @@ import io.quarkus.logging.Log;
 })
 @ControllerConfiguration
 @SuppressWarnings("unused")
-public class MySQLSchemaReconciler
-        implements Reconciler<MySQLSchema>, ErrorStatusHandler<MySQLSchema> {
+public class MySQLSchemaReconciler implements Reconciler<MySQLSchema> {
 
     @Inject
     SchemaService schemaService;
