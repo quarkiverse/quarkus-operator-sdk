@@ -19,7 +19,6 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -227,7 +226,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
 
                 dependentResource = ClientProxy.unwrap(dependent);
                 // configure the bean
-                DependentResourceConfigurationResolver.configure(dependentResource, spec, configuration);
+                configure(dependentResource, spec, configuration);
                 // record the configured dependent for later retrieval if needed
                 knownDependents.put(dependentKey, dependentResource);
             }
