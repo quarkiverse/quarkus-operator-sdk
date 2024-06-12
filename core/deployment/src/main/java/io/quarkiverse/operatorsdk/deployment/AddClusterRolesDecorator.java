@@ -109,7 +109,7 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
         final Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata = cri.getDependentsMetadata();
         dependentsMetadata.forEach((name, spec) -> {
             final var dependentResourceClass = spec.getDependentResourceClass();
-            final var associatedResourceClass = spec.getDependentType();
+            final var associatedResourceClass = spec.getResourceClass();
 
             // only process Kubernetes dependents
             if (HasMetadata.class.isAssignableFrom(associatedResourceClass)) {
