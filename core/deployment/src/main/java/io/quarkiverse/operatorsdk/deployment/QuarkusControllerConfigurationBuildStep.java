@@ -21,6 +21,8 @@ import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -46,9 +48,11 @@ import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.SelectiveAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.*;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration.DefaultRateLimiter;
+import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.LiveReloadBuildItem;
+import io.quarkus.deployment.builditem.ObjectSubstitutionBuildItem;
 import io.quarkus.deployment.util.JandexUtil;
 
 @SuppressWarnings("rawtypes")
@@ -60,24 +64,25 @@ class QuarkusControllerConfigurationBuildStep {
     private static final KubernetesDependentConverter KUBERNETES_DEPENDENT_CONVERTER = new KubernetesDependentConverter() {
         @Override
         @SuppressWarnings("unchecked")
-        public KubernetesDependentResourceConfig configFrom(
-                KubernetesDependent configAnnotation,
-                ControllerConfiguration parentConfiguration, Class originatingClass) {
-            final var original = super.configFrom(configAnnotation, parentConfiguration, originatingClass);
+        public KubernetesDependentResourceConfig configFrom(KubernetesDependent configAnnotation, DependentResourceSpec spec,
+                ControllerConfiguration controllerConfig) {
+            final var original = super.configFrom(configAnnotation, spec, controllerConfig);
             // make the configuration bytecode-serializable
-            return new QuarkusKubernetesDependentResourceConfig(original.namespaces(),
-                    original.labelSelector(),
-                    original.wereNamespacesConfigured(),
-                    original.createResourceOnlyIfNotExistingWithSSA(),
-                    (Boolean) original.useSSA().orElse(null),
-                    original.onAddFilter(),
-                    original.onUpdateFilter(), original.onDeleteFilter(), original.genericFilter());
+            return new QuarkusKubernetesDependentResourceConfig(
+                    original.useSSA(), original.createResourceOnlyIfNotExistingWithSSA(),
+                    original.informerConfigurationBuilder());
         }
     };
     static {
         // register Quarkus-specific converter for Kubernetes dependent resources
         DependentResourceConfigurationResolver.registerConverter(KubernetesDependentResource.class,
                 KUBERNETES_DEPENDENT_CONVERTER);
+    }
+
+    @BuildStep
+    void recordInformerConfigurationObjectSubstitution(BuildProducer<ObjectSubstitutionBuildItem> substitutions) {
+        substitutions.produce(new ObjectSubstitutionBuildItem(InformerConfiguration.class, InformerConfigurationProxy.class,
+                InformerConfigurationObjectSubstitution.class));
     }
 
     @BuildStep
@@ -420,9 +425,7 @@ class QuarkusControllerConfigurationBuildStep {
 
         final var dependentTypeName = drTypeName.toString();
         final var dependentClass = loadClass(dependentTypeName, DependentResource.class);
-
-        final var cfg = DependentResourceConfigurationResolver.extractConfigurationFromConfigured(
-                dependentClass, configuration);
+        final var resourceClass = loadClass(resourceTypeName, Object.class);
 
         final var dependentConfig = dependent.getDependentAnnotationFromController();
         final var dependsOnField = dependentConfig.value("dependsOn");
@@ -448,11 +451,13 @@ class QuarkusControllerConfigurationBuildStep {
                 dependentConfig, "useEventSourceWithName", AnnotationValue::asString,
                 () -> null);
 
-        return new DependentResourceSpecMetadata(dependentClass, cfg, dependent.nameOrFailIfUnset(),
+        final var spec = new DependentResourceSpecMetadata(dependentClass, dependent.nameOrFailIfUnset(),
                 dependsOn, readyCondition, reconcilePrecondition, deletePostcondition, activationCondition,
-                useEventSourceWithName,
-                resourceTypeName);
+                useEventSourceWithName, resourceClass);
 
+        DependentResourceConfigurationResolver.configureSpecFromConfigured(spec, configuration, dependentClass);
+
+        return spec;
     }
 
     private static String getFinalizer(AnnotationInstance controllerAnnotation, String crdName) {

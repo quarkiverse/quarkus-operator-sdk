@@ -218,9 +218,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     public void propagateNamespacesToDependents() {
         if (workflow != null) {
             dependentsMetadata().forEach((unused, spec) -> {
-                final var config = spec.getDependentResourceConfig();
+                final var config = spec.getConfiguration().orElse(null);
                 if (config instanceof QuarkusKubernetesDependentResourceConfig qConfig) {
-                    qConfig.setNamespaces(this.namespaces);
+                    qConfig.setNamespaces(namespaces);
                 }
             });
         }
@@ -267,8 +267,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Object getConfigurationFor(DependentResourceSpec dependentResourceSpec) {
-        return ((DependentResourceSpecMetadata) dependentResourceSpec).getDependentResourceConfig();
+        return dependentResourceSpec.getConfiguration().orElse(null);
     }
 
     @Override
