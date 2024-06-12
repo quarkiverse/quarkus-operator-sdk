@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -20,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingDependentResource;
 import io.quarkiverse.operatorsdk.samples.mysqlschema.MySQLSchema;
@@ -31,7 +31,7 @@ import io.quarkiverse.operatorsdk.samples.mysqlschema.schema.SchemaService;
 public class SchemaDependentResource
         extends PerResourcePollingDependentResource<Schema, MySQLSchema>
         implements
-        DependentResourceConfigurator<ResourcePollerConfig>,
+        ConfiguredDependentResource<ResourcePollerConfig>,
         Creator<Schema, MySQLSchema>,
         Deleter<MySQLSchema> {
     public static final String NAME = "schema";

@@ -30,6 +30,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
+import io.quarkiverse.operatorsdk.runtime.DependentResourceSpecMetadata;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkus.runtime.annotations.RegisterForReflection;
@@ -88,15 +89,15 @@ public class OperatorSDKResource {
     @Path("{name}/dependents/{dependent}")
     public JSONKubernetesResourceConfig getDependentConfig(@PathParam("name") String name,
             @PathParam("dependent") String dependent) {
-        final var dr = configurationService.getDependentByName(name, dependent);
+        final DependentResourceSpecMetadata<?, ?, ?> dr = configurationService.getDependentByName(name, dependent);
         if (dr == null) {
             return null;
         }
-        final var config = dr.getDependentResourceConfig();
-        if (config instanceof KubernetesDependentResourceConfig) {
-            return new JSONKubernetesResourceConfig((KubernetesDependentResourceConfig<?>) config);
-        }
-        return null;
+        return dr.getConfiguration()
+                .filter(KubernetesDependentResourceConfig.class::isInstance)
+                .map(KubernetesDependentResourceConfig.class::cast)
+                .map(JSONKubernetesResourceConfig::new)
+                .orElse(null);
     }
 
     static class JSONConfiguration {
@@ -236,10 +237,10 @@ public class OperatorSDKResource {
     }
 
     static class JSONDependentResourceSpec {
-        private final DependentResourceSpec<?, ?> spec;
+        private final DependentResourceSpec<?, ?, ?> spec;
         private final ControllerConfiguration<?> conf;
 
-        JSONDependentResourceSpec(DependentResourceSpec<?, ?> spec, ControllerConfiguration<?> conf) {
+        JSONDependentResourceSpec(DependentResourceSpec<?, ?, ?> spec, ControllerConfiguration<?> conf) {
             this.spec = spec;
             this.conf = conf;
         }
@@ -249,7 +250,8 @@ public class OperatorSDKResource {
         }
 
         public Object getDependentConfig() {
-            final var c = DependentResourceConfigurationResolver.configurationFor(spec, conf);
+            DependentResourceConfigurationResolver.configureSpecFromConfigured(spec, conf, spec.getDependentResourceClass());
+            final var c = spec.getConfiguration().orElse(null);
             if (c instanceof KubernetesDependentResourceConfig) {
                 return new JSONKubernetesResourceConfig((KubernetesDependentResourceConfig<?>) c);
             } else {
@@ -273,13 +275,15 @@ public class OperatorSDKResource {
         }
 
         public String getOnAddFilter() {
-            return Optional.ofNullable(config.onAddFilter())
+            // todo: fix me, it should be possible to retrieve the current configuration in a better way than building the builder
+            return Optional.ofNullable(config.informerConfigurationBuilder().build().onAddFilter())
                     .map(f -> f.getClass().getCanonicalName())
                     .orElse(null);
         }
 
         public String getLabelSelector() {
-            return config.labelSelector();
+            // todo: fix me, it should be possible to retrieve the current configuration in a better way than building the builder
+            return config.informerConfigurationBuilder().build().getLabelSelector();
         }
     }
 
