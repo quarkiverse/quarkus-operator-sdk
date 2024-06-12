@@ -3,7 +3,7 @@ package io.quarkiverse.operatorsdk.runtime;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentInformerConfig;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
@@ -11,8 +11,8 @@ public class QuarkusKubernetesDependentResourceConfig<R extends HasMetadata> ext
 
     @RecordableConstructor
     public QuarkusKubernetesDependentResourceConfig(Boolean useSSA, boolean createResourceOnlyIfNotExistingWithSSA,
-            InformerConfiguration.InformerConfigurationBuilder<R> informerConfiguration) {
-        super(useSSA, createResourceOnlyIfNotExistingWithSSA, informerConfiguration);
+            QuarkusKubernetesDependentInformerConfig<R> informerConfig) {
+        super(useSSA, createResourceOnlyIfNotExistingWithSSA, informerConfig);
     }
 
     // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
@@ -29,10 +29,11 @@ public class QuarkusKubernetesDependentResourceConfig<R extends HasMetadata> ext
 
     // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings("unused")
-    public InformerConfiguration.InformerConfigurationBuilder<R> getInformerConfiguration() {
-        return informerConfigurationBuilder();
+    public KubernetesDependentInformerConfig<R> getInformerConfig() {
+        return informerConfig();
     }
 
     void setNamespaces(Set<String> namespaces) {
+        // todo: remove?
     }
 }
