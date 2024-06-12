@@ -28,12 +28,6 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
         super(Secret.class);
     }
 
-    // todo: automatically generate
-    @Override
-    protected Class<MySQLSchema> getPrimaryResourceType() {
-        return MySQLSchema.class;
-    }
-
     private static String encode(String value) {
         return Base64.getEncoder().encodeToString(value.getBytes());
     }
