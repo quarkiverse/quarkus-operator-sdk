@@ -9,9 +9,9 @@ import io.quarkus.arc.Arc;
 
 @SuppressWarnings({ "unused", "rawtypes" })
 public class DependentInfo<R, P extends HasMetadata> implements Comparable<DependentInfo> {
-    private final DependentResourceSpec<R, P> spec;
+    private final DependentResourceSpec<R, P, ?> spec;
 
-    public DependentInfo(DependentResourceSpec<R, P> spec) {
+    public DependentInfo(DependentResourceSpec<R, P, ?> spec) {
         this.spec = spec;
     }
 

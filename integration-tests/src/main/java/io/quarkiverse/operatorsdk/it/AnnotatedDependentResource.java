@@ -6,16 +6,17 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.ConfigurationConverter;
 import io.javaoperatorsdk.operator.api.config.dependent.Configured;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
 
 @ADRConfigurationAnnotation(AnnotatedDependentResource.VALUE)
 @Configured(by = ADRConfigurationAnnotation.class, with = ADRConfiguration.class, converter = AnnotatedDependentResource.class)
 public class AnnotatedDependentResource implements DependentResource<TestResource, Service>,
-        DependentResourceConfigurator<ADRConfiguration>,
-        ConfigurationConverter<ADRConfigurationAnnotation, ADRConfiguration, AnnotatedDependentResource> {
+        ConfiguredDependentResource<ADRConfiguration>,
+        ConfigurationConverter<ADRConfigurationAnnotation, ADRConfiguration> {
 
     public static final int VALUE = 42;
     private ADRConfiguration config;
@@ -42,8 +43,8 @@ public class AnnotatedDependentResource implements DependentResource<TestResourc
 
     @Override
     public ADRConfiguration configFrom(ADRConfigurationAnnotation adrConfigurationAnnotation,
-            ControllerConfiguration<?> controllerConfiguration,
-            Class<AnnotatedDependentResource> aClass) {
+            DependentResourceSpec<?, ?, ADRConfiguration> dependentResourceSpec,
+            ControllerConfiguration<?> controllerConfiguration) {
         return new ADRConfiguration(adrConfigurationAnnotation.value());
     }
 }
