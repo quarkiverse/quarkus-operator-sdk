@@ -275,15 +275,13 @@ public class OperatorSDKResource {
         }
 
         public String getOnAddFilter() {
-            // todo: fix me, it should be possible to retrieve the current configuration in a better way than building the builder
-            return Optional.ofNullable(config.informerConfigurationBuilder().build().onAddFilter())
+            return Optional.ofNullable(config.informerConfig().getOnAddFilter())
                     .map(f -> f.getClass().getCanonicalName())
                     .orElse(null);
         }
 
         public String getLabelSelector() {
-            // todo: fix me, it should be possible to retrieve the current configuration in a better way than building the builder
-            return config.informerConfigurationBuilder().build().getLabelSelector();
+            return config.informerConfig().getLabelSelector();
         }
     }
 

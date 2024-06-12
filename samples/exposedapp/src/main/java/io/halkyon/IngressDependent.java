@@ -20,12 +20,6 @@ public class IngressDependent extends CRUDKubernetesDependentResource<Ingress, E
         super(Ingress.class);
     }
 
-    // todo: automatically generate
-    @Override
-    protected Class<ExposedApp> getPrimaryResourceType() {
-        return ExposedApp.class;
-    }
-
     @Override
     @SuppressWarnings("unchecked")
     public Ingress desired(ExposedApp exposedApp, Context context) {
