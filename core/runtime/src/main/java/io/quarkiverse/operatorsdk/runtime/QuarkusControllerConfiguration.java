@@ -46,15 +46,15 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         }
     }
 
-    private final String associatedReconcilerClassName;
     private final String name;
+    private final boolean generationAware;
+    private final String associatedReconcilerClassName;
     private final String resourceTypeName;
     private final String crVersion;
-    private final boolean generationAware;
     private final boolean statusPresentAndNotVoid;
     private final Class<R> resourceClass;
     private final Optional<Long> informerListLimit;
-    private final Optional<Duration> maxReconciliationInterval;
+    private final Duration maxReconciliationInterval;
     private final Optional<OnAddFilter<? super R>> onAddFilter;
     private final Optional<OnUpdateFilter<? super R>> onUpdateFilter;
     private final Optional<GenericFilter<? super R>> genericFilter;
@@ -109,8 +109,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         setFinalizer(finalizerName);
         this.labelSelector = labelSelector;
         this.statusPresentAndNotVoid = statusPresentAndNotVoid;
-        this.maxReconciliationInterval = maxReconciliationInterval != null ? Optional.of(maxReconciliationInterval)
-                : ControllerConfiguration.super.maxReconciliationInterval();
+        this.maxReconciliationInterval = maxReconciliationInterval;
         this.onAddFilter = Optional.ofNullable(onAddFilter);
         this.onUpdateFilter = Optional.ofNullable(onUpdateFilter);
         this.genericFilter = Optional.ofNullable(genericFilter);
@@ -218,7 +217,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     public void propagateNamespacesToDependents() {
         if (workflow != null) {
             dependentsMetadata().forEach((unused, spec) -> {
-                final var config = spec.getDependentResourceConfig();
+                final var config = spec.getConfiguration().orElse(null);
                 if (config instanceof QuarkusKubernetesDependentResourceConfig qConfig) {
                     qConfig.setNamespaces(namespaces);
                 }
@@ -267,8 +266,9 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Object getConfigurationFor(DependentResourceSpec dependentResourceSpec) {
-        return ((DependentResourceSpecMetadata) dependentResourceSpec).getDependentResourceConfig();
+        return dependentResourceSpec.getConfiguration().orElse(null);
     }
 
     @Override
@@ -287,13 +287,13 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     }
 
     public Optional<Duration> maxReconciliationInterval() {
-        return maxReconciliationInterval;
+        return Optional.ofNullable(maxReconciliationInterval);
     }
 
     // for Quarkus' RecordableConstructor
     @SuppressWarnings("unused")
     public Duration getMaxReconciliationInterval() {
-        return maxReconciliationInterval.orElseThrow();
+        return maxReconciliationInterval;
     }
 
     // for Quarkus' RecordableConstructor
