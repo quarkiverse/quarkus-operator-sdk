@@ -22,7 +22,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -217,7 +216,7 @@ public class OperatorSDKResource {
                     .orElse(Collections.emptyList());
             final var result = new ArrayList<JSONDependentResourceSpec>(dependents.size());
             return dependents.stream()
-                    .map(spec -> new JSONDependentResourceSpec(spec, conf))
+                    .map(JSONDependentResourceSpec::new)
                     .collect(Collectors.toList());
         }
 
@@ -238,11 +237,9 @@ public class OperatorSDKResource {
 
     static class JSONDependentResourceSpec {
         private final DependentResourceSpec<?, ?, ?> spec;
-        private final ControllerConfiguration<?> conf;
 
-        JSONDependentResourceSpec(DependentResourceSpec<?, ?, ?> spec, ControllerConfiguration<?> conf) {
+        JSONDependentResourceSpec(DependentResourceSpec<?, ?, ?> spec) {
             this.spec = spec;
-            this.conf = conf;
         }
 
         public String getDependentClass() {
@@ -250,7 +247,6 @@ public class OperatorSDKResource {
         }
 
         public Object getDependentConfig() {
-            DependentResourceConfigurationResolver.configureSpecFromConfigured(spec, conf, spec.getDependentResourceClass());
             final var c = spec.getConfiguration().orElse(null);
             if (c instanceof KubernetesDependentResourceConfig) {
                 return new JSONKubernetesResourceConfig((KubernetesDependentResourceConfig<?>) c);
