@@ -52,6 +52,10 @@ on:
         description: 'Fabric8 client version to run a QOSDK build with'
         type: string
         required: false
+      quarkus-version:
+        type: string
+        required: false
+        description: 'Quarkus version to use'
       java-version:
         description: 'Java version to build with'
         type: string
