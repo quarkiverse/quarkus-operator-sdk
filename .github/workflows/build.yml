@@ -1,9 +1,12 @@
 name: Build PRs and main when updated
 
 on:
+  schedule:
+    # daily run
+    - cron: '0 0 * * *'
   push:
     branches:
-      - "main"
+      - "next-fabric8-version"
     paths-ignore:
       - '.gitignore'
       - 'CODEOWNERS'
@@ -83,7 +86,8 @@ jobs:
         java-version: [ 17, 21 ]
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
-      quarkus-version: ${{ needs.extract-project-metadata.outputs.latest_stable_quarkus }}
+#      quarkus-version: ${{ needs.extract-project-metadata.outputs.latest_stable_quarkus }}
+      quarkus-version: 999-SNAPSHOT
       java-version: ${{ matrix.java-version }}
       branch: ${{ needs.extract-project-metadata.outputs.branch_name }}
       native-modules: "integration-tests"
