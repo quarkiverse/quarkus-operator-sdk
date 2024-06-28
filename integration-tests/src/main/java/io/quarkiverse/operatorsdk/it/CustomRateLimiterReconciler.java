@@ -5,8 +5,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 
-@ControllerConfiguration(name = CustomRateLimiterReconciler.NAME, rateLimiter = CustomRateLimiter.class, itemStore = NullItemStore.class)
+@ControllerConfiguration(name = CustomRateLimiterReconciler.NAME, rateLimiter = CustomRateLimiter.class, informerConfig = @InformerConfig(itemStore = NullItemStore.class))
 @CustomRateConfiguration(42)
 public class CustomRateLimiterReconciler implements Reconciler<ResourceQuota> {
 
