@@ -67,7 +67,7 @@ class QuarkusControllerConfigurationBuildStep {
             // make the configuration bytecode-serializable
             return new QuarkusKubernetesDependentResourceConfig(
                     original.useSSA(), original.createResourceOnlyIfNotExistingWithSSA(),
-                    new QuarkusKubernetesDependentInformerConfig(original.informerConfig()));
+                    new QuarkusInformerConfigHolder(original.informerConfig()));
         }
     };
     static {
