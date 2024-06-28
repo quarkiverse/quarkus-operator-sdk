@@ -25,9 +25,10 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 
 @CSVMetadata(bundleName = BUNDLE_NAME)
-@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
+@ControllerConfiguration(informerConfig = @InformerConfig(namespaces = WATCH_CURRENT_NAMESPACE))
 @SuppressWarnings("unused")
 public class PingReconciler implements Reconciler<Ping> {
 
