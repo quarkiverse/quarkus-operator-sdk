@@ -21,11 +21,12 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 
 @CSVMetadata(bundleName = BUNDLE_NAME)
-@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
 @SuppressWarnings("unused")
+@ControllerConfiguration(informerConfig = @InformerConfig(namespaces = WATCH_CURRENT_NAMESPACE))
 public class PongReconciler implements Reconciler<Pong> {
 
     @Override
