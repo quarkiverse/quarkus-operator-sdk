@@ -6,8 +6,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 
-@ControllerConfiguration(name = WatchAllNamespacesReconciler.NAME, namespaces = WATCH_ALL_NAMESPACES)
+@ControllerConfiguration(name = WatchAllNamespacesReconciler.NAME, informerConfig = @InformerConfig(namespaces = WATCH_ALL_NAMESPACES))
 public class WatchAllNamespacesReconciler implements Reconciler<SimpleCR> {
 
     public static final String NAME = "all-namespaces-reconciler";
