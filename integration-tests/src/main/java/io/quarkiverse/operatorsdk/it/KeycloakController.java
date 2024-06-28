@@ -5,8 +5,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 
-@ControllerConfiguration(namespaces = Constants.WATCH_CURRENT_NAMESPACE)
+@ControllerConfiguration(informerConfig = @InformerConfig(namespaces = Constants.WATCH_CURRENT_NAMESPACE))
 public class KeycloakController implements Reconciler<Keycloak> {
 
     public static final String FROM_ENV = Constants.WATCH_ALL_NAMESPACES;
