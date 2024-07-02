@@ -20,9 +20,10 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 
 @SuppressWarnings("unused")
-@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
+@ControllerConfiguration(informerConfig = @InformerConfig(namespaces = WATCH_CURRENT_NAMESPACE))
 public class PongReconciler implements Reconciler<Pong> {
 
     @Override

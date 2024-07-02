@@ -3,7 +3,7 @@ package io.quarkiverse.operatorsdk.runtime;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentInformerConfig;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
@@ -11,7 +11,7 @@ public class QuarkusKubernetesDependentResourceConfig<R extends HasMetadata> ext
 
     @RecordableConstructor
     public QuarkusKubernetesDependentResourceConfig(Boolean useSSA, boolean createResourceOnlyIfNotExistingWithSSA,
-            QuarkusKubernetesDependentInformerConfig<R> informerConfig) {
+            QuarkusInformerConfigHolder<R> informerConfig) {
         super(useSSA, createResourceOnlyIfNotExistingWithSSA, informerConfig);
     }
 
@@ -29,7 +29,7 @@ public class QuarkusKubernetesDependentResourceConfig<R extends HasMetadata> ext
 
     // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings("unused")
-    public KubernetesDependentInformerConfig<R> getInformerConfig() {
+    public InformerConfigHolder<R> getInformerConfig() {
         return informerConfig();
     }
 
