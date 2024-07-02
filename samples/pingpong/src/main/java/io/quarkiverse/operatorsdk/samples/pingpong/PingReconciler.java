@@ -23,7 +23,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 
+@CSVMetadata(bundleName = "pingpong-operator")
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
 @SuppressWarnings("unused")
 public class PingReconciler implements Reconciler<Ping> {

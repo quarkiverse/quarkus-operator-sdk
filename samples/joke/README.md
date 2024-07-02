@@ -65,11 +65,10 @@ mvn clean package -Dquarkus.container-image.build=true \
     -Dquarkus.container-image.registry=<your container registry. Example: quay.io> \
     -Dquarkus.container-image.group=<your container registry namespace> \
     -Dquarkus.kubernetes.namespace=<the kubernetes namespace where you will deploy the operator> \
-    -Dquarkus.operator-sdk.bundle.package-name=<the name of the package that bundle image belongs to> \ 
     -Dquarkus.operator-sdk.bundle.channels=<the list of channels that bundle image belongs to>
 ```
 
-For example, if we want to name the package `joke-operator` and use the `alpha` channels, we would need to append the properties `-Dquarkus.operator-sdk.bundle.package-name=joke-operator -Dquarkus.operator-sdk.bundle.channels=alpha`.
+For example, if we want to name the package `joke-operator` and use the `alpha` channels, we would need to append the property `-Dquarkus.operator-sdk.bundle.channels=alpha`. The bundle name needs to be provided via the `bundleName` field of the `@CSVMetadata` annotation on your reconciler. 
 
 ---
 **NOTE**

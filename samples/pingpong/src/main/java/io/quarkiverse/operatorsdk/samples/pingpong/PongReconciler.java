@@ -22,6 +22,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
+@SuppressWarnings("unused")
 public class PongReconciler implements Reconciler<Pong> {
 
     @Override
