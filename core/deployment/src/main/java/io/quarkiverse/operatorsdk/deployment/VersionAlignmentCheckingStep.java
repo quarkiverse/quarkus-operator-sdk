@@ -18,6 +18,8 @@ public class VersionAlignmentCheckingStep {
     @BuildStep
     VersionBuildItem checkVersionsAlignment(BuildTimeOperatorConfiguration buildTimeConfiguration) {
         final var version = Version.loadFromProperties();
+        log.info("QOSDK: " + version.getExtensionCompleteVersion());
+        log.info("JOSDK: " + version.getSdkCompleteVersion());
 
         final var runtimeQuarkusVersion = io.quarkus.builder.Version.getVersion();
         checkVersionCompatibility(buildTimeConfiguration, runtimeQuarkusVersion, version.getQuarkusVersion(), "Quarkus");
