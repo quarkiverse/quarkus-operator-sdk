@@ -44,6 +44,7 @@ public class ConfigurationServiceRecorder {
             if (extConfig != null) {
                 extConfig.finalizer.ifPresent(c::setFinalizer);
                 extConfig.selector.ifPresent(c::setLabelSelector);
+                extConfig.maxReconciliationInterval.ifPresent(c::setMaxReconciliationInterval);
                 c.setRetryConfiguration(RetryConfigurationResolver.resolve(extConfig.retry));
                 setNamespacesFromRuntime(c, extConfig.namespaces);
             }

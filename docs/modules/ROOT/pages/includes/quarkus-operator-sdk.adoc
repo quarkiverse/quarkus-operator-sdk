@@ -576,7 +576,7 @@ a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-selector]
 
 [.description]
 --
-An optional list of comma-separated label selectors that Custom Resources must match to trigger the controller. See https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/ for more details on selectors.
+An optional list of comma-separated label selectors that Custom Resources must match to trigger the controller. See link:https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/[...] for more details on selectors.
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__SELECTOR+++[]
@@ -585,6 +585,24 @@ ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__SELECTOR+++`
 endif::add-copy-button-to-env-var[]
 --|string 
+|
+
+
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-max-reconciliation-interval]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-max-reconciliation-interval[quarkus.operator-sdk.controllers."controllers".max-reconciliation-interval]`
+
+
+[.description]
+--
+An optional `Duration` to specify the maximum time that is allowed to elapse before a reconciliation will happen regardless of the presence of events. See `MaxReconciliationInterval++#++interval()` for more details. Value is specified according to the rules defined at `Duration++#++parse(CharSequence)`.
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__MAX_RECONCILIATION_INTERVAL+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__MAX_RECONCILIATION_INTERVAL+++`
+endif::add-copy-button-to-env-var[]
+--|link:https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html[Duration]
+  link:#duration-note-anchor-{summaryTableId}[icon:question-circle[title=More information about the Duration format]]
 |
 
 |===

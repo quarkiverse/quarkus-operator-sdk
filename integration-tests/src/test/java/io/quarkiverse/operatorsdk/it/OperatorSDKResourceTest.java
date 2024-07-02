@@ -4,6 +4,8 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -98,14 +100,14 @@ class OperatorSDKResourceTest {
         assertThat(names, arrayContainingInAnyOrder(ApplicationScopedReconciler.NAME,
                 ConfiguredReconciler.NAME,
                 TestReconciler.NAME,
-                ReconcilerUtils.getDefaultNameFor(SecretReconciler.class),
                 ReconcilerUtils.getDefaultNameFor(GatewayReconciler.class),
                 DependentDefiningReconciler.NAME, NamespaceFromEnvReconciler.NAME,
                 EmptyReconciler.NAME, VariableNSReconciler.NAME,
                 AnnotatedDependentReconciler.NAME,
                 ReconcilerUtils.getDefaultNameFor(KeycloakController.class),
                 NameWithSpaceReconciler.NAME,
-                CustomRateLimiterReconciler.NAME));
+                CustomRateLimiterReconciler.NAME,
+                SecretReconciler.NAME));
     }
 
     @Test
@@ -285,5 +287,26 @@ class OperatorSDKResourceTest {
                 .body(
                         "rateLimiter.value", equalTo(42),
                         "itemStore.name", equalTo(NullItemStore.NAME));
+    }
+
+    @Test
+    void shouldHaveDefaultMaxReconciliationInterval() {
+        given()
+                .when()
+                .get("/operator/" + EmptyReconciler.NAME + "/config")
+                .then()
+                .statusCode(200)
+                .body("maxReconciliationIntervalSeconds", equalTo(Long.valueOf(Duration.ofHours(10).getSeconds()).intValue()));
+    }
+
+    @Test
+    void shouldUseMaxReconciliationIntervalFromPropertyIfProvided() {
+        given()
+                .when()
+                .get("/operator/" + SecretReconciler.NAME + "/config")
+                .then()
+                .statusCode(200)
+                .body("maxReconciliationIntervalSeconds",
+                        equalTo(Long.valueOf(Duration.ofMinutes(15).getSeconds()).intValue()));
     }
 }

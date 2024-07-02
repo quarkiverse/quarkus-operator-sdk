@@ -34,6 +34,7 @@ import io.quarkus.runtime.annotations.RecordableConstructor;
 @SuppressWarnings("rawtypes")
 public class QuarkusControllerConfiguration<R extends HasMetadata> implements ControllerConfiguration<R>,
         DependentResourceConfigurationProvider {
+
     // we need to create this class because Quarkus cannot reference the default implementation that
     // JOSDK provides as it doesn't like lambdas at build time. The class also needs to be public
     // because otherwise Quarkus isn't able to access it… :(
@@ -71,7 +72,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final Class<R> resourceClass;
     private final Optional<Long> informerListLimit;
     private final ResourceEventFilter<R> eventFilter;
-    private final Optional<Duration> maxReconciliationInterval;
     private final Optional<OnAddFilter<? super R>> onAddFilter;
     private final Optional<OnUpdateFilter<? super R>> onUpdateFilter;
     private final Optional<GenericFilter<? super R>> genericFilter;
@@ -83,6 +83,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private Class<? extends Retry> retryClass;
     private Class<? extends Annotation> rateLimiterConfigurationClass;
     private Class<? extends RateLimiter> rateLimiterClass;
+    private Optional<Duration> maxReconciliationInterval;
     private String finalizer;
     private Set<String> namespaces;
     private boolean wereNamespacesSet;
@@ -225,8 +226,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             // propagate namespace changes to the dependents' config if needed
             this.dependentsMetadata.forEach((name, spec) -> {
                 final var config = spec.getDependentResourceConfig();
-                if (config instanceof QuarkusKubernetesDependentResourceConfig) {
-                    final var qConfig = (QuarkusKubernetesDependentResourceConfig) config;
+                if (config instanceof QuarkusKubernetesDependentResourceConfig qConfig) {
                     qConfig.setNamespaces(this.namespaces);
                 }
             });
@@ -262,7 +262,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return labelSelector;
     }
 
-    public void setLabelSelector(String labelSelector) {
+    void setLabelSelector(String labelSelector) {
         this.labelSelector = labelSelector;
     }
 
@@ -319,6 +319,10 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     @SuppressWarnings("unused")
     public Duration getMaxReconciliationInterval() {
         return maxReconciliationInterval.orElseThrow();
+    }
+
+    void setMaxReconciliationInterval(Duration duration) {
+        maxReconciliationInterval = Optional.of(duration);
     }
 
     // for Quarkus' RecordableConstructor

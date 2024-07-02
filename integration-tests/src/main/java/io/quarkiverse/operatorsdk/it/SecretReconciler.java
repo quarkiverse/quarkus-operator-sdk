@@ -6,11 +6,13 @@ import java.util.HashMap;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
-@ControllerConfiguration
+@ControllerConfiguration(name = SecretReconciler.NAME, maxReconciliationInterval = @MaxReconciliationInterval(interval = 2))
 public class SecretReconciler implements Reconciler<Secret> {
+    public static final String NAME = "secret";
 
     @Override
     public UpdateControl<Secret> reconcile(Secret secret, Context context) {
