@@ -34,7 +34,7 @@ import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestSpec.ExcludedTopic;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestStatus.State;
 
-@CSVMetadata(requiredCRDs = @CSVMetadata.RequiredCRD(kind = "Joke", name = Joke.NAME, version = Joke.VERSION), icon = @Icon(fileName = "icon.png", mediatype = "image/png"))
+@CSVMetadata(bundleName = "joke-operator", requiredCRDs = @CSVMetadata.RequiredCRD(kind = "Joke", name = Joke.NAME, version = Joke.VERSION), icon = @Icon(fileName = "icon.png", mediatype = "image/png"))
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
 @RBACRule(apiGroups = Joke.GROUP, resources = "jokes", verbs = RBACRule.ALL)
 @SuppressWarnings("unused")
