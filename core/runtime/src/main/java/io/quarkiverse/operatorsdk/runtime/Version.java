@@ -57,6 +57,11 @@ public class Version extends io.javaoperatorsdk.operator.api.config.Version {
         return extensionVersion + " (commit: " + extensionCommit + branch + ") built on " + extensionBuildTime;
     }
 
+    @IgnoreProperty
+    public String getSdkCompleteVersion() {
+        return getSdkVersion() + " (commit: " + getCommit() + ") built on " + getBuiltTime();
+    }
+
     public String getQuarkusVersion() {
         return Versions.QUARKUS;
     }
