@@ -88,7 +88,6 @@ public class BundleProcessor {
 
         final var sharedMetadataHolders = getSharedMetadataHolders(defaultName, defaultVersion, defaultReplaces, index);
         final var csvGroups = new HashMap<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>>();
-
         ClassUtils.getKnownReconcilers(index, log)
                 .forEach(reconcilerInfo -> {
                     // figure out which group should be used to generate CSV
