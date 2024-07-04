@@ -378,6 +378,12 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return informerConfig;
     }
 
+    // required until https://github.com/quarkusio/quarkus/pull/41609 is available in a Quarkus release
+    @Override
+    public Set<String> getNamespaces() {
+        return informerConfig.getNamespaces();
+    }
+
     // Needed by Quarkus because LinearRateLimiter doesn't expose setters for byte recording
     public final static class DefaultRateLimiter extends LinearRateLimiter {
 
