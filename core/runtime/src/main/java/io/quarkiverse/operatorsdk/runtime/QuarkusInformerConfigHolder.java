@@ -1,6 +1,7 @@
 package io.quarkiverse.operatorsdk.runtime;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
@@ -15,16 +16,21 @@ public class QuarkusInformerConfigHolder<R extends HasMetadata> extends Informer
 
     @RecordableConstructor
     public QuarkusInformerConfigHolder(String name, Set<String> namespaces,
-            boolean followControllerNamespacesOnChange, String labelSelector, OnAddFilter<? super R> onAddFilter,
+            String labelSelector, OnAddFilter<? super R> onAddFilter,
             OnUpdateFilter<? super R> onUpdateFilter, OnDeleteFilter<? super R> onDeleteFilter,
             GenericFilter<? super R> genericFilter, ItemStore<R> itemStore, Long informerListLimit) {
-        super(name, namespaces, followControllerNamespacesOnChange, labelSelector, onAddFilter, onUpdateFilter, onDeleteFilter,
+        super(name, namespaces, false, labelSelector, onAddFilter, onUpdateFilter, onDeleteFilter,
                 genericFilter, itemStore, informerListLimit);
     }
 
     public QuarkusInformerConfigHolder(InformerConfigHolder<R> config) {
-        this(config.getName(), config.getNamespaces(), config.isFollowControllerNamespacesOnChange(), config.getLabelSelector(),
+        this(config.getName(), sanitizeNamespaces(config.getNamespaces()),
+                config.getLabelSelector(),
                 config.getOnAddFilter(), config.getOnUpdateFilter(), config.getOnDeleteFilter(), config.getGenericFilter(),
                 config.getItemStore(), config.getInformerListLimit());
+    }
+
+    private static Set<String> sanitizeNamespaces(Set<String> namespaces) {
+        return namespaces.stream().map(String::trim).collect(Collectors.toSet());
     }
 }
