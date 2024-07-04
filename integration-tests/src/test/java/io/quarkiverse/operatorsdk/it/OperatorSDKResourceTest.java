@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.DisabledOnIntegrationTest;
 import io.quarkus.test.junit.QuarkusTest;
 
@@ -29,7 +29,7 @@ import io.quarkus.test.junit.QuarkusTest;
  * See also {@code maven-surefire-plugin} configuration where these same environment variables are set
  */
 @QuarkusTest
-@QuarkusTestResource(CustomKubernetesServerTestResource.class)
+@WithTestResource(CustomKubernetesServerTestResource.class)
 class OperatorSDKResourceTest {
 
     @BeforeAll
