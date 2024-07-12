@@ -17,16 +17,16 @@ package io.quarkiverse.operatorsdk.samples.pingpong;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 import static io.quarkiverse.operatorsdk.samples.pingpong.PingPongOperatorCSVMetadata.BUNDLE_NAME;
 
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 
 @CSVMetadata(bundleName = BUNDLE_NAME)
 @SuppressWarnings("unused")
-@ControllerConfiguration(informerConfig = @InformerConfig(namespaces = WATCH_CURRENT_NAMESPACE))
+@ControllerConfiguration(informer = @Informer(namespaces = WATCH_CURRENT_NAMESPACE))
 public class PongReconciler implements Reconciler<Pong> {
 
     @Override

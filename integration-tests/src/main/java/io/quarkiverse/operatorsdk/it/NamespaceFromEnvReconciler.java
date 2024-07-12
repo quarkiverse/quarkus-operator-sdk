@@ -1,13 +1,13 @@
 package io.quarkiverse.operatorsdk.it;
 
 import io.fabric8.kubernetes.api.model.Pod;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 
-@ControllerConfiguration(name = NamespaceFromEnvReconciler.NAME, informerConfig = @InformerConfig(namespaces = { "static",
+@ControllerConfiguration(name = NamespaceFromEnvReconciler.NAME, informer = @Informer(namespaces = { "static",
         "${" + NamespaceFromEnvReconciler.ENV_VAR_NAME + "}" }))
 public class NamespaceFromEnvReconciler implements Reconciler<Pod> {
     public static final String NAME = "fromenv";
