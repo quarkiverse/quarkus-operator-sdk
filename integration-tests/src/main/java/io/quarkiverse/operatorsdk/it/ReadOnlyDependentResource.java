@@ -5,16 +5,16 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfig;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 
-@KubernetesDependent(informerConfig = @InformerConfig(labelSelector = ReadOnlyDependentResource.LABEL_SELECTOR))
+@KubernetesDependent(informer = @Informer(labelSelector = ReadOnlyDependentResource.LABEL_SELECTOR))
 public class ReadOnlyDependentResource extends KubernetesDependentResource<Deployment, ConfigMap> implements
         SecondaryToPrimaryMapper<Deployment> {
 

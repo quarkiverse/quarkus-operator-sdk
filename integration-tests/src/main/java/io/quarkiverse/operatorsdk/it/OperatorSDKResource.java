@@ -190,16 +190,18 @@ public class OperatorSDKResource {
         }
 
         public String[] getNamespaces() {
-            return conf.getNamespaces().toArray(new String[0]);
+            return conf.getInformerConfig().getNamespaces().toArray(new String[0]);
         }
 
         @JsonProperty("watchAllNamespaces")
         public boolean watchAllNamespaces() {
+            //            return conf.getInformerConfig().watchAllNamespaces();
             return conf.watchAllNamespaces();
         }
 
         @JsonProperty("watchCurrentNamespace")
         public boolean watchCurrentNamespace() {
+            //            return conf.getInformerConfig().watchCurrentNamespace();
             return conf.watchCurrentNamespace();
         }
 
@@ -208,7 +210,7 @@ public class OperatorSDKResource {
         }
 
         public String getLabelSelector() {
-            return conf.getLabelSelector();
+            return conf.getInformerConfig().getLabelSelector();
         }
 
         public List<JSONDependentResourceSpec> getDependents() {
@@ -231,7 +233,7 @@ public class OperatorSDKResource {
         }
 
         public ItemStore<?> getItemStore() {
-            return conf.getItemStore().orElse(null);
+            return conf.getInformerConfig().getItemStore();
         }
     }
 

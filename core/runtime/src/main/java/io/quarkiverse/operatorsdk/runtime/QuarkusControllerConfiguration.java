@@ -18,9 +18,9 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
@@ -58,7 +58,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private QuarkusManagedWorkflow<R> workflow;
     private ConfigurationService parent;
     private ExternalGradualRetryConfiguration gradualRetry;
-    private QuarkusInformerConfigHolder<R> informerConfig;
+    private QuarkusInformerConfiguration<R> informerConfig;
 
     @RecordableConstructor
     @SuppressWarnings("unchecked")
@@ -75,7 +75,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             Class<? extends Retry> retryClass, Class<? extends Annotation> retryConfigurationClass,
             Class<? extends RateLimiter> rateLimiterClass, Class<? extends Annotation> rateLimiterConfigurationClass,
             List<PolicyRule> additionalRBACRules, List<RoleRef> additionalRBACRoleRefs, String fieldManager,
-            QuarkusInformerConfigHolder<R> informerConfig) {
+            QuarkusInformerConfiguration<R> informerConfig) {
         this.informerConfig = informerConfig;
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
@@ -156,8 +156,8 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     void setNamespaces(Set<String> namespaces) {
         if (!namespaces.equals(informerConfig.getNamespaces())) {
-            informerConfig = new QuarkusInformerConfigHolder<>(
-                    InformerConfigHolder.builder(informerConfig)
+            informerConfig = new QuarkusInformerConfiguration<>(
+                    InformerConfiguration.builder(informerConfig)
                             .withNamespaces(namespaces)
                             .buildForController());
             wereNamespacesSet = true;
@@ -179,7 +179,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             dependentsMetadata().forEach((unused, spec) -> {
                 final var config = spec.getConfiguration().orElse(null);
                 if (config instanceof QuarkusKubernetesDependentResourceConfig qConfig) {
-                    qConfig.setNamespaces(getNamespaces());
+                    qConfig.setNamespaces(informerConfig.getNamespaces());
                 }
             });
         }
@@ -196,7 +196,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     }
 
     void setLabelSelector(String labelSelector) {
-        informerConfig = new QuarkusInformerConfigHolder<>(InformerConfigHolder.builder(informerConfig)
+        informerConfig = new QuarkusInformerConfiguration<>(InformerConfiguration.builder(informerConfig)
                 .withLabelSelector(labelSelector)
                 .buildForController());
     }
@@ -306,10 +306,11 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             if (gradualRetry != null) {
                 // configurable should be a GenericRetry as validated by RetryResolver
                 final var genericRetry = (GenericRetry) retry;
-                gradualRetry.maxAttempts.ifPresent(genericRetry::setMaxAttempts);
-                gradualRetry.interval.initial.ifPresent(genericRetry::setInitialInterval);
-                gradualRetry.interval.max.ifPresent(genericRetry::setMaxInterval);
-                gradualRetry.interval.multiplier.ifPresent(genericRetry::setIntervalMultiplier);
+                gradualRetry.maxAttempts().ifPresent(genericRetry::setMaxAttempts);
+                final var intervalConfiguration = gradualRetry.interval();
+                intervalConfiguration.initial().ifPresent(genericRetry::setInitialInterval);
+                intervalConfiguration.max().ifPresent(genericRetry::setMaxInterval);
+                intervalConfiguration.multiplier().ifPresent(genericRetry::setIntervalMultiplier);
             }
             retryClass = null;
             retryConfigurationClass = null;
@@ -374,14 +375,8 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     }
 
     @Override
-    public InformerConfigHolder<R> getInformerConfig() {
+    public InformerConfiguration<R> getInformerConfig() {
         return informerConfig;
-    }
-
-    // required until https://github.com/quarkusio/quarkus/pull/41609 is available in a Quarkus release
-    @Override
-    public Set<String> getNamespaces() {
-        return informerConfig.getNamespaces();
     }
 
     // Needed by Quarkus because LinearRateLimiter doesn't expose setters for byte recording
