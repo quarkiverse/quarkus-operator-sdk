@@ -24,7 +24,17 @@ import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.Constants;
 import io.quarkiverse.operatorsdk.common.ResourceAssociatedAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.deployment.devui.commands.ConsoleCommands;
-import io.quarkiverse.operatorsdk.runtime.*;
+import io.quarkiverse.operatorsdk.runtime.AppEventListener;
+import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
+import io.quarkiverse.operatorsdk.runtime.ConfigurationServiceRecorder;
+import io.quarkiverse.operatorsdk.runtime.KubernetesClientObjectMapperCustomizer;
+import io.quarkiverse.operatorsdk.runtime.KubernetesClientSerializationCustomizer;
+import io.quarkiverse.operatorsdk.runtime.NoOpMetricsProvider;
+import io.quarkiverse.operatorsdk.runtime.OperatorHealthCheck;
+import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
+import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
+import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
+import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
@@ -33,7 +43,13 @@ import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
-import io.quarkus.deployment.builditem.*;
+import io.quarkus.deployment.builditem.AdditionalIndexedClassesBuildItem;
+import io.quarkus.deployment.builditem.ApplicationIndexBuildItem;
+import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
+import io.quarkus.deployment.builditem.ConsoleCommandBuildItem;
+import io.quarkus.deployment.builditem.FeatureBuildItem;
+import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
+import io.quarkus.deployment.builditem.RunTimeConfigurationDefaultBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ForceNonWeakReflectiveClassBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveHierarchyBuildItem;
 import io.quarkus.deployment.metrics.MetricsCapabilityBuildItem;
@@ -235,7 +251,7 @@ class OperatorSDKProcessor {
             ControllerConfigurationsBuildItem configurations,
             BuildProducer<RunTimeConfigurationDefaultBuildItem> runtimeConfig) {
         configurations.getControllerConfigs().forEach((name, configuration) -> {
-            final var namespaces = String.join(",", configuration.getNamespaces());
+            final var namespaces = String.join(",", configuration.getInformerConfig().getNamespaces());
             runtimeConfig.produce(new RunTimeConfigurationDefaultBuildItem(
                     "quarkus.operator-sdk.controllers." + configuration.getName() + ".namespaces",
                     namespaces));

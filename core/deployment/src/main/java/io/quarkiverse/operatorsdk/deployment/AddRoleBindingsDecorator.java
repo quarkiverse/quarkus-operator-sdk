@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 
@@ -60,7 +61,8 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
         final var controllerName = controllerConfiguration.getName();
 
         // retrieve which namespaces should be used to generate either from annotation or from the build time configuration
-        final var desiredWatchedNamespaces = controllerConfiguration.getNamespaces();
+        final InformerConfiguration<?> informerConfig = controllerConfiguration.getInformerConfig();
+        final var desiredWatchedNamespaces = informerConfig.getNamespaces();
 
         // if we validate the CRDs, also create a binding for the CRD validating role
         List<HasMetadata> itemsToAdd;
@@ -75,6 +77,7 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
         }
 
         final var roleBindingName = getRoleBindingName(controllerName);
+        //        if (informerConfig.watchCurrentNamespace()) {
         if (controllerConfiguration.watchCurrentNamespace()) {
             // create a RoleBinding that will be applied in the current namespace if watching only the current NS
             itemsToAdd.add(createRoleBinding(roleBindingName, serviceAccountName, null,
@@ -85,6 +88,7 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
                         final var specificRoleBindingName = getSpecificRoleBindingName(controllerName, roleRef);
                         itemsToAdd.add(createRoleBinding(specificRoleBindingName, serviceAccountName, null, roleRef));
                     });
+            //        } else if (informerConfig.watchAllNamespaces()) {
         } else if (controllerConfiguration.watchAllNamespaces()) {
             itemsToAdd.add(createClusterRoleBinding(serviceAccountName, controllerName,
                     getClusterRoleBindingName(controllerName), "watch all namespaces",
