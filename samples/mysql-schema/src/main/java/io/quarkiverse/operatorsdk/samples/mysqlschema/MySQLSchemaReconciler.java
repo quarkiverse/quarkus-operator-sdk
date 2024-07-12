@@ -7,7 +7,6 @@ import jakarta.inject.Inject;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
@@ -23,7 +22,6 @@ import io.quarkus.logging.Log;
         @Dependent(type = SecretDependentResource.class),
         @Dependent(type = SchemaDependentResource.class, name = SchemaDependentResource.NAME)
 })
-@ControllerConfiguration
 @SuppressWarnings("unused")
 public class MySQLSchemaReconciler implements Reconciler<MySQLSchema> {
 
