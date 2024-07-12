@@ -51,7 +51,7 @@ public class ControllerInfo<P extends HasMetadata> {
 
     @SuppressWarnings("unused")
     public Set<String> getConfiguredNamespaces() {
-        return controller.getConfiguration().getNamespaces();
+        return controller.getConfiguration().getInformerConfig().getNamespaces();
     }
 
     @SuppressWarnings("unused")
