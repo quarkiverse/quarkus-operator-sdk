@@ -23,9 +23,9 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.InformerConfigHolder;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentConverter;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
@@ -69,7 +69,7 @@ class QuarkusControllerConfigurationBuildStep {
             // make the configuration bytecode-serializable
             return new QuarkusKubernetesDependentResourceConfig(
                     original.useSSA(), original.createResourceOnlyIfNotExistingWithSSA(),
-                    new QuarkusInformerConfigHolder(original.informerConfig()));
+                    new QuarkusInformerConfiguration(original.informerConfig()));
         }
     };
     private static final Supplier<AnnotationInstance> NULL_ANNOTATION_SUPPLIER = () -> null;
@@ -189,7 +189,7 @@ class QuarkusControllerConfigurationBuildStep {
 
             // deal with informer configuration
             final var informerConfigAnnotation = ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
-                    "informerConfig", AnnotationValue::asNested, NULL_ANNOTATION_SUPPLIER);
+                    "informer", AnnotationValue::asNested, NULL_ANNOTATION_SUPPLIER);
             if (informerConfigAnnotation != null) {
                 onAddFilter = ConfigurationUtils.instantiateImplementationClass(
                         informerConfigAnnotation, "onAddFilter", OnAddFilter.class, OnAddFilter.class, true, index);
@@ -264,7 +264,7 @@ class QuarkusControllerConfigurationBuildStep {
         final Class<? extends HasMetadata> resourceClass = (Class<? extends HasMetadata>) primaryInfo.loadAssociatedClass();
         final String resourceFullName = primaryAsResource.fullResourceName();
 
-        final var informerConfigHolder = InformerConfigHolder.builder(resourceClass)
+        final var informerConfigHolder = InformerConfiguration.builder(resourceClass)
                 .withName(informerName)
                 .withNamespaces(namespaces)
                 .withLabelSelector(labelSelector)
@@ -274,7 +274,7 @@ class QuarkusControllerConfigurationBuildStep {
                 .withItemStore(itemStore)
                 .withInformerListLimit(nullableInformerListLimit)
                 .buildForController();
-        final var informerConfig = new QuarkusInformerConfigHolder(informerConfigHolder);
+        final var informerConfig = new QuarkusInformerConfiguration(informerConfigHolder);
 
         configuration = new QuarkusControllerConfiguration(
                 reconcilerClassName,

@@ -31,6 +31,6 @@ public class OneNSConfigurationTest {
     @Test
     void checkDefaultOperatorLevelNamespaces() {
         final var config = configurationService.getConfigurationFor(testReconciler);
-        assertEquals(Set.of(OneNSReconciler.NS), config.getNamespaces());
+        assertEquals(Set.of(OneNSReconciler.NS), config.getInformerConfig().getNamespaces());
     }
 }

@@ -29,6 +29,6 @@ public class DefaultConfigurationTest {
     @Test
     void checkDefaultOperatorLevelNamespaces() {
         final var config = configurationService.getConfigurationFor(testReconciler);
-        assertEquals(Constants.DEFAULT_NAMESPACES_SET, config.getNamespaces());
+        assertEquals(Constants.DEFAULT_NAMESPACES_SET, config.getInformerConfig().getNamespaces());
     }
 }
