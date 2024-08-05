@@ -19,7 +19,6 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -34,6 +33,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         DependentResourceFactory<QuarkusControllerConfiguration<?>>,
         ManagedWorkflowFactory<QuarkusControllerConfiguration<?>> {
     private static final Logger log = LoggerFactory.getLogger(QuarkusConfigurationService.class);
+    public static final int UNSET_TERMINATION_TIMEOUT_SECONDS = -1;
     private final CRDGenerationInfo crdInfo;
     private final int concurrentReconciliationThreads;
     private final int terminationTimeout;
@@ -49,6 +49,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     @SuppressWarnings("rawtypes")
     private final Map<String, DependentResource> knownDependents = new ConcurrentHashMap<>();
     private final boolean useSSA;
+    private final boolean defensiveCloning;
 
     public QuarkusConfigurationService(
             Version version,
@@ -58,7 +59,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
             int timeout, Duration cacheSyncTimeout, Metrics metrics, boolean startOperator,
             LeaderElectionConfiguration leaderElectionConfiguration, InformerStoppedHandler informerStoppedHandler,
             boolean closeClientOnStop, boolean stopOnInformerErrorDuringStartup,
-            boolean useSSA) {
+            boolean useSSA, boolean defensiveCloning) {
         super(version);
         this.closeClientOnStop = closeClientOnStop;
         this.stopOnInformerErrorDuringStartup = stopOnInformerErrorDuringStartup;
@@ -85,6 +86,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         this.informerStoppedHandler = informerStoppedHandler;
         this.leaderElectionConfiguration = leaderElectionConfiguration;
         this.useSSA = useSSA;
+        this.defensiveCloning = defensiveCloning;
     }
 
     @Override
@@ -128,7 +130,6 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         return this.concurrentReconciliationThreads;
     }
 
-    @Override
     public int getTerminationTimeoutSeconds() {
         return terminationTimeout;
     }
@@ -225,7 +226,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
 
                 dependentResource = ClientProxy.unwrap(dependent);
                 // configure the bean
-                DependentResourceConfigurationResolver.configure(dependentResource, spec, configuration);
+                configure(dependentResource, spec, configuration);
                 // record the configured dependent for later retrieval if needed
                 knownDependents.put(dependentKey, dependentResource);
             }
@@ -243,15 +244,18 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         return controllerName + "#" + dependentName;
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "rawtypes" })
     public DependentResourceSpecMetadata getDependentByName(String controllerName, String dependentName) {
-        return (DependentResourceSpecMetadata) controllerConfigurations()
-                .filter(cc -> controllerName.equals(cc.getName()))
-                .findFirst()
-                .flatMap(cc -> cc.getDependentResources().stream()
-                        .filter(drs -> dependentName.equals(((DependentResourceSpec) drs).getName()))
-                        .findFirst())
-                .orElse(null);
+        final ControllerConfiguration<?> cc = getFor(controllerName);
+        if (cc == null) {
+            return null;
+        } else {
+            return cc.getWorkflowSpec().flatMap(spec -> spec.getDependentResourceSpecs().stream()
+                    .filter(r -> r.getName().equals(dependentName) && r instanceof DependentResourceSpecMetadata<?, ?, ?>)
+                    .map(DependentResourceSpecMetadata.class::cast)
+                    .findFirst())
+                    .orElse(null);
+        }
     }
 
     @SuppressWarnings("rawtypes")
@@ -262,5 +266,15 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     @Override
     public boolean ssaBasedCreateUpdateMatchForDependentResources() {
         return useSSA;
+    }
+
+    @Override
+    public boolean useSSAToPatchPrimaryResource() {
+        return useSSA;
+    }
+
+    @Override
+    public boolean cloneSecondaryResourcesWhenGettingFromCache() {
+        return defensiveCloning;
     }
 }
