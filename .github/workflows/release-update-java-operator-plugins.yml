@@ -30,7 +30,7 @@ jobs:
           sed -i -e 's|<quarkus.version>.*</quarkus.version>|<quarkus.version>${{inputs.quarkus-version}}</quarkus.version>|' $(pwd)/pkg/quarkus/v1beta/scaffolds/internal/templates/pomxml.go
 
       - name: Create java-operator-plugins pull request
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v6
         id: jop-pr
         with:
           title: "feat: update QOSDK to ${{inputs.qosdk-version}}"
