@@ -22,30 +22,29 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
-import io.quarkus.runtime.annotations.ConfigItem;
 import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.runtime.annotations.ConfigRoot;
+import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
 
-@ConfigRoot(name = "operator-sdk", phase = ConfigPhase.RUN_TIME)
-public class RunTimeOperatorConfiguration {
+@ConfigMapping(prefix = "quarkus.operator-sdk")
+@ConfigRoot(phase = ConfigPhase.RUN_TIME)
+public interface RunTimeOperatorConfiguration {
 
     /**
      * Maps a controller name to its configuration.
      */
-    @ConfigItem
-    public Map<String, RunTimeControllerConfiguration> controllers;
+    Map<String, RunTimeControllerConfiguration> controllers();
 
     /**
      * The max number of concurrent dispatches of reconciliation requests to controllers.
      */
-    @ConfigItem
-    public Optional<Integer> concurrentReconciliationThreads;
+    Optional<Integer> concurrentReconciliationThreads();
 
     /**
      * Amount of seconds the SDK waits for reconciliation threads to terminate before shutting down.
      */
-    @ConfigItem
-    public Optional<Integer> terminationTimeoutSeconds;
+    Optional<Integer> terminationTimeoutSeconds();
 
     /**
      * An optional list of comma-separated namespace names all controllers will watch if they do not specify their own list. If
@@ -64,19 +63,18 @@ public class RunTimeOperatorConfiguration {
     // We use a default here so that we are able to detect if the configuration value is set to "". Setting the value to "" will
     // reset the configuration and result in an empty Optional, but not setting the value at all will result in the default being
     // applied.
-    @ConfigItem(defaultValue = QOSDK_USE_BUILDTIME_NAMESPACES)
-    public Optional<List<String>> namespaces;
+    @WithDefault(QOSDK_USE_BUILDTIME_NAMESPACES)
+    Optional<List<String>> namespaces();
 
     /**
      * The max number of concurrent workflow processing requests.
      */
-    @ConfigItem
-    public Optional<Integer> concurrentWorkflowThreads;
+    Optional<Integer> concurrentWorkflowThreads();
 
     /**
      * How long the operator will wait for informers to finish synchronizing their caches on startup
      * before timing out.
      */
-    @ConfigItem(defaultValue = "2M")
-    public Duration cacheSyncTimeout;
+    @WithDefault("2M")
+    Duration cacheSyncTimeout();
 }

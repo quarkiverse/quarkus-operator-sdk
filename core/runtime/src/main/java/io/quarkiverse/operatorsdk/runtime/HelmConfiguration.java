@@ -1,15 +1,15 @@
 package io.quarkiverse.operatorsdk.runtime;
 
 import io.quarkus.runtime.annotations.ConfigGroup;
-import io.quarkus.runtime.annotations.ConfigItem;
+import io.smallrye.config.WithDefault;
 
 @ConfigGroup
-public class HelmConfiguration {
+public interface HelmConfiguration {
 
     /**
      * Can be used to disable helm chart generation.
      */
-    @ConfigItem(defaultValue = "false")
-    public Boolean enabled;
+    @WithDefault("false")
+    Boolean enabled();
 
 }

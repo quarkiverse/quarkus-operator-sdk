@@ -64,7 +64,7 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
 
         // if we validate the CRDs, also create a binding for the CRD validating role
         List<HasMetadata> itemsToAdd;
-        if (operatorConfiguration.crd.validate) {
+        if (operatorConfiguration.crd().validate()) {
             final var crBindingName = getCRDValidatingBindingName(controllerName);
             final var crdValidatorRoleBinding = createClusterRoleBinding(serviceAccountName, controllerName,
                     crBindingName, "validate CRDs", CRD_VALIDATING_ROLE_REF);

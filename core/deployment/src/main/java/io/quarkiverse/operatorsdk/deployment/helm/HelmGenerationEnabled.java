@@ -9,6 +9,6 @@ class HelmGenerationEnabled implements BooleanSupplier {
 
     @Override
     public boolean getAsBoolean() {
-        return config.helm.enabled;
+        return config.helm().enabled();
     }
 }

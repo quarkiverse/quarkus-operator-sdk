@@ -28,8 +28,8 @@ class CRDGenerationBuildStep {
             LiveReloadBuildItem liveReload,
             OutputTargetBuildItem outputTarget,
             CombinedIndexBuildItem combinedIndexBuildItem) {
-        final var crdConfig = operatorConfiguration.crd;
-        final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(crdConfig.validate);
+        final var crdConfig = operatorConfiguration.crd();
+        final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(crdConfig.validate());
 
         //apply should imply generate: we cannot apply if we're not generating!
         final var launchMode = launchModeBuildItem.getLaunchMode();
@@ -41,7 +41,7 @@ class CRDGenerationBuildStep {
             stored = new ContextStoredCRDInfos();
         }
 
-        final var generate = CRDGeneration.shouldGenerate(crdConfig.generate, crdConfig.apply, launchMode);
+        final var generate = CRDGeneration.shouldGenerate(crdConfig.generate(), crdConfig.apply(), launchMode);
         final var storedCRDInfos = stored;
         final var changedClasses = ConfigurationUtils.getChangedClasses(liveReload);
         final var scheduledForGeneration = new HashSet<String>(7);
@@ -74,7 +74,7 @@ class CRDGenerationBuildStep {
             });
 
             // generate non-reconciler associated CRDs if requested
-            if (crdConfig.generateAll) {
+            if (crdConfig.generateAll()) {
                 ClassUtils.getProcessableSubClassesOf(Constants.CUSTOM_RESOURCE, combinedIndexBuildItem.getIndex(), log,
                         // pass already generated CRD names so that we can only keep the unhandled ones
                         Map.of(CustomResourceAugmentedClassInfo.EXISTING_CRDS_KEY, scheduledForGeneration))
