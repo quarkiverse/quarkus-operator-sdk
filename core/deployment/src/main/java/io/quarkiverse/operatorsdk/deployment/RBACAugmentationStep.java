@@ -15,7 +15,7 @@ public class RBACAugmentationStep {
 
         @Override
         public boolean getAsBoolean() {
-            return !config.disableRbacGeneration;
+            return !config.disableRbacGeneration();
         }
     }
 
@@ -26,7 +26,7 @@ public class RBACAugmentationStep {
 
         final var configs = configurations.getControllerConfigs().values();
         decorators.produce(new DecoratorBuildItem(
-                new AddClusterRolesDecorator(configs, buildTimeConfiguration.crd.validate)));
+                new AddClusterRolesDecorator(configs, buildTimeConfiguration.crd().validate())));
         decorators.produce(new DecoratorBuildItem(
                 new AddRoleBindingsDecorator(configs, buildTimeConfiguration)));
     }

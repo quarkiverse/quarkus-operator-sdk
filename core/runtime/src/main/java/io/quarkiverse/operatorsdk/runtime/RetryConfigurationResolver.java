@@ -66,8 +66,8 @@ public class RetryConfigurationResolver implements RetryConfiguration {
         private final IntervalConfigurationAdapter interval;
 
         public ExternalRetryConfigurationAdapter(ExternalRetryConfiguration config) {
-            maxAttempts = config.maxAttempts.orElse(RetryConfiguration.DEFAULT.getMaxAttempts());
-            interval = Optional.ofNullable(config.interval)
+            maxAttempts = config.maxAttempts().orElse(RetryConfiguration.DEFAULT.getMaxAttempts());
+            interval = Optional.ofNullable(config.interval())
                     .map(IntervalConfigurationAdapter::new)
                     .orElse(new IntervalConfigurationAdapter());
         }
@@ -100,9 +100,9 @@ public class RetryConfigurationResolver implements RetryConfiguration {
         private final long max;
 
         IntervalConfigurationAdapter(ExternalIntervalConfiguration config) {
-            initial = config.initial;
-            multiplier = config.multiplier;
-            max = config.max.orElse(RetryConfiguration.DEFAULT.getMaxInterval());
+            initial = config.initial();
+            multiplier = config.multiplier();
+            max = config.max().orElse(RetryConfiguration.DEFAULT.getMaxInterval());
         }
 
         IntervalConfigurationAdapter() {

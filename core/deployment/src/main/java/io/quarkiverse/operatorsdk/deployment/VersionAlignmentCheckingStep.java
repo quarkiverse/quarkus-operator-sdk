@@ -50,7 +50,7 @@ public class VersionAlignmentCheckingStep {
         if (!expectedVersion.equals(foundVersion)) {
             String message = "Mismatched " + name + " version found: \"" + found + "\", expected: \"" + expected
                     + "\"";
-            if (buildTimeConfiguration.failOnVersionCheck) {
+            if (buildTimeConfiguration.failOnVersionCheck()) {
                 throw new RuntimeException(message);
             } else {
                 final var diff = expectedVersion.diff(foundVersion);
