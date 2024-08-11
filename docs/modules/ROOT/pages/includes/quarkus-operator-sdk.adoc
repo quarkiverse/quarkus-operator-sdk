@@ -1,21 +1,19 @@
-
-:summaryTableId: quarkus-operator-sdk
+:summaryTableId: quarkus-operator-sdk_quarkus-operator-sdk
 [.configuration-legend]
 icon:lock[title=Fixed at build time] Configuration property fixed at build time - All other configuration properties are overridable at runtime
 [.configuration-reference.searchable, cols="80,.^10,.^10"]
 |===
 
-h|[[quarkus-operator-sdk_configuration]]link:#quarkus-operator-sdk_configuration[Configuration property]
-
+h|[.header-title]##Configuration property##
 h|Type
 h|Default
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-validate]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-validate[quarkus.operator-sdk.crd.validate]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-validate]] [.property-path]##`quarkus.operator-sdk.crd.validate`##
 
 [.description]
 --
 Whether the operator should check that the CRD is properly deployed and that the associated `CustomResource` implementation matches its information before registering the associated controller.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CRD_VALIDATE+++[]
@@ -23,16 +21,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CRD_VALIDATE+++`
 endif::add-copy-button-to-env-var[]
---|boolean 
+--
+|boolean
 |`true`
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-generate]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-generate[quarkus.operator-sdk.crd.generate]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-generate]] [.property-path]##`quarkus.operator-sdk.crd.generate`##
 
 [.description]
 --
 Whether the extension should automatically generate the CRD based on `CustomResource` implementations.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CRD_GENERATE+++[]
@@ -40,16 +38,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CRD_GENERATE+++`
 endif::add-copy-button-to-env-var[]
---|boolean 
+--
+|boolean
 |
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-apply]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-apply[quarkus.operator-sdk.crd.apply]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-apply]] [.property-path]##`quarkus.operator-sdk.crd.apply`##
 
 [.description]
 --
 Whether the extension should automatically apply updated CRDs when they change. When running on DEV mode, the CRD changes will always be applied automatically.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CRD_APPLY+++[]
@@ -57,16 +55,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CRD_APPLY+++`
 endif::add-copy-button-to-env-var[]
---|boolean 
+--
+|boolean
 |
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-versions]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-versions[quarkus.operator-sdk.crd.versions]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-versions]] [.property-path]##`quarkus.operator-sdk.crd.versions`##
 
 [.description]
 --
 Comma-separated list of which CRD versions should be generated.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CRD_VERSIONS+++[]
@@ -74,16 +72,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CRD_VERSIONS+++`
 endif::add-copy-button-to-env-var[]
---|list of string 
+--
+|list of string
 |`v1`
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-output-directory]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-output-directory[quarkus.operator-sdk.crd.output-directory]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-output-directory]] [.property-path]##`quarkus.operator-sdk.crd.output-directory`##
 
 [.description]
 --
 The directory where the CRDs will be generated, defaults to the `kubernetes` directory of the project's output directory.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CRD_OUTPUT_DIRECTORY+++[]
@@ -91,16 +89,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CRD_OUTPUT_DIRECTORY+++`
 endif::add-copy-button-to-env-var[]
---|string 
+--
+|string
 |
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-generate-all]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-generate-all[quarkus.operator-sdk.crd.generate-all]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-generate-all]] [.property-path]##`quarkus.operator-sdk.crd.generate-all`##
 
 [.description]
 --
 Whether the extension should generate all CRDs even if some are not tied to a Reconciler.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CRD_GENERATE_ALL+++[]
@@ -108,16 +106,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CRD_GENERATE_ALL+++`
 endif::add-copy-button-to-env-var[]
---|boolean 
+--
+|boolean
 |`false`
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-generate-in-parallel]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-generate-in-parallel[quarkus.operator-sdk.crd.generate-in-parallel]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-generate-in-parallel]] [.property-path]##`quarkus.operator-sdk.crd.generate-in-parallel`##
 
 [.description]
 --
 Whether the CRDs should be generated in parallel. Please note that this feature is experimental and it may lead to unexpected results.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CRD_GENERATE_IN_PARALLEL+++[]
@@ -125,16 +123,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CRD_GENERATE_IN_PARALLEL+++`
 endif::add-copy-button-to-env-var[]
---|boolean 
+--
+|boolean
 |`false`
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-exclude-resources]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-exclude-resources[quarkus.operator-sdk.crd.exclude-resources]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-exclude-resources]] [.property-path]##`quarkus.operator-sdk.crd.exclude-resources`##
 
 [.description]
 --
 A comma-separated list of fully-qualified class names implementing custom resources to exclude from the CRD generation process.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CRD_EXCLUDE_RESOURCES+++[]
@@ -142,16 +140,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CRD_EXCLUDE_RESOURCES+++`
 endif::add-copy-button-to-env-var[]
---|list of string 
+--
+|list of string
 |
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-generation-aware]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-generation-aware[quarkus.operator-sdk.generation-aware]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-generation-aware]] [.property-path]##`quarkus.operator-sdk.generation-aware`##
 
 [.description]
 --
 Whether controllers should only process events if the associated resource generation has increased since last reconciliation, otherwise will process all events. Sets the default value for all controllers.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_GENERATION_AWARE+++[]
@@ -159,16 +157,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_GENERATION_AWARE+++`
 endif::add-copy-button-to-env-var[]
---|boolean 
+--
+|boolean
 |`true`
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-disable-rbac-generation]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-disable-rbac-generation[quarkus.operator-sdk.disable-rbac-generation]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-disable-rbac-generation]] [.property-path]##`quarkus.operator-sdk.disable-rbac-generation`##
 
 [.description]
 --
 Whether Role-Based Access Control (RBAC) resources generated by the Kubernetes extension should be augmented by this extension.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_DISABLE_RBAC_GENERATION+++[]
@@ -176,16 +174,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_DISABLE_RBAC_GENERATION+++`
 endif::add-copy-button-to-env-var[]
---|boolean 
+--
+|boolean
 |`false`
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-start-operator]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-start-operator[quarkus.operator-sdk.start-operator]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-start-operator]] [.property-path]##`quarkus.operator-sdk.start-operator`##
 
 [.description]
 --
 Whether the operator should be automatically started or not. Mostly useful for testing scenarios.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_START_OPERATOR+++[]
@@ -193,16 +191,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_START_OPERATOR+++`
 endif::add-copy-button-to-env-var[]
---|boolean 
+--
+|boolean
 |`true`
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-close-client-on-stop]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-close-client-on-stop[quarkus.operator-sdk.close-client-on-stop]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-close-client-on-stop]] [.property-path]##`quarkus.operator-sdk.close-client-on-stop`##
 
 [.description]
 --
 Whether the injected Kubernetes client should be stopped when the operator is stopped.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CLOSE_CLIENT_ON_STOP+++[]
@@ -210,16 +208,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CLOSE_CLIENT_ON_STOP+++`
 endif::add-copy-button-to-env-var[]
---|boolean 
+--
+|boolean
 |`true`
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-stop-on-informer-error-during-startup]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-stop-on-informer-error-during-startup[quarkus.operator-sdk.stop-on-informer-error-during-startup]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-stop-on-informer-error-during-startup]] [.property-path]##`quarkus.operator-sdk.stop-on-informer-error-during-startup`##
 
 [.description]
 --
 Whether the operator should stop if an informer error (such as one caused by missing / improper RBACs) occurs during startup.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_STOP_ON_INFORMER_ERROR_DURING_STARTUP+++[]
@@ -227,12 +225,11 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_STOP_ON_INFORMER_ERROR_DURING_STARTUP+++`
 endif::add-copy-button-to-env-var[]
---|boolean 
+--
+|boolean
 |`true`
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-fail-on-version-check]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-fail-on-version-check[quarkus.operator-sdk.fail-on-version-check]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-fail-on-version-check]] [.property-path]##`quarkus.operator-sdk.fail-on-version-check`##
 
 [.description]
 --
@@ -244,22 +241,23 @@ The following versions are checked for alignment:
  - Fabric8 client version used by JOSDK vs. actually used Fabric8 client version
  - Fabric8 client version used by Quarkus vs. actually used Fabric8 client version
 
+
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_FAIL_ON_VERSION_CHECK+++[]
 endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_FAIL_ON_VERSION_CHECK+++`
 endif::add-copy-button-to-env-var[]
---|boolean 
+--
+|boolean
 |`false`
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-activate-leader-election-for-profiles]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-activate-leader-election-for-profiles[quarkus.operator-sdk.activate-leader-election-for-profiles]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-activate-leader-election-for-profiles]] [.property-path]##`quarkus.operator-sdk.activate-leader-election-for-profiles`##
 
 [.description]
 --
 The list of profile names for which leader election should be activated. This is mostly useful for testing scenarios where leader election behavior might lead to issues.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_ACTIVATE_LEADER_ELECTION_FOR_PROFILES+++[]
@@ -267,16 +265,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_ACTIVATE_LEADER_ELECTION_FOR_PROFILES+++`
 endif::add-copy-button-to-env-var[]
---|list of string 
+--
+|list of string
 |`prod`
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-enable-ssa]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-enable-ssa[quarkus.operator-sdk.enable-ssa]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-enable-ssa]] [.property-path]##`quarkus.operator-sdk.enable-ssa`##
 
 [.description]
 --
 The optional Server-Side Apply (SSA) related configuration.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_ENABLE_SSA+++[]
@@ -284,16 +282,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_ENABLE_SSA+++`
 endif::add-copy-button-to-env-var[]
---|boolean 
+--
+|boolean
 |`true`
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-generate-with-watched-namespaces]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-generate-with-watched-namespaces[quarkus.operator-sdk.generate-with-watched-namespaces]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-generate-with-watched-namespaces]] [.property-path]##`quarkus.operator-sdk.generate-with-watched-namespaces`##
 
 [.description]
 --
 An optional list of comma-separated watched namespace names that will be used to generate manifests at build time if controllers do *NOT* specify a value individually. See `BuildTimeControllerConfiguration++#++generateWithWatchedNamespaces` for more information.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_GENERATE_WITH_WATCHED_NAMESPACES+++[]
@@ -301,16 +299,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_GENERATE_WITH_WATCHED_NAMESPACES+++`
 endif::add-copy-button-to-env-var[]
---|list of string 
+--
+|list of string
 |
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-helm-enabled]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-helm-enabled[quarkus.operator-sdk.helm.enabled]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-helm-enabled]] [.property-path]##`quarkus.operator-sdk.helm.enabled`##
 
 [.description]
 --
 Can be used to disable helm chart generation.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_HELM_ENABLED+++[]
@@ -318,16 +316,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_HELM_ENABLED+++`
 endif::add-copy-button-to-env-var[]
---|boolean 
+--
+|boolean
 |`false`
 
-
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-concurrent-reconciliation-threads]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-concurrent-reconciliation-threads[quarkus.operator-sdk.concurrent-reconciliation-threads]`
-
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-concurrent-reconciliation-threads]] [.property-path]##`quarkus.operator-sdk.concurrent-reconciliation-threads`##
 
 [.description]
 --
 The max number of concurrent dispatches of reconciliation requests to controllers.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONCURRENT_RECONCILIATION_THREADS+++[]
@@ -335,16 +333,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CONCURRENT_RECONCILIATION_THREADS+++`
 endif::add-copy-button-to-env-var[]
---|int 
+--
+|int
 |
 
-
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-termination-timeout-seconds]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-termination-timeout-seconds[quarkus.operator-sdk.termination-timeout-seconds]`
-
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-termination-timeout-seconds]] [.property-path]##`quarkus.operator-sdk.termination-timeout-seconds`##
 
 [.description]
 --
 Amount of seconds the SDK waits for reconciliation threads to terminate before shutting down.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_TERMINATION_TIMEOUT_SECONDS+++[]
@@ -352,12 +350,11 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_TERMINATION_TIMEOUT_SECONDS+++`
 endif::add-copy-button-to-env-var[]
---|int 
+--
+|int
 |
 
-
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-namespaces]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-namespaces[quarkus.operator-sdk.namespaces]`
-
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-namespaces]] [.property-path]##`quarkus.operator-sdk.namespaces`##
 
 [.description]
 --
@@ -365,22 +362,23 @@ An optional list of comma-separated namespace names all controllers will watch i
 
 If this property is left empty then controllers will watch all namespaces by default (which is equivalent to setting this property to `Constants++#++WATCH_ALL_NAMESPACES`, assuming they do not provide their own list of namespaces to watch. . The value can be set to `Constants++#++WATCH_CURRENT_NAMESPACE` to make all controllers watch the current namespace as specified by the kube config file the operator uses.
 
+
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_NAMESPACES+++[]
 endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_NAMESPACES+++`
 endif::add-copy-button-to-env-var[]
---|list of string 
+--
+|list of string
 |`QOSDK_USE_BUILDTIME_NAMESPACES`
 
-
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-concurrent-workflow-threads]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-concurrent-workflow-threads[quarkus.operator-sdk.concurrent-workflow-threads]`
-
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-concurrent-workflow-threads]] [.property-path]##`quarkus.operator-sdk.concurrent-workflow-threads`##
 
 [.description]
 --
 The max number of concurrent workflow processing requests.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONCURRENT_WORKFLOW_THREADS+++[]
@@ -388,16 +386,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CONCURRENT_WORKFLOW_THREADS+++`
 endif::add-copy-button-to-env-var[]
---|int 
+--
+|int
 |
 
-
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-cache-sync-timeout]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-cache-sync-timeout[quarkus.operator-sdk.cache-sync-timeout]`
-
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-cache-sync-timeout]] [.property-path]##`quarkus.operator-sdk.cache-sync-timeout`##
 
 [.description]
 --
 How long the operator will wait for informers to finish synchronizing their caches on startup before timing out.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CACHE_SYNC_TIMEOUT+++[]
@@ -405,17 +403,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CACHE_SYNC_TIMEOUT+++`
 endif::add-copy-button-to-env-var[]
---|link:https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html[Duration]
-  link:#duration-note-anchor-{summaryTableId}[icon:question-circle[title=More information about the Duration format]]
+--
+|link:https://docs.oracle.com/en/java/javase/17/docs/api/java/time/Duration.html[Duration] link:#duration-note-anchor-{summaryTableId}[icon:question-circle[title=More information about the Duration format]]
 |`2M`
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-generation-aware]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-generation-aware[quarkus.operator-sdk.controllers."controllers".generation-aware]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-generation-aware]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".generation-aware`##
 
 [.description]
 --
 Whether the controller should only process events if the associated resource generation has increased since last reconciliation, otherwise will process all events.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__GENERATION_AWARE+++[]
@@ -423,12 +420,11 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__GENERATION_AWARE+++`
 endif::add-copy-button-to-env-var[]
---|boolean 
+--
+|boolean
 |
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-generate-with-watched-namespaces]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-generate-with-watched-namespaces[quarkus.operator-sdk.controllers."controllers".generate-with-watched-namespaces]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-generate-with-watched-namespaces]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".generate-with-watched-namespaces`##
 
 [.description]
 --
@@ -442,22 +438,23 @@ As this functionality cannot handle namespaces that are not know until runtime (
 
 This replaces the previous `namespaces` property which was confusing and against Quarkus best practices since it existed both at build time and runtime. That property wasn't also adequately capturing the fact that namespaces that wouldn't be known until runtime would render whatever got generated at build time invalid as far as generated manifests were concerned.
 
+
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__GENERATE_WITH_WATCHED_NAMESPACES+++[]
 endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__GENERATE_WITH_WATCHED_NAMESPACES+++`
 endif::add-copy-button-to-env-var[]
---|list of string 
+--
+|list of string
 |
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-unowned-primary]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-unowned-primary[quarkus.operator-sdk.controllers."controllers".unowned-primary]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-unowned-primary]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".unowned-primary`##
 
 [.description]
 --
 Indicates whether the primary resource for the associated controller is unowned, meaning that another controller is the principal controller handling resources of this type. By default, controllers are assumed to own their primary resource but there are cases where this might not be the case, for example, when extra processing of a given resource type is required even though another controller already handles reconciliations of resources of that type. Set this property to `true` if you want to indicate that the controller doesn't own its primary resource
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__UNOWNED_PRIMARY+++[]
@@ -465,16 +462,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__UNOWNED_PRIMARY+++`
 endif::add-copy-button-to-env-var[]
---|boolean 
+--
+|boolean
 |`false`
 
-
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-namespaces]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-namespaces[quarkus.operator-sdk.controllers."controllers".namespaces]`
-
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-namespaces]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".namespaces`##
 
 [.description]
 --
 An optional list of comma-separated namespace names the controller should watch. If this property is left empty then the controller will watch all namespaces. The value can be set to "JOSDK_WATCH_CURRENT" to watch the current (default) namespace from kube config. Constant(s) can be found in at `io.javaoperatorsdk.operator.api.reconciler.Constants`".
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__NAMESPACES+++[]
@@ -482,16 +479,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__NAMESPACES+++`
 endif::add-copy-button-to-env-var[]
---|list of string 
+--
+|list of string
 |`QOSDK_USE_BUILDTIME_NAMESPACES`
 
-
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-finalizer]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-finalizer[quarkus.operator-sdk.controllers."controllers".finalizer]`
-
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-finalizer]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".finalizer`##
 
 [.description]
 --
 The optional name of the finalizer for the controller. If none is provided, one will be automatically generated.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__FINALIZER+++[]
@@ -499,16 +496,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__FINALIZER+++`
 endif::add-copy-button-to-env-var[]
---|string 
+--
+|string
 |
 
-
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-max-attempts]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-max-attempts[quarkus.operator-sdk.controllers."controllers".retry.max-attempts]`
-
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-max-attempts]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".retry.max-attempts`##
 
 [.description]
 --
 How many times an operation should be retried before giving up
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_MAX_ATTEMPTS+++[]
@@ -516,16 +513,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_MAX_ATTEMPTS+++`
 endif::add-copy-button-to-env-var[]
---|int 
+--
+|int
 |
 
-
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-initial]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-initial[quarkus.operator-sdk.controllers."controllers".retry.interval.initial]`
-
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-initial]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".retry.interval.initial`##
 
 [.description]
 --
 The initial interval that the controller waits for before attempting the first retry
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_INTERVAL_INITIAL+++[]
@@ -533,16 +530,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_INTERVAL_INITIAL+++`
 endif::add-copy-button-to-env-var[]
---|long 
+--
+|long
 |`2000`
 
-
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-multiplier]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-multiplier[quarkus.operator-sdk.controllers."controllers".retry.interval.multiplier]`
-
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-multiplier]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".retry.interval.multiplier`##
 
 [.description]
 --
 The value by which the initial interval is multiplied by for each retry
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_INTERVAL_MULTIPLIER+++[]
@@ -550,16 +547,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_INTERVAL_MULTIPLIER+++`
 endif::add-copy-button-to-env-var[]
---|double 
+--
+|double
 |`1.5`
 
-
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-max]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-max[quarkus.operator-sdk.controllers."controllers".retry.interval.max]`
-
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-max]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".retry.interval.max`##
 
 [.description]
 --
 The maximum interval that the controller will wait for before attempting a retry, regardless of all other configuration
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_INTERVAL_MAX+++[]
@@ -567,16 +564,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_INTERVAL_MAX+++`
 endif::add-copy-button-to-env-var[]
---|long 
+--
+|long
 |
 
-
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-selector]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-selector[quarkus.operator-sdk.controllers."controllers".selector]`
-
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-selector]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".selector`##
 
 [.description]
 --
 An optional list of comma-separated label selectors that Custom Resources must match to trigger the controller. See link:https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/[...] for more details on selectors.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__SELECTOR+++[]
@@ -584,16 +581,16 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__SELECTOR+++`
 endif::add-copy-button-to-env-var[]
---|string 
+--
+|string
 |
 
-
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-max-reconciliation-interval]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-max-reconciliation-interval[quarkus.operator-sdk.controllers."controllers".max-reconciliation-interval]`
-
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-max-reconciliation-interval]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".max-reconciliation-interval`##
 
 [.description]
 --
 An optional `Duration` to specify the maximum time that is allowed to elapse before a reconciliation will happen regardless of the presence of events. See `MaxReconciliationInterval++#++interval()` for more details. Value is specified according to the rules defined at `Duration++#++parse(CharSequence)`.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__MAX_RECONCILIATION_INTERVAL+++[]
@@ -601,14 +598,15 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__MAX_RECONCILIATION_INTERVAL+++`
 endif::add-copy-button-to-env-var[]
---|link:https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html[Duration]
-  link:#duration-note-anchor-{summaryTableId}[icon:question-circle[title=More information about the Duration format]]
+--
+|link:https://docs.oracle.com/en/java/javase/17/docs/api/java/time/Duration.html[Duration] link:#duration-note-anchor-{summaryTableId}[icon:question-circle[title=More information about the Duration format]]
 |
 
 |===
+
 ifndef::no-duration-note[]
 [NOTE]
-[id='duration-note-anchor-{summaryTableId}']
+[id=duration-note-anchor-quarkus-operator-sdk_quarkus-operator-sdk]
 .About the Duration format
 ====
 To write duration values, use the standard `java.time.Duration` format.
@@ -625,3 +623,5 @@ In other cases, the simplified format is translated to the `java.time.Duration` 
 * If the value is a number followed by `d`, it is prefixed with `P`.
 ====
 endif::no-duration-note[]
+
+:!summaryTableId:
