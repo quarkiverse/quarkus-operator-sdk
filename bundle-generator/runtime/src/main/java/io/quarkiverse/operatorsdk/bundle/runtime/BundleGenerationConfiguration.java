@@ -4,28 +4,29 @@ import java.util.List;
 import java.util.Optional;
 
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
-import io.quarkus.runtime.annotations.ConfigItem;
 import io.quarkus.runtime.annotations.ConfigRoot;
+import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
 
-@ConfigRoot(name = "operator-sdk.bundle")
-public class BundleGenerationConfiguration {
+@ConfigMapping(prefix = "operator-sdk.bundle")
+@ConfigRoot
+public interface BundleGenerationConfiguration {
     /**
      * Whether the extension should generate the Operator bundle.
      */
-    @ConfigItem(defaultValue = "true")
-    public Boolean enabled;
+    @WithDefault("true")
+    Boolean enabled();
 
     /**
      * The list of channels that bundle belongs to. By default, it's "alpha".
      */
-    @ConfigItem(defaultValue = "alpha")
-    public List<String> channels;
+    @WithDefault("alpha")
+    List<String> channels();
 
     /**
      * The default channel for the bundle.
      */
-    @ConfigItem
-    public Optional<String> defaultChannel;
+    Optional<String> defaultChannel();
 
     /**
      * The name of the package that bundle belongs to.
@@ -33,20 +34,17 @@ public class BundleGenerationConfiguration {
      * @deprecated Use {@link CSVMetadata#bundleName()} instead
      */
     @Deprecated(forRemoval = true)
-    @ConfigItem
-    public Optional<String> packageName;
+    Optional<String> packageName();
 
     /**
      * The replaces value that should be used in the generated CSV.
      */
-    @ConfigItem
-    public Optional<String> replaces;
+    Optional<String> replaces();
 
     /**
      * The version value that should be used in the generated CSV instead of the automatically detected one extracted from the
      * project information.
      */
-    @ConfigItem
-    public Optional<String> version;
+    Optional<String> version();
 
 }

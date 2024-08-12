@@ -93,12 +93,12 @@ public class BundleGenerator {
 
     private static SortedMap<String, String> generateBundleLabels(CSVMetadataHolder csvMetadata,
             BundleGenerationConfiguration bundleConfiguration, Version version) {
-        var packageName = bundleConfiguration.packageName.orElse(csvMetadata.bundleName);
+        var packageName = bundleConfiguration.packageName().orElse(csvMetadata.bundleName);
 
         SortedMap<String, String> values = new TreeMap<>();
         values.put(join(BUNDLE_PREFIX, CHANNEL, DEFAULT, ANNOTATIONS_VERSION),
-                bundleConfiguration.defaultChannel.orElse(bundleConfiguration.channels.get(0)));
-        values.put(join(BUNDLE_PREFIX, CHANNELS, ANNOTATIONS_VERSION), String.join(COMMA, bundleConfiguration.channels));
+                bundleConfiguration.defaultChannel().orElse(bundleConfiguration.channels().get(0)));
+        values.put(join(BUNDLE_PREFIX, CHANNELS, ANNOTATIONS_VERSION), String.join(COMMA, bundleConfiguration.channels()));
         values.put(join(BUNDLE_PREFIX, MANIFESTS, ANNOTATIONS_VERSION), MANIFESTS + SLASH);
         values.put(join(BUNDLE_PREFIX, MEDIA_TYPE, ANNOTATIONS_VERSION), REGISTRY_PLUS + ANNOTATIONS_VERSION);
         values.put(join(BUNDLE_PREFIX, METADATA, ANNOTATIONS_VERSION), METADATA + SLASH);
