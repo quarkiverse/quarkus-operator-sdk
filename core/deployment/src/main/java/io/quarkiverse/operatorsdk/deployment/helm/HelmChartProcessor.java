@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
@@ -156,21 +157,24 @@ public class HelmChartProcessor {
 
     @BuildStep
     @Produce(ArtifactResultBuildItem.class)
-    void addExplicitlyAddedKubernetesResources(DeserializedKubernetesResourcesBuildItem generatedKubernetesResources,
+    void addExplicitlyAddedKubernetesResources(
+            @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<DeserializedKubernetesResourcesBuildItem> maybedGeneratedKubeRes,
             HelmTargetDirectoryBuildItem helmDirBI,
             ApplicationInfoBuildItem appInfo, KubernetesConfig kubernetesConfig) {
-        var resources = generatedKubernetesResources.getResources();
-        resources = filterOutStandardResources(resources, ResourceNameUtil.getResourceName(kubernetesConfig, appInfo));
-        if (!resources.isEmpty()) {
-            final var kubernetesManifest = helmDirBI.getPathToTemplatesDir().resolve("kubernetes.yml");
-            // Generate a possibly multi-document YAML
-            String yaml = resources.stream().map(FileUtils::asYaml).collect(Collectors.joining());
-            try {
-                Files.writeString(kubernetesManifest, yaml);
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
+        maybedGeneratedKubeRes.ifPresent(generatedKubernetesResources -> {
+            var resources = generatedKubernetesResources.getResources();
+            resources = filterOutStandardResources(resources, ResourceNameUtil.getResourceName(kubernetesConfig, appInfo));
+            if (!resources.isEmpty()) {
+                final var kubernetesManifest = helmDirBI.getPathToTemplatesDir().resolve("kubernetes.yml");
+                // Generate a possibly multi-document YAML
+                String yaml = resources.stream().map(FileUtils::asYaml).collect(Collectors.joining());
+                try {
+                    Files.writeString(kubernetesManifest, yaml);
+                } catch (IOException e) {
+                    throw new IllegalStateException(e);
+                }
             }
-        }
+        });
     }
 
     private List<HasMetadata> filterOutStandardResources(List<HasMetadata> resources, String operatorName) {
@@ -202,29 +206,33 @@ public class HelmChartProcessor {
     @BuildStep
     @Produce(ArtifactResultBuildItem.class)
     void addGeneratedDeployment(HelmTargetDirectoryBuildItem helmDirBI,
-            DeserializedKubernetesResourcesBuildItem deserializedKubernetesResources,
+            @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<DeserializedKubernetesResourcesBuildItem> maybeDeserializedKubeResources,
             ControllerConfigurationsBuildItem controllerConfigurations,
             ApplicationInfoBuildItem appInfo) {
-        // add an env var for each reconciler's watch namespace in the operator's deployment
-        var deployment = (Deployment) deserializedKubernetesResources.getResources().stream()
-                .filter(Deployment.class::isInstance).findFirst()
-                .orElseThrow();
-        // copy the deployment so that changes are not propagated outside of this method
-        final var firstContainer = deployment.edit().editSpec().editTemplate().editSpec().editFirstContainer();
-        controllerConfigurations.getControllerConfigs()
-                .forEach((name, unused) -> firstContainer.addNewEnv()
-                        .withName(ConfigurationUtils.getNamespacesPropertyName(name, true))
-                        .withValue("{watchNamespaces}").endEnv());
-        deployment = firstContainer.endContainer().endSpec().endTemplate().endSpec().build();
+        if (maybeDeserializedKubeResources.isEmpty()) {
+            log.warn("No Kubernetes manifests were found, no Helm chart will be generated");
+        } else {
+            // add an env var for each reconciler's watch namespace in the operator's deployment
+            var deployment = (Deployment) maybeDeserializedKubeResources.get().getResources().stream()
+                    .filter(Deployment.class::isInstance).findFirst()
+                    .orElseThrow();
+            // copy the deployment so that changes are not propagated outside of this method
+            final var firstContainer = deployment.edit().editSpec().editTemplate().editSpec().editFirstContainer();
+            controllerConfigurations.getControllerConfigs()
+                    .forEach((name, unused) -> firstContainer.addNewEnv()
+                            .withName(ConfigurationUtils.getNamespacesPropertyName(name, true))
+                            .withValue("{watchNamespaces}").endEnv());
+            deployment = firstContainer.endContainer().endSpec().endTemplate().endSpec().build();
 
-        // a bit hacky solution to get the exact placeholder without brackets
-        final var template = FileUtils.asYaml(deployment);
-        var res = template.replace("\"{watchNamespaces}\"", "{{ .Values.watchNamespaces }}");
-        res = res.replaceAll(appInfo.getVersion(), "{{ .Chart.AppVersion }}");
-        try {
-            Files.writeString(helmDirBI.getPathToTemplatesDir().resolve("deployment.yaml"), res);
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
+            // a bit hacky solution to get the exact placeholder without brackets
+            final var template = FileUtils.asYaml(deployment);
+            var res = template.replace("\"{watchNamespaces}\"", "{{ .Values.watchNamespaces }}");
+            res = res.replaceAll(appInfo.getVersion(), "{{ .Chart.AppVersion }}");
+            try {
+                Files.writeString(helmDirBI.getPathToTemplatesDir().resolve("deployment.yaml"), res);
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
         }
     }
 
