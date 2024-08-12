@@ -298,10 +298,6 @@ class QuarkusControllerConfigurationBuildStep {
         // compute workflow and set it
         initializeWorkflowIfNeeded(configuration, reconcilerInfo, index);
 
-        // need to set the namespaces after the dependents have been set so that they can be properly updated if needed
-        // however, we need to do it in a way that doesn't reset whether the namespaces were set by the user or not
-        configuration.propagateNamespacesToDependents();
-
         log.infov(
                 "Processed ''{0}'' reconciler named ''{1}'' for ''{2}'' resource (version ''{3}'')",
                 reconcilerClassName, name, resourceFullName, HasMetadata.getApiVersion(resourceClass));
