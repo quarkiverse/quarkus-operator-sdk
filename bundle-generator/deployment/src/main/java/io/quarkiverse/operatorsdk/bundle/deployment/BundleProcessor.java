@@ -43,7 +43,6 @@ import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.GeneratedFileSystemResourceBuildItem;
 import io.quarkus.deployment.pkg.builditem.JarBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
-import io.quarkus.kubernetes.deployment.KubernetesCommonHelper;
 import io.quarkus.kubernetes.deployment.KubernetesConfig;
 import io.quarkus.kubernetes.deployment.ResourceNameUtil;
 
@@ -136,37 +135,6 @@ public class BundleProcessor {
         return new CSVMetadataBuildItem(csvGroups);
     }
 
-    private static String getDefaultProviderURLFromSCMInfo(ApplicationInfoBuildItem appConfiguration,
-            JarBuildItem jarBuildItem) {
-        final var maybeProject = KubernetesCommonHelper.createProject(appConfiguration, Optional.empty(),
-                jarBuildItem.getPath());
-        return maybeProject.map(project -> {
-            final var scmInfo = project.getScmInfo();
-            if (scmInfo != null) {
-                var origin = scmInfo.getRemote().get("origin");
-                if (origin != null) {
-                    try {
-                        int atSign = origin.indexOf('@');
-                        if (atSign > 0) {
-                            origin = origin.substring(atSign + 1);
-                            origin = origin.replaceFirst(":", "/");
-                            origin = "https://" + origin;
-                        }
-
-                        int dotGit = origin.indexOf(".git");
-                        if (dotGit > 0 && dotGit < origin.length() - 1) {
-                            origin = origin.substring(0, dotGit);
-                        }
-                        return origin;
-                    } catch (Exception e) {
-                        log.warnv("Couldn't parse SCM information: {0}", origin);
-                    }
-                }
-            }
-            return null;
-        }).orElse(null);
-    }
-
     private static ReconcilerAugmentedClassInfo augmentReconcilerInfo(
             ReconcilerAugmentedClassInfo reconcilerInfo) {
         // if primary resource is a CR, check if it is annotated with CSVMetadata and augment it if it is
@@ -224,7 +192,7 @@ public class BundleProcessor {
             VersionBuildItem versionBuildItem,
             BuildProducer<GeneratedBundleBuildItem> doneGeneratingCSV,
             GeneratedCRDInfoBuildItem generatedCustomResourcesDefinitions,
-            DeserializedKubernetesResourcesBuildItem generatedKubernetesResources,
+            @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<DeserializedKubernetesResourcesBuildItem> maybeGeneratedKubeResources,
             BuildProducer<GeneratedFileSystemResourceBuildItem> generatedCSVs) {
         final var crds = generatedCustomResourcesDefinitions.getCRDGenerationInfo().getCrds()
                 .values().stream()
@@ -238,36 +206,38 @@ public class BundleProcessor {
         final var roles = new LinkedList<Role>();
         final var deployments = new LinkedList<Deployment>();
 
-        final var resources = generatedKubernetesResources.getResources();
-        resources.forEach(r -> {
-            if (r instanceof ServiceAccount) {
-                serviceAccounts.add((ServiceAccount) r);
-                return;
-            }
+        maybeGeneratedKubeResources.ifPresent(generatedKubeResources -> {
+            final var resources = generatedKubeResources.getResources();
+            resources.forEach(r -> {
+                if (r instanceof ServiceAccount) {
+                    serviceAccounts.add((ServiceAccount) r);
+                    return;
+                }
 
-            if (r instanceof ClusterRoleBinding) {
-                clusterRoleBindings.add((ClusterRoleBinding) r);
-                return;
-            }
+                if (r instanceof ClusterRoleBinding) {
+                    clusterRoleBindings.add((ClusterRoleBinding) r);
+                    return;
+                }
 
-            if (r instanceof ClusterRole) {
-                clusterRoles.add((ClusterRole) r);
-                return;
-            }
+                if (r instanceof ClusterRole) {
+                    clusterRoles.add((ClusterRole) r);
+                    return;
+                }
 
-            if (r instanceof RoleBinding) {
-                roleBindings.add((RoleBinding) r);
-                return;
-            }
+                if (r instanceof RoleBinding) {
+                    roleBindings.add((RoleBinding) r);
+                    return;
+                }
 
-            if (r instanceof Role) {
-                roles.add((Role) r);
-                return;
-            }
+                if (r instanceof Role) {
+                    roles.add((Role) r);
+                    return;
+                }
 
-            if (r instanceof Deployment) {
-                deployments.add((Deployment) r);
-            }
+                if (r instanceof Deployment) {
+                    deployments.add((Deployment) r);
+                }
+            });
         });
 
         final var deploymentName = ResourceNameUtil.getResourceName(kubernetesConfig, configuration);
