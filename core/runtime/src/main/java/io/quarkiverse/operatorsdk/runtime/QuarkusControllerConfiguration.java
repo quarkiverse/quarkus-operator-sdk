@@ -161,27 +161,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
                             .withNamespaces(namespaces)
                             .buildForController());
             wereNamespacesSet = true;
-            // propagate namespace changes to the dependents' config if needed
-            propagateNamespacesToDependents();
-        }
-    }
-
-    /**
-     * Record potentially user-set namespaces, updating the dependent resources, which should have been set before this method
-     * is called. Note that this method won't affect the status of whether the namespaces were set by the user or not, as this
-     * should have been recorded already when the instance was created.
-     * This method, while public for visibility purpose from the deployment module, should be considered internal and *NOT* be
-     * called from user code.
-     */
-    @SuppressWarnings("unchecked")
-    public void propagateNamespacesToDependents() {
-        if (workflow != null) {
-            dependentsMetadata().forEach((unused, spec) -> {
-                final var config = spec.getConfiguration().orElse(null);
-                if (config instanceof QuarkusKubernetesDependentResourceConfig qConfig) {
-                    qConfig.setNamespaces(informerConfig.getNamespaces());
-                }
-            });
         }
     }
 

@@ -1,7 +1,5 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import java.util.Set;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
@@ -31,9 +29,5 @@ public class QuarkusKubernetesDependentResourceConfig<R extends HasMetadata> ext
     @SuppressWarnings("unused")
     public InformerConfiguration<R> getInformerConfig() {
         return informerConfig();
-    }
-
-    void setNamespaces(Set<String> namespaces) {
-        // todo: remove?
     }
 }
