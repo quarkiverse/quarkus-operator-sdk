@@ -63,7 +63,7 @@ public class BundleProcessor {
 
         @Override
         public boolean getAsBoolean() {
-            return config.enabled;
+            return config.enabled();
         }
     }
 
@@ -75,16 +75,16 @@ public class BundleProcessor {
             CombinedIndexBuildItem combinedIndexBuildItem,
             JarBuildItem jarBuildItem) {
         final var index = combinedIndexBuildItem.getIndex();
-        final var defaultName = bundleConfiguration.packageName
+        final var defaultName = bundleConfiguration.packageName()
                 .orElse(ResourceNameUtil.getResourceName(kubernetesConfig, appConfiguration));
 
         // note that version, replaces, etc. should probably be settable at the reconciler level
         // use version specified in bundle configuration, if not use the one extracted from the project, if available
         final var version = kubernetesConfig.getVersion().orElse(appConfiguration.getVersion());
-        final var defaultVersion = bundleConfiguration.version
+        final var defaultVersion = bundleConfiguration.version()
                 .orElse(ApplicationInfoBuildItem.UNSET_VALUE.equals(version) ? null : version);
 
-        final var defaultReplaces = bundleConfiguration.replaces.orElse(null);
+        final var defaultReplaces = bundleConfiguration.replaces().orElse(null);
 
         final var sharedMetadataHolders = getSharedMetadataHolders(defaultName, defaultVersion, defaultReplaces, index);
         final var csvGroups = new HashMap<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>>();
