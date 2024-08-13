@@ -118,14 +118,14 @@ jobs:
             git fetch origin pull/${{ github.event.inputs.josdk-pr }}/head:pr-to-check
             git switch pr-to-check
           fi
-          mvn install -DskipTests
-          echo "josdk_version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_OUTPUT
-          echo "josdk_f8_version=$(mvn help:evaluate -Dexpression=fabric8-client.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+          ./mvnw install -DskipTests
+          echo "josdk_version=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+          echo "josdk_f8_version=$(./mvnw help:evaluate -Dexpression=fabric8-client.version -q -DforceStdout)" >> $GITHUB_OUTPUT
           cd -
 
       - name: Set JOSDK version from build PR if requested
         if: "${{ inputs.josdk-pr != '' }}"
-        run: mvn versions:set-property -Dproperty='java-operator-sdk.version' -DnewVersion=${{ steps.build-josdk-pr.outputs.josdk_version }}
+        run: ./mvnw versions:set-property -Dproperty='java-operator-sdk.version' -DnewVersion=${{ steps.build-josdk-pr.outputs.josdk_version }}
 
       - name: Check-out Quarkus if building from PR is requested
         uses: actions/checkout@v4
@@ -142,7 +142,7 @@ jobs:
           git fetch origin pull/${{ github.event.inputs.quarkus-pr }}/head:pr-to-check
           git switch pr-to-check
           ./update-version.sh 999.${{ github.event.inputs.quarkus-pr }}-SNAPSHOT
-          echo "quarkus_f8_version=$(mvn help:evaluate -Dexpression=kubernetes-client.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+          echo "quarkus_f8_version=$(./mvnw help:evaluate -Dexpression=kubernetes-client.version -q -DforceStdout)" >> $GITHUB_OUTPUT
           ./mvnw -Dquickly
           cd -
 
@@ -160,9 +160,9 @@ jobs:
           cd fkc
           git fetch origin pull/${{ github.event.inputs.fkc-pr }}/head:pr-to-check
           git switch pr-to-check
-          mvn versions:set -DnewVersion=999.${{ github.event.inputs.fkc-pr }}-SNAPSHOT versions:commit
-          echo "f8_pr_version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_OUTPUT
-          mvn clean install -DskipTests
+          ./mvnw versions:set -DnewVersion=999.${{ github.event.inputs.fkc-pr }}-SNAPSHOT versions:commit
+          echo "f8_pr_version=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+          ./mvnw clean install -DskipTests
           cd -
 
       - name: Retrieve Quarkus version from platform
@@ -200,7 +200,7 @@ jobs:
       - name: Change Quarkus version
         run: |
           echo "Using Quarkus ${{ steps.quarkus-version.outputs.quarkus_version }}"
-          mvn versions:set-property -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dproperty=quarkus.version -DnewVersion=${{ steps.quarkus-version.outputs.quarkus_version }}
+          ./mvnw versions:set-property -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dproperty=quarkus.version -DnewVersion=${{ steps.quarkus-version.outputs.quarkus_version }}
 
       - name: Change Fabric8 client version
         id: fkc-version
@@ -213,25 +213,25 @@ jobs:
            fkc_version=${{ steps.build-fkc-pr.outputs.f8_pr_version }}
           fi
           echo "Using Fabric8 ${fkc_version}"
-          mvn versions:set-property -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dproperty=fabric8-client.version -DnewVersion=${fkc_version}
+          ./mvnw versions:set-property -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dproperty=fabric8-client.version -DnewVersion=${fkc_version}
           echo "fkc_version=${fkc_version}" >> $GITHUB_OUTPUT
 
       - name: Output versions being used
         run: |
-          echo "QOSDK version: $(mvn help:evaluate -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dexpression=project.version -q -DforceStdout)"
-          echo "JOSDK version: $(mvn help:evaluate -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dexpression=java-operator-sdk.version -q -DforceStdout)"
+          echo "QOSDK version: $(./mvnw help:evaluate -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dexpression=project.version -q -DforceStdout)"
+          echo "JOSDK version: $(./mvnw help:evaluate -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dexpression=java-operator-sdk.version -q -DforceStdout)"
           echo "JOSDK Fabric8 version: ${{ steps.build-josdk-pr.outputs.josdk_f8_version }}"
           echo "JOSDK overridden Fabric8 version ${{ steps.fkc-version.outputs.fkc_version }}"
-          echo "Quarkus version: $(mvn help:evaluate -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dexpression=quarkus.version -q -DforceStdout)"
+          echo "Quarkus version: $(./mvnw help:evaluate -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dexpression=quarkus.version -q -DforceStdout)"
           echo "Quarkus Fabric8 version: ${{ steps.build-quarkus-pr.outputs.quarkus_f8_version }}"
-          echo "Effective Fabric8 version: $(mvn dependency:tree -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dincludes=io.fabric8:kubernetes-client-api -pl core/deployment | grep io.fabric8:kubernetes-client-api -m1 | cut -d ':' -f 4)"
+          echo "Effective Fabric8 version: $(./mvnw dependency:tree -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dincludes=io.fabric8:kubernetes-client-api -pl core/deployment | grep io.fabric8:kubernetes-client-api -m1 | cut -d ':' -f 4)"
 
       - name: Build with Maven (JVM)
-        run: mvn -B formatter:validate install -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' --file pom.xml
+        run: ./mvnw -B formatter:validate install -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' --file pom.xml
 
       - name: Dependency tree on failure
         if: failure()
-        run: mvn -B dependency:tree -Dverbose
+        run: ./mvnw -B dependency:tree -Dverbose
 
       - name: Kubernetes KinD Cluster
         uses: container-tools/kind-action@v2
@@ -267,7 +267,7 @@ jobs:
           # Run operator in DEV mode
           cd samples/joke
           # Need to override application.properties setting to avoid using dev services instead of set up cluster
-          mvn quarkus:dev -Dquarkus.kubernetes-client.devservices.override-kubeconfig=false >app.log 2>&1 &
+          "$CURRENT_PWD"/mvnw quarkus:dev -Dquarkus.kubernetes-client.devservices.override-kubeconfig=false >app.log 2>&1 &
           PID=$(echo $!)
           cd $CURRENT_PWD
 
@@ -296,7 +296,7 @@ jobs:
           path: samples/joke/app.log
 
       - name: Build with Maven (Native)
-        run: mvn -B install -Dnative --file pom.xml -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -pl '${{inputs.native-modules}}' -amd
+        run: ./mvnw -B install -Dnative --file pom.xml -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -pl '${{inputs.native-modules}}' -amd
 
       - name: Run Joke sample in native mode
         if: ${{ contains(inputs.native-modules, 'samples') }}
