@@ -12,8 +12,8 @@ CURRENT_PWD=$(pwd)
 kubectl config set-context --current --namespace=$K8S_NAMESPACE
 
 # Build manifests and images
-cd $OPERATOR_LOCATION
-mvn clean package -Dquarkus.container-image.build=true \
+cd $OPERATOR_LOCATION || exit
+"$CURRENT_PWD"/mvnw clean package -Dquarkus.container-image.build=true \
   -Dquarkus.container-image.push=true \
   -Dquarkus.container-image.insecure=true \
   -Dquarkus.container-image.registry=$KIND_REGISTRY \
@@ -41,7 +41,7 @@ spec:
 EOF
 
 # Wait until the catalog source of our operator is up and running
-if ! $CURRENT_PWD/.github/scripts/waitFor.sh pods $K8S_NAMESPACE Running "--selector=olm.catalogSource=$NAME-catalog -o jsonpath='{..status.phase}'"; then
+if ! "$CURRENT_PWD"/.github/scripts/waitFor.sh pods $K8S_NAMESPACE Running "--selector=olm.catalogSource=$NAME-catalog -o jsonpath='{..status.phase}'"; then
   exit 1;
 fi
 
@@ -60,9 +60,9 @@ spec:
 EOF
 
 # Wait until the operator is up and running
-if ! $CURRENT_PWD/.github/scripts/waitFor.sh csv $K8S_NAMESPACE Succeeded "$NAME-operator -o jsonpath='{.status.phase}'"; then
+if ! "$CURRENT_PWD"/.github/scripts/waitFor.sh csv $K8S_NAMESPACE Succeeded "$NAME-operator -o jsonpath='{.status.phase}'"; then
   exit 1;
 fi
 
-cd $CURRENT_PWD
+cd "$CURRENT_PWD" || exit
 exit 0;

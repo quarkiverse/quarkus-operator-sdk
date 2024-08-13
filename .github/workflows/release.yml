@@ -38,7 +38,7 @@ jobs:
 
       - name: Retrieve Quarkus version
         id: quarkus-version
-        run: echo "quarkus_version=$(mvn help:evaluate -Dexpression=quarkus.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+        run: echo "quarkus_version=$(./mvnw help:evaluate -Dexpression=quarkus.version -q -DforceStdout)" >> $GITHUB_OUTPUT
 
       - uses: actions/setup-java@v4
         with:
@@ -87,10 +87,10 @@ jobs:
           fi
           
           git checkout -b release
-          mvn -B release:prepare -Prelease -Darguments="-DperformRelease -Dno-samples -DskipTests" -DreleaseVersion=${{steps.metadata.outputs.current-version}} -DdevelopmentVersion=${{steps.metadata.outputs.next-version}}
+          ./mvnw -B release:prepare -Prelease -Darguments="-DperformRelease -Dno-samples -DskipTests" -DreleaseVersion=${{steps.metadata.outputs.current-version}} -DdevelopmentVersion=${{steps.metadata.outputs.next-version}}
           git checkout ${{github.base_ref}}
           git rebase release
-          mvn -B release:perform -Darguments="-DperformRelease -Dno-samples -DskipTests" -DperformRelease -Prelease
+          ./mvnw -B release:perform -Darguments="-DperformRelease -Dno-samples -DskipTests" -DperformRelease -Prelease
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
