@@ -21,12 +21,18 @@ public class VersionAlignmentCheckingStep {
         log.info("QOSDK: " + version.getExtensionCompleteVersion());
         log.info("JOSDK: " + version.getSdkCompleteVersion());
 
+        final var runtimeFabric8Version = io.fabric8.kubernetes.client.Version.clientVersion();
+        log.info("Fabric8 (effective): " + runtimeFabric8Version);
+
         final var runtimeQuarkusVersion = io.quarkus.builder.Version.getVersion();
         checkVersionCompatibility(buildTimeConfiguration, runtimeQuarkusVersion, version.getQuarkusVersion(), "Quarkus");
-        final var runtimeFabric8Version = io.fabric8.kubernetes.client.Version.clientVersion();
-        checkVersionCompatibility(buildTimeConfiguration, runtimeFabric8Version, version.getKubernetesClientVersion(),
+
+        final var josdkFabric8Version = version.getKubernetesClientVersion();
+        log.info("Fabric8 (JOSDK-defined): " + josdkFabric8Version);
+        checkVersionCompatibility(buildTimeConfiguration, runtimeFabric8Version, josdkFabric8Version,
                 "JOSDK Fabric8 Kubernetes Client");
-        String quarkusFabric8Version = io.quarkus.kubernetes.client.deployment.Versions.KUBERNETES_CLIENT;
+        final var quarkusFabric8Version = io.quarkus.kubernetes.client.deployment.Versions.KUBERNETES_CLIENT;
+        log.info("Fabric8 (Quarkus): " + quarkusFabric8Version);
         checkVersionCompatibility(buildTimeConfiguration, runtimeFabric8Version, quarkusFabric8Version,
                 "Quarkus-provided Fabric8 Kubernetes Client");
 
