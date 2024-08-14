@@ -1,4 +1,16 @@
 name: Build with specific Quarkus version
+run-name: 'Build with specific Quarkus version:\n
+  quarkus-version-jq-cmd: ${{ inputs.quarkus-version-jq-cmd }}\n
+  josdk-pr: ${{ inputs.josdk-pr }}\n
+  quarkus-pr: ${{ inputs.quarkus-pr }}\n
+  fkc-pr: ${{ inputs.fkc-pr }}\n
+  fkc-version: ${{ inputs.fkc-version }}\n
+  quarkus-version: ${{ inputs.quarkus-version }}\n
+  java-version: ${{ inputs.java-version }}\n
+  branch: ${{ inputs.branch }}\n
+  native-modules: ${{ inputs.native-modules }}\n
+  profiles: ${{ inputs.profiles }}
+  repository (workflow_call): ${{ inputs.repository }}\n'
 
 on:
   workflow_call:
