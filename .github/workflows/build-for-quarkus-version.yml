@@ -1,16 +1,4 @@
 name: Build with specific Quarkus version
-run-name: 'Build with specific Quarkus version:\n
-  quarkus-version-jq-cmd: ${{ inputs.quarkus-version-jq-cmd }}\n
-  josdk-pr: ${{ inputs.josdk-pr }}\n
-  quarkus-pr: ${{ inputs.quarkus-pr }}\n
-  fkc-pr: ${{ inputs.fkc-pr }}\n
-  fkc-version: ${{ inputs.fkc-version }}\n
-  quarkus-version: ${{ inputs.quarkus-version }}\n
-  java-version: ${{ inputs.java-version }}\n
-  branch: ${{ inputs.branch }}\n
-  native-modules: ${{ inputs.native-modules }}\n
-  profiles: ${{ inputs.profiles }}
-  repository (workflow_call): ${{ inputs.repository }}\n'
 
 on:
   workflow_call:
@@ -98,6 +86,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Input parameters
+        id: input-params
+        run: |
+          echo "quarkus-version-jq-cmd: ${{ inputs.quarkus-version-jq-cmd }}"
+          echo "josdk-pr: ${{ inputs.josdk-pr }}"
+          echo "quarkus-pr: ${{ inputs.quarkus-pr }}"
+          echo "fkc-pr: ${{ inputs.fkc-pr }}"
+          echo "fkc-version: ${{ inputs.fkc-version }}"
+          echo "quarkus-version: ${{ inputs.quarkus-version }}"
+          echo "java-version: ${{ inputs.java-version }}"
+          echo "branch: ${{ inputs.branch }}"
+          echo "native-modules: ${{ inputs.native-modules }}"
+          echo "profiles: ${{ inputs.profiles }}"
+          echo "repository (workflow_call): ${{ inputs.repository }}"
+
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.branch }}
