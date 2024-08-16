@@ -29,17 +29,17 @@ import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 @SuppressWarnings("rawtypes")
 public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<KubernetesListBuilder> {
 
-    private static final Logger log = Logger.getLogger(AddRoleBindingsDecorator.class);
-    protected static final String RBAC_AUTHORIZATION_GROUP = "rbac.authorization.k8s.io";
     public static final String CLUSTER_ROLE = "ClusterRole";
+    protected static final String RBAC_AUTHORIZATION_GROUP = "rbac.authorization.k8s.io";
+    public static final RoleRef CRD_VALIDATING_ROLE_REF = new RoleRef(RBAC_AUTHORIZATION_GROUP, CLUSTER_ROLE,
+            JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME);
     protected static final String SERVICE_ACCOUNT = "ServiceAccount";
-    private final Collection<QuarkusControllerConfiguration<?>> configs;
-    private final BuildTimeOperatorConfiguration operatorConfiguration;
+    private static final Logger log = Logger.getLogger(AddRoleBindingsDecorator.class);
     private static final ConcurrentMap<QuarkusControllerConfiguration, List<HasMetadata>> cachedBindings = new ConcurrentHashMap<>();
     private static final Optional<String> deployNamespace = ConfigProvider.getConfig()
             .getOptionalValue("quarkus.kubernetes.namespace", String.class);
-    public static final RoleRef CRD_VALIDATING_ROLE_REF = new RoleRef(RBAC_AUTHORIZATION_GROUP, CLUSTER_ROLE,
-            JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME);
+    private final Collection<QuarkusControllerConfiguration<?>> configs;
+    private final BuildTimeOperatorConfiguration operatorConfiguration;
 
     public AddRoleBindingsDecorator(Collection<QuarkusControllerConfiguration<?>> configs,
             BuildTimeOperatorConfiguration operatorConfiguration) {
@@ -77,8 +77,7 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
         }
 
         final var roleBindingName = getRoleBindingName(controllerName);
-        //        if (informerConfig.watchCurrentNamespace()) {
-        if (controllerConfiguration.watchCurrentNamespace()) {
+        if (informerConfig.watchCurrentNamespace()) {
             // create a RoleBinding that will be applied in the current namespace if watching only the current NS
             itemsToAdd.add(createRoleBinding(roleBindingName, serviceAccountName, null,
                     createDefaultRoleRef(controllerName)));
@@ -88,8 +87,7 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
                         final var specificRoleBindingName = getSpecificRoleBindingName(controllerName, roleRef);
                         itemsToAdd.add(createRoleBinding(specificRoleBindingName, serviceAccountName, null, roleRef));
                     });
-            //        } else if (informerConfig.watchAllNamespaces()) {
-        } else if (controllerConfiguration.watchAllNamespaces()) {
+        } else if (informerConfig.watchAllNamespaces()) {
             itemsToAdd.add(createClusterRoleBinding(serviceAccountName, controllerName,
                     getClusterRoleBindingName(controllerName), "watch all namespaces",
                     null));

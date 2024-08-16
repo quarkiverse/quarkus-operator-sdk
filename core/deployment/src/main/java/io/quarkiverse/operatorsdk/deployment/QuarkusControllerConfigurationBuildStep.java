@@ -264,7 +264,7 @@ class QuarkusControllerConfigurationBuildStep {
         final Class<? extends HasMetadata> resourceClass = (Class<? extends HasMetadata>) primaryInfo.loadAssociatedClass();
         final String resourceFullName = primaryAsResource.fullResourceName();
 
-        final var informerConfigHolder = InformerConfiguration.builder(resourceClass)
+        final var informerConfiguration = InformerConfiguration.builder(resourceClass)
                 .withName(informerName)
                 .withNamespaces(namespaces)
                 .withLabelSelector(labelSelector)
@@ -274,7 +274,7 @@ class QuarkusControllerConfigurationBuildStep {
                 .withItemStore(itemStore)
                 .withInformerListLimit(nullableInformerListLimit)
                 .buildForController();
-        final var informerConfig = new QuarkusInformerConfiguration(informerConfigHolder);
+        final var informerConfig = new QuarkusInformerConfiguration(informerConfiguration);
 
         configuration = new QuarkusControllerConfiguration(
                 reconcilerClassName,
