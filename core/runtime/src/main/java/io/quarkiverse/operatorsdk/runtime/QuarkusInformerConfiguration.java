@@ -15,16 +15,18 @@ import io.quarkus.runtime.annotations.RecordableConstructor;
 public class QuarkusInformerConfiguration<R extends HasMetadata> extends InformerConfiguration<R> {
 
     @RecordableConstructor
-    public QuarkusInformerConfiguration(String name, Set<String> namespaces,
-            String labelSelector, OnAddFilter<? super R> onAddFilter,
+    public QuarkusInformerConfiguration(Class<R> resourceClass, String name, Set<String> namespaces,
+            boolean followControllerNamespacesOnChange, String labelSelector, OnAddFilter<? super R> onAddFilter,
             OnUpdateFilter<? super R> onUpdateFilter, OnDeleteFilter<? super R> onDeleteFilter,
             GenericFilter<? super R> genericFilter, ItemStore<R> itemStore, Long informerListLimit) {
-        super(name, namespaces, false, labelSelector, onAddFilter, onUpdateFilter, onDeleteFilter,
+        super(resourceClass, name, namespaces, followControllerNamespacesOnChange, labelSelector, onAddFilter, onUpdateFilter,
+                onDeleteFilter,
                 genericFilter, itemStore, informerListLimit);
     }
 
     public QuarkusInformerConfiguration(InformerConfiguration<R> config) {
-        this(config.getName(), sanitizeNamespaces(config.getNamespaces()),
+        this(config.getResourceClass(), config.getName(), sanitizeNamespaces(config.getNamespaces()),
+                config.isFollowControllerNamespacesOnChange(),
                 config.getLabelSelector(),
                 config.getOnAddFilter(), config.getOnUpdateFilter(), config.getOnDeleteFilter(), config.getGenericFilter(),
                 config.getItemStore(), config.getInformerListLimit());

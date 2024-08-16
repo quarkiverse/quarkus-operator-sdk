@@ -30,10 +30,11 @@ import io.quarkus.arc.Arc;
 import io.quarkus.arc.ClientProxy;
 
 public class QuarkusConfigurationService extends AbstractConfigurationService implements
-        DependentResourceFactory<QuarkusControllerConfiguration<?>>,
+        DependentResourceFactory<QuarkusControllerConfiguration<?>, DependentResourceSpecMetadata<?, ?, ?>>,
         ManagedWorkflowFactory<QuarkusControllerConfiguration<?>> {
-    private static final Logger log = LoggerFactory.getLogger(QuarkusConfigurationService.class);
+    public static final QuarkusConfigurationService RESOURCE_CLASS_RESOLVER_ONLY = new QuarkusConfigurationService();
     public static final int UNSET_TERMINATION_TIMEOUT_SECONDS = -1;
+    private static final Logger log = LoggerFactory.getLogger(QuarkusConfigurationService.class);
     private final CRDGenerationInfo crdInfo;
     private final int concurrentReconciliationThreads;
     private final int terminationTimeout;
@@ -89,6 +90,26 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         this.defensiveCloning = defensiveCloning;
     }
 
+    private QuarkusConfigurationService() {
+        this(Version.UNKNOWN, Collections.emptyList(), null, null, DEFAULT_RECONCILIATION_THREADS_NUMBER,
+                DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER, UNSET_TERMINATION_TIMEOUT_SECONDS, null, null, false, null, null,
+                false, false, false, false);
+    }
+
+    private static <R extends HasMetadata> Reconciler<R> unwrap(Reconciler<R> reconciler) {
+        return ClientProxy.unwrap(reconciler);
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static String getDependentKey(QuarkusControllerConfiguration configuration,
+            DependentResourceSpec spec) {
+        return getDependentKeyFromNames(configuration.getName(), spec.getName());
+    }
+
+    private static String getDependentKeyFromNames(String controllerName, String dependentName) {
+        return controllerName + "#" + dependentName;
+    }
+
     @Override
     public <R extends HasMetadata> QuarkusControllerConfiguration<R> getConfigurationFor(Reconciler<R> reconciler) {
         final var unwrapped = unwrap(reconciler);
@@ -100,10 +121,6 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     @Override
     public boolean checkCRDAndValidateLocalModel() {
         return crdInfo.isValidateCRDs();
-    }
-
-    private static <R extends HasMetadata> Reconciler<R> unwrap(Reconciler<R> reconciler) {
-        return ClientProxy.unwrap(reconciler);
     }
 
     @Override
@@ -194,7 +211,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     }
 
     @Override
-    public DependentResourceFactory<QuarkusControllerConfiguration<?>> dependentResourceFactory() {
+    public DependentResourceFactory<QuarkusControllerConfiguration<?>, DependentResourceSpecMetadata<?, ?, ?>> dependentResourceFactory() {
         return this;
     }
 
@@ -210,7 +227,8 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
 
     @Override
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public DependentResource createFrom(DependentResourceSpec spec, QuarkusControllerConfiguration configuration) {
+    public DependentResource createFrom(DependentResourceSpecMetadata spec,
+            QuarkusControllerConfiguration configuration) {
         final var dependentKey = getDependentKey(configuration, spec);
         var dependentResource = knownDependents.get(dependentKey);
         if (dependentResource == null) {
@@ -234,14 +252,9 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         return dependentResource;
     }
 
-    @SuppressWarnings("rawtypes")
-    private static String getDependentKey(QuarkusControllerConfiguration configuration,
-            DependentResourceSpec spec) {
-        return getDependentKeyFromNames(configuration.getName(), spec.getName());
-    }
-
-    private static String getDependentKeyFromNames(String controllerName, String dependentName) {
-        return controllerName + "#" + dependentName;
+    @Override
+    public Class<?> associatedResourceType(DependentResourceSpecMetadata spec) {
+        return spec.getResourceClass();
     }
 
     @SuppressWarnings({ "rawtypes" })
