@@ -195,14 +195,12 @@ public class OperatorSDKResource {
 
         @JsonProperty("watchAllNamespaces")
         public boolean watchAllNamespaces() {
-            //            return conf.getInformerConfig().watchAllNamespaces();
-            return conf.watchAllNamespaces();
+            return conf.getInformerConfig().watchAllNamespaces();
         }
 
         @JsonProperty("watchCurrentNamespace")
         public boolean watchCurrentNamespace() {
-            //            return conf.getInformerConfig().watchCurrentNamespace();
-            return conf.watchCurrentNamespace();
+            return conf.getInformerConfig().watchCurrentNamespace();
         }
 
         public Retry getRetry() {
