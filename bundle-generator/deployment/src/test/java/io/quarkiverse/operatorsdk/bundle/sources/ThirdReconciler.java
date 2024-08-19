@@ -14,7 +14,8 @@ import io.quarkiverse.operatorsdk.annotations.CSVMetadata.RequiredCRD;
         + SecondExternal.GROUP, version = SecondExternal.VERSION), replaces = "1.0.0", annotations = @Annotations(skipRange = ">=1.0.0 <1.0.3", capabilities = "Test", others = @Annotation(name = "foo", value = "bar")))
 @ControllerConfiguration(name = ThirdReconciler.NAME, dependents = {
         @Dependent(type = ExternalDependentResource.class),
-        @Dependent(type = PodDependentResource.class)
+        @Dependent(name = "pod1", type = PodDependentResource.class),
+        @Dependent(name = "pod2", type = PodDependentResource.class)
 })
 public class ThirdReconciler implements Reconciler<Third> {
 

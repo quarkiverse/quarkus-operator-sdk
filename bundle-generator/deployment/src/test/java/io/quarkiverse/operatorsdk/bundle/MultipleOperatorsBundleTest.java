@@ -79,7 +79,9 @@ public class MultipleOperatorsBundleTest {
         assertEquals(HasMetadata.getFullResourceName(SecondExternal.class), crds.getRequired().get(1).getName());
         // should list native APIs as well
         final var spec = csv.getSpec();
-        final var podGVK = spec.getNativeAPIs().get(0);
+        final var nativeAPIs = spec.getNativeAPIs();
+        assertEquals(1, nativeAPIs.size());
+        final var podGVK = nativeAPIs.get(0);
         assertEquals(HasMetadata.getGroup(Pod.class), podGVK.getGroup());
         assertEquals(HasMetadata.getKind(Pod.class), podGVK.getKind());
         assertEquals(HasMetadata.getVersion(Pod.class), podGVK.getVersion());
