@@ -3,11 +3,24 @@ package io.quarkiverse.operatorsdk.bundle.deployment.builders;
 import static io.quarkiverse.operatorsdk.bundle.deployment.BundleGenerator.MANIFESTS;
 import static io.quarkiverse.operatorsdk.bundle.deployment.BundleProcessor.CRD_DESCRIPTION;
 import static io.quarkiverse.operatorsdk.bundle.deployment.BundleProcessor.CRD_DISPLAY_NAME;
+import static java.util.Comparator.comparing;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -17,11 +30,27 @@ import io.fabric8.kubernetes.api.model.GroupVersionKind;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpecBuilder;
-import io.fabric8.kubernetes.api.model.rbac.*;
-import io.fabric8.openshift.api.model.operatorhub.v1alpha1.*;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
+import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
+import io.fabric8.kubernetes.api.model.rbac.Subject;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.CRDDescription;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.CRDDescriptionBuilder;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersionBuilder;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.NamedInstallStrategyFluent;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.StrategyDeploymentPermissionsBuilder;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.StrategyDeploymentPermissionsFluent;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder.RequiredCRD;
-import io.quarkiverse.operatorsdk.common.*;
+import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
+import io.quarkiverse.operatorsdk.common.ReconciledAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.common.ReconciledResourceAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.common.ResourceAssociatedAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 
 public class CsvManifestsBuilder extends ManifestsBuilder {
@@ -195,9 +224,13 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         }
 
         // add sorted native APIs
+        final var nullsFirst = Comparator.nullsFirst(String::compareTo);
         csvSpecBuilder.addAllToNativeAPIs(nativeApis.stream()
-                .sorted(Comparator.comparing(CsvManifestsBuilder::asString))
-                .collect(Collectors.toList()));
+                .distinct()
+                .sorted(comparing(GroupVersionKind::getGroup, nullsFirst)
+                        .thenComparing(comparing(GroupVersionKind::getKind, nullsFirst))
+                        .thenComparing(comparing(GroupVersionKind::getVersion, nullsFirst)))
+                .toList());
 
         csvSpecBuilder.editOrNewCustomresourcedefinitions()
                 .addAllToOwned(ownedCRs)
@@ -215,10 +248,6 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                 .withVersion(secondaryResource.version())
                 .withKind(secondaryResource.kind())
                 .build();
-    }
-
-    private static String asString(GroupVersionKind gvk) {
-        return gvk.getGroup() + " " + gvk.getKind() + gvk.getVersion();
     }
 
     public Set<String> getOwnedCRs() {
