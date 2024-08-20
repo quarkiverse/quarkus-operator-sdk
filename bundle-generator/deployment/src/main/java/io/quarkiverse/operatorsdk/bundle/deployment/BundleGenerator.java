@@ -66,12 +66,12 @@ public class BundleGenerator {
             var missing = addCRDManifestBuilder(crds, builders, csvMetadata, csvBuilder.getOwnedCRs());
             if (!missing.isEmpty()) {
                 throw new IllegalStateException(
-                        "Missing owned CRD data for resources: " + missing + " for bundle: " + csvMetadata.name);
+                        "Missing owned CRD data for resources: " + missing + " for bundle: " + csvMetadata.bundleName);
             }
             // output required CRDs in the manifest, output a warning in case we're missing some
             missing = addCRDManifestBuilder(crds, builders, csvMetadata, csvBuilder.getRequiredCRs());
             if (!missing.isEmpty()) {
-                log.warnv("Missing required CRD data for resources: {0} for bundle: {1}", missing, csvMetadata.name);
+                log.warnv("Missing required CRD data for resources: {0} for bundle: {1}", missing, csvMetadata.bundleName);
             }
         }
 
@@ -93,12 +93,12 @@ public class BundleGenerator {
 
     private static SortedMap<String, String> generateBundleLabels(CSVMetadataHolder csvMetadata,
             BundleGenerationConfiguration bundleConfiguration, Version version) {
-        var packageName = bundleConfiguration.packageName.orElse(csvMetadata.name);
+        var packageName = bundleConfiguration.packageName().orElse(csvMetadata.bundleName);
 
         SortedMap<String, String> values = new TreeMap<>();
         values.put(join(BUNDLE_PREFIX, CHANNEL, DEFAULT, ANNOTATIONS_VERSION),
-                bundleConfiguration.defaultChannel.orElse(bundleConfiguration.channels.get(0)));
-        values.put(join(BUNDLE_PREFIX, CHANNELS, ANNOTATIONS_VERSION), String.join(COMMA, bundleConfiguration.channels));
+                bundleConfiguration.defaultChannel().orElse(bundleConfiguration.channels().get(0)));
+        values.put(join(BUNDLE_PREFIX, CHANNELS, ANNOTATIONS_VERSION), String.join(COMMA, bundleConfiguration.channels()));
         values.put(join(BUNDLE_PREFIX, MANIFESTS, ANNOTATIONS_VERSION), MANIFESTS + SLASH);
         values.put(join(BUNDLE_PREFIX, MEDIA_TYPE, ANNOTATIONS_VERSION), REGISTRY_PLUS + ANNOTATIONS_VERSION);
         values.put(join(BUNDLE_PREFIX, METADATA, ANNOTATIONS_VERSION), METADATA + SLASH);

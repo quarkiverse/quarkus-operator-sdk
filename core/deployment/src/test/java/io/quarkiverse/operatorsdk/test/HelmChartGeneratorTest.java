@@ -1,5 +1,6 @@
 package io.quarkiverse.operatorsdk.test;
 
+import static io.quarkiverse.operatorsdk.deployment.helm.HelmChartProcessor.ADDITIONAL_CRD_ROLE_BINDING_YAML;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -40,6 +41,7 @@ class HelmChartGeneratorTest {
         assertThat(new File(helmDir, "values.yaml"), FileMatchers.anExistingFile());
         assertThat(Objects.requireNonNull(new File(helmDir, "templates").listFiles()).length,
                 greaterThanOrEqualTo(7));
+        assertThat(new File(helmDir, "templates/" + ADDITIONAL_CRD_ROLE_BINDING_YAML), FileMatchers.anExistingFile());
     }
 
 }

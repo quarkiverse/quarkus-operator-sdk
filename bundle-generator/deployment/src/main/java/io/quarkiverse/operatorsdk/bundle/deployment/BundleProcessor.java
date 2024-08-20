@@ -41,6 +41,7 @@ import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.GeneratedFileSystemResourceBuildItem;
+import io.quarkus.deployment.pkg.builditem.JarBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.kubernetes.deployment.KubernetesConfig;
 import io.quarkus.kubernetes.deployment.ResourceNameUtil;
@@ -51,6 +52,7 @@ public class BundleProcessor {
     private static final DotName SHARED_CSV_METADATA = DotName.createSimple(SharedCSVMetadata.class.getName());
     private static final DotName CSV_METADATA = DotName.createSimple(CSVMetadata.class.getName());
     private static final String BUNDLE = "bundle";
+    private static final String DEFAULT_PROVIDER_NAME = System.getProperty("user.name");
     public static final String CRD_DISPLAY_NAME = "CRD_DISPLAY_NAME";
     public static final String CRD_DESCRIPTION = "CRD_DESCRIPTION";
 
@@ -60,7 +62,7 @@ public class BundleProcessor {
 
         @Override
         public boolean getAsBoolean() {
-            return config.enabled;
+            return config.enabled();
         }
     }
 
@@ -69,22 +71,22 @@ public class BundleProcessor {
     CSVMetadataBuildItem gatherCSVMetadata(KubernetesConfig kubernetesConfig,
             ApplicationInfoBuildItem appConfiguration,
             BundleGenerationConfiguration bundleConfiguration,
-            CombinedIndexBuildItem combinedIndexBuildItem) {
+            CombinedIndexBuildItem combinedIndexBuildItem,
+            JarBuildItem jarBuildItem) {
         final var index = combinedIndexBuildItem.getIndex();
-        final var defaultName = bundleConfiguration.packageName
+        final var defaultName = bundleConfiguration.packageName()
                 .orElse(ResourceNameUtil.getResourceName(kubernetesConfig, appConfiguration));
 
         // note that version, replaces, etc. should probably be settable at the reconciler level
         // use version specified in bundle configuration, if not use the one extracted from the project, if available
         final var version = kubernetesConfig.getVersion().orElse(appConfiguration.getVersion());
-        final var defaultVersion = bundleConfiguration.version
+        final var defaultVersion = bundleConfiguration.version()
                 .orElse(ApplicationInfoBuildItem.UNSET_VALUE.equals(version) ? null : version);
 
-        final var defaultReplaces = bundleConfiguration.replaces.orElse(null);
+        final var defaultReplaces = bundleConfiguration.replaces().orElse(null);
 
         final var sharedMetadataHolders = getSharedMetadataHolders(defaultName, defaultVersion, defaultReplaces, index);
         final var csvGroups = new HashMap<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>>();
-
         ClassUtils.getKnownReconcilers(index, log)
                 .forEach(reconcilerInfo -> {
                     // figure out which group should be used to generate CSV
@@ -94,31 +96,37 @@ public class BundleProcessor {
                     // Check whether the reconciler must be shipped using a custom bundle
                     final var csvMetadataAnnotation = reconcilerInfo.classInfo()
                             .declaredAnnotation(CSV_METADATA);
-                    final var maybeCSVMetadataName = getCSVMetadataName(csvMetadataAnnotation);
-                    final var csvMetadataName = maybeCSVMetadataName.orElse(defaultName);
+                    final var sharedMetadataName = getBundleName(csvMetadataAnnotation, defaultName);
+                    final var isNameInferred = defaultName.equals(sharedMetadataName);
 
-                    var csvMetadata = sharedMetadataHolders.get(csvMetadataName);
+                    var csvMetadata = sharedMetadataHolders.get(sharedMetadataName);
                     if (csvMetadata == null) {
                         final var origin = reconcilerInfo.classInfo().name().toString();
 
-                        if (!csvMetadataName.equals(defaultName)) {
+                        if (!sharedMetadataName.equals(defaultName)) {
                             final var maybeExistingOrigin = csvGroups.keySet().stream()
-                                    .filter(mh -> mh.name.equals(csvMetadataName))
+                                    .filter(mh -> mh.bundleName.equals(sharedMetadataName))
                                     .map(CSVMetadataHolder::getOrigin)
                                     .findFirst();
                             if (maybeExistingOrigin.isPresent()) {
                                 throw new IllegalStateException("Reconcilers '" + maybeExistingOrigin.get()
                                         + "' and '" + origin
-                                        + "' are using the same bundle name '" + csvMetadataName
+                                        + "' are using the same bundle name '" + sharedMetadataName
                                         + "' but no SharedCSVMetadata implementation with that name exists. Please create a SharedCSVMetadata with that name to have one single source of truth and reference it via CSVMetadata annotations using that name on your reconcilers.");
                             }
                         }
                         csvMetadata = createMetadataHolder(csvMetadataAnnotation,
-                                new CSVMetadataHolder(csvMetadataName, defaultVersion, defaultReplaces, origin));
+                                new CSVMetadataHolder(sharedMetadataName, defaultVersion, defaultReplaces,
+                                        DEFAULT_PROVIDER_NAME, origin));
+                        if (DEFAULT_PROVIDER_NAME.equals(csvMetadata.providerName)) {
+                            log.warnv(
+                                    "It is recommended that you provide a provider name provided for {0}: ''{1}'' was used as default value.",
+                                    origin, DEFAULT_PROVIDER_NAME);
+                        }
                     }
                     log.infov("Assigning ''{0}'' reconciler to {1}",
                             reconcilerInfo.nameOrFailIfUnset(),
-                            getMetadataOriginInformation(csvMetadataAnnotation, maybeCSVMetadataName, csvMetadata));
+                            getMetadataOriginInformation(csvMetadataAnnotation, isNameInferred, csvMetadata));
 
                     csvGroups.computeIfAbsent(csvMetadata, m -> new ArrayList<>()).add(
                             augmentReconcilerInfo(reconcilerInfo));
@@ -161,14 +169,14 @@ public class BundleProcessor {
         }
     }
 
-    private String getMetadataOriginInformation(AnnotationInstance csvMetadataAnnotation, Optional<String> csvMetadataName,
+    private String getMetadataOriginInformation(AnnotationInstance csvMetadataAnnotation, boolean isNameInferred,
             CSVMetadataHolder metadataHolder) {
         final var isDefault = csvMetadataAnnotation == null;
-        final var actualName = metadataHolder.name;
+        final var actualName = metadataHolder.bundleName;
         if (isDefault) {
             return "default bundle automatically named '" + actualName + "'";
         } else {
-            return "bundle " + (csvMetadataName.isEmpty() ? "automatically " : "") + "named '"
+            return "bundle " + (isNameInferred ? "automatically " : "") + "named '"
                     + actualName + "' defined by '" + metadataHolder.getOrigin() + "'";
         }
     }
@@ -184,7 +192,7 @@ public class BundleProcessor {
             VersionBuildItem versionBuildItem,
             BuildProducer<GeneratedBundleBuildItem> doneGeneratingCSV,
             GeneratedCRDInfoBuildItem generatedCustomResourcesDefinitions,
-            DeserializedKubernetesResourcesBuildItem generatedKubernetesResources,
+            @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<DeserializedKubernetesResourcesBuildItem> maybeGeneratedKubeResources,
             BuildProducer<GeneratedFileSystemResourceBuildItem> generatedCSVs) {
         final var crds = generatedCustomResourcesDefinitions.getCRDGenerationInfo().getCrds()
                 .values().stream()
@@ -198,36 +206,38 @@ public class BundleProcessor {
         final var roles = new LinkedList<Role>();
         final var deployments = new LinkedList<Deployment>();
 
-        final var resources = generatedKubernetesResources.getResources();
-        resources.forEach(r -> {
-            if (r instanceof ServiceAccount) {
-                serviceAccounts.add((ServiceAccount) r);
-                return;
-            }
+        maybeGeneratedKubeResources.ifPresent(generatedKubeResources -> {
+            final var resources = generatedKubeResources.getResources();
+            resources.forEach(r -> {
+                if (r instanceof ServiceAccount) {
+                    serviceAccounts.add((ServiceAccount) r);
+                    return;
+                }
 
-            if (r instanceof ClusterRoleBinding) {
-                clusterRoleBindings.add((ClusterRoleBinding) r);
-                return;
-            }
+                if (r instanceof ClusterRoleBinding) {
+                    clusterRoleBindings.add((ClusterRoleBinding) r);
+                    return;
+                }
 
-            if (r instanceof ClusterRole) {
-                clusterRoles.add((ClusterRole) r);
-                return;
-            }
+                if (r instanceof ClusterRole) {
+                    clusterRoles.add((ClusterRole) r);
+                    return;
+                }
 
-            if (r instanceof RoleBinding) {
-                roleBindings.add((RoleBinding) r);
-                return;
-            }
+                if (r instanceof RoleBinding) {
+                    roleBindings.add((RoleBinding) r);
+                    return;
+                }
 
-            if (r instanceof Role) {
-                roles.add((Role) r);
-                return;
-            }
+                if (r instanceof Role) {
+                    roles.add((Role) r);
+                    return;
+                }
 
-            if (r instanceof Deployment) {
-                deployments.add((Deployment) r);
-            }
+                if (r instanceof Deployment) {
+                    deployments.add((Deployment) r);
+                }
+            });
         });
 
         final var deploymentName = ResourceNameUtil.getResourceName(kubernetesConfig, configuration);
@@ -256,7 +266,8 @@ public class BundleProcessor {
 
     private Map<String, CSVMetadataHolder> getSharedMetadataHolders(String name, String version, String defaultReplaces,
             IndexView index) {
-        CSVMetadataHolder csvMetadata = new CSVMetadataHolder(name, version, defaultReplaces, "default");
+        CSVMetadataHolder csvMetadata = new CSVMetadataHolder(name, version, defaultReplaces, DEFAULT_PROVIDER_NAME,
+                "default");
         final var sharedMetadataImpls = index.getAllKnownImplementors(SHARED_CSV_METADATA);
         final var result = new HashMap<String, CSVMetadataHolder>(sharedMetadataImpls.size() + 1);
         sharedMetadataImpls.forEach(sharedMetadataImpl -> {
@@ -264,22 +275,31 @@ public class BundleProcessor {
             if (csvMetadataAnn != null) {
                 final var origin = sharedMetadataImpl.name().toString();
                 final var metadataHolder = createMetadataHolder(csvMetadataAnn, csvMetadata, origin);
-                final var existing = result.get(metadataHolder.name);
+                final var existing = result.get(metadataHolder.bundleName);
                 if (existing != null) {
                     throw new IllegalStateException(
-                            "Only one SharedCSVMetadata named " + metadataHolder.name
+                            "Only one SharedCSVMetadata named " + metadataHolder.bundleName
                                     + " can be defined. Was defined on (at least): " + existing.getOrigin() + " and " + origin);
                 }
-                result.put(metadataHolder.name, metadataHolder);
+                result.put(metadataHolder.bundleName, metadataHolder);
             }
         });
         return result;
     }
 
-    private Optional<String> getCSVMetadataName(AnnotationInstance csvMetadataAnnotation) {
-        return Optional.ofNullable(csvMetadataAnnotation)
-                .map(annotation -> annotation.value("name"))
-                .map(AnnotationValue::asString);
+    private static String getBundleName(AnnotationInstance csvMetadata, String defaultName) {
+        if (csvMetadata == null) {
+            return defaultName;
+        } else {
+            final var bundleName = csvMetadata.value("bundleName");
+            if (bundleName != null) {
+                return bundleName.asString();
+            } else {
+                return Optional.ofNullable(csvMetadata.value("name"))
+                        .map(AnnotationValue::asString)
+                        .orElse(defaultName);
+            }
+        }
     }
 
     private CSVMetadataHolder createMetadataHolder(AnnotationInstance csvMetadata,
@@ -294,8 +314,8 @@ public class BundleProcessor {
         }
 
         final var providerField = csvMetadata.value("provider");
-        String providerName = null;
-        String providerURL = null;
+        String providerName = mh.providerName;
+        String providerURL = mh.providerURL;
         if (providerField != null) {
             final var provider = providerField.asNested();
             providerName = ConfigurationUtils.annotationValueOrDefault(provider, "name",
@@ -441,8 +461,9 @@ public class BundleProcessor {
         }
 
         return new CSVMetadataHolder(
-                ConfigurationUtils.annotationValueOrDefault(csvMetadata, "name",
-                        AnnotationValue::asString, () -> mh.name),
+                getBundleName(csvMetadata, mh.bundleName),
+                ConfigurationUtils.annotationValueOrDefault(csvMetadata, "csvName",
+                        AnnotationValue::asString, () -> mh.csvName),
                 ConfigurationUtils.annotationValueOrDefault(csvMetadata, "description",
                         AnnotationValue::asString, () -> mh.description),
                 ConfigurationUtils.annotationValueOrDefault(csvMetadata, "displayName",

@@ -25,28 +25,28 @@ public class ConfigurationServiceRecorder {
 
     static final Logger log = Logger.getLogger(ConfigurationServiceRecorder.class.getName());
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     public Supplier<QuarkusConfigurationService> configurationServiceSupplier(Version version,
-            Map<String, QuarkusControllerConfiguration> configurations,
+            Map<String, QuarkusControllerConfiguration<?>> configurations,
             CRDGenerationInfo crdInfo, RunTimeOperatorConfiguration runTimeConfiguration,
             BuildTimeOperatorConfiguration buildTimeConfiguration) {
-        final var maxThreads = runTimeConfiguration.concurrentReconciliationThreads
+        final var maxThreads = runTimeConfiguration.concurrentReconciliationThreads()
                 .orElse(ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
-        final var timeout = runTimeConfiguration.terminationTimeoutSeconds
+        final var timeout = runTimeConfiguration.terminationTimeoutSeconds()
                 .orElse(ConfigurationService.DEFAULT_TERMINATION_TIMEOUT_SECONDS);
-        final var workflowThreads = runTimeConfiguration.concurrentWorkflowThreads
+        final var workflowThreads = runTimeConfiguration.concurrentWorkflowThreads()
                 .orElse(ConfigurationService.DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER);
-        final var cacheSyncTimeout = runTimeConfiguration.cacheSyncTimeout;
+        final var cacheSyncTimeout = runTimeConfiguration.cacheSyncTimeout();
 
         configurations.forEach((name, c) -> {
-            final var extConfig = runTimeConfiguration.controllers.get(name);
+            final var extConfig = runTimeConfiguration.controllers().get(name);
 
             // then override with controller-specific configuration if present
             if (extConfig != null) {
-                extConfig.finalizer.ifPresent(c::setFinalizer);
-                extConfig.selector.ifPresent(c::setLabelSelector);
-                c.setRetryConfiguration(RetryConfigurationResolver.resolve(extConfig.retry));
-                setNamespacesFromRuntime(c, extConfig.namespaces);
+                extConfig.finalizer().ifPresent(c::setFinalizer);
+                extConfig.selector().ifPresent(c::setLabelSelector);
+                extConfig.maxReconciliationInterval().ifPresent(c::setMaxReconciliationInterval);
+                c.setRetryConfiguration(RetryConfigurationResolver.resolve(extConfig.retry()));
+                setNamespacesFromRuntime(c, extConfig.namespaces());
             }
 
             // set retry to default if it hasn't been set already
@@ -60,7 +60,7 @@ public class ConfigurationServiceRecorder {
 
             // if the namespaces weren't set on controller level or as an annotation, use the operator-level configuration if it exists
             if (!c.isWereNamespacesSet()) {
-                setNamespacesFromRuntime(c, runTimeConfiguration.namespaces);
+                setNamespacesFromRuntime(c, runTimeConfiguration.namespaces());
             }
         });
 
@@ -70,11 +70,12 @@ public class ConfigurationServiceRecorder {
             // deactivate leader election in dev mode
             LeaderElectionConfiguration leaderElectionConfiguration = null;
             final var profiles = ConfigUtils.getProfiles();
-            if (profiles.stream().anyMatch(buildTimeConfiguration.activateLeaderElectionForProfiles::contains)) {
+            final var leaderElectionActivationProfiles = buildTimeConfiguration.activateLeaderElectionForProfiles();
+            if (profiles.stream().anyMatch(leaderElectionActivationProfiles::contains)) {
                 leaderElectionConfiguration = container.instance(LeaderElectionConfiguration.class).get();
             } else {
                 log.info("Leader election deactivated because it is only activated for "
-                        + buildTimeConfiguration.activateLeaderElectionForProfiles
+                        + leaderElectionActivationProfiles
                         + " profiles. Currently active profiles: " + profiles);
             }
 
@@ -88,12 +89,12 @@ public class ConfigurationServiceRecorder {
                     timeout,
                     cacheSyncTimeout,
                     container.instance(Metrics.class).get(),
-                    buildTimeConfiguration.startOperator,
+                    buildTimeConfiguration.startOperator(),
                     leaderElectionConfiguration,
                     container.instance(InformerStoppedHandler.class).orElse(null),
-                    buildTimeConfiguration.closeClientOnStop,
-                    buildTimeConfiguration.stopOnInformerErrorDuringStartup,
-                    buildTimeConfiguration.enableSSA);
+                    buildTimeConfiguration.closeClientOnStop(),
+                    buildTimeConfiguration.stopOnInformerErrorDuringStartup(),
+                    buildTimeConfiguration.enableSSA());
         };
     }
 

@@ -2,8 +2,6 @@ package io.quarkiverse.operatorsdk.runtime;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Properties;
@@ -37,6 +35,7 @@ public class Version extends io.javaoperatorsdk.operator.api.config.Version {
         return extensionVersion;
     }
 
+    @SuppressWarnings("unused")
     public String getExtensionBranch() {
         return extensionBranch;
     }
@@ -45,6 +44,7 @@ public class Version extends io.javaoperatorsdk.operator.api.config.Version {
         return extensionCommit;
     }
 
+    @SuppressWarnings("unused")
     public Date getExtensionBuildTime() {
         return extensionBuildTime;
     }
@@ -55,6 +55,11 @@ public class Version extends io.javaoperatorsdk.operator.api.config.Version {
                 ? " on branch: " + extensionBranch
                 : "";
         return extensionVersion + " (commit: " + extensionCommit + branch + ") built on " + extensionBuildTime;
+    }
+
+    @IgnoreProperty
+    public String getSdkCompleteVersion() {
+        return getSdkVersion() + " (commit: " + getCommit() + ") built on " + getBuiltTime();
     }
 
     public String getQuarkusVersion() {
@@ -77,8 +82,14 @@ public class Version extends io.javaoperatorsdk.operator.api.config.Version {
 
         Date builtTime;
         try {
-            builtTime = (new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")).parse(properties.getProperty("git.build.time"));
-        } catch (ParseException var4) {
+            String time = properties.getProperty("git.build.time");
+            if (time != null) {
+                builtTime = Date.from(Instant.parse(time));
+            } else {
+                builtTime = Date.from(Instant.EPOCH);
+            }
+        } catch (Exception e) {
+            log.debug("Couldn't parse git.build.time property", e);
             builtTime = Date.from(Instant.EPOCH);
         }
 

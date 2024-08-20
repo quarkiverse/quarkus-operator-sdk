@@ -6,12 +6,11 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 
-@CSVMetadata(name = "shared", version = "0.0.2")
+@CSVMetadata(bundleName = AReconciler.SHARED, version = "0.0.2")
 public class BReconciler implements Reconciler<Service> {
 
     @Override
-    public UpdateControl<Service> reconcile(Service service, Context<Service> context)
-            throws Exception {
+    public UpdateControl<Service> reconcile(Service service, Context<Service> context) {
         return null;
     }
 }

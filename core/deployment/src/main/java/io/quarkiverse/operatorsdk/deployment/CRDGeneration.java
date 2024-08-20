@@ -49,7 +49,7 @@ class CRDGeneration {
     }
 
     boolean shouldApply() {
-        return shouldApply(crdConfiguration.apply, mode);
+        return shouldApply(crdConfiguration.apply(), mode);
     }
 
     /**
@@ -73,14 +73,14 @@ class CRDGeneration {
         final var generated = new HashSet<String>();
 
         if (needGeneration) {
-            Path targetDirectory = crdConfiguration.outputDirectory
+            Path targetDirectory = crdConfiguration.outputDirectory()
                     .map(d -> Paths.get("").toAbsolutePath().resolve(d))
                     .orElse(outputTarget.getOutputDirectory().resolve(KUBERNETES));
             final var outputDir = targetDirectory.toFile();
             FileUtils.ensureDirectoryExists(outputDir);
 
             // generate CRDs with detailed information
-            final var info = generator.forCRDVersions(crdConfiguration.versions).inOutputDir(outputDir).detailedGenerate();
+            final var info = generator.forCRDVersions(crdConfiguration.versions()).inOutputDir(outputDir).detailedGenerate();
             final var crdDetailsPerNameAndVersion = info.getCRDDetailsPerNameAndVersion();
 
             crdDetailsPerNameAndVersion.forEach((crdName, initialVersionToCRDInfoMap) -> {
@@ -103,7 +103,7 @@ class CRDGeneration {
 
     private boolean needsGeneration(Map<String, CRDInfo> existingCRDInfos, Set<String> changedClassNames, String targetCRName) {
         final boolean[] generateCurrent = { true }; // request CRD generation by default
-        crdConfiguration.versions.forEach(v -> {
+        crdConfiguration.versions().forEach(v -> {
             final var crd = existingCRDInfos.get(v);
             // if we don't have any information about this CRD version, we need to generate the CRD
             if (crd == null) {
@@ -147,7 +147,7 @@ class CRDGeneration {
     public void withCustomResource(Class<? extends CustomResource<?, ?>> crClass, String crdName,
             String associatedControllerName) {
         // first check if the CR is not filtered out
-        if (crdConfiguration.excludeResources.map(excluded -> excluded.contains(crClass.getName())).orElse(false)) {
+        if (crdConfiguration.excludeResources().map(excluded -> excluded.contains(crClass.getName())).orElse(false)) {
             log.infov("CRD generation was skipped for ''{0}'' because it was excluded from generation", crClass.getName());
             return;
         }
@@ -156,7 +156,7 @@ class CRDGeneration {
             // generator MUST be initialized before we start processing classes as initializing it
             // will reset the types information held by the generator
             if (generator == null) {
-                generator = new CRDGenerator().withParallelGenerationEnabled(crdConfiguration.generateInParallel);
+                generator = new CRDGenerator().withParallelGenerationEnabled(crdConfiguration.generateInParallel());
             }
             final var info = CustomResourceInfo.fromClass(crClass);
             crMappings.add(info, crdName, associatedControllerName);

@@ -45,7 +45,7 @@ public abstract class ManifestsBuilder {
     public abstract String getManifestType();
 
     public String getName() {
-        return metadata.name;
+        return metadata.bundleName;
     }
 
     @Override

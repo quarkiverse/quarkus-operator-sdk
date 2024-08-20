@@ -15,6 +15,7 @@
 package io.quarkiverse.operatorsdk.samples.pingpong;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
+import static io.quarkiverse.operatorsdk.samples.pingpong.PingPongOperatorCSVMetadata.BUNDLE_NAME;
 
 import jakarta.inject.Inject;
 
@@ -23,7 +24,9 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 
+@CSVMetadata(bundleName = BUNDLE_NAME)
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
 @SuppressWarnings("unused")
 public class PingReconciler implements Reconciler<Ping> {

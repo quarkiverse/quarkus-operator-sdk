@@ -4,7 +4,7 @@
   <parent>
     <groupId>io.quarkiverse.operatorsdk</groupId>
     <artifactId>quarkus-operator-sdk-parent</artifactId>
-    <version>6.6.4-SNAPSHOT</version>
+    <version>6.7.4-SNAPSHOT</version>
   </parent>
   <artifactId>quarkus-operator-sdk-bom</artifactId>
   <name>Quarkus - Operator SDK - BOM</name>
@@ -91,13 +91,6 @@
         <groupId>io.quarkiverse.operatorsdk</groupId>
         <artifactId>quarkus-operator-sdk-annotations</artifactId>
         <version>${project.version}</version>
-      </dependency>
-      <!-- We need to add this dependency to work around https://github.com/fabric8io/kubernetes-client/pull/5757 -->
-      <dependency>
-        <groupId>commons-codec</groupId>
-        <artifactId>commons-codec</artifactId>
-        <version>1.16.1</version>
-        <optional>true</optional>
       </dependency>
     </dependencies>
   </dependencyManagement>

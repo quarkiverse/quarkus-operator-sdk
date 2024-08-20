@@ -3,7 +3,7 @@
   <parent>
     <artifactId>quarkus-operator-sdk-build-parent</artifactId>
     <groupId>io.quarkiverse.operatorsdk</groupId>
-    <version>6.6.4-SNAPSHOT</version>
+    <version>6.7.4-SNAPSHOT</version>
     <relativePath>../build-parent/pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -20,11 +20,6 @@
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-jdk18on</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>commons-codec</groupId>
-      <artifactId>commons-codec</artifactId>
       <optional>true</optional>
     </dependency>
   </dependencies>

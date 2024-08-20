@@ -77,7 +77,7 @@ class HelmChartWatchAllNamespacesGeneratorTest {
 
         File templatesDir = new File(helmDir, "templates");
 
-        assertThat(Objects.requireNonNull(templatesDir.listFiles()).length, equalTo(8));
+        assertThat(Objects.requireNonNull(templatesDir.listFiles()).length, equalTo(9));
 
         File kubernetesYml = new File(templatesDir, "kubernetes.yml");
         assertThat(kubernetesYml, FileMatchers.anExistingFile());

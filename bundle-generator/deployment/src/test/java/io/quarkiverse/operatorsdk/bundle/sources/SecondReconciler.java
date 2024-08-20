@@ -7,7 +7,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 import io.quarkiverse.operatorsdk.annotations.RBACRule;
 
-@CSVMetadata(name = "second-operator")
+@CSVMetadata(bundleName = "second-operator")
 @RBACRule(apiGroups = SecondReconciler.RBAC_RULE_GROUP, resources = SecondReconciler.RBAC_RULE_RES, verbs = SecondReconciler.RBAC_RULE_VERBS)
 @ControllerConfiguration(namespaces = "foo")
 public class SecondReconciler implements Reconciler<Second> {

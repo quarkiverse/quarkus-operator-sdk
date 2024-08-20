@@ -52,14 +52,14 @@ jobs:
         if: ${{ inputs.version != '' }}
         run: |
           echo "Set version to ${{inputs.version}}"
-          mvn versions:set -DnewVersion="${{inputs.version}}" versions:commit -Puse-snapshots
+          ./mvnw versions:set -DnewVersion="${{inputs.version}}" versions:commit -Puse-snapshots
 
       - name: Output information
-        run: echo "Release snapshot for branch ${{inputs.branch}} with version $(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)"
+        run: echo "Release snapshot for branch ${{inputs.branch}} with version $(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)"
 
       - name: Deploy maven snapshot
         run: |
-          mvn -B deploy -DperformRelease -Dno-samples -Dno-docs -Prelease,use-snapshots
+          ./mvnw -B deploy -DperformRelease -Dno-samples -Dno-docs -Prelease,use-snapshots
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}

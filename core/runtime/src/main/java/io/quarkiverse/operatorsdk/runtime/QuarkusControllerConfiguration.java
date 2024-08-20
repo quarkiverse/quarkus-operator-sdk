@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
@@ -33,6 +34,7 @@ import io.quarkus.runtime.annotations.RecordableConstructor;
 @SuppressWarnings("rawtypes")
 public class QuarkusControllerConfiguration<R extends HasMetadata> implements ControllerConfiguration<R>,
         DependentResourceConfigurationProvider {
+
     // we need to create this class because Quarkus cannot reference the default implementation that
     // JOSDK provides as it doesn't like lambdas at build time. The class also needs to be public
     // because otherwise Quarkus isn't able to access it… :(
@@ -70,17 +72,18 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final Class<R> resourceClass;
     private final Optional<Long> informerListLimit;
     private final ResourceEventFilter<R> eventFilter;
-    private final Optional<Duration> maxReconciliationInterval;
     private final Optional<OnAddFilter<? super R>> onAddFilter;
     private final Optional<OnUpdateFilter<? super R>> onUpdateFilter;
     private final Optional<GenericFilter<? super R>> genericFilter;
     private final List<PolicyRule> additionalRBACRules;
+    private final List<RoleRef> additionalRBACRoleRefs;
     private final String fieldManager;
     private final Optional<ItemStore<R>> itemStore;
     private Class<? extends Annotation> retryConfigurationClass;
     private Class<? extends Retry> retryClass;
     private Class<? extends Annotation> rateLimiterConfigurationClass;
     private Class<? extends RateLimiter> rateLimiterClass;
+    private Optional<Duration> maxReconciliationInterval;
     private String finalizer;
     private Set<String> namespaces;
     private boolean wereNamespacesSet;
@@ -110,7 +113,8 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             Class<? extends Retry> retryClass, Class<? extends Annotation> retryConfigurationClass,
             Class<? extends RateLimiter> rateLimiterClass, Class<? extends Annotation> rateLimiterConfigurationClass,
             Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata, ManagedWorkflow<R> workflow,
-            List<PolicyRule> additionalRBACRules, String fieldManager, ItemStore<R> nullableItemStore) {
+            List<PolicyRule> additionalRBACRules, List<RoleRef> additionalRBACRoleRefs, String fieldManager,
+            ItemStore<R> nullableItemStore) {
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
         this.resourceTypeName = resourceTypeName;
@@ -119,6 +123,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.resourceClass = resourceClass;
         this.informerListLimit = Optional.ofNullable(nullableInformerListLimit);
         this.additionalRBACRules = additionalRBACRules;
+        this.additionalRBACRoleRefs = additionalRBACRoleRefs;
         this.dependentsMetadata = dependentsMetadata;
         this.workflow = workflow;
         this.retryConfiguration = ControllerConfiguration.super.getRetryConfiguration();
@@ -221,8 +226,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             // propagate namespace changes to the dependents' config if needed
             this.dependentsMetadata.forEach((name, spec) -> {
                 final var config = spec.getDependentResourceConfig();
-                if (config instanceof QuarkusKubernetesDependentResourceConfig) {
-                    final var qConfig = (QuarkusKubernetesDependentResourceConfig) config;
+                if (config instanceof QuarkusKubernetesDependentResourceConfig qConfig) {
                     qConfig.setNamespaces(this.namespaces);
                 }
             });
@@ -258,7 +262,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return labelSelector;
     }
 
-    public void setLabelSelector(String labelSelector) {
+    void setLabelSelector(String labelSelector) {
         this.labelSelector = labelSelector;
     }
 
@@ -315,6 +319,10 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     @SuppressWarnings("unused")
     public Duration getMaxReconciliationInterval() {
         return maxReconciliationInterval.orElseThrow();
+    }
+
+    void setMaxReconciliationInterval(Duration duration) {
+        maxReconciliationInterval = Optional.of(duration);
     }
 
     // for Quarkus' RecordableConstructor
@@ -414,6 +422,10 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
 
     public List<PolicyRule> getAdditionalRBACRules() {
         return additionalRBACRules;
+    }
+
+    public List<RoleRef> getAdditionalRBACRoleRefs() {
+        return additionalRBACRoleRefs;
     }
 
     @SuppressWarnings("unused")

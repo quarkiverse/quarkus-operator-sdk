@@ -5,7 +5,8 @@ import java.util.Map;
 import java.util.Objects;
 
 public class CSVMetadataHolder {
-    public final String name;
+    public final String bundleName;
+    public final String csvName;
     private final String origin;
     public final String description;
     public final String displayName;
@@ -117,27 +118,32 @@ public class CSVMetadataHolder {
 
     }
 
-    public CSVMetadataHolder(String name, String version, String replaces, String origin) {
-        this(name, null, null, null, null, null, null, replaces, null, version, null, null, null, null, null, null, null, null,
+    public CSVMetadataHolder(String bundleName, String version, String replaces, String providerName, String origin) {
+        this(bundleName, null, null, null, null, null, providerName, null, replaces, null, version, null, null, null,
+                null, null,
+                null, null,
+                null,
                 origin);
     }
 
-    public CSVMetadataHolder(String name, String description, String displayName, Annotations annotations, String[] keywords,
+    public CSVMetadataHolder(String bundleName, String csvName, String description, String displayName, Annotations annotations,
+            String[] keywords,
             String providerName,
             String providerURL, String replaces, String[] skips, String version, String maturity,
             String minKubeVersion,
             Maintainer[] maintainers, Link[] links, Icon[] icon,
             InstallMode[] installModes, PermissionRule[] permissionRules, RequiredCRD[] requiredCRDs, String origin) {
-        this.name = name;
+        this.bundleName = bundleName;
+        assert version != null;
+        this.version = version;
+        this.csvName = csvName == null ? bundleName + ".v" + version.toLowerCase() : csvName;
         this.description = description;
         this.displayName = displayName;
         this.annotations = annotations;
         this.keywords = keywords;
-        this.providerName = providerName;
         this.providerURL = providerURL;
         this.replaces = replaces;
         this.skips = skips;
-        this.version = version;
         this.maturity = maturity;
         this.minKubeVersion = minKubeVersion;
         this.maintainers = maintainers;
@@ -147,8 +153,13 @@ public class CSVMetadataHolder {
         this.permissionRules = permissionRules;
         this.requiredCRDs = requiredCRDs;
         this.origin = origin;
+        this.providerName = providerName;
     }
 
+    /**
+     * CSVMetadataHolders are stored as key in Maps and identified by their associated bundle name, so that's what we use for
+     * equals and {@link #hashCode()}
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -156,12 +167,12 @@ public class CSVMetadataHolder {
         if (o == null || getClass() != o.getClass())
             return false;
         CSVMetadataHolder that = (CSVMetadataHolder) o;
-        return Objects.equals(name, that.name);
+        return Objects.equals(bundleName, that.bundleName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name);
+        return Objects.hash(bundleName);
     }
 
     public String getOrigin() {

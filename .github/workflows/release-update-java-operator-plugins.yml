@@ -26,11 +26,11 @@ jobs:
           sed -i -e 's|<quarkus-sdk.version>.*</quarkus-sdk.version>|<quarkus-sdk.version>${{inputs.qosdk-version}}</quarkus-sdk.version>|' $(pwd)/testdata/quarkus/memcached-quarkus-operator/pom.xml
           
           echo "Using Quarkus ${{ inputs.quarkus-version }}"
-          mvn versions:set-property -Dproperty=quarkus.version -DnewVersion=${{inputs.quarkus-version}} -f ./testdata/quarkus/memcached-quarkus-operator/pom.xml versions:commit
+          ./mvnw versions:set-property -Dproperty=quarkus.version -DnewVersion=${{inputs.quarkus-version}} -f ./testdata/quarkus/memcached-quarkus-operator/pom.xml versions:commit
           sed -i -e 's|<quarkus.version>.*</quarkus.version>|<quarkus.version>${{inputs.quarkus-version}}</quarkus.version>|' $(pwd)/pkg/quarkus/v1beta/scaffolds/internal/templates/pomxml.go
 
       - name: Create java-operator-plugins pull request
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v6
         id: jop-pr
         with:
           title: "feat: update QOSDK to ${{inputs.qosdk-version}}"

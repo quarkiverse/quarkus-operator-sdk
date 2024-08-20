@@ -4,16 +4,16 @@
   <parent>
     <groupId>io.quarkiverse</groupId>
     <artifactId>quarkiverse-parent</artifactId>
-    <version>16</version>
+    <version>17</version>
   </parent>
   <groupId>io.quarkiverse.operatorsdk</groupId>
   <artifactId>quarkus-operator-sdk-parent</artifactId>
-  <version>6.6.4-SNAPSHOT</version>
+  <version>6.7.4-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Quarkus - Operator SDK - Parent</name>
   <properties>
-    <quarkus.version>3.8.1</quarkus.version>
-    <java-operator-sdk.version>4.8.0</java-operator-sdk.version>
+    <quarkus.version>3.13.2</quarkus.version>
+    <java-operator-sdk.version>4.9.2</java-operator-sdk.version>
   </properties>
   <scm>
     <connection>:git:git@github.com:quarkiverse/quarkus-operator-sdk.git</connection>

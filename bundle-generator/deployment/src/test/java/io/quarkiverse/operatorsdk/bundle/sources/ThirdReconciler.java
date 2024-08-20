@@ -10,7 +10,7 @@ import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Annotations;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Annotations.Annotation;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata.RequiredCRD;
 
-@CSVMetadata(name = "third-operator", requiredCRDs = @RequiredCRD(kind = SecondExternal.KIND, name = "externalagains."
+@CSVMetadata(bundleName = "third-operator", requiredCRDs = @RequiredCRD(kind = SecondExternal.KIND, name = "externalagains."
         + SecondExternal.GROUP, version = SecondExternal.VERSION), replaces = "1.0.0", annotations = @Annotations(skipRange = ">=1.0.0 <1.0.3", capabilities = "Test", others = @Annotation(name = "foo", value = "bar")))
 @ControllerConfiguration(name = ThirdReconciler.NAME, dependents = {
         @Dependent(type = ExternalDependentResource.class),

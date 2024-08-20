@@ -38,7 +38,7 @@ jobs:
 
       - name: Retrieve Quarkus version
         id: quarkus-version
-        run: echo "quarkus_version=$(mvn help:evaluate -Dexpression=quarkus.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+        run: echo "quarkus_version=$(./mvnw help:evaluate -Dexpression=quarkus.version -q -DforceStdout)" >> $GITHUB_OUTPUT
 
       - uses: actions/setup-java@v4
         with:
@@ -73,12 +73,12 @@ jobs:
           
           if [ "${quarkus_platform_branch}" = "main" ]; then
             echo "quarkus-platform update will target main"
+            echo "need_main_pr=true" >> $GITHUB_OUTPUT
           else
             echo "quarkus-platform update will target ${quarkus_platform_branch}"
             echo "Check if quarkus-platform also needs to be updated on main"
-            qosdk_latest=$(curl -sL https://api.github.com/repos/quarkiverse/quarkus-operator-sdk/releases/latest | jq -r ".tag_name")
-            echo "Latest QOSDK release: ${qosdk_latest}"
-            if [ "${{steps.metadata.outputs.current-version}}" = "${qosdk_latest}" ]; then
+            if [ "${{ github.base_ref }}" = "main" ]; then
+              echo "PR targets main so assume quarkus-platform main also needs to be updated"
               echo "need_main_pr=true" >> $GITHUB_OUTPUT
             else
               echo "No need for PR on quarkus-platform main"
@@ -87,10 +87,10 @@ jobs:
           fi
           
           git checkout -b release
-          mvn -B release:prepare -Prelease -Darguments="-DperformRelease -Dno-samples -DskipTests" -DreleaseVersion=${{steps.metadata.outputs.current-version}} -DdevelopmentVersion=${{steps.metadata.outputs.next-version}}
+          ./mvnw -B release:prepare -Prelease -Darguments="-DperformRelease -Dno-samples -DskipTests" -DreleaseVersion=${{steps.metadata.outputs.current-version}} -DdevelopmentVersion=${{steps.metadata.outputs.next-version}}
           git checkout ${{github.base_ref}}
           git rebase release
-          mvn -B release:perform -Darguments="-DperformRelease -Dno-samples -DskipTests" -DperformRelease -Prelease
+          ./mvnw -B release:perform -Darguments="-DperformRelease -Dno-samples -DskipTests" -DperformRelease -Prelease
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
@@ -116,7 +116,8 @@ jobs:
     needs:
       - release
     uses: ./.github/workflows/release-update-java-operator-plugins.yml
-    if: "${{ needs.release.outputs.released }}"
+#    only update java-operator-plugins if we are releasing the latest version of QOSDK
+    if: "${{ needs.release.outputs.released && needs.release.outputs.needs-quarkus-platform-main-pr == 'true' }}"
     with:
       qosdk-version: ${{needs.release.outputs.qosdk-version}}
       quarkus-version: ${{needs.release.outputs.quarkus-version}}
