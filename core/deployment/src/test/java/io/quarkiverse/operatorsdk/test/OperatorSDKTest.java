@@ -28,17 +28,7 @@ import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
 import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
 import io.quarkiverse.operatorsdk.deployment.AddRoleBindingsDecorator;
-import io.quarkiverse.operatorsdk.test.sources.CRUDConfigMap;
-import io.quarkiverse.operatorsdk.test.sources.CreateOnlyService;
-import io.quarkiverse.operatorsdk.test.sources.Foo;
-import io.quarkiverse.operatorsdk.test.sources.NonKubeResource;
-import io.quarkiverse.operatorsdk.test.sources.ReadOnlySecret;
-import io.quarkiverse.operatorsdk.test.sources.SimpleCR;
-import io.quarkiverse.operatorsdk.test.sources.SimpleReconciler;
-import io.quarkiverse.operatorsdk.test.sources.SimpleSpec;
-import io.quarkiverse.operatorsdk.test.sources.SimpleStatus;
-import io.quarkiverse.operatorsdk.test.sources.TestCR;
-import io.quarkiverse.operatorsdk.test.sources.TestReconciler;
+import io.quarkiverse.operatorsdk.test.sources.*;
 import io.quarkus.test.ProdBuildResults;
 import io.quarkus.test.ProdModeTestResults;
 import io.quarkus.test.QuarkusProdModeTest;
@@ -53,6 +43,7 @@ public class OperatorSDKTest {
             .withApplicationRoot((jar) -> jar
                     .addClasses(TestReconciler.class, TestCR.class, CRUDConfigMap.class, ReadOnlySecret.class,
                             CreateOnlyService.class, NonKubeResource.class, Foo.class,
+                            TypelessKubeResource.class, TypelessAnotherKubeResource.class,
                             SimpleReconciler.class, SimpleCR.class, SimpleSpec.class, SimpleStatus.class));
 
     @ProdBuildResults
@@ -79,7 +70,7 @@ public class OperatorSDKTest {
                 .map(ClusterRole.class::cast)
                 .forEach(cr -> {
                     final var rules = cr.getRules();
-                    assertEquals(5, rules.size());
+                    assertEquals(6, rules.size());
                     assertTrue(rules.stream()
                             .filter(rule -> rule.getApiGroups().equals(List.of(HasMetadata.getGroup(TestCR.class))))
                             .anyMatch(rule -> {
@@ -108,6 +99,8 @@ public class OperatorSDKTest {
                             .filter(rule -> rule.getResources().equals(List.of(RBACRule.ALL)))
                             .anyMatch(rule -> rule.getVerbs().equals(List.of(UPDATE))
                                     && rule.getApiGroups().equals(List.of(RBACRule.ALL))));
+                    rules.stream().filter(rule -> rule.getApiGroups().equals(List.of(TypelessKubeResource.GROUP)))
+                            .anyMatch(rule -> rule.getResources().equals(List.of("*")));
                 });
 
         // check that we have a role binding for TestReconciler and that it uses the operator-level specified namespace
