@@ -112,18 +112,6 @@ jobs:
       - name: Push tags
         run: git push && git push --tags
 
-  update-java-plugins:
-    needs:
-      - release
-    uses: ./.github/workflows/release-update-java-operator-plugins.yml
-#    only update java-operator-plugins if we are releasing the latest version of QOSDK
-    if: "${{ needs.release.outputs.released && needs.release.outputs.needs-quarkus-platform-main-pr == 'true' }}"
-    with:
-      qosdk-version: ${{needs.release.outputs.qosdk-version}}
-      quarkus-version: ${{needs.release.outputs.quarkus-version}}
-    secrets:
-      qosdk-bot-token: ${{ secrets.QOSDK_BOT_TOKEN }}
-
   update-quarkus-platform:
     needs:
       - release
