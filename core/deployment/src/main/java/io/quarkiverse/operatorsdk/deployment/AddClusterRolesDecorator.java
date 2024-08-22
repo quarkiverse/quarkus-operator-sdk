@@ -81,7 +81,7 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                 .addToRules(rule.build());
 
         final Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata = cri.getDependentsMetadata();
-        Set<PolicyRule> collectedRules = new LinkedHashSet<PolicyRule>();
+        Set<PolicyRule> collectedRules = new LinkedHashSet<>();
         dependentsMetadata.forEach((name, spec) -> {
             final var dependentResourceClass = spec.getDependentResourceClass();
             final var associatedResourceClass = spec.getDependentType();
@@ -95,6 +95,7 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                     try {
                         // Only applied class with non-parameter constructor
                         if (Arrays.stream(dependentResourceClass.getConstructors()).anyMatch(i -> i.getParameterCount() == 0)) {
+                            @SuppressWarnings("rawtypes")
                             GenericKubernetesDependentResource genericKubernetesResource = (GenericKubernetesDependentResource) dependentResourceClass
                                     .getConstructor().newInstance();
                             resourceGroup = genericKubernetesResource.getGroupVersionKind().getGroup();
@@ -134,45 +135,42 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
 
     @NotNull
     private static Set<PolicyRule> getNormalizedRules(Set<PolicyRule> collectedRules) {
-        Set<PolicyRule> normalizedRules = new LinkedHashSet<PolicyRule>();
-        collectedRules.stream().map(i -> {
-            return new PolicyRule(i.getApiGroups(), i.getNonResourceURLs(), i.getResourceNames(), i.getResources(),
-                    i.getVerbs()) {
+        Set<PolicyRule> normalizedRules = new LinkedHashSet<>();
+        collectedRules.stream()
+                .map(i -> new PolicyRule(i.getApiGroups(), i.getNonResourceURLs(), i.getResourceNames(), i.getResources(),
+                        i.getVerbs()) {
 
-                @Override
-                public boolean equals(Object o) {
-                    if (o == null)
-                        return false;
-                    if (o instanceof PolicyRule) {
-                        if (Objects.equals(
-                                this.getApiGroups().stream().sorted().toList(),
-                                ((PolicyRule) o).getApiGroups().stream().sorted().toList())) {
+                    @Override
+                    public boolean equals(Object o) {
+                        if (o == null)
+                            return false;
+                        if (o instanceof PolicyRule) {
                             if (Objects.equals(
-                                    getResources().stream().sorted().toList(),
-                                    ((PolicyRule) o).getResources().stream().sorted().toList())) {
-                                return true;
+                                    this.getApiGroups().stream().sorted().toList(),
+                                    ((PolicyRule) o).getApiGroups().stream().sorted().toList())) {
+                                return Objects.equals(
+                                        getResources().stream().sorted().toList(),
+                                        ((PolicyRule) o).getResources().stream().sorted().toList());
                             }
                         }
+                        return false;
                     }
-                    return false;
-                }
 
-                @Override
-                public int hashCode() {
-                    // equals method called only with same hashCode
-                    return 0;
-                }
-            };
-        }).forEach(i -> {
-            if (!normalizedRules.add(i)) {
-                normalizedRules.stream().filter(j -> Objects.equals(j, i)).findAny().ifPresent(r -> {
-                    Set<String> verbs1 = new LinkedHashSet(r.getVerbs());
-                    Set<String> verbs2 = new LinkedHashSet<>(i.getVerbs());
-                    verbs1.addAll(verbs2);
-                    r.setVerbs(verbs1.stream().toList());
+                    @Override
+                    public int hashCode() {
+                        // equals method called only with same hashCode
+                        return 0;
+                    }
+                }).forEach(i -> {
+                    if (!normalizedRules.add(i)) {
+                        normalizedRules.stream().filter(j -> Objects.equals(j, i)).findAny().ifPresent(r -> {
+                            Set<String> verbs1 = new LinkedHashSet<>(r.getVerbs());
+                            Set<String> verbs2 = new LinkedHashSet<>(i.getVerbs());
+                            verbs1.addAll(verbs2);
+                            r.setVerbs(verbs1.stream().toList());
+                        });
+                    }
                 });
-            }
-        });
         return normalizedRules;
     }
 
