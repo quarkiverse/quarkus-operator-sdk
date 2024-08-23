@@ -133,6 +133,12 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
         return clusterRoleBuilder.build();
     }
 
+    /**
+     * Remove duplicated rules with same groups and resources, from which merge all verbs
+     *
+     * @param collectedRules may contain duplicated rules with same groups and resources, but different verbs
+     * @return no duplicated rules
+     */
     @NotNull
     private static Set<PolicyRule> getNormalizedRules(Set<PolicyRule> collectedRules) {
         Set<PolicyRule> normalizedRules = new LinkedHashSet<>();
