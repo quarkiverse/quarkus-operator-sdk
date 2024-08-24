@@ -99,6 +99,8 @@ public class OperatorSDKTest {
                             .filter(rule -> rule.getResources().equals(List.of(RBACRule.ALL)))
                             .anyMatch(rule -> rule.getVerbs().equals(List.of(UPDATE))
                                     && rule.getApiGroups().equals(List.of(RBACRule.ALL))));
+
+                    // TODO: need update, https://github.com/operator-framework/java-operator-sdk/pull/2515
                     // expected generic kubernetes resource: apiGroups is Group from GVK and resources should be '*'
                     // verbs should contain merged 'delete'
                     // count should be 1, as TypelessKubeResource and TypelessAnotherKubeResource have same GROUP

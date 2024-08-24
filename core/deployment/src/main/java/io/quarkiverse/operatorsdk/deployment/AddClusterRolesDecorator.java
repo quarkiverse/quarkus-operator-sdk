@@ -1,6 +1,7 @@
 package io.quarkiverse.operatorsdk.deployment;
 
 import java.util.*;
+import java.util.function.Function;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -56,6 +57,73 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
     }
 
     public static ClusterRole createClusterRole(QuarkusControllerConfiguration<?> cri) {
+
+        Set<PolicyRule> collectedRules = new LinkedHashSet<>();
+        collectedRules.add(getClusterRolePolicyRuleFromPrimaryResource(cri));
+        collectedRules.addAll(getClusterRolePolicyRulesFromDependentResources(cri));
+        collectedRules.addAll(cri.getAdditionalRBACRules());
+
+        return new ClusterRoleBuilder()
+                .withNewMetadata()
+                .withName(getClusterRoleName(cri.getName()))
+                .endMetadata()
+                .addAllToRules(mergePolicyRulesOfSameGroupsAndKinds(collectedRules))
+                .build();
+    }
+
+    @NotNull
+    private static Set<PolicyRule> getClusterRolePolicyRulesFromDependentResources(QuarkusControllerConfiguration<?> cri) {
+        Set<PolicyRule> rules = new LinkedHashSet<>();
+        final Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata = cri.getDependentsMetadata();
+        dependentsMetadata.forEach((name, spec) -> {
+            final var dependentResourceClass = spec.getDependentResourceClass();
+            final var associatedResourceClass = spec.getDependentType();
+
+            // only process Kubernetes dependents
+            if (HasMetadata.class.isAssignableFrom(associatedResourceClass)) {
+                String resourceGroup = HasMetadata.getGroup(associatedResourceClass);
+                String resourcePlural = HasMetadata.getPlural(associatedResourceClass);
+
+                // https://github.com/operator-framework/java-operator-sdk/pull/2515
+                // Workaround for typeless resource, no necessary when this pull merged
+                if (GenericKubernetesDependentResource.class.isAssignableFrom(dependentResourceClass)) {
+                    try {
+                        // Only applied class with non-parameter constructor
+                        if (Arrays.stream(dependentResourceClass.getConstructors()).anyMatch(i -> i.getParameterCount() == 0)) {
+                            @SuppressWarnings("rawtypes")
+                            GenericKubernetesDependentResource genericKubernetesResource = (GenericKubernetesDependentResource) dependentResourceClass
+                                    .getConstructor().newInstance();
+                            resourceGroup = genericKubernetesResource.getGroupVersionKind().getGroup();
+                            resourcePlural = "*";
+                        }
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                final var dependentRule = new PolicyRuleBuilder()
+                        .addToApiGroups(resourceGroup)
+                        .addToResources(resourcePlural)
+                        .addToVerbs(RBACVerbs.READ_VERBS);
+                if (Updater.class.isAssignableFrom(dependentResourceClass)) {
+                    dependentRule.addToVerbs(RBACVerbs.UPDATE_VERBS);
+                }
+                if (Deleter.class.isAssignableFrom(dependentResourceClass)) {
+                    dependentRule.addToVerbs(RBACVerbs.DELETE);
+                }
+                if (Creator.class.isAssignableFrom(dependentResourceClass)) {
+                    dependentRule.addToVerbs(RBACVerbs.CREATE);
+                    if (!dependentRule.getVerbs().contains(RBACVerbs.PATCH)) {
+                        dependentRule.addToVerbs(RBACVerbs.PATCH);
+                    }
+                }
+                rules.add(dependentRule.build());
+            }
+        });
+        return rules;
+    }
+
+    private static PolicyRule getClusterRolePolicyRuleFromPrimaryResource(QuarkusControllerConfiguration<?> cri) {
         final var rule = new PolicyRuleBuilder();
         final var resourceClass = cri.getResourceClass();
         final var plural = HasMetadata.getPlural(resourceClass);
@@ -73,64 +141,7 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
         rule.addToApiGroups(HasMetadata.getGroup(resourceClass))
                 .addToVerbs(RBACVerbs.ALL_COMMON_VERBS)
                 .build();
-
-        final var clusterRoleBuilder = new ClusterRoleBuilder()
-                .withNewMetadata()
-                .withName(getClusterRoleName(cri.getName()))
-                .endMetadata()
-                .addToRules(rule.build());
-
-        final Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata = cri.getDependentsMetadata();
-        Set<PolicyRule> collectedRules = new LinkedHashSet<>();
-        dependentsMetadata.forEach((name, spec) -> {
-            final var dependentResourceClass = spec.getDependentResourceClass();
-            final var associatedResourceClass = spec.getDependentType();
-
-            // only process Kubernetes dependents
-            if (HasMetadata.class.isAssignableFrom(associatedResourceClass)) {
-                String resourceGroup = HasMetadata.getGroup(associatedResourceClass);
-                String resourcePlural = HasMetadata.getPlural(associatedResourceClass);
-
-                if (GenericKubernetesDependentResource.class.isAssignableFrom(dependentResourceClass)) {
-                    try {
-                        // Only applied class with non-parameter constructor
-                        if (Arrays.stream(dependentResourceClass.getConstructors()).anyMatch(i -> i.getParameterCount() == 0)) {
-                            @SuppressWarnings("rawtypes")
-                            GenericKubernetesDependentResource genericKubernetesResource = (GenericKubernetesDependentResource) dependentResourceClass
-                                    .getConstructor().newInstance();
-                            resourceGroup = genericKubernetesResource.getGroupVersionKind().getGroup();
-                            resourcePlural = "*";
-                        }
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-                final var dependentRule = new PolicyRuleBuilder()
-                        .addToApiGroups(resourceGroup)
-                        .addToResources(resourcePlural)
-                        .addToVerbs(RBACVerbs.READ_VERBS);
-                if (Updater.class.isAssignableFrom(dependentResourceClass)) {
-                    dependentRule.addToVerbs(RBACVerbs.UPDATE_VERBS);
-                }
-                if (Deleter.class.isAssignableFrom(dependentResourceClass)) {
-                    dependentRule.addToVerbs(RBACVerbs.DELETE);
-                }
-                if (Creator.class.isAssignableFrom(dependentResourceClass)) {
-                    dependentRule.addToVerbs(RBACVerbs.CREATE);
-                    if (!dependentRule.getVerbs().contains(RBACVerbs.PATCH)) {
-                        dependentRule.addToVerbs(RBACVerbs.PATCH);
-                    }
-                }
-                collectedRules.add(dependentRule.build());
-            }
-
-        });
-        // add additional RBAC rules
-        collectedRules.addAll(cri.getAdditionalRBACRules());
-        Set<PolicyRule> normalizedRules = getNormalizedRules(collectedRules);
-        clusterRoleBuilder.addToRules(normalizedRules.toArray(PolicyRule[]::new));
-
-        return clusterRoleBuilder.build();
+        return rule.build();
     }
 
     /**
@@ -140,36 +151,12 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
      * @return no duplicated rules
      */
     @NotNull
-    private static Set<PolicyRule> getNormalizedRules(Set<PolicyRule> collectedRules) {
-        Set<PolicyRule> normalizedRules = new LinkedHashSet<>();
+    private static Set<PolicyRule> mergePolicyRulesOfSameGroupsAndKinds(Set<PolicyRule> collectedRules) {
+        Set<PolicyRule> mergedRules = new LinkedHashSet<>();
         collectedRules.stream()
-                .map(i -> new PolicyRule(i.getApiGroups(), i.getNonResourceURLs(), i.getResourceNames(), i.getResources(),
-                        i.getVerbs()) {
-
-                    @Override
-                    public boolean equals(Object o) {
-                        if (o == null)
-                            return false;
-                        if (o instanceof PolicyRule) {
-                            if (Objects.equals(
-                                    this.getApiGroups().stream().sorted().toList(),
-                                    ((PolicyRule) o).getApiGroups().stream().sorted().toList())) {
-                                return Objects.equals(
-                                        getResources().stream().sorted().toList(),
-                                        ((PolicyRule) o).getResources().stream().sorted().toList());
-                            }
-                        }
-                        return false;
-                    }
-
-                    @Override
-                    public int hashCode() {
-                        // equals method called only with same hashCode
-                        return 0;
-                    }
-                }).forEach(i -> {
-                    if (!normalizedRules.add(i)) {
-                        normalizedRules.stream().filter(j -> Objects.equals(j, i)).findAny().ifPresent(r -> {
+                .map(wrapEqualOfGroupsAndKinds()).forEach(i -> {
+                    if (!mergedRules.add(i)) {
+                        mergedRules.stream().filter(j -> Objects.equals(j, i)).findAny().ifPresent(r -> {
                             Set<String> verbs1 = new LinkedHashSet<>(r.getVerbs());
                             Set<String> verbs2 = new LinkedHashSet<>(i.getVerbs());
                             verbs1.addAll(verbs2);
@@ -177,7 +164,35 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                         });
                     }
                 });
-        return normalizedRules;
+        return mergedRules;
+    }
+
+    @NotNull
+    private static Function<PolicyRule, PolicyRule> wrapEqualOfGroupsAndKinds() {
+        return i -> new PolicyRule(i.getApiGroups(), i.getNonResourceURLs(), i.getResourceNames(), i.getResources(),
+                i.getVerbs()) {
+            @Override
+            public boolean equals(Object o) {
+                if (o == null)
+                    return false;
+                if (o instanceof PolicyRule) {
+                    if (Objects.equals(
+                            this.getApiGroups().stream().sorted().toList(),
+                            ((PolicyRule) o).getApiGroups().stream().sorted().toList())) {
+                        return Objects.equals(
+                                getResources().stream().sorted().toList(),
+                                ((PolicyRule) o).getResources().stream().sorted().toList());
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public int hashCode() {
+                // equals method called only with same hashCode
+                return 0;
+            }
+        };
     }
 
     public static String getClusterRoleName(String controller) {
