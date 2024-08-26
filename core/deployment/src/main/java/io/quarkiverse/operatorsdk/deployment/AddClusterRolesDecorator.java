@@ -1,17 +1,21 @@
 package io.quarkiverse.operatorsdk.deployment;
 
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Function;
+
+import org.jetbrains.annotations.NotNull;
 
 import io.dekorate.kubernetes.decorator.ResourceProvidingDecorator;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesListBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBuilder;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesDependentResource;
 import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
 import io.quarkiverse.operatorsdk.runtime.DependentResourceSpecMetadata;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
@@ -53,6 +57,73 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
     }
 
     public static ClusterRole createClusterRole(QuarkusControllerConfiguration<?> cri) {
+
+        Set<PolicyRule> collectedRules = new LinkedHashSet<>();
+        collectedRules.add(getClusterRolePolicyRuleFromPrimaryResource(cri));
+        collectedRules.addAll(getClusterRolePolicyRulesFromDependentResources(cri));
+        collectedRules.addAll(cri.getAdditionalRBACRules());
+
+        return new ClusterRoleBuilder()
+                .withNewMetadata()
+                .withName(getClusterRoleName(cri.getName()))
+                .endMetadata()
+                .addAllToRules(mergePolicyRulesOfSameGroupsAndKinds(collectedRules))
+                .build();
+    }
+
+    @NotNull
+    private static Set<PolicyRule> getClusterRolePolicyRulesFromDependentResources(QuarkusControllerConfiguration<?> cri) {
+        Set<PolicyRule> rules = new LinkedHashSet<>();
+        final Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata = cri.getDependentsMetadata();
+        dependentsMetadata.forEach((name, spec) -> {
+            final var dependentResourceClass = spec.getDependentResourceClass();
+            final var associatedResourceClass = spec.getDependentType();
+
+            // only process Kubernetes dependents
+            if (HasMetadata.class.isAssignableFrom(associatedResourceClass)) {
+                String resourceGroup = HasMetadata.getGroup(associatedResourceClass);
+                String resourcePlural = HasMetadata.getPlural(associatedResourceClass);
+
+                // https://github.com/operator-framework/java-operator-sdk/pull/2515
+                // Workaround for typeless resource, no necessary when this pull merged
+                if (GenericKubernetesDependentResource.class.isAssignableFrom(dependentResourceClass)) {
+                    try {
+                        // Only applied class with non-parameter constructor
+                        if (Arrays.stream(dependentResourceClass.getConstructors()).anyMatch(i -> i.getParameterCount() == 0)) {
+                            @SuppressWarnings("rawtypes")
+                            GenericKubernetesDependentResource genericKubernetesResource = (GenericKubernetesDependentResource) dependentResourceClass
+                                    .getConstructor().newInstance();
+                            resourceGroup = genericKubernetesResource.getGroupVersionKind().getGroup();
+                            resourcePlural = "*";
+                        }
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                final var dependentRule = new PolicyRuleBuilder()
+                        .addToApiGroups(resourceGroup)
+                        .addToResources(resourcePlural)
+                        .addToVerbs(RBACVerbs.READ_VERBS);
+                if (Updater.class.isAssignableFrom(dependentResourceClass)) {
+                    dependentRule.addToVerbs(RBACVerbs.UPDATE_VERBS);
+                }
+                if (Deleter.class.isAssignableFrom(dependentResourceClass)) {
+                    dependentRule.addToVerbs(RBACVerbs.DELETE);
+                }
+                if (Creator.class.isAssignableFrom(dependentResourceClass)) {
+                    dependentRule.addToVerbs(RBACVerbs.CREATE);
+                    if (!dependentRule.getVerbs().contains(RBACVerbs.PATCH)) {
+                        dependentRule.addToVerbs(RBACVerbs.PATCH);
+                    }
+                }
+                rules.add(dependentRule.build());
+            }
+        });
+        return rules;
+    }
+
+    private static PolicyRule getClusterRolePolicyRuleFromPrimaryResource(QuarkusControllerConfiguration<?> cri) {
         final var rule = new PolicyRuleBuilder();
         final var resourceClass = cri.getResourceClass();
         final var plural = HasMetadata.getPlural(resourceClass);
@@ -70,45 +141,58 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
         rule.addToApiGroups(HasMetadata.getGroup(resourceClass))
                 .addToVerbs(RBACVerbs.ALL_COMMON_VERBS)
                 .build();
+        return rule.build();
+    }
 
-        final var clusterRoleBuilder = new ClusterRoleBuilder()
-                .withNewMetadata()
-                .withName(getClusterRoleName(cri.getName()))
-                .endMetadata()
-                .addToRules(rule.build());
+    /**
+     * Remove duplicated rules with same groups and resources, from which merge all verbs
+     *
+     * @param collectedRules may contain duplicated rules with same groups and resources, but different verbs
+     * @return no duplicated rules
+     */
+    @NotNull
+    private static Set<PolicyRule> mergePolicyRulesOfSameGroupsAndKinds(Set<PolicyRule> collectedRules) {
+        Set<PolicyRule> mergedRules = new LinkedHashSet<>();
+        collectedRules.stream()
+                .map(wrapEqualOfGroupsAndKinds()).forEach(i -> {
+                    if (!mergedRules.add(i)) {
+                        mergedRules.stream().filter(j -> Objects.equals(j, i)).findAny().ifPresent(r -> {
+                            Set<String> verbs1 = new LinkedHashSet<>(r.getVerbs());
+                            Set<String> verbs2 = new LinkedHashSet<>(i.getVerbs());
+                            verbs1.addAll(verbs2);
+                            r.setVerbs(verbs1.stream().toList());
+                        });
+                    }
+                });
+        return mergedRules;
+    }
 
-        final Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata = cri.getDependentsMetadata();
-        dependentsMetadata.forEach((name, spec) -> {
-            final var dependentResourceClass = spec.getDependentResourceClass();
-            final var associatedResourceClass = spec.getDependentType();
-
-            // only process Kubernetes dependents
-            if (HasMetadata.class.isAssignableFrom(associatedResourceClass)) {
-                final var dependentRule = new PolicyRuleBuilder()
-                        .addToApiGroups(HasMetadata.getGroup(associatedResourceClass))
-                        .addToResources(HasMetadata.getPlural(associatedResourceClass))
-                        .addToVerbs(RBACVerbs.READ_VERBS);
-                if (Updater.class.isAssignableFrom(dependentResourceClass)) {
-                    dependentRule.addToVerbs(RBACVerbs.UPDATE_VERBS);
-                }
-                if (Deleter.class.isAssignableFrom(dependentResourceClass)) {
-                    dependentRule.addToVerbs(RBACVerbs.DELETE);
-                }
-                if (Creator.class.isAssignableFrom(dependentResourceClass)) {
-                    dependentRule.addToVerbs(RBACVerbs.CREATE);
-                    if (!dependentRule.getVerbs().contains(RBACVerbs.PATCH)) {
-                        dependentRule.addToVerbs(RBACVerbs.PATCH);
+    @NotNull
+    private static Function<PolicyRule, PolicyRule> wrapEqualOfGroupsAndKinds() {
+        return i -> new PolicyRule(i.getApiGroups(), i.getNonResourceURLs(), i.getResourceNames(), i.getResources(),
+                i.getVerbs()) {
+            @Override
+            public boolean equals(Object o) {
+                if (o == null)
+                    return false;
+                if (o instanceof PolicyRule) {
+                    if (Objects.equals(
+                            this.getApiGroups().stream().sorted().toList(),
+                            ((PolicyRule) o).getApiGroups().stream().sorted().toList())) {
+                        return Objects.equals(
+                                getResources().stream().sorted().toList(),
+                                ((PolicyRule) o).getResources().stream().sorted().toList());
                     }
                 }
-                clusterRoleBuilder.addToRules(dependentRule.build());
+                return false;
             }
 
-        });
-
-        // add additional RBAC rules
-        clusterRoleBuilder.addAllToRules(cri.getAdditionalRBACRules());
-
-        return clusterRoleBuilder.build();
+            @Override
+            public int hashCode() {
+                // equals method called only with same hashCode
+                return 0;
+            }
+        };
     }
 
     public static String getClusterRoleName(String controller) {

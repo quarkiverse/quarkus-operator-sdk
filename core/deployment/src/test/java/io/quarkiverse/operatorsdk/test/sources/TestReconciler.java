@@ -12,7 +12,9 @@ import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
         @Dependent(type = CRUDConfigMap.class),
         @Dependent(type = ReadOnlySecret.class),
         @Dependent(type = CreateOnlyService.class),
-        @Dependent(type = NonKubeResource.class)
+        @Dependent(type = NonKubeResource.class),
+        @Dependent(type = TypelessKubeResource.class),
+        @Dependent(type = TypelessAnotherKubeResource.class)
 })
 @RBACRule(verbs = RBACVerbs.UPDATE, apiGroups = RBACRule.ALL, resources = RBACRule.ALL)
 public class TestReconciler implements Reconciler<TestCR> {
