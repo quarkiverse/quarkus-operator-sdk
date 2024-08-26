@@ -12,6 +12,7 @@ public class RBACVerbs {
     public static final String WATCH = "watch";
     public static final String DELETE = "delete";
     public static final String[] UPDATE_VERBS = new String[] { PATCH, UPDATE };
+    public static final String[] CREATE_VERBS = new String[] { CREATE, PATCH };
     public static final String[] READ_VERBS = new String[] { GET, LIST, WATCH };
     public static final String[] ALL_COMMON_VERBS;
 

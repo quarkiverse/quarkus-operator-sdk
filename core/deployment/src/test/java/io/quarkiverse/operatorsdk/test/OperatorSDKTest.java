@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.utils.Serialization;
@@ -28,13 +29,26 @@ import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
 import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
 import io.quarkiverse.operatorsdk.deployment.AddRoleBindingsDecorator;
-import io.quarkiverse.operatorsdk.test.sources.*;
+import io.quarkiverse.operatorsdk.test.sources.CRUDConfigMap;
+import io.quarkiverse.operatorsdk.test.sources.CreateOnlyService;
+import io.quarkiverse.operatorsdk.test.sources.Foo;
+import io.quarkiverse.operatorsdk.test.sources.NonKubeResource;
+import io.quarkiverse.operatorsdk.test.sources.ReadOnlySecret;
+import io.quarkiverse.operatorsdk.test.sources.SimpleCR;
+import io.quarkiverse.operatorsdk.test.sources.SimpleReconciler;
+import io.quarkiverse.operatorsdk.test.sources.SimpleSpec;
+import io.quarkiverse.operatorsdk.test.sources.SimpleStatus;
+import io.quarkiverse.operatorsdk.test.sources.TestCR;
+import io.quarkiverse.operatorsdk.test.sources.TestReconciler;
+import io.quarkiverse.operatorsdk.test.sources.TypelessAnotherKubeResource;
+import io.quarkiverse.operatorsdk.test.sources.TypelessKubeResource;
 import io.quarkus.test.ProdBuildResults;
 import io.quarkus.test.ProdModeTestResults;
 import io.quarkus.test.QuarkusProdModeTest;
 
 public class OperatorSDKTest {
 
+    public static final List<String> READ_VERBS_LIST = Arrays.asList(READ_VERBS);
     private static final String APPLICATION_NAME = "test";
     // Start unit test with your extension loaded
     @RegisterExtension
@@ -48,6 +62,22 @@ public class OperatorSDKTest {
 
     @ProdBuildResults
     private ProdModeTestResults prodModeTestResults;
+
+    private static boolean hasReadAndAdditionalVerbsOnly(PolicyRule rule, String... additionalVerbs) {
+        final var verbs = rule.getVerbs();
+        return (verbs.size() == READ_VERBS_LIST.size() + additionalVerbs.length) && verbs.containsAll(READ_VERBS_LIST)
+                && verbs.containsAll(List.of(additionalVerbs));
+    }
+
+    private static boolean isReadOnly(PolicyRule rule) {
+        return rule.getVerbs().equals(READ_VERBS_LIST);
+    }
+
+    private static boolean hasOnlyCommonVerbs(PolicyRule rule) {
+        final var verbs = rule.getVerbs();
+        return verbs.size() == ALL_COMMON_VERBS.length
+                && verbs.containsAll(Arrays.asList(ALL_COMMON_VERBS));
+    }
 
     @Test
     public void shouldCreateRolesAndRoleBindings() throws IOException {
@@ -82,19 +112,14 @@ public class OperatorSDKTest {
                             }));
                     assertTrue(rules.stream()
                             .filter(rule -> rule.getResources().equals(List.of(HasMetadata.getPlural(Secret.class))))
-                            .anyMatch(rule -> rule.getVerbs().equals(Arrays.asList(READ_VERBS))));
+                            .anyMatch(OperatorSDKTest::isReadOnly));
                     assertTrue(rules.stream()
                             .filter(rule -> rule.getResources().equals(List.of(HasMetadata.getPlural(
                                     Service.class))))
-                            .anyMatch(rule -> rule.getVerbs().containsAll(Arrays.asList(READ_VERBS))
-                                    && rule.getVerbs().contains(CREATE)));
+                            .anyMatch(rule -> hasReadAndAdditionalVerbsOnly(rule, CREATE_VERBS)));
                     assertTrue(rules.stream()
                             .filter(rule -> rule.getResources().equals(List.of(HasMetadata.getPlural(ConfigMap.class))))
-                            .anyMatch(rule -> {
-                                final var verbs = rule.getVerbs();
-                                return verbs.size() == ALL_COMMON_VERBS.length
-                                        && verbs.containsAll(Arrays.asList(ALL_COMMON_VERBS));
-                            }));
+                            .anyMatch(OperatorSDKTest::hasOnlyCommonVerbs));
                     assertTrue(rules.stream()
                             .filter(rule -> rule.getResources().equals(List.of(RBACRule.ALL)))
                             .anyMatch(rule -> rule.getVerbs().equals(List.of(UPDATE))
@@ -104,11 +129,11 @@ public class OperatorSDKTest {
                     // expected generic kubernetes resource: apiGroups is Group from GVK and resources should be '*'
                     // verbs should contain merged 'delete'
                     // count should be 1, as TypelessKubeResource and TypelessAnotherKubeResource have same GROUP
-                    assertTrue(rules.stream()
+                    assertEquals(1, rules.stream()
                             .filter(rule -> rule.getApiGroups().equals(List.of(TypelessKubeResource.GROUP)))
                             .filter(rule -> rule.getResources().equals(List.of("*")))
                             .filter(rule -> rule.getVerbs().contains("delete"))
-                            .count() == 1);
+                            .count());
                 });
 
         // check that we have a role binding for TestReconciler and that it uses the operator-level specified namespace
