@@ -1,11 +1,18 @@
 package io.quarkiverse.operatorsdk.deployment;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 
 import io.dekorate.kubernetes.decorator.ResourceProvidingDecorator;
+import io.fabric8.kubernetes.api.Pluralize;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesListBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
@@ -112,9 +119,8 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                                 GenericKubernetesDependentResource.class, "AddClusterRolesDecorator");
                         final var gvk = genericKubernetesResource.getGroupVersionKind();
                         resourceGroup = gvk.getGroup();
-                        // todo: might want to use plural form on GVK, see // https://github.com/operator-framework/java-operator-sdk/pull/2515
-                        //                        resourcePlural = Pluralize.toPlural(gvk.getKind());
-                        resourcePlural = "*";
+                        // todo: use plural form on GVK if available, see https://github.com/operator-framework/java-operator-sdk/pull/2515
+                        resourcePlural = Pluralize.toPlural(gvk.getKind());
                     } catch (Exception e) {
                         log.warn("Ignoring " + dependentResourceClass.getName()
                                 + " for generic resource role processing as it cannot be instantiated", e);
