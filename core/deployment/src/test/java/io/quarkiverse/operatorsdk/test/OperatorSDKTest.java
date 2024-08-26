@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import io.fabric8.kubernetes.api.Pluralize;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -124,16 +125,15 @@ public class OperatorSDKTest {
                             .filter(rule -> rule.getResources().equals(List.of(RBACRule.ALL)))
                             .anyMatch(rule -> rule.getVerbs().equals(List.of(UPDATE))
                                     && rule.getApiGroups().equals(List.of(RBACRule.ALL))));
-
-                    // TODO: need update, https://github.com/operator-framework/java-operator-sdk/pull/2515
-                    // expected generic kubernetes resource: apiGroups is Group from GVK and resources should be '*'
-                    // verbs should contain merged 'delete'
-                    // count should be 1, as TypelessKubeResource and TypelessAnotherKubeResource have same GROUP
+                    // Both typeless dependents are using the same GVK so the verbs associated with their policy rules should be merged into a single one
                     assertEquals(1, rules.stream()
-                            .filter(rule -> rule.getApiGroups().equals(List.of(TypelessKubeResource.GROUP)))
-                            .filter(rule -> rule.getResources().equals(List.of("*")))
-                            .filter(rule -> rule.getVerbs().contains("delete"))
+                            .filter(rule -> rule.getApiGroups().equals(List.of(TypelessKubeResource.GROUP))
+                                    && rule.getResources().equals(List.of(Pluralize.toPlural(TypelessKubeResource.KIND))))
                             .count());
+                    assertTrue(rules.stream()
+                            .filter(rule -> rule.getApiGroups().equals(List.of(TypelessKubeResource.GROUP))
+                                    && rule.getResources().equals(List.of(Pluralize.toPlural(TypelessKubeResource.KIND))))
+                            .allMatch(rule -> hasReadAndAdditionalVerbsOnly(rule, DELETE)));
                 });
 
         // check that we have a role binding for TestReconciler and that it uses the operator-level specified namespace
