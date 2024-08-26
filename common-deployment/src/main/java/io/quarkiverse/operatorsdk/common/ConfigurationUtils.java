@@ -80,7 +80,12 @@ public class ConfigurationUtils {
             Class<T> interfaceClass,
             IndexView index) {
         final var expectedTypeDN = toInstantiate.asClass().name();
-        return index.getClassByName(expectedTypeDN);
+        final var clazz = index.getClassByName(expectedTypeDN);
+        if (clazz == null) {
+            throw new IllegalStateException(expectedTypeDN
+                    + " class was not found in Jandex index. If you see this in a test, don't forget to add the class to the application root when setting up the test.");
+        }
+        return clazz;
     }
 
     @SuppressWarnings("unchecked")
