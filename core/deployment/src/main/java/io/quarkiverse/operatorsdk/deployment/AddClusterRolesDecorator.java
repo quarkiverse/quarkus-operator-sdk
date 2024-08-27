@@ -1,5 +1,6 @@
 package io.quarkiverse.operatorsdk.deployment;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -41,6 +42,7 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
     private static final String CR_API_VERSION = HasMetadata.getApiVersion(ClusterRole.class);
     private static final String CR_KIND = HasMetadata.getKind(ClusterRole.class);
     private static final Logger log = Logger.getLogger(AddClusterRolesDecorator.class);
+    private static final String ADD_CLUSTER_ROLES_DECORATOR = "AddClusterRolesDecorator";
     private final Collection<QuarkusControllerConfiguration<?>> configs;
 
     private final boolean validateCRDs;
@@ -89,7 +91,7 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
             existingRules.merge(key, newPolicyRule, (existing, npr) -> {
                 Set<String> verbs1 = new TreeSet<>(existing.getVerbs());
                 verbs1.addAll(npr.getVerbs());
-                existing.setVerbs(verbs1.stream().toList());
+                existing.setVerbs(new ArrayList<>(verbs1));
                 return existing;
             });
         });
@@ -116,7 +118,7 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                         @SuppressWarnings({ "unchecked", "rawtypes" })
                         final var genericKubernetesResource = Utils.instantiate(
                                 (Class<? extends GenericKubernetesDependentResource>) dependentResourceClass,
-                                GenericKubernetesDependentResource.class, "AddClusterRolesDecorator");
+                                GenericKubernetesDependentResource.class, ADD_CLUSTER_ROLES_DECORATOR);
                         final var gvk = genericKubernetesResource.getGroupVersionKind();
                         resourceGroup = gvk.getGroup();
                         // todo: use plural form on GVK if available, see https://github.com/operator-framework/java-operator-sdk/pull/2515
