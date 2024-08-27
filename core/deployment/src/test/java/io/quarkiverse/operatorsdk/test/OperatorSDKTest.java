@@ -117,7 +117,7 @@ public class OperatorSDKTest {
                     assertTrue(rules.stream()
                             .filter(rule -> rule.getResources().equals(List.of(HasMetadata.getPlural(
                                     Service.class))))
-                            .anyMatch(rule -> hasReadAndAdditionalVerbsOnly(rule, CREATE_VERBS)));
+                            .anyMatch(rule -> hasReadAndAdditionalVerbsOnly(rule, CREATE)));
                     assertTrue(rules.stream()
                             .filter(rule -> rule.getResources().equals(List.of(HasMetadata.getPlural(ConfigMap.class))))
                             .anyMatch(OperatorSDKTest::hasOnlyCommonVerbs));
