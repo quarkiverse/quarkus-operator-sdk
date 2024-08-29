@@ -6,7 +6,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -14,22 +13,18 @@ import java.util.stream.Collectors;
 import org.jboss.logging.Logger;
 
 import io.dekorate.kubernetes.decorator.ResourceProvidingDecorator;
-import io.fabric8.kubernetes.api.Pluralize;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesListBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.ResourceUpdaterMatcher;
 import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
 import io.quarkiverse.operatorsdk.runtime.DependentResourceSpecMetadata;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
@@ -107,6 +102,7 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                 + rule.getResources().stream().sorted().collect(Collectors.joining("-"));
     }
 
+    @SuppressWarnings("unchecked")
     private static Set<PolicyRule> getClusterRolePolicyRulesFromDependentResources(QuarkusControllerConfiguration<?> cri) {
         Set<PolicyRule> rules = new LinkedHashSet<>();
         final Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata = cri.getDependentsMetadata();
@@ -133,7 +129,7 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                 // Check if we're dealing with typeless Kubernetes resource or if we need to deal with SSA
                 if (KubernetesDependentResource.class.isAssignableFrom(dependentResourceClass)) {
                     try {
-                        @SuppressWarnings({ "unchecked", "rawtypes" })
+                        @SuppressWarnings("rawtypes")
                         var kubeResource = Utils.instantiate(
                                 (Class<? extends KubernetesDependentResource>) dependentResourceClass,
                                 KubernetesDependentResource.class, ADD_CLUSTER_ROLES_DECORATOR);
@@ -141,13 +137,11 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                         if (kubeResource instanceof GenericKubernetesDependentResource<? extends HasMetadata> genericKubeRes) {
                             final var gvk = genericKubeRes.getGroupVersionKind();
                             resourceGroup = gvk.getGroup();
-                            // todo: use plural form on GVK if available, see https://github.com/operator-framework/java-operator-sdk/pull/2515
-                            resourcePlural = Pluralize.toPlural(gvk.getKind());
+                            resourcePlural = gvk.getPluralOrDefault();
                         }
 
                         // if we use SSA and the dependent resource class is not excluded from using SSA, we also need PATCH permissions for finalizer
-                        // todo: replace by using ConfigurationService.isUsingSSA once available see https://github.com/operator-framework/java-operator-sdk/pull/2516
-                        if (isUsingSSA(kubeResource, cri.getConfigurationService())) {
+                        if (cri.getConfigurationService().shouldUseSSA(kubeResource)) {
                             verbs.add(RBACVerbs.PATCH);
                         }
                     } catch (Exception e) {
@@ -164,21 +158,6 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
             }
         });
         return rules;
-    }
-
-    private static boolean isUsingSSA(KubernetesDependentResource<?, ?> dependentResource,
-            ConfigurationService configurationService) {
-        if (dependentResource instanceof ResourceUpdaterMatcher) {
-            return false;
-        }
-        Optional<Boolean> useSSAConfig = dependentResource.configuration()
-                .flatMap(KubernetesDependentResourceConfig::useSSA);
-        // don't use SSA for certain resources by default, only if explicitly overriden
-        if (useSSAConfig.isEmpty()
-                && configurationService.defaultNonSSAResource().contains(dependentResource.resourceType())) {
-            return false;
-        }
-        return useSSAConfig.orElse(configurationService.ssaBasedCreateUpdateMatchForDependentResources());
     }
 
     private static PolicyRule getClusterRolePolicyRuleFromPrimaryResource(QuarkusControllerConfiguration<?> cri) {
