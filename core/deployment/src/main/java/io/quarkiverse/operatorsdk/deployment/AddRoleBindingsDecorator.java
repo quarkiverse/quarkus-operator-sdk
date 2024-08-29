@@ -28,31 +28,111 @@ import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 @SuppressWarnings("rawtypes")
 public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<KubernetesListBuilder> {
 
-    private static final Logger log = Logger.getLogger(AddRoleBindingsDecorator.class);
-    protected static final String RBAC_AUTHORIZATION_GROUP = "rbac.authorization.k8s.io";
     public static final String CLUSTER_ROLE = "ClusterRole";
+    protected static final String RBAC_AUTHORIZATION_GROUP = "rbac.authorization.k8s.io";
+    public static final RoleRef CRD_VALIDATING_ROLE_REF = new RoleRef(RBAC_AUTHORIZATION_GROUP, CLUSTER_ROLE,
+            JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME);
     protected static final String SERVICE_ACCOUNT = "ServiceAccount";
-    private final Collection<QuarkusControllerConfiguration<?>> configs;
-    private final BuildTimeOperatorConfiguration operatorConfiguration;
+    private static final Logger log = Logger.getLogger(AddRoleBindingsDecorator.class);
     private static final ConcurrentMap<QuarkusControllerConfiguration, List<HasMetadata>> cachedBindings = new ConcurrentHashMap<>();
     private static final Optional<String> deployNamespace = ConfigProvider.getConfig()
             .getOptionalValue("quarkus.kubernetes.namespace", String.class);
-    public static final RoleRef CRD_VALIDATING_ROLE_REF = new RoleRef(RBAC_AUTHORIZATION_GROUP, CLUSTER_ROLE,
-            JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME);
+    private final Collection<QuarkusControllerConfiguration<?>> configs;
+    private final BuildTimeOperatorConfiguration operatorConfiguration;
+    private final String serviceAccount;
 
     public AddRoleBindingsDecorator(Collection<QuarkusControllerConfiguration<?>> configs,
-            BuildTimeOperatorConfiguration operatorConfiguration) {
+            BuildTimeOperatorConfiguration operatorConfiguration, String serviceAccountName) {
         this.configs = configs;
         this.operatorConfiguration = operatorConfiguration;
+        this.serviceAccount = serviceAccountName;
+    }
+
+    public static String getCRDValidatingBindingName(String controllerName) {
+        return controllerName + "-crd-validating-role-binding";
+    }
+
+    private static String getClusterRoleBindingName(String controllerName) {
+        return controllerName + "-cluster-role-binding";
+    }
+
+    public static String getRoleBindingName(String controllerName) {
+        return controllerName + "-role-binding";
+    }
+
+    public static String getSpecificRoleBindingName(String controllerName, String roleRefName) {
+        return roleRefName + "-" + getRoleBindingName(controllerName);
+    }
+
+    public static String getSpecificRoleBindingName(String controllerName, RoleRef roleRef) {
+        return getSpecificRoleBindingName(controllerName, roleRef.getName());
+    }
+
+    private static RoleRef createDefaultRoleRef(String controllerName) {
+        return new RoleRefBuilder()
+                .withApiGroup(RBAC_AUTHORIZATION_GROUP).withKind(CLUSTER_ROLE).withName(controllerName)
+                .build();
+    }
+
+    private static RoleBinding createRoleBinding(String roleBindingName,
+            String serviceAccountName,
+            String targetNamespace,
+            RoleRef roleRef) {
+        final var nsMsg = (targetNamespace == null ? "current" : "'" + targetNamespace + "'") + " namespace";
+        log.infov("Creating ''{0}'' RoleBinding to be applied to {1}", roleBindingName, nsMsg);
+        return new RoleBindingBuilder()
+                .withNewMetadata()
+                .withName(roleBindingName)
+                .withNamespace(targetNamespace)
+                .endMetadata()
+                .withRoleRef(roleRef)
+                .addNewSubject(null, SERVICE_ACCOUNT, serviceAccountName, deployNamespace(serviceAccountName))
+                .build();
+    }
+
+    private static String deployNamespace(String serviceAccountName) {
+        return deployNamespace.orElse(null);
+    }
+
+    private static ClusterRoleBinding createClusterRoleBinding(String serviceAccountName,
+            String controllerName, String bindingName, String controllerConfMessage,
+            RoleRef roleRef) {
+        outputWarningIfNeeded(controllerName, bindingName, controllerConfMessage);
+        roleRef = roleRef == null ? createDefaultRoleRef(serviceAccountName) : roleRef;
+        final var ns = deployNamespace(serviceAccountName);
+        log.infov("Creating ''{0}'' ClusterRoleBinding to be applied to ''{1}'' namespace", bindingName, ns);
+        return new ClusterRoleBindingBuilder()
+                .withNewMetadata().withName(bindingName)
+                .endMetadata()
+                .withRoleRef(roleRef)
+                .addNewSubject()
+                .withKind(SERVICE_ACCOUNT).withName(serviceAccountName).withNamespace(ns)
+                .endSubject()
+                .build();
+    }
+
+    private static void outputWarningIfNeeded(String controllerName, String crBindingName, String controllerConfMessage) {
+        // the decorator can be called several times but we only want to output the warning once
+        if (deployNamespace.isEmpty()) {
+            log.warnv(
+                    "''{0}'' controller is configured to "
+                            + controllerConfMessage
+                            + ", this requires a ClusterRoleBinding for which we MUST specify the namespace of the operator ServiceAccount. This can be specified by setting the ''quarkus.kubernetes.namespace'' property. However, as this property is not set, we are leaving the namespace blank to be provided by the user by editing the ''{1}'' ClusterRoleBinding to provide the namespace in which the operator will be deployed.",
+                    controllerName, crBindingName);
+        }
     }
 
     @Override
     public void visit(KubernetesListBuilder list) {
         final var serviceAccountName = getMandatoryDeploymentMetadata(list).getName();
         configs.forEach(config -> {
-            final var toAdd = cachedBindings.computeIfAbsent(config, c -> bindingsFor(c, serviceAccountName));
+            final var toAdd = cachedBindings.computeIfAbsent(config, c -> bindingsFor(c, serviceAccount));
             list.addAllToItems(toAdd);
         });
+    }
+
+    public List<HasMetadata> createBindings() {
+        return configs.stream().flatMap(config -> bindingsFor(config, serviceAccount).stream()).toList();
     }
 
     private List<HasMetadata> bindingsFor(QuarkusControllerConfiguration<?> controllerConfiguration,
@@ -118,76 +198,5 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
         }
 
         return itemsToAdd;
-    }
-
-    public static String getCRDValidatingBindingName(String controllerName) {
-        return controllerName + "-crd-validating-role-binding";
-    }
-
-    private static String getClusterRoleBindingName(String controllerName) {
-        return controllerName + "-cluster-role-binding";
-    }
-
-    public static String getRoleBindingName(String controllerName) {
-        return controllerName + "-role-binding";
-    }
-
-    public static String getSpecificRoleBindingName(String controllerName, String roleRefName) {
-        return roleRefName + "-" + getRoleBindingName(controllerName);
-    }
-
-    public static String getSpecificRoleBindingName(String controllerName, RoleRef roleRef) {
-        return getSpecificRoleBindingName(controllerName, roleRef.getName());
-    }
-
-    private static RoleRef createDefaultRoleRef(String controllerName) {
-        return new RoleRefBuilder()
-                .withApiGroup(RBAC_AUTHORIZATION_GROUP).withKind(CLUSTER_ROLE).withName(controllerName)
-                .build();
-    }
-
-    private static RoleBinding createRoleBinding(String roleBindingName,
-            String serviceAccountName,
-            String targetNamespace,
-            RoleRef roleRef) {
-        final var nsMsg = (targetNamespace == null ? "current" : "'" + targetNamespace + "'") + " namespace";
-        log.infov("Creating ''{0}'' RoleBinding to be applied to {1}", roleBindingName, nsMsg);
-        return new RoleBindingBuilder()
-                .withNewMetadata()
-                .withName(roleBindingName)
-                .withNamespace(targetNamespace)
-                .endMetadata()
-                .withRoleRef(roleRef)
-                .addNewSubject(null, SERVICE_ACCOUNT, serviceAccountName,
-                        deployNamespace.orElse(null))
-                .build();
-    }
-
-    private static ClusterRoleBinding createClusterRoleBinding(String serviceAccountName,
-            String controllerName, String bindingName, String controllerConfMessage,
-            RoleRef roleRef) {
-        outputWarningIfNeeded(controllerName, bindingName, controllerConfMessage);
-        roleRef = roleRef == null ? createDefaultRoleRef(serviceAccountName) : roleRef;
-        final var ns = deployNamespace.orElse(null);
-        log.infov("Creating ''{0}'' ClusterRoleBinding to be applied to ''{1}'' namespace", bindingName, ns);
-        return new ClusterRoleBindingBuilder()
-                .withNewMetadata().withName(bindingName)
-                .endMetadata()
-                .withRoleRef(roleRef)
-                .addNewSubject()
-                .withKind(SERVICE_ACCOUNT).withName(serviceAccountName).withNamespace(ns)
-                .endSubject()
-                .build();
-    }
-
-    private static void outputWarningIfNeeded(String controllerName, String crBindingName, String controllerConfMessage) {
-        // the decorator can be called several times but we only want to output the warning once
-        if (deployNamespace.isEmpty()) {
-            log.warnv(
-                    "''{0}'' controller is configured to "
-                            + controllerConfMessage
-                            + ", this requires a ClusterRoleBinding for which we MUST specify the namespace of the operator ServiceAccount. This can be specified by setting the ''quarkus.kubernetes.namespace'' property. However, as this property is not set, we are leaving the namespace blank to be provided by the user by editing the ''{1}'' ClusterRoleBinding to provide the namespace in which the operator will be deployed.",
-                    controllerName, crBindingName);
-        }
     }
 }

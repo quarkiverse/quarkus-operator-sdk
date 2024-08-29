@@ -32,13 +32,14 @@ import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 public class AddClusterRolesDecorator extends ResourceProvidingDecorator<KubernetesListBuilder> {
 
     public static final String JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME = "josdk-crd-validating-cluster-role";
-    private static final ClusterRoleBuilder CRD_VALIDATING_CLUSTER_ROLE_BUILDER = new ClusterRoleBuilder().withNewMetadata()
+    private static final ClusterRole CRD_VALIDATING_CLUSTER_ROLE = new ClusterRoleBuilder().withNewMetadata()
             .withName(JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME).endMetadata()
             .addToRules(new PolicyRuleBuilder()
                     .addToApiGroups("apiextensions.k8s.io")
                     .addToResources("customresourcedefinitions")
                     .addToVerbs("get", "list")
-                    .build());
+                    .build())
+            .build();
     private static final String CR_API_VERSION = HasMetadata.getApiVersion(ClusterRole.class);
     private static final String CR_KIND = HasMetadata.getKind(ClusterRole.class);
     private static final Logger log = Logger.getLogger(AddClusterRolesDecorator.class);
@@ -62,9 +63,24 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
         // if we're asking to validate the CRDs, also add CRDs permissions, once
         if (validateCRDs) {
             if (!contains(list, CR_API_VERSION, CR_KIND, JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME)) {
-                list.addToItems(CRD_VALIDATING_CLUSTER_ROLE_BUILDER);
+                list.addToItems(CRD_VALIDATING_CLUSTER_ROLE);
             }
         }
+    }
+
+    public List<ClusterRole> createClusterRoles() {
+        List<ClusterRole> roles = new ArrayList<>(configs.size() + 1);
+        configs.forEach(cri -> {
+            var clusterRole = createClusterRole(cri);
+            roles.add(clusterRole);
+        });
+
+        // if we're asking to validate the CRDs, also add CRDs permissions, once
+        if (validateCRDs) {
+            roles.add(CRD_VALIDATING_CLUSTER_ROLE);
+        }
+
+        return roles;
     }
 
     public static ClusterRole createClusterRole(QuarkusControllerConfiguration<?> cri) {
