@@ -306,12 +306,12 @@ endif::add-copy-button-to-env-var[]
 |boolean
 |`true`
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-defensive-cloning]]`link:#quarkus-operator-sdk_quarkus-operator-sdk-defensive-cloning[quarkus.operator-sdk.defensive-cloning]`
-
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-defensive-cloning]] [.property-path]##`quarkus.operator-sdk.defensive-cloning`##
 
 [.description]
 --
 Whether defensive cloning of resources retrieved from caches should be activated or not. With the prevalence of Server-Side Apply (SSA) use, defensively cloning resources, to prevent cached versions from being inadvertently modified, shouldn't be needed anymore. This should also allow for better performance. If you encounter cache corruption issues, you can always turn defensive cloning back on, however, you might first want to check that you're not unduly modifying resources retrieved from caches.
+
 
 ifdef::add-copy-button-to-env-var[]
 Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_DEFENSIVE_CLONING+++[]
@@ -319,11 +319,11 @@ endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
 Environment variable: `+++QUARKUS_OPERATOR_SDK_DEFENSIVE_CLONING+++`
 endif::add-copy-button-to-env-var[]
---|boolean
+--
+|boolean
 |`false`
 
-
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-generate-with-watched-namespaces]][.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-generate-with-watched-namespaces[`quarkus.operator-sdk.generate-with-watched-namespaces`]##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-generate-with-watched-namespaces]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-generate-with-watched-namespaces[`quarkus.operator-sdk.generate-with-watched-namespaces`]##
 
 [.description]
 --
@@ -567,7 +567,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_I
 endif::add-copy-button-to-env-var[]
 --
 |long
-|`2000`
+|
 
 a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-multiplier]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-multiplier[`quarkus.operator-sdk.controllers."controllers".retry.interval.multiplier`]##
 
@@ -584,7 +584,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_I
 endif::add-copy-button-to-env-var[]
 --
 |double
-|`1.5`
+|
 
 a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-max]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-max[`quarkus.operator-sdk.controllers."controllers".retry.interval.max`]##
 
