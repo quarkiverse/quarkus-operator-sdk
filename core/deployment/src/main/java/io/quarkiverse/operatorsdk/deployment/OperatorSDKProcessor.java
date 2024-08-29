@@ -36,6 +36,7 @@ import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.*;
 import io.quarkus.deployment.builditem.nativeimage.ForceNonWeakReflectiveClassBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveHierarchyBuildItem;
+import io.quarkus.deployment.builditem.nativeimage.ReflectiveHierarchyIgnoreWarningBuildItem;
 import io.quarkus.deployment.metrics.MetricsCapabilityBuildItem;
 import io.quarkus.gizmo.AssignableResultHandle;
 import io.quarkus.gizmo.MethodCreator;
@@ -258,6 +259,30 @@ class OperatorSDKProcessor {
                     "quarkus.operator-sdk.controllers." + configuration.getName() + ".namespaces",
                     namespaces));
         });
+
+    }
+
+    /**
+     * Ignore warnings related to non-indexed classes in the reflective hierarchy. At this point, we cannot know
+     * if they are actually needed for native compilation.
+     *
+     * This could probably be removed once https://github.com/quarkiverse/quarkus-operator-sdk/issues/941 is resolved.
+     *
+     */
+    @BuildStep
+    void ignoreNonIndexedClassesWarningsInReflectiveHierarchy(
+            BuildProducer<ReflectiveHierarchyIgnoreWarningBuildItem> reflectiveHierarchyIgnoreWarningBuildItemBuildProducer) {
+        reflectiveHierarchyIgnoreWarningBuildItemBuildProducer.produce(
+                new ReflectiveHierarchyIgnoreWarningBuildItem(DotName.createSimple(io.vertx.core.Vertx.class.getName())));
+        reflectiveHierarchyIgnoreWarningBuildItemBuildProducer.produce(
+                new ReflectiveHierarchyIgnoreWarningBuildItem(
+                        DotName.createSimple(io.vertx.core.http.HttpClient.class.getName())));
+        reflectiveHierarchyIgnoreWarningBuildItemBuildProducer.produce(
+                new ReflectiveHierarchyIgnoreWarningBuildItem(
+                        DotName.createSimple(io.vertx.core.http.WebSocket.class.getName())));
+        reflectiveHierarchyIgnoreWarningBuildItemBuildProducer.produce(
+                new ReflectiveHierarchyIgnoreWarningBuildItem(
+                        DotName.createSimple(io.vertx.core.net.ProxyType.class.getName())));
 
     }
 
