@@ -27,7 +27,6 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubern
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
-import io.quarkiverse.operatorsdk.runtime.DependentResourceSpecMetadata;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 
 public class AddClusterRolesDecorator extends ResourceProvidingDecorator<KubernetesListBuilder> {
@@ -106,7 +105,7 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
     @SuppressWarnings("unchecked")
     private static Set<PolicyRule> getClusterRolePolicyRulesFromDependentResources(QuarkusControllerConfiguration<?> cri) {
         Set<PolicyRule> rules = new LinkedHashSet<>();
-        final Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata = cri.getDependentsMetadata();
+        final var dependentsMetadata = cri.dependentsMetadata();
         dependentsMetadata.forEach((name, spec) -> {
             final var dependentResourceClass = spec.getDependentResourceClass();
             final var associatedResourceClass = spec.getResourceClass();
