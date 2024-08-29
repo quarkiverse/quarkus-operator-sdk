@@ -12,9 +12,7 @@ import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 
-import io.dekorate.kubernetes.decorator.ResourceProvidingDecorator;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.KubernetesListBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
@@ -29,42 +27,34 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 
-public class AddClusterRolesDecorator extends ResourceProvidingDecorator<KubernetesListBuilder> {
+public class AddClusterRolesDecorator {
 
     public static final String JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME = "josdk-crd-validating-cluster-role";
-    private static final ClusterRoleBuilder CRD_VALIDATING_CLUSTER_ROLE_BUILDER = new ClusterRoleBuilder().withNewMetadata()
+    private static final ClusterRole CRD_VALIDATING_CLUSTER_ROLE = new ClusterRoleBuilder().withNewMetadata()
             .withName(JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME).endMetadata()
             .addToRules(new PolicyRuleBuilder()
                     .addToApiGroups("apiextensions.k8s.io")
                     .addToResources("customresourcedefinitions")
                     .addToVerbs("get", "list")
-                    .build());
-    private static final String CR_API_VERSION = HasMetadata.getApiVersion(ClusterRole.class);
-    private static final String CR_KIND = HasMetadata.getKind(ClusterRole.class);
+                    .build())
+            .build();
     private static final Logger log = Logger.getLogger(AddClusterRolesDecorator.class);
     private static final String ADD_CLUSTER_ROLES_DECORATOR = "AddClusterRolesDecorator";
-    private final Collection<QuarkusControllerConfiguration<?>> configs;
 
-    private final boolean validateCRDs;
-
-    public AddClusterRolesDecorator(Collection<QuarkusControllerConfiguration<?>> configs, boolean validateCRDs) {
-        this.configs = configs;
-        this.validateCRDs = validateCRDs;
-    }
-
-    @Override
-    public void visit(KubernetesListBuilder list) {
+    public static List<ClusterRole> createClusterRoles(Collection<QuarkusControllerConfiguration<?>> configs,
+            boolean validateCRDs) {
+        List<ClusterRole> roles = new ArrayList<>(configs.size() + 1);
         configs.forEach(cri -> {
             var clusterRole = createClusterRole(cri);
-            list.addToItems(clusterRole);
+            roles.add(clusterRole);
         });
 
-        // if we're asking to validate the CRDs, also add CRDs permissions, once
+        // if we're asking to validate the CRDs, also add CRDs permissions
         if (validateCRDs) {
-            if (!contains(list, CR_API_VERSION, CR_KIND, JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME)) {
-                list.addToItems(CRD_VALIDATING_CLUSTER_ROLE_BUILDER);
-            }
+            roles.add(CRD_VALIDATING_CLUSTER_ROLE);
         }
+
+        return roles;
     }
 
     public static ClusterRole createClusterRole(QuarkusControllerConfiguration<?> cri) {
