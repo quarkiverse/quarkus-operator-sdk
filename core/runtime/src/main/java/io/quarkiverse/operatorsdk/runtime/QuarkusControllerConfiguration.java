@@ -93,7 +93,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private Retry retry;
     private RateLimiter rateLimiter;
     private ManagedWorkflow<R> workflow;
-    private QuarkusConfigurationService parent;
+    private ConfigurationService parent;
 
     @RecordableConstructor
     @SuppressWarnings("unchecked")
@@ -157,7 +157,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return parent;
     }
 
-    public void setParent(QuarkusConfigurationService parent) {
+    public void setParent(ConfigurationService parent) {
         this.parent = parent;
     }
 
