@@ -183,12 +183,10 @@ class OperatorSDKProcessor {
      * Gathers the CustomResource implementations that are not part of the application index because they are part of an
      * external, reusable module for example.
      *
+     * <p>
      * Note that this will be obsolete once <a href="https://github.com/quarkusio/quarkus/pull/38586">Quarkus #38586</a> is
      * usable
-     *
-     * @param combinedIndexBuildItem
-     * @param applicationIndexBuildItem
-     * @param reflectiveClassProducer
+     * </p>
      */
     @BuildStep
     void gatherOutOfAppCustomResourceImplementations(CombinedIndexBuildItem combinedIndexBuildItem,
@@ -250,7 +248,6 @@ class OperatorSDKProcessor {
             ControllerConfigurationsBuildItem configurations,
             BuildProducer<RunTimeConfigurationDefaultBuildItem> runtimeConfig) {
         configurations.getControllerConfigs().forEach((name, configuration) -> {
-            @SuppressWarnings("unchecked")
             final var namespaces = String.join(",", configuration.getNamespaces());
             runtimeConfig.produce(new RunTimeConfigurationDefaultBuildItem(
                     "quarkus.operator-sdk.controllers." + configuration.getName() + ".namespaces",
@@ -263,7 +260,11 @@ class OperatorSDKProcessor {
      * Ignore warnings related to non-indexed classes in the reflective hierarchy. At this point, we cannot know
      * if they are actually needed for native compilation.
      *
-     * This could probably be removed once https://github.com/quarkiverse/quarkus-operator-sdk/issues/941 is resolved.
+     * <p>
+     * This could probably be removed once <a href=
+     * "https://github.com/quarkiverse/quarkus-operator-sdk/issues/941">https://github.com/quarkiverse/quarkus-operator-sdk/issues/941</a>
+     * is resolved.
+     * </p>
      *
      */
     @BuildStep

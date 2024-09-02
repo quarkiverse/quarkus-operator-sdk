@@ -122,7 +122,8 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                 if (Deleter.class.isAssignableFrom(dependentResourceClass)) {
                     verbs.add(RBACVerbs.DELETE);
                 }
-                if (Creator.class.isAssignableFrom(dependentResourceClass)) {
+                final var isCreator = Creator.class.isAssignableFrom(dependentResourceClass);
+                if (isCreator) {
                     verbs.add(RBACVerbs.CREATE);
                 }
 
@@ -140,8 +141,8 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                             resourcePlural = gvk.getPluralOrDefault();
                         }
 
-                        // if we use SSA and the dependent resource class is not excluded from using SSA, we also need PATCH permissions for finalizer
-                        if (cri.getConfigurationService().shouldUseSSA(kubeResource)) {
+                        // if we use SSA and the dependent resource class is not excluded from using SSA, we also need PATCH permissions for finalizer when the dependent resource is creatable
+                        if (isCreator && cri.getConfigurationService().shouldUseSSA(kubeResource)) {
                             verbs.add(RBACVerbs.PATCH);
                         }
                     } catch (Exception e) {

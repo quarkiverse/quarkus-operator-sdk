@@ -186,7 +186,7 @@ class QuarkusControllerConfigurationBuildStep {
             final var interval = ConfigurationUtils.annotationValueOrDefault(
                     intervalFromAnnotation, "interval", AnnotationValue::asLong,
                     () -> MaxReconciliationInterval.DEFAULT_INTERVAL);
-            final var timeUnit = (TimeUnit) ConfigurationUtils.annotationValueOrDefault(
+            final var timeUnit = ConfigurationUtils.annotationValueOrDefault(
                     intervalFromAnnotation,
                     "timeUnit",
                     av -> TimeUnit.valueOf(av.asEnum()),
