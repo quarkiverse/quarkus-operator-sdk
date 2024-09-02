@@ -25,10 +25,10 @@ public class ConfigurationServiceRecorder {
 
     static final Logger log = Logger.getLogger(ConfigurationServiceRecorder.class.getName());
 
-    public Supplier<QuarkusConfigurationService> configurationServiceSupplier(Version version,
+    public Supplier<QuarkusConfigurationService> configurationServiceSupplier(
+            BuildTimeConfigurationService buildTimeConfigurationService,
             Map<String, QuarkusControllerConfiguration<?>> configurations,
-            CRDGenerationInfo crdInfo, RunTimeOperatorConfiguration runTimeConfiguration,
-            BuildTimeOperatorConfiguration buildTimeConfiguration) {
+            RunTimeOperatorConfiguration runTimeConfiguration) {
         final var maxThreads = runTimeConfiguration.concurrentReconciliationThreads()
                 .orElse(ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
         final var timeout = runTimeConfiguration.terminationTimeoutSeconds()
@@ -70,31 +70,30 @@ public class ConfigurationServiceRecorder {
             // deactivate leader election in dev mode
             LeaderElectionConfiguration leaderElectionConfiguration = null;
             final var profiles = ConfigUtils.getProfiles();
-            final var leaderElectionActivationProfiles = buildTimeConfiguration.activateLeaderElectionForProfiles();
-            if (profiles.stream().anyMatch(leaderElectionActivationProfiles::contains)) {
+            if (buildTimeConfigurationService.activateLeaderElection(profiles)) {
                 leaderElectionConfiguration = container.instance(LeaderElectionConfiguration.class).get();
             } else {
                 log.info("Leader election deactivated because it is only activated for "
-                        + leaderElectionActivationProfiles
+                        + buildTimeConfigurationService.getLeaderElectionActivationProfiles()
                         + " profiles. Currently active profiles: " + profiles);
             }
 
             return new QuarkusConfigurationService(
-                    version,
+                    buildTimeConfigurationService.getVersion(),
                     configurations.values(),
                     container.instance(KubernetesClient.class).get(),
-                    crdInfo,
+                    buildTimeConfigurationService.getCrdInfo(),
                     maxThreads,
                     workflowThreads,
                     timeout,
                     cacheSyncTimeout,
                     container.instance(Metrics.class).get(),
-                    buildTimeConfiguration.startOperator(),
+                    buildTimeConfigurationService.isStartOperator(),
                     leaderElectionConfiguration,
                     container.instance(InformerStoppedHandler.class).orElse(null),
-                    buildTimeConfiguration.closeClientOnStop(),
-                    buildTimeConfiguration.stopOnInformerErrorDuringStartup(),
-                    buildTimeConfiguration.enableSSA());
+                    buildTimeConfigurationService.isCloseClientOnStop(),
+                    buildTimeConfigurationService.isStopOnInformerErrorDuringStartup(),
+                    buildTimeConfigurationService.isEnableSSA());
         };
     }
 

@@ -85,6 +85,7 @@ class QuarkusControllerConfigurationBuildStep {
     @BuildStep
     @SuppressWarnings("unused")
     ControllerConfigurationsBuildItem createControllerConfigurations(
+            BuildTimeConfigurationServiceBuildItem buildTimeConfigurationServiceBuildItem,
             ReconcilerInfosBuildItem reconcilers,
             AnnotationConfigurablesBuildItem annotationConfigurables,
             BuildTimeOperatorConfiguration buildTimeConfiguration,
@@ -119,6 +120,7 @@ class QuarkusControllerConfigurationBuildStep {
                     if (configuration == null) {
                         configuration = createConfiguration(reconcilerInfo,
                                 annotationConfigurables.getConfigurableInfos(),
+                                buildTimeConfigurationServiceBuildItem.getConfigurationService(),
                                 buildTimeConfiguration,
                                 combinedIndexBuildItem.getIndex());
                     }
@@ -139,6 +141,7 @@ class QuarkusControllerConfigurationBuildStep {
     static QuarkusControllerConfiguration createConfiguration(
             ReconcilerAugmentedClassInfo reconcilerInfo,
             Map<String, AnnotationConfigurableAugmentedClassInfo> configurableInfos,
+            BuildTimeConfigurationService buildTimeConfigurationService,
             BuildTimeOperatorConfiguration buildTimeConfiguration,
             IndexView index) {
 
@@ -282,6 +285,9 @@ class QuarkusControllerConfigurationBuildStep {
                 onAddFilter, onUpdateFilter, genericFilter, retryClass, retryConfigurationClass, rateLimiterClass,
                 rateLimiterConfigurationClass, dependentResources, null, additionalRBACRules, additionalRBACRoleRefs,
                 fieldManager, itemStore);
+
+        // setting the configuration service with build-time known information for resolution of some information such as resource classes associated with dependent resources or whether SSA should be used for a given dependent
+        configuration.setParent(buildTimeConfigurationService);
 
         if (hasDependents) {
             dependentResourceInfos.forEach(dependent -> {
