@@ -262,7 +262,7 @@ jobs:
           echo "Effective Fabric8 version: $(./mvnw dependency:tree -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dincludes=io.fabric8:kubernetes-client-api -pl core/deployment | grep io.fabric8:kubernetes-client-api -m1 | cut -d ':' -f 4)"
 
       - name: Build with Maven (JVM)
-        run: ./mvnw -B formatter:validate install -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' '${{inputs.mvnArgs}}' --file pom.xml
+        run: ./mvnw -B formatter:validate install -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' ${{inputs.mvnArgs}} --file pom.xml
 
       - name: Dependency tree on failure
         if: failure()
