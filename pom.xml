@@ -28,6 +28,27 @@
     </snapshotRepository>
   </distributionManagement>
   <profiles>
+      <profile>
+<!-- Quarkus BOM is added automatically via an activated by default profile, this is done so that we can override the Fabric8 client version using the override-fkc profile -->
+          <id>quarkus-bom</id>
+          <activation>
+              <activeByDefault>true</activeByDefault>
+              <property>
+                  <name>!default</name>
+              </property>
+          </activation>
+          <dependencyManagement>
+              <dependencies>
+                  <dependency>
+                      <groupId>io.quarkus</groupId>
+                      <artifactId>quarkus-bom</artifactId>
+                      <version>${quarkus.version}</version>
+                      <type>pom</type>
+                      <scope>import</scope>
+                  </dependency>
+              </dependencies>
+          </dependencyManagement>
+      </profile>
     <profile>
       <id>default</id>
       <activation>
@@ -169,6 +190,46 @@
           </snapshots>
         </pluginRepository>
       </pluginRepositories>
+    </profile>
+    <profile>
+      <id>override-fkc</id>
+      <activation>
+        <property>
+<!-- We need to activate the profile by using the opposite of the property used for the default profiles -->
+          <name>default</name>
+        </property>
+      </activation>
+      <dependencyManagement>
+        <dependencies>
+<!-- Add the FKC BOM before the Quarkus one to override the client version -->
+          <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-client-bom</artifactId>
+            <version>${fkc.version}</version>
+            <scope>import</scope>
+            <type>pom</type>
+            <optional>true</optional>
+          </dependency>
+          <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-bom</artifactId>
+            <version>${quarkus.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+          </dependency>
+        </dependencies>
+      </dependencyManagement>
+      <modules>
+        <module>bom</module>
+        <module>build-parent</module>
+        <module>annotations</module>
+        <module>common</module>
+        <module>common-deployment</module>
+        <module>cli</module>
+        <module>core</module>
+        <module>bundle-generator</module>
+        <module>integration-tests</module>
+      </modules>
     </profile>
   </profiles>
 </project>
