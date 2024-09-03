@@ -86,7 +86,7 @@ public class ConfigurationServiceRecorder {
                     buildTimeConfigurationService.isCloseClientOnStop(),
                     buildTimeConfigurationService.isStopOnInformerErrorDuringStartup(),
                     buildTimeConfigurationService.isEnableSSA(),
-                    buildTimeConfiguration.defensiveCloning());
+                    buildTimeConfigurationService.isDefensiveCloning());
         };
     }
 
