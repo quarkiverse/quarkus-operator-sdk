@@ -16,7 +16,8 @@ public class BuildTimeConfigurationServiceBuildStep {
                 buildTimeConfig.closeClientOnStop(),
                 buildTimeConfig.stopOnInformerErrorDuringStartup(),
                 buildTimeConfig.enableSSA(),
-                buildTimeConfig.activateLeaderElectionForProfiles());
+                buildTimeConfig.activateLeaderElectionForProfiles(),
+                buildTimeConfig.defensiveCloning());
         return new BuildTimeConfigurationServiceBuildItem(service);
     }
 }
