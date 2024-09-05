@@ -29,6 +29,7 @@ import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
+import io.quarkiverse.operatorsdk.bundle.runtime.BundleConfiguration;
 import io.quarkiverse.operatorsdk.bundle.runtime.BundleGenerationConfiguration;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.common.*;
@@ -85,7 +86,11 @@ public class BundleProcessor {
 
         final var defaultReplaces = bundleConfiguration.replaces().orElse(null);
 
-        final var sharedMetadataHolders = getSharedMetadataHolders(defaultName, defaultVersion, defaultReplaces, index);
+        final var bundleConfigs = bundleConfiguration.bundles();
+        final var defaultBundleConfig = bundleConfigs.get(BundleGenerationConfiguration.DEFAULT_BUNDLE_NAME);
+
+        final var sharedMetadataHolders = getSharedMetadataHolders(defaultName, defaultVersion, defaultReplaces,
+                defaultBundleConfig, index);
         final var csvGroups = new HashMap<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>>();
         ClassUtils.getKnownReconcilers(index, log)
                 .forEach(reconcilerInfo -> {
@@ -115,9 +120,19 @@ public class BundleProcessor {
                                         + "' but no SharedCSVMetadata implementation with that name exists. Please create a SharedCSVMetadata with that name to have one single source of truth and reference it via CSVMetadata annotations using that name on your reconcilers.");
                             }
                         }
+
+                        // merge default bundle configuration with more specific one if they exist
+                        var bundleConfig = bundleConfigs.get(sharedMetadataName);
+                        if (bundleConfig != null) {
+                            bundleConfig.mergeWithDefaults(defaultBundleConfig);
+                        } else {
+                            bundleConfig = defaultBundleConfig;
+                        }
+
                         csvMetadata = createMetadataHolder(csvMetadataAnnotation,
                                 new CSVMetadataHolder(sharedMetadataName, defaultVersion, defaultReplaces,
-                                        DEFAULT_PROVIDER_NAME, origin));
+                                        DEFAULT_PROVIDER_NAME, origin),
+                                bundleConfig, origin);
                         if (DEFAULT_PROVIDER_NAME.equals(csvMetadata.providerName)) {
                             log.warnv(
                                     "It is recommended that you provide a provider name provided for {0}: ''{1}'' was used as default value.",
@@ -265,7 +280,7 @@ public class BundleProcessor {
     }
 
     private Map<String, CSVMetadataHolder> getSharedMetadataHolders(String name, String version, String defaultReplaces,
-            IndexView index) {
+            BundleConfiguration defaultBundleConfig, IndexView index) {
         CSVMetadataHolder csvMetadata = new CSVMetadataHolder(name, version, defaultReplaces, DEFAULT_PROVIDER_NAME,
                 "default");
         final var sharedMetadataImpls = index.getAllKnownImplementors(SHARED_CSV_METADATA);
@@ -274,7 +289,7 @@ public class BundleProcessor {
             final var csvMetadataAnn = sharedMetadataImpl.declaredAnnotation(CSV_METADATA);
             if (csvMetadataAnn != null) {
                 final var origin = sharedMetadataImpl.name().toString();
-                final var metadataHolder = createMetadataHolder(csvMetadataAnn, csvMetadata, origin);
+                final var metadataHolder = createMetadataHolder(csvMetadataAnn, csvMetadata, defaultBundleConfig, origin);
                 final var existing = result.get(metadataHolder.bundleName);
                 if (existing != null) {
                     throw new IllegalStateException(
@@ -302,13 +317,8 @@ public class BundleProcessor {
         }
     }
 
-    private CSVMetadataHolder createMetadataHolder(AnnotationInstance csvMetadata,
-            CSVMetadataHolder mh) {
-        return createMetadataHolder(csvMetadata, mh, mh.getOrigin());
-    }
-
     private CSVMetadataHolder createMetadataHolder(AnnotationInstance csvMetadata, CSVMetadataHolder mh,
-            String origin) {
+            BundleConfiguration bundleConfig, String origin) {
         if (csvMetadata == null) {
             return mh;
         }
@@ -356,6 +366,9 @@ public class BundleProcessor {
                     others);
         } else {
             annotations = mh.annotations;
+        }
+        if (bundleConfig != null) {
+            annotations = CSVMetadataHolder.Annotations.override(annotations, bundleConfig.annotations());
         }
 
         final var maintainersField = csvMetadata.value("maintainers");

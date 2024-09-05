@@ -1,6 +1,7 @@
 package io.quarkiverse.operatorsdk.bundle.runtime;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
@@ -11,6 +12,8 @@ import io.smallrye.config.WithDefault;
 @ConfigMapping(prefix = "quarkus.operator-sdk.bundle")
 @ConfigRoot
 public interface BundleGenerationConfiguration {
+    String DEFAULT_BUNDLE_NAME = "QOSDK_DEFAULT";
+
     /**
      * Whether the extension should generate the Operator bundle.
      */
@@ -47,4 +50,12 @@ public interface BundleGenerationConfiguration {
      */
     Optional<String> version();
 
+    /**
+     * Per-bundle configuration. Note that you can also provide default values that will be applied to all your bundles by
+     * adding configuration using the {@link #DEFAULT_BUNDLE_NAME} key. In that case, any configuration found under that key
+     * will be used as default for every bundle unless otherwise overridden.
+     *
+     * @since 6.8.0
+     */
+    Map<String, BundleConfiguration> bundles();
 }

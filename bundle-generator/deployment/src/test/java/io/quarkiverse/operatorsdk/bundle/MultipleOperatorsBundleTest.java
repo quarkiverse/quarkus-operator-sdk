@@ -12,6 +12,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
+import io.quarkiverse.operatorsdk.bundle.runtime.BundleConfiguration;
+import io.quarkiverse.operatorsdk.bundle.runtime.BundleGenerationConfiguration;
 import io.quarkiverse.operatorsdk.bundle.sources.*;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkus.test.ProdBuildResults;
@@ -21,7 +23,13 @@ import io.quarkus.test.QuarkusProdModeTest;
 public class MultipleOperatorsBundleTest {
 
     private static final String VERSION = "test-version";
-    public static final String BUNDLE_PACKAGE = "olm-package";
+    private static final String BUNDLE_PACKAGE = "olm-package";
+    private static final String OVERRIDEN_REPO_ANNOTATION = "overridden-repo-annotation";
+    private static final String DEFAULT_ANNOTATION_NAME = "default-annotation-name";
+    private static final String DEFAULT_ANNOTATION_VALUE = "default-annotation-value";
+    private static final String OVERRIDDEN_DEFAULT_ANNOTATION_NAME = "overridden-annotation-name";
+    private static final String OVERRIDEN_DEFAULT_ANNOTATION_VALUE = "initial-annotation-value";
+    private static final String OVERRIDEN_BY_THIRD_ANNOTATION_VALUE = "overridden-by-third-annotation-value";
 
     @RegisterExtension
     static final QuarkusProdModeTest config = new QuarkusProdModeTest()
@@ -33,7 +41,19 @@ public class MultipleOperatorsBundleTest {
                             ExternalDependentResource.class, PodDependentResource.class))
             .overrideConfigKey("quarkus.operator-sdk.crd.generate-all", "true")
             .overrideConfigKey("quarkus.operator-sdk.bundle.replaces", FirstReconciler.REPLACES)
-            .overrideConfigKey("quarkus.operator-sdk.bundle.package-name", BUNDLE_PACKAGE);
+            .overrideConfigKey("quarkus.operator-sdk.bundle.package-name", BUNDLE_PACKAGE)
+            .overrideConfigKey("quarkus.operator-sdk.bundle.bundles." + ThirdReconciler.BUNDLE_NAME + ".annotations."
+                    + BundleConfiguration.REPOSITORY_ANNOTATION, OVERRIDEN_REPO_ANNOTATION)
+            .overrideConfigKey(
+                    "quarkus.operator-sdk.bundle.bundles." + BundleGenerationConfiguration.DEFAULT_BUNDLE_NAME + ".annotations."
+                            + DEFAULT_ANNOTATION_NAME,
+                    DEFAULT_ANNOTATION_VALUE)
+            .overrideConfigKey(
+                    "quarkus.operator-sdk.bundle.bundles." + BundleGenerationConfiguration.DEFAULT_BUNDLE_NAME + ".annotations."
+                            + OVERRIDDEN_DEFAULT_ANNOTATION_NAME,
+                    OVERRIDEN_DEFAULT_ANNOTATION_VALUE)
+            .overrideConfigKey("quarkus.operator-sdk.bundle.bundles." + ThirdReconciler.BUNDLE_NAME + ".annotations."
+                    + OVERRIDDEN_DEFAULT_ANNOTATION_NAME, OVERRIDEN_BY_THIRD_ANNOTATION_VALUE);
 
     @SuppressWarnings("unused")
     @ProdBuildResults
@@ -45,6 +65,9 @@ public class MultipleOperatorsBundleTest {
         checkBundleFor(bundle, "first-operator", First.class);
         // check that version is properly overridden
         var csv = getCSVFor(bundle, "first-operator");
+        var metadata = csv.getMetadata();
+        var annotations = metadata.getAnnotations();
+        assertEquals(OVERRIDEN_DEFAULT_ANNOTATION_VALUE, annotations.get(OVERRIDDEN_DEFAULT_ANNOTATION_NAME));
         assertEquals(FirstReconciler.VERSION, csv.getSpec().getVersion());
         assertEquals(FirstReconciler.REPLACES, csv.getSpec().getReplaces());
         var bundleMeta = getAnnotationsFor(bundle, "first-operator");
@@ -52,6 +75,9 @@ public class MultipleOperatorsBundleTest {
 
         checkBundleFor(bundle, "second-operator", Second.class);
         csv = getCSVFor(bundle, "second-operator");
+        metadata = csv.getMetadata();
+        annotations = metadata.getAnnotations();
+        assertEquals(OVERRIDEN_DEFAULT_ANNOTATION_VALUE, annotations.get(OVERRIDDEN_DEFAULT_ANNOTATION_NAME));
         final var permissions = csv.getSpec().getInstall().getSpec().getPermissions();
         assertEquals(1, permissions.size());
         assertTrue(permissions.get(0).getRules().contains(new PolicyRuleBuilder()
@@ -86,10 +112,13 @@ public class MultipleOperatorsBundleTest {
         assertEquals(HasMetadata.getKind(Pod.class), podGVK.getKind());
         assertEquals(HasMetadata.getVersion(Pod.class), podGVK.getVersion());
         assertEquals("1.0.0", spec.getReplaces());
-        final var metadata = csv.getMetadata();
-        assertEquals(">=1.0.0 <1.0.3", metadata.getAnnotations().get("olm.skipRange"));
-        assertEquals("Test", metadata.getAnnotations().get("capabilities"));
-        assertEquals("bar", metadata.getAnnotations().get("foo"));
+        metadata = csv.getMetadata();
+        annotations = metadata.getAnnotations();
+        assertEquals(">=1.0.0 <1.0.3", annotations.get(BundleConfiguration.OLM_SKIP_RANGE_ANNOTATION));
+        assertEquals("Test", annotations.get(BundleConfiguration.CAPABILITIES_ANNOTATION));
+        assertEquals(OVERRIDEN_REPO_ANNOTATION, annotations.get(BundleConfiguration.REPOSITORY_ANNOTATION));
+        assertEquals(OVERRIDEN_BY_THIRD_ANNOTATION_VALUE, annotations.get(OVERRIDDEN_DEFAULT_ANNOTATION_NAME));
+        assertEquals("bar", annotations.get("foo"));
         // version should be the default application's version since it's not provided for this reconciler
         assertEquals(VERSION, spec.getVersion());
 
