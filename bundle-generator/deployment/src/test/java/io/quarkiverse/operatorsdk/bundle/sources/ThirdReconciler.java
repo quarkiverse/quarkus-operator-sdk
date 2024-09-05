@@ -10,8 +10,8 @@ import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Annotations;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Annotations.Annotation;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata.RequiredCRD;
 
-@CSVMetadata(bundleName = "third-operator", requiredCRDs = @RequiredCRD(kind = SecondExternal.KIND, name = "externalagains."
-        + SecondExternal.GROUP, version = SecondExternal.VERSION), replaces = "1.0.0", annotations = @Annotations(skipRange = ">=1.0.0 <1.0.3", capabilities = "Test", others = @Annotation(name = "foo", value = "bar")))
+@CSVMetadata(bundleName = ThirdReconciler.BUNDLE_NAME, requiredCRDs = @RequiredCRD(kind = SecondExternal.KIND, name = "externalagains."
+        + SecondExternal.GROUP, version = SecondExternal.VERSION), replaces = "1.0.0", annotations = @Annotations(skipRange = ">=1.0.0 <1.0.3", capabilities = "Test", repository = "should be overridden by property", others = @Annotation(name = "foo", value = "bar")))
 @ControllerConfiguration(name = ThirdReconciler.NAME, dependents = {
         @Dependent(type = ExternalDependentResource.class),
         @Dependent(name = "pod1", type = PodDependentResource.class),
@@ -20,6 +20,7 @@ import io.quarkiverse.operatorsdk.annotations.CSVMetadata.RequiredCRD;
 public class ThirdReconciler implements Reconciler<Third> {
 
     public static final String NAME = "third";
+    public static final String BUNDLE_NAME = "third-operator";
 
     @Override
     public UpdateControl<Third> reconcile(Third third, Context<Third> context) {

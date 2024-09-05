@@ -3,6 +3,7 @@ package io.quarkiverse.operatorsdk.bundle.deployment.builders;
 import static io.quarkiverse.operatorsdk.bundle.deployment.BundleGenerator.MANIFESTS;
 import static io.quarkiverse.operatorsdk.bundle.deployment.BundleProcessor.CRD_DESCRIPTION;
 import static io.quarkiverse.operatorsdk.bundle.deployment.BundleProcessor.CRD_DISPLAY_NAME;
+import static io.quarkiverse.operatorsdk.bundle.runtime.BundleConfiguration.*;
 import static java.util.Comparator.comparing;
 
 import java.io.FileInputStream;
@@ -85,13 +86,13 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
 
         final var metadataBuilder = csvBuilder.withNewMetadata().withName(metadata.csvName);
         if (metadata.annotations != null) {
-            metadataBuilder.addToAnnotations("olm.skipRange", metadata.annotations.skipRange);
-            metadataBuilder.addToAnnotations("containerImage", metadata.annotations.containerImage);
-            metadataBuilder.addToAnnotations("repository", metadata.annotations.repository);
-            metadataBuilder.addToAnnotations("capabilities", metadata.annotations.capabilities);
-            metadataBuilder.addToAnnotations("categories", metadata.annotations.categories);
-            metadataBuilder.addToAnnotations("certified", String.valueOf(metadata.annotations.certified));
-            metadataBuilder.addToAnnotations("alm-examples", metadata.annotations.almExamples);
+            metadataBuilder.addToAnnotations(OLM_SKIP_RANGE_ANNOTATION, metadata.annotations.skipRange);
+            metadataBuilder.addToAnnotations(CONTAINER_IMAGE_ANNOTATION, metadata.annotations.containerImage);
+            metadataBuilder.addToAnnotations(REPOSITORY_ANNOTATION, metadata.annotations.repository);
+            metadataBuilder.addToAnnotations(CAPABILITIES_ANNOTATION, metadata.annotations.capabilities);
+            metadataBuilder.addToAnnotations(CATEGORIES_ANNOTATION, metadata.annotations.categories);
+            metadataBuilder.addToAnnotations(CERTIFIED_ANNOTATION, String.valueOf(metadata.annotations.certified));
+            metadataBuilder.addToAnnotations(ALM_EXAMPLES_ANNOTATION, metadata.annotations.almExamples);
             if (metadata.annotations.others != null) {
                 metadata.annotations.others.forEach(metadataBuilder::addToAnnotations);
             }

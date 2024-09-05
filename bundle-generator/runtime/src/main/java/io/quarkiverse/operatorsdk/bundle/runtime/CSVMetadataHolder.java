@@ -1,6 +1,10 @@
 package io.quarkiverse.operatorsdk.bundle.runtime;
 
+import static io.quarkiverse.operatorsdk.bundle.runtime.BundleConfiguration.*;
+import static io.quarkiverse.operatorsdk.bundle.runtime.BundleConfiguration.CONTAINER_IMAGE_ANNOTATION;
+
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -45,6 +49,7 @@ public class CSVMetadataHolder {
         public final String almExamples;
         public final String skipRange;
         public final Map<String, String> others;
+        private final static Annotations EMPTY = new Annotations(null, null, null, null, false, null, null, Map.of());
 
         public Annotations(String containerImage, String repository, String capabilities, String categories, boolean certified,
                 String almExamples, String skipRange, Map<String, String> others) {
@@ -56,6 +61,35 @@ public class CSVMetadataHolder {
             this.almExamples = almExamples;
             this.skipRange = skipRange;
             this.others = Collections.unmodifiableMap(others);
+        }
+
+        public static Annotations override(Annotations initial, Map<String, String> overrides) {
+            if (initial == null) {
+                initial = EMPTY;
+            }
+            final var copy = new HashMap<>(overrides);
+
+            return new Annotations(
+                    getOrDefault(copy, CONTAINER_IMAGE_ANNOTATION, initial.containerImage),
+                    getOrDefault(copy, REPOSITORY_ANNOTATION, initial.repository),
+                    getOrDefault(copy, CAPABILITIES_ANNOTATION, initial.capabilities),
+                    getOrDefault(copy, CATEGORIES_ANNOTATION, initial.categories),
+                    Boolean.parseBoolean(getOrDefault(copy, CERTIFIED_ANNOTATION, "false")),
+                    getOrDefault(copy, ALM_EXAMPLES_ANNOTATION, initial.almExamples),
+                    getOrDefault(copy, OLM_SKIP_RANGE_ANNOTATION, initial.skipRange),
+                    additionalAnnotationOverrides(initial.others, copy));
+        }
+
+        private static Map<String, String> additionalAnnotationOverrides(Map<String, String> others,
+                HashMap<String, String> overrides) {
+            final var initial = new HashMap<>(others);
+            initial.putAll(overrides);
+            return initial;
+        }
+
+        private static String getOrDefault(Map<String, String> overrides, String annotation, String initialValue) {
+            final var removed = overrides.remove(annotation);
+            return removed != null ? removed : initialValue;
         }
     }
 
