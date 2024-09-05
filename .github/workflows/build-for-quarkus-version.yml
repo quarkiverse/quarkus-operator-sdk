@@ -252,6 +252,7 @@ jobs:
         uses: container-tools/kind-action@v2
         with:
           registry: true
+          version: v0.24.0
 
       - name: Install OPM and Operator SDK tool
         uses: redhat-actions/openshift-tools-installer@v1
