@@ -255,6 +255,7 @@ jobs:
           kubernetes version: 1.31.0
           driver: 'docker'
           github token: ${{ secrets.GITHUB_TOKEN }}
+          start args: '--addons=registry'
 
       - name: Install OPM and Operator SDK tool
         uses: redhat-actions/openshift-tools-installer@v1
