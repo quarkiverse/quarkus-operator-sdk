@@ -306,6 +306,23 @@ endif::add-copy-button-to-env-var[]
 |boolean
 |`true`
 
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-defensive-cloning]] [.property-path]##`quarkus.operator-sdk.defensive-cloning`##
+
+[.description]
+--
+Whether defensive cloning of resources retrieved from caches should be activated or not. With the prevalence of Server-Side Apply (SSA) use, defensively cloning resources, to prevent cached versions from being inadvertently modified, shouldn't be needed anymore. This should also allow for better performance. If you encounter cache corruption issues, you can always turn defensive cloning back on, however, you might first want to check that you're not unduly modifying resources retrieved from caches.
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_DEFENSIVE_CLONING+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_DEFENSIVE_CLONING+++`
+endif::add-copy-button-to-env-var[]
+--
+|boolean
+|`false`
+
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-generate-with-watched-namespaces]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-generate-with-watched-namespaces[`quarkus.operator-sdk.generate-with-watched-namespaces`]##
 
 [.description]
@@ -361,7 +378,7 @@ a| [[quarkus-operator-sdk_quarkus-operator-sdk-termination-timeout-seconds]] [.p
 
 [.description]
 --
-Amount of seconds the SDK waits for reconciliation threads to terminate before shutting down.
+Amount of seconds the SDK waits for reconciliation threads to terminate before shutting down. Setting this value will install a shutdown hook to wait for termination (causing `io.javaoperatorsdk.operator.Operator++#++installShutdownHook(Duration)` to be called with `Duration.ofSeconds(terminationTimeoutSeconds)`).
 
 
 ifdef::add-copy-button-to-env-var[]
