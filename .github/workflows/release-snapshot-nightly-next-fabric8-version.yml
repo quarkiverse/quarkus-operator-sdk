@@ -8,11 +8,11 @@ jobs:
   build-for-latest-quarkus-version:
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
-      quarkus-version-jq-cmd: '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current) | .releases[0].version'
+      quarkus-pr: 42335
       java-version: 21
-      branch: "next-fabric8-version"
       native-modules: "integration-tests,samples"
-      profiles: "use-snapshots"
+      profiles: "use-snapshots,override-fkc"
+      mvnArgs: "-Dfkc.version=7.0-SNAPSHOT -Ddefault=false"
 
   release-snapshot:
     uses: ./.github/workflows/release-snapshot.yml

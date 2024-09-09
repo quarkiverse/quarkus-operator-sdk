@@ -10,6 +10,22 @@ on:
       quarkus-version:
         type: string
         required: false
+      josdk-pr:
+        description: 'JOSDK PR number (or main) to use to build QOSDK with'
+        type: string
+        required: false
+      quarkus-pr:
+        description: 'Quarkus PR number to use to run a QOSDK build with'
+        type: string
+        required: false
+      fkc-pr:
+        description: 'Fabric8 client PR number to use to run a QOSDK build with'
+        type: string
+        required: false
+      fkc-version:
+        description: 'Fabric8 client version to run a QOSDK build with'
+        type: string
+        required: false
       java-version:
         type: string
         required: true
@@ -29,6 +45,10 @@ on:
         type: string
         required: false
         default: 'default'
+      mvnArgs:
+        type: string
+        description: 'Extra maven arguments to build QOSDK'
+        required: false
   workflow_dispatch:
     inputs:
       quarkus-version-jq-cmd:
@@ -242,7 +262,7 @@ jobs:
           echo "Effective Fabric8 version: $(./mvnw dependency:tree -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dincludes=io.fabric8:kubernetes-client-api -pl core/deployment | grep io.fabric8:kubernetes-client-api -m1 | cut -d ':' -f 4)"
 
       - name: Build with Maven (JVM)
-        run: ./mvnw -B formatter:validate install -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' --file pom.xml
+        run: ./mvnw -B formatter:validate install -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' ${{inputs.mvnArgs}} --file pom.xml
 
       - name: Dependency tree on failure
         if: failure()
