@@ -281,6 +281,21 @@ class OperatorSDKProcessor {
         reflectiveHierarchyIgnoreWarningBuildItemBuildProducer.produce(
                 new ReflectiveHierarchyIgnoreWarningBuildItem(
                         DotName.createSimple(io.vertx.core.net.ProxyType.class.getName())));
+        reflectiveHierarchyIgnoreWarningBuildItemBuildProducer.produce(
+                new ReflectiveHierarchyIgnoreWarningBuildItem(
+                        DotName.createSimple("okhttp3.OkHttpClient")));
+        reflectiveHierarchyIgnoreWarningBuildItemBuildProducer.produce(
+                new ReflectiveHierarchyIgnoreWarningBuildItem(
+                        DotName.createSimple("okhttp3.OkHttpClient$Builder")));
+        reflectiveHierarchyIgnoreWarningBuildItemBuildProducer.produce(
+                new ReflectiveHierarchyIgnoreWarningBuildItem(
+                        DotName.createSimple("okhttp3.Request$Builder")));
+        reflectiveHierarchyIgnoreWarningBuildItemBuildProducer.produce(
+                new ReflectiveHierarchyIgnoreWarningBuildItem(
+                        DotName.createSimple("okhttp3.WebSocket")));
+        reflectiveHierarchyIgnoreWarningBuildItemBuildProducer.produce(
+                new ReflectiveHierarchyIgnoreWarningBuildItem(
+                        DotName.createSimple("okio.BufferedSource")));
 
     }
 
