@@ -13,11 +13,12 @@ jobs:
       native-modules: "integration-tests,samples"
       profiles: "use-snapshots,override-fkc"
       mvnArgs: "-Dfkc.version=7.0-SNAPSHOT -Ddefault=false"
+      branch: "main"
 
   release-snapshot:
     uses: ./.github/workflows/release-snapshot.yml
     with:
-      branch: "next-fabric8-version"
+#      branch: "next-fabric8-version"
       version: "999.F8-SNAPSHOT"
     secrets:
       GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
