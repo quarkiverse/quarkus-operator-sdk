@@ -150,7 +150,7 @@ jobs:
             echo "Using JOSDK main branch"
           else
             echo "Checking out ${{ inputs.josdk-pr }} PR"
-            git fetch origin pull/${{ github.event.inputs.josdk-pr }}/head:pr-to-check
+            git fetch origin pull/${{ inputs.josdk-pr }}/head:pr-to-check
             git switch pr-to-check
           fi
           ./mvnw install -DskipTests
@@ -174,9 +174,9 @@ jobs:
         id: build-quarkus-pr
         run: |
           cd quarkus
-          git fetch origin pull/${{ github.event.inputs.quarkus-pr }}/head:pr-to-check
+          git fetch origin pull/${{ inputs.quarkus-pr }}/head:pr-to-check
           git switch pr-to-check
-          ./update-version.sh 999.${{ github.event.inputs.quarkus-pr }}-SNAPSHOT
+          ./update-version.sh 999.${{ inputs.quarkus-pr }}-SNAPSHOT
           echo "quarkus_f8_version=$(./mvnw help:evaluate -Dexpression=kubernetes-client.version -q -DforceStdout)" >> $GITHUB_OUTPUT
           ./mvnw -Dquickly
           cd -
@@ -193,9 +193,9 @@ jobs:
         id: build-fkc-pr
         run: |
           cd fkc
-          git fetch origin pull/${{ github.event.inputs.fkc-pr }}/head:pr-to-check
+          git fetch origin pull/${{ inputs.fkc-pr }}/head:pr-to-check
           git switch pr-to-check
-          ./mvnw versions:set -DnewVersion=999.${{ github.event.inputs.fkc-pr }}-SNAPSHOT versions:commit
+          ./mvnw versions:set -DnewVersion=999.${{ inputs.fkc-pr }}-SNAPSHOT versions:commit
           echo "f8_pr_version=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_OUTPUT
           ./mvnw clean install -DskipTests
           cd -
@@ -218,7 +218,7 @@ jobs:
             quarkus_version="${{ inputs.quarkus-version }}" 
           fi
           if [[ -n "${{ inputs.quarkus-pr }}" ]]; then
-            quarkus_version=999.${{ github.event.inputs.quarkus-pr }}-SNAPSHOT
+            quarkus_version=999.${{ inputs.quarkus-pr }}-SNAPSHOT
           fi
           echo "quarkus_version=${quarkus_version}" >> $GITHUB_OUTPUT
 
