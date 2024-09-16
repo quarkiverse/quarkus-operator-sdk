@@ -8,20 +8,9 @@ jobs:
   build-for-latest-quarkus-version:
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
-      quarkus-pr: 42335
+      quarkus-pr: "42335"
       java-version: 21
       native-modules: "integration-tests,samples"
       profiles: "use-snapshots,override-fkc"
       mvnArgs: "-Dfkc.version=7.0-SNAPSHOT -Ddefault=false"
       branch: "main"
-
-  release-snapshot:
-    uses: ./.github/workflows/release-snapshot.yml
-    with:
-#      branch: "next-fabric8-version"
-      version: "999.F8-SNAPSHOT"
-    secrets:
-      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-      OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-      OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
-      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
