@@ -78,7 +78,7 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
         if (controllerConfiguration.watchCurrentNamespace()) {
             // create a RoleBinding that will be applied in the current namespace if watching only the current NS
             itemsToAdd.add(createRoleBinding(roleBindingName, serviceAccountName, null,
-                    createDefaultRoleRef(getClusterRoleName(controllerName))));
+                    createDefaultRoleRef(controllerName)));
             // add additional Role Bindings
             controllerConfiguration.getAdditionalRBACRoleRefs().forEach(
                     roleRef -> {
@@ -106,7 +106,7 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
             desiredWatchedNamespaces
                     .forEach(ns -> {
                         itemsToAdd.add(createRoleBinding(roleBindingName, serviceAccountName, ns,
-                                createDefaultRoleRef(getClusterRoleName(controllerName))));
+                                createDefaultRoleRef(controllerName)));
                         //add additional Role Bindings
                         controllerConfiguration.getAdditionalRBACRoleRefs()
                                 .forEach(roleRef -> {
@@ -124,7 +124,7 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
         return controllerName + "-crd-validating-role-binding";
     }
 
-    private static String getClusterRoleBindingName(String controllerName) {
+    public static String getClusterRoleBindingName(String controllerName) {
         return controllerName + "-cluster-role-binding";
     }
 
@@ -142,7 +142,9 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
 
     private static RoleRef createDefaultRoleRef(String controllerName) {
         return new RoleRefBuilder()
-                .withApiGroup(RBAC_AUTHORIZATION_GROUP).withKind(CLUSTER_ROLE).withName(controllerName)
+                .withApiGroup(RBAC_AUTHORIZATION_GROUP)
+                .withKind(CLUSTER_ROLE)
+                .withName(getClusterRoleName(controllerName))
                 .build();
     }
 
@@ -167,7 +169,7 @@ public class AddRoleBindingsDecorator extends ResourceProvidingDecorator<Kuberne
             String controllerName, String bindingName, String controllerConfMessage,
             RoleRef roleRef) {
         outputWarningIfNeeded(controllerName, bindingName, controllerConfMessage);
-        roleRef = roleRef == null ? createDefaultRoleRef(serviceAccountName) : roleRef;
+        roleRef = roleRef == null ? createDefaultRoleRef(controllerName) : roleRef;
         final var ns = deployNamespace.orElse(null);
         log.infov("Creating ''{0}'' ClusterRoleBinding to be applied to ''{1}'' namespace", bindingName, ns);
         return new ClusterRoleBindingBuilder()
