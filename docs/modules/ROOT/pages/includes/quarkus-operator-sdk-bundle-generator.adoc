@@ -1,0 +1,116 @@
+:summaryTableId: quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk
+[.configuration-legend]
+icon:lock[title=Fixed at build time] Configuration property fixed at build time - All other configuration properties are overridable at runtime
+[.configuration-reference.searchable, cols="80,.^10,.^10"]
+|===
+
+h|[.header-title]##Configuration property##
+h|Type
+h|Default
+
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-enabled]] [.property-path]##`quarkus.operator-sdk.bundle.enabled`##
+
+[.description]
+--
+Whether the extension should generate the Operator bundle.
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_BUNDLE_ENABLED+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_BUNDLE_ENABLED+++`
+endif::add-copy-button-to-env-var[]
+--
+|boolean
+|`true`
+
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-channels]] [.property-path]##`quarkus.operator-sdk.bundle.channels`##
+
+[.description]
+--
+The list of channels that bundle belongs to. By default, it's "alpha".
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_BUNDLE_CHANNELS+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_BUNDLE_CHANNELS+++`
+endif::add-copy-button-to-env-var[]
+--
+|list of string
+|`alpha`
+
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-default-channel]] [.property-path]##`quarkus.operator-sdk.bundle.default-channel`##
+
+[.description]
+--
+The default channel for the bundle.
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_BUNDLE_DEFAULT_CHANNEL+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_BUNDLE_DEFAULT_CHANNEL+++`
+endif::add-copy-button-to-env-var[]
+--
+|string
+|
+
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-replaces]] [.property-path]##`quarkus.operator-sdk.bundle.replaces`##
+
+[.description]
+--
+The replaces value that should be used in the generated CSV.
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_BUNDLE_REPLACES+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_BUNDLE_REPLACES+++`
+endif::add-copy-button-to-env-var[]
+--
+|string
+|
+
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-version]] [.property-path]##`quarkus.operator-sdk.bundle.version`##
+
+[.description]
+--
+The version value that should be used in the generated CSV instead of the automatically detected one extracted from the project information.
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_BUNDLE_VERSION+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_BUNDLE_VERSION+++`
+endif::add-copy-button-to-env-var[]
+--
+|string
+|
+
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-bundles-bundles-annotations-annotations]] [.property-path]##`quarkus.operator-sdk.bundle.bundles."bundles".annotations."annotations"`##
+
+[.description]
+--
+The bundle's annotations (as found in the CSV metadata)
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_BUNDLE_BUNDLES__BUNDLES__ANNOTATIONS__ANNOTATIONS_+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_BUNDLE_BUNDLES__BUNDLES__ANNOTATIONS__ANNOTATIONS_+++`
+endif::add-copy-button-to-env-var[]
+--
+|Map<String,String>
+|
+
+|===
+
+
+:!summaryTableId:
