@@ -25,6 +25,7 @@ import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
 import io.quarkiverse.operatorsdk.runtime.DependentResourceSpecMetadata;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
@@ -123,15 +124,30 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                     verbs.add(RBACVerbs.DELETE);
                 }
                 final var isCreator = Creator.class.isAssignableFrom(dependentResourceClass);
+                boolean shouldDoubleCheckPatch = false;
                 if (isCreator) {
                     verbs.add(RBACVerbs.CREATE);
+
+                    // PATCH verb is also needed when using SSA to be able to add the finalizer when creating the resource
+                    // optimistically add PATCH method if resource should use SSA as defined by configuration
+                    // note that this isn't the only thing that is taken into account in that determination but should
+                    // a good first approximation, full determination is done if we can instantiate the dependent, see below
+                    final Object dependentResourceConfig = spec.getDependentResourceConfig();
+                    if (dependentResourceConfig instanceof KubernetesDependentResourceConfig<?> kubernetesDependentResourceConfig) {
+                        if (kubernetesDependentResourceConfig.useSSA().orElse(false)) {
+                            verbs.add(RBACVerbs.PATCH);
+                            shouldDoubleCheckPatch = true;
+                        }
+                    }
                 }
 
                 // Check if we're dealing with typeless Kubernetes resource or if we need to deal with SSA
+                boolean ignore = false;
+                KubernetesDependentResource<?, ?> kubeResource = null;
                 if (KubernetesDependentResource.class.isAssignableFrom(dependentResourceClass)) {
                     try {
-                        @SuppressWarnings("rawtypes")
-                        var kubeResource = Utils.instantiate(
+                        //noinspection rawtypes
+                        kubeResource = Utils.instantiate(
                                 (Class<? extends KubernetesDependentResource>) dependentResourceClass,
                                 KubernetesDependentResource.class, ADD_CLUSTER_ROLES_DECORATOR);
 
@@ -140,22 +156,35 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                             resourceGroup = gvk.getGroup();
                             resourcePlural = gvk.getPluralOrDefault();
                         }
-
-                        // if we use SSA and the dependent resource class is not excluded from using SSA, we also need PATCH permissions for finalizer when the dependent resource is creatable
-                        if (isCreator && cri.getConfigurationService().shouldUseSSA(kubeResource)) {
-                            verbs.add(RBACVerbs.PATCH);
-                        }
                     } catch (Exception e) {
-                        log.warn("Ignoring " + dependentResourceClass.getName()
-                                + " for generic resource role processing as it cannot be instantiated", e);
+                        ignore = true;
+                        log.warn(" Ignoring dependent " + dependentResourceClass.getName()
+                                + "because it couldn't be instantiated as it doesn't provide a no-arg constructor, preventing its group and plural to be determined.");
                     }
                 }
-                final var dependentRule = new PolicyRuleBuilder()
-                        .addToApiGroups(resourceGroup)
-                        .addToResources(resourcePlural);
 
-                dependentRule.addToVerbs(verbs.toArray(String[]::new));
-                rules.add(dependentRule.build());
+                if (!ignore) {
+                    // if we need to double check if we really should use SSA
+                    if (shouldDoubleCheckPatch) {
+                        // we can only check if we managed to instantiate the dependent, though
+                        if (kubeResource != null) {
+                            if (!cri.getConfigurationService().shouldUseSSA(kubeResource)) {
+                                verbs.remove(RBACVerbs.PATCH);
+                            }
+                        } else {
+                            // if we couldn't double check, warn the user
+                            log.warn("Couldn't verify that dependent " + dependentResourceClass.getName()
+                                    + " really needs PATCH permission for SSA because it couldn't be instantiated. This means that a PATCH verb might have been added to the rule (group: "
+                                    + resourceGroup + " / plural: " + resourcePlural + ") when not needed.");
+                        }
+                    }
+
+                    final var dependentRule = new PolicyRuleBuilder()
+                            .addToApiGroups(resourceGroup)
+                            .addToResources(resourcePlural);
+                    dependentRule.addToVerbs(verbs.toArray(String[]::new));
+                    rules.add(dependentRule.build());
+                }
             }
         });
         return rules;
