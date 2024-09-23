@@ -1,11 +1,15 @@
 package io.quarkiverse.operatorsdk.runtime.devconsole;
 
-import io.javaoperatorsdk.operator.processing.event.EventSourceMetadata;
+import java.util.Optional;
+
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.processing.event.source.Configurable;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 
 public class EventSourceInfo implements Comparable<EventSourceInfo> {
-    private final EventSourceMetadata metadata;
+    private final EventSource<?, ? extends HasMetadata> metadata;
 
-    public EventSourceInfo(EventSourceMetadata metadata) {
+    public EventSourceInfo(EventSource<?, ? extends HasMetadata> metadata) {
         this.metadata = metadata;
     }
 
@@ -15,11 +19,16 @@ public class EventSourceInfo implements Comparable<EventSourceInfo> {
 
     @SuppressWarnings("unused")
     public String getResourceClass() {
-        return metadata.resourceType().map(Class::getName).orElse(null);
+        return metadata.resourceType().getName();
     }
 
     public String getType() {
-        return metadata.type().getName();
+        return metadata.getClass().getName();
+    }
+
+    public Optional<?> getConfiguration() {
+        return metadata instanceof Configurable<?> ? Optional.of(((Configurable<?>) metadata).configuration())
+                : Optional.empty();
     }
 
     @Override

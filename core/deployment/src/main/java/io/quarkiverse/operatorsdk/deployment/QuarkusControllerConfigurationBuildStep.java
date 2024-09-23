@@ -1,6 +1,5 @@
 package io.quarkiverse.operatorsdk.deployment;
 
-import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.instantiate;
 import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.loadClass;
 import static io.quarkiverse.operatorsdk.common.Constants.*;
 
@@ -8,6 +7,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.jboss.jandex.*;
@@ -22,6 +22,8 @@ import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
+import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -29,10 +31,8 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowSupport;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
@@ -58,24 +58,24 @@ import io.quarkus.deployment.util.JandexUtil;
 class QuarkusControllerConfigurationBuildStep {
 
     static final Logger log = Logger.getLogger(QuarkusControllerConfigurationBuildStep.class.getName());
+    private static final ManagedWorkflowSupport workflowSupport = new ManagedWorkflowSupport();
 
     private static final KubernetesDependentConverter KUBERNETES_DEPENDENT_CONVERTER = new KubernetesDependentConverter() {
         @Override
         @SuppressWarnings("unchecked")
-        public KubernetesDependentResourceConfig configFrom(
-                KubernetesDependent configAnnotation,
-                ControllerConfiguration parentConfiguration, Class originatingClass) {
-            final var original = super.configFrom(configAnnotation, parentConfiguration, originatingClass);
+        public KubernetesDependentResourceConfig configFrom(KubernetesDependent configAnnotation, DependentResourceSpec spec,
+                ControllerConfiguration controllerConfig) {
+            final var original = super.configFrom(configAnnotation, spec, controllerConfig);
             // make the configuration bytecode-serializable
-            return new QuarkusKubernetesDependentResourceConfig(original.namespaces(),
-                    original.labelSelector(),
-                    original.wereNamespacesConfigured(),
-                    original.createResourceOnlyIfNotExistingWithSSA(), original.getResourceDiscriminator(),
-                    (Boolean) original.useSSA().orElse(null),
-                    original.onAddFilter(),
-                    original.onUpdateFilter(), original.onDeleteFilter(), original.genericFilter());
+            return new QuarkusKubernetesDependentResourceConfig(
+                    original.useSSA(), original.createResourceOnlyIfNotExistingWithSSA(),
+                    new QuarkusInformerConfiguration(original.informerConfig()));
         }
     };
+    private static final Supplier<AnnotationInstance> NULL_ANNOTATION_SUPPLIER = () -> null;
+    public static final Supplier<String[]> NULL_STRING_ARRAY_SUPPLIER = () -> null;
+    public static final Supplier<String> NULL_STRING_SUPPLIER = () -> null;
+
     static {
         // register Quarkus-specific converter for Kubernetes dependent resources
         DependentResourceConfigurationResolver.registerConverter(KubernetesDependentResource.class,
@@ -157,17 +157,6 @@ class QuarkusControllerConfigurationBuildStep {
                 externalConfiguration,
                 controllerAnnotation);
 
-        // deal with event filters
-        ResourceEventFilter finalFilter = null;
-        final var eventFilterTypes = ConfigurationUtils.annotationValueOrDefault(
-                controllerAnnotation, "eventFilters",
-                AnnotationValue::asClassArray, () -> new Type[0]);
-        for (Type filterType : eventFilterTypes) {
-            final var filterClass = loadClass(filterType.name().toString(), ResourceEventFilter.class);
-            final var filter = instantiate(filterClass);
-            finalFilter = finalFilter == null ? filter : finalFilter.and(filter);
-        }
-
         Duration maxReconciliationInterval = null;
         OnAddFilter onAddFilter = null;
         OnUpdateFilter onUpdateFilter = null;
@@ -179,10 +168,13 @@ class QuarkusControllerConfigurationBuildStep {
         Long nullableInformerListLimit = null;
         String fieldManager = null;
         ItemStore<?> itemStore = null;
+        Set<String> namespaces = null;
+        String informerName = null;
+        String labelSelector = null;
         if (controllerAnnotation != null) {
             final var intervalFromAnnotation = ConfigurationUtils.annotationValueOrDefault(
                     controllerAnnotation, "maxReconciliationInterval", AnnotationValue::asNested,
-                    () -> null);
+                    NULL_ANNOTATION_SUPPLIER);
             final var interval = ConfigurationUtils.annotationValueOrDefault(
                     intervalFromAnnotation, "interval", AnnotationValue::asLong,
                     () -> MaxReconciliationInterval.DEFAULT_INTERVAL);
@@ -195,18 +187,43 @@ class QuarkusControllerConfigurationBuildStep {
                 maxReconciliationInterval = Duration.of(interval, timeUnit.toChronoUnit());
             }
 
-            onAddFilter = ConfigurationUtils.instantiateImplementationClass(
-                    controllerAnnotation, "onAddFilter", OnAddFilter.class, OnAddFilter.class, true, index);
-            onUpdateFilter = ConfigurationUtils.instantiateImplementationClass(
-                    controllerAnnotation, "onUpdateFilter", OnUpdateFilter.class, OnUpdateFilter.class,
-                    true, index);
-            genericFilter = ConfigurationUtils.instantiateImplementationClass(
-                    controllerAnnotation, "genericFilter", GenericFilter.class, GenericFilter.class,
-                    true, index);
-            retryClass = ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
-                    "retry", av -> loadClass(av.asClass().name().toString(), Retry.class), () -> GenericRetry.class);
+            // deal with informer configuration
+            final var informerConfigAnnotation = ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
+                    "informer", AnnotationValue::asNested, NULL_ANNOTATION_SUPPLIER);
+            if (informerConfigAnnotation != null) {
+                onAddFilter = ConfigurationUtils.instantiateImplementationClass(
+                        informerConfigAnnotation, "onAddFilter", OnAddFilter.class, OnAddFilter.class, true, index);
+                onUpdateFilter = ConfigurationUtils.instantiateImplementationClass(
+                        informerConfigAnnotation, "onUpdateFilter", OnUpdateFilter.class, OnUpdateFilter.class,
+                        true, index);
+                genericFilter = ConfigurationUtils.instantiateImplementationClass(
+                        informerConfigAnnotation, "genericFilter", GenericFilter.class, GenericFilter.class,
+                        true, index);
+                retryClass = ConfigurationUtils.annotationValueOrDefault(informerConfigAnnotation,
+                        "retry", av -> loadClass(av.asClass().name().toString(), Retry.class), () -> GenericRetry.class);
+                nullableInformerListLimit = ConfigurationUtils.annotationValueOrDefault(
+                        informerConfigAnnotation, "informerListLimit", AnnotationValue::asLong,
+                        () -> null);
+                itemStore = ConfigurationUtils.instantiateImplementationClass(informerConfigAnnotation, "itemStore",
+                        ItemStore.class,
+                        ItemStore.class, true, index);
+                informerName = ConfigurationUtils.annotationValueOrDefault(informerConfigAnnotation, "name",
+                        AnnotationValue::asString, NULL_STRING_SUPPLIER);
+                labelSelector = ConfigurationUtils.annotationValueOrDefault(informerConfigAnnotation,
+                        "labelSelector",
+                        AnnotationValue::asString,
+                        NULL_STRING_SUPPLIER);
+
+                // extract the namespaces
+                // first check if we explicitly set the namespaces via the annotations
+                namespaces = Optional.ofNullable(informerConfigAnnotation.value("namespaces"))
+                        .map(v -> new HashSet<>(Arrays.asList(v.asStringArray())))
+                        .orElse(null);
+            }
+
             final var retryConfigurableInfo = configurableInfos.get(retryClass.getName());
             retryConfigurationClass = getConfigurationAnnotationClass(reconcilerInfo, retryConfigurableInfo);
+
             rateLimiterClass = ConfigurationUtils.annotationValueOrDefault(
                     controllerAnnotation,
                     "rateLimiter", av -> loadClass(av.asClass().name().toString(), RateLimiter.class),
@@ -214,13 +231,9 @@ class QuarkusControllerConfigurationBuildStep {
             final var rateLimiterConfigurableInfo = configurableInfos.get(rateLimiterClass.getName());
             rateLimiterConfigurationClass = getConfigurationAnnotationClass(reconcilerInfo,
                     rateLimiterConfigurableInfo);
-            nullableInformerListLimit = ConfigurationUtils.annotationValueOrDefault(
-                    controllerAnnotation, "informerListLimit", AnnotationValue::asLong,
-                    () -> null);
+
             fieldManager = ConfigurationUtils.annotationValueOrDefault(controllerAnnotation, "fieldManager",
-                    AnnotationValue::asString, () -> null);
-            itemStore = ConfigurationUtils.instantiateImplementationClass(controllerAnnotation, "itemStore", ItemStore.class,
-                    ItemStore.class, true, index);
+                    AnnotationValue::asString, NULL_STRING_SUPPLIER);
         }
 
         // check if we have additional RBAC rules to handle
@@ -229,14 +242,6 @@ class QuarkusControllerConfigurationBuildStep {
         // check if we have additional RBAC role refs to handle
         final var additionalRBACRoleRefs = extractAdditionalRBACRoleRefs(info);
 
-        // extract the namespaces
-        // first check if we explicitly set the namespaces via the annotations
-        Set<String> namespaces = null;
-        if (controllerAnnotation != null) {
-            namespaces = Optional.ofNullable(controllerAnnotation.value("namespaces"))
-                    .map(v -> new HashSet<>(Arrays.asList(v.asStringArray())))
-                    .orElse(null);
-        }
         // remember whether or not we explicitly set the namespaces
         final boolean wereNamespacesSet;
         if (namespaces == null) {
@@ -256,17 +261,21 @@ class QuarkusControllerConfigurationBuildStep {
         // create the configuration
         final ReconciledAugmentedClassInfo<?> primaryInfo = reconcilerInfo.associatedResourceInfo();
         final var primaryAsResource = primaryInfo.asResourceTargeting();
-        final var resourceClass = primaryInfo.loadAssociatedClass();
+        final Class<? extends HasMetadata> resourceClass = (Class<? extends HasMetadata>) primaryInfo.loadAssociatedClass();
         final String resourceFullName = primaryAsResource.fullResourceName();
-        // initialize dependent specs
-        final Map<String, DependentResourceSpecMetadata> dependentResources;
-        final var dependentResourceInfos = reconcilerInfo.getDependentResourceInfos();
-        final var hasDependents = !dependentResourceInfos.isEmpty();
-        if (hasDependents) {
-            dependentResources = new HashMap<>(dependentResourceInfos.size());
-        } else {
-            dependentResources = Collections.emptyMap();
-        }
+
+        final var informerConfiguration = InformerConfiguration.builder(resourceClass)
+                .withName(informerName)
+                .withNamespaces(namespaces)
+                .withLabelSelector(labelSelector)
+                .withGenericFilter(genericFilter)
+                .withOnAddFilter(onAddFilter)
+                .withOnUpdateFilter(onUpdateFilter)
+                .withItemStore(itemStore)
+                .withInformerListLimit(nullableInformerListLimit)
+                .buildForController();
+        final var informerConfig = new QuarkusInformerConfiguration(informerConfiguration);
+
         configuration = new QuarkusControllerConfiguration(
                 reconcilerClassName,
                 name,
@@ -274,45 +283,55 @@ class QuarkusControllerConfigurationBuildStep {
                 primaryAsResource.version(),
                 configExtractor.generationAware(),
                 resourceClass,
-                nullableInformerListLimit,
-                namespaces,
                 wereNamespacesSet,
                 getFinalizer(controllerAnnotation, resourceFullName),
-                getLabelSelector(controllerAnnotation),
                 primaryAsResource.hasNonVoidStatus(),
-                finalFilter,
                 maxReconciliationInterval,
-                onAddFilter, onUpdateFilter, genericFilter, retryClass, retryConfigurationClass, rateLimiterClass,
-                rateLimiterConfigurationClass, dependentResources, null, additionalRBACRules, additionalRBACRoleRefs,
-                fieldManager, itemStore);
+                retryClass, retryConfigurationClass, rateLimiterClass,
+                rateLimiterConfigurationClass, additionalRBACRules, additionalRBACRoleRefs,
+                fieldManager,
+                informerConfig);
 
         // setting the configuration service with build-time known information for resolution of some information such as resource classes associated with dependent resources or whether SSA should be used for a given dependent
         configuration.setParent(buildTimeConfigurationService);
 
-        if (hasDependents) {
-            dependentResourceInfos.forEach(dependent -> {
-                final var spec = createDependentResourceSpec(dependent, index, configuration);
-                final var dependentName = dependent.classInfo().name();
-                dependentResources.put(dependentName.toString(), spec);
-            });
-        }
-
-        // compute workflow and set it (originally set to null in constructor)
-        final ManagedWorkflow workflow;
-        if (hasDependents) {
-            // make workflow bytecode serializable
-            final var original = ManagedWorkflowFactory.DEFAULT.workflowFor(configuration);
-            workflow = new QuarkusManagedWorkflow<>(original.getOrderedSpecs(),
-                    original.hasCleaner());
-        } else {
-            workflow = QuarkusManagedWorkflow.noOpManagedWorkflow;
-        }
-        configuration.setWorkflow(workflow);
+        // compute workflow and set it
+        initializeWorkflowIfNeeded(configuration, reconcilerInfo, index);
 
         log.infov(
                 "Processed ''{0}'' reconciler named ''{1}'' for ''{2}'' resource (version ''{3}'')",
                 reconcilerClassName, name, resourceFullName, HasMetadata.getApiVersion(resourceClass));
         return configuration;
+    }
+
+    private static <R extends HasMetadata> void initializeWorkflowIfNeeded(QuarkusControllerConfiguration<R> configuration,
+            ReconcilerAugmentedClassInfo reconcilerInfo, IndexView index) {
+        final var workflowAnnotation = reconcilerInfo.classInfo().declaredAnnotation(WORKFLOW);
+        @SuppressWarnings("unchecked")
+        QuarkusManagedWorkflow<R> workflow = QuarkusManagedWorkflow.noOpManagedWorkflow;
+        if (workflowAnnotation != null) {
+            final var dependentResourceInfos = reconcilerInfo.getDependentResourceInfos();
+            if (!dependentResourceInfos.isEmpty()) {
+                Map<String, DependentResourceSpecMetadata> dependentResources = new HashMap<>(dependentResourceInfos.size());
+                dependentResourceInfos.forEach(dependent -> {
+                    final var spec = createDependentResourceSpec(dependent, index, configuration);
+                    final var dependentName = dependent.classInfo().name();
+                    dependentResources.put(dependentName.toString(), spec);
+                });
+
+                final var explicitInvocation = ConfigurationUtils.annotationValueOrDefault(
+                        workflowAnnotation, "explicitInvocation", AnnotationValue::asBoolean,
+                        () -> false);
+                final var handleExceptionsInReconciler = ConfigurationUtils.annotationValueOrDefault(
+                        workflowAnnotation, "handleExceptionsInReconciler", AnnotationValue::asBoolean,
+                        () -> false);
+                // make workflow bytecode serializable
+                final var spec = new QuarkusWorkflowSpec(dependentResources, explicitInvocation, handleExceptionsInReconciler);
+                final var original = workflowSupport.createWorkflow(spec);
+                workflow = new QuarkusManagedWorkflow<>(spec, original.getOrderedSpecs(), original.hasCleaner());
+            }
+        }
+        configuration.setWorkflow(workflow);
     }
 
     private static List<PolicyRule> extractAdditionalRBACRules(ClassInfo info) {
@@ -356,27 +375,27 @@ class QuarkusControllerConfigurationBuildStep {
         builder.withApiGroups(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
                 "apiGroups",
                 AnnotationValue::asStringArray,
-                () -> null));
+                NULL_STRING_ARRAY_SUPPLIER));
 
         builder.withVerbs(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
                 "verbs",
                 AnnotationValue::asStringArray,
-                () -> null));
+                NULL_STRING_ARRAY_SUPPLIER));
 
         builder.withResources(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
                 "resources",
                 AnnotationValue::asStringArray,
-                () -> null));
+                NULL_STRING_ARRAY_SUPPLIER));
 
         builder.withResourceNames(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
                 "resourceNames",
                 AnnotationValue::asStringArray,
-                () -> null));
+                NULL_STRING_ARRAY_SUPPLIER));
 
         builder.withNonResourceURLs(ConfigurationUtils.annotationValueOrDefault(ruleAnnotation,
                 "nonResourceURLs",
                 AnnotationValue::asStringArray,
-                () -> null));
+                NULL_STRING_ARRAY_SUPPLIER));
 
         return builder.build();
     }
@@ -393,7 +412,7 @@ class QuarkusControllerConfigurationBuildStep {
         builder.withName(ConfigurationUtils.annotationValueOrDefault(roleRefAnnotation,
                 "name",
                 AnnotationValue::asString,
-                () -> null));
+                NULL_STRING_SUPPLIER));
 
         return builder.build();
     }
@@ -431,9 +450,7 @@ class QuarkusControllerConfigurationBuildStep {
 
         final var dependentTypeName = drTypeName.toString();
         final var dependentClass = loadClass(dependentTypeName, DependentResource.class);
-
-        final var cfg = DependentResourceConfigurationResolver.extractConfigurationFromConfigured(
-                dependentClass, configuration);
+        final var resourceClass = loadClass(resourceTypeName, Object.class);
 
         final var dependentConfig = dependent.getDependentAnnotationFromController();
         final var dependsOnField = dependentConfig.value("dependsOn");
@@ -457,13 +474,15 @@ class QuarkusControllerConfigurationBuildStep {
 
         final var useEventSourceWithName = ConfigurationUtils.annotationValueOrDefault(
                 dependentConfig, "useEventSourceWithName", AnnotationValue::asString,
-                () -> null);
+                NULL_STRING_SUPPLIER);
 
-        return new DependentResourceSpecMetadata(dependentClass, cfg, dependent.nameOrFailIfUnset(),
+        final var spec = new DependentResourceSpecMetadata(dependentClass, dependent.nameOrFailIfUnset(),
                 dependsOn, readyCondition, reconcilePrecondition, deletePostcondition, activationCondition,
-                useEventSourceWithName,
-                resourceTypeName);
+                useEventSourceWithName, resourceClass);
 
+        DependentResourceConfigurationResolver.configureSpecFromConfigured(spec, configuration, dependentClass);
+
+        return spec;
     }
 
     private static String getFinalizer(AnnotationInstance controllerAnnotation, String crdName) {
@@ -471,12 +490,5 @@ class QuarkusControllerConfigurationBuildStep {
                 "finalizerName",
                 AnnotationValue::asString,
                 () -> ReconcilerUtils.getDefaultFinalizerName(crdName));
-    }
-
-    private static String getLabelSelector(AnnotationInstance controllerAnnotation) {
-        return ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
-                "labelSelector",
-                AnnotationValue::asString,
-                () -> null);
     }
 }

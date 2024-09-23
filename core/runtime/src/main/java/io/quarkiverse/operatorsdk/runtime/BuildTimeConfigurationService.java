@@ -17,10 +17,11 @@ public class BuildTimeConfigurationService implements ConfigurationService {
     private final boolean stopOnInformerErrorDuringStartup;
     private final boolean enableSSA;
     private final List<String> leaderElectionActivationProfiles;
+    private final boolean defensiveCloning;
 
     public BuildTimeConfigurationService(Version version, CRDGenerationInfo crdInfo, boolean startOperator,
             boolean closeClientOnStop, boolean stopOnInformerErrorDuringStartup, boolean enableSSA,
-            List<String> leaderElectionActivationProfiles) {
+            List<String> leaderElectionActivationProfiles, boolean defensiveCloning) {
         this.version = version;
         this.crdInfo = crdInfo;
         this.startOperator = startOperator;
@@ -28,6 +29,7 @@ public class BuildTimeConfigurationService implements ConfigurationService {
         this.stopOnInformerErrorDuringStartup = stopOnInformerErrorDuringStartup;
         this.enableSSA = enableSSA;
         this.leaderElectionActivationProfiles = leaderElectionActivationProfiles;
+        this.defensiveCloning = defensiveCloning;
     }
 
     @Override
@@ -71,5 +73,9 @@ public class BuildTimeConfigurationService implements ConfigurationService {
 
     public List<String> getLeaderElectionActivationProfiles() {
         return leaderElectionActivationProfiles;
+    }
+
+    public boolean isDefensiveCloning() {
+        return defensiveCloning;
     }
 }

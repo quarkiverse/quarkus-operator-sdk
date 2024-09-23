@@ -15,6 +15,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 public class IngressDependent extends CRUDKubernetesDependentResource<Ingress, ExposedApp> implements
         Condition<Ingress, ExposedApp> {
 
+    // todo: automatically generate
     public IngressDependent() {
         super(Ingress.class);
     }
@@ -22,7 +23,7 @@ public class IngressDependent extends CRUDKubernetesDependentResource<Ingress, E
     @Override
     @SuppressWarnings("unchecked")
     public Ingress desired(ExposedApp exposedApp, Context context) {
-        final var labels = (Map<String, String>) context.managedDependentResourceContext()
+        final var labels = (Map<String, String>) context.managedWorkflowAndDependentResourceContext()
                 .getMandatory(LABELS_CONTEXT_KEY, Map.class);
         final var metadata = createMetadata(exposedApp, labels);
         /*

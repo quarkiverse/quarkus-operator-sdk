@@ -19,7 +19,6 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -31,8 +30,10 @@ import io.quarkus.arc.Arc;
 import io.quarkus.arc.ClientProxy;
 
 public class QuarkusConfigurationService extends AbstractConfigurationService implements
-        DependentResourceFactory<QuarkusControllerConfiguration<?>>,
+        DependentResourceFactory<QuarkusControllerConfiguration<?>, DependentResourceSpecMetadata<?, ?, ?>>,
         ManagedWorkflowFactory<QuarkusControllerConfiguration<?>> {
+    public static final QuarkusConfigurationService RESOURCE_CLASS_RESOLVER_ONLY = new QuarkusConfigurationService();
+    public static final int UNSET_TERMINATION_TIMEOUT_SECONDS = -1;
     private static final Logger log = LoggerFactory.getLogger(QuarkusConfigurationService.class);
     private final CRDGenerationInfo crdInfo;
     private final int concurrentReconciliationThreads;
@@ -49,6 +50,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     @SuppressWarnings("rawtypes")
     private final Map<String, DependentResource> knownDependents = new ConcurrentHashMap<>();
     private final boolean useSSA;
+    private final boolean defensiveCloning;
 
     public QuarkusConfigurationService(
             Version version,
@@ -58,7 +60,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
             int timeout, Duration cacheSyncTimeout, Metrics metrics, boolean startOperator,
             LeaderElectionConfiguration leaderElectionConfiguration, InformerStoppedHandler informerStoppedHandler,
             boolean closeClientOnStop, boolean stopOnInformerErrorDuringStartup,
-            boolean useSSA) {
+            boolean useSSA, boolean defensiveCloning) {
         super(version);
         this.closeClientOnStop = closeClientOnStop;
         this.stopOnInformerErrorDuringStartup = stopOnInformerErrorDuringStartup;
@@ -85,6 +87,27 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         this.informerStoppedHandler = informerStoppedHandler;
         this.leaderElectionConfiguration = leaderElectionConfiguration;
         this.useSSA = useSSA;
+        this.defensiveCloning = defensiveCloning;
+    }
+
+    private QuarkusConfigurationService() {
+        this(Version.UNKNOWN, Collections.emptyList(), null, null, DEFAULT_RECONCILIATION_THREADS_NUMBER,
+                DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER, UNSET_TERMINATION_TIMEOUT_SECONDS, null, null, false, null, null,
+                false, false, false, false);
+    }
+
+    private static <R extends HasMetadata> Reconciler<R> unwrap(Reconciler<R> reconciler) {
+        return ClientProxy.unwrap(reconciler);
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static String getDependentKey(QuarkusControllerConfiguration configuration,
+            DependentResourceSpec spec) {
+        return getDependentKeyFromNames(configuration.getName(), spec.getName());
+    }
+
+    private static String getDependentKeyFromNames(String controllerName, String dependentName) {
+        return controllerName + "#" + dependentName;
     }
 
     @Override
@@ -98,10 +121,6 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     @Override
     public boolean checkCRDAndValidateLocalModel() {
         return crdInfo.isValidateCRDs();
-    }
-
-    private static <R extends HasMetadata> Reconciler<R> unwrap(Reconciler<R> reconciler) {
-        return ClientProxy.unwrap(reconciler);
     }
 
     @Override
@@ -128,7 +147,6 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         return this.concurrentReconciliationThreads;
     }
 
-    @Override
     public int getTerminationTimeoutSeconds() {
         return terminationTimeout;
     }
@@ -193,7 +211,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     }
 
     @Override
-    public DependentResourceFactory<QuarkusControllerConfiguration<?>> dependentResourceFactory() {
+    public DependentResourceFactory<QuarkusControllerConfiguration<?>, DependentResourceSpecMetadata<?, ?, ?>> dependentResourceFactory() {
         return this;
     }
 
@@ -209,7 +227,8 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
 
     @Override
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public DependentResource createFrom(DependentResourceSpec spec, QuarkusControllerConfiguration configuration) {
+    public DependentResource createFrom(DependentResourceSpecMetadata spec,
+            QuarkusControllerConfiguration configuration) {
         final var dependentKey = getDependentKey(configuration, spec);
         var dependentResource = knownDependents.get(dependentKey);
         if (dependentResource == null) {
@@ -225,7 +244,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
 
                 dependentResource = ClientProxy.unwrap(dependent);
                 // configure the bean
-                DependentResourceConfigurationResolver.configure(dependentResource, spec, configuration);
+                configure(dependentResource, spec, configuration);
                 // record the configured dependent for later retrieval if needed
                 knownDependents.put(dependentKey, dependentResource);
             }
@@ -233,25 +252,23 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         return dependentResource;
     }
 
-    @SuppressWarnings("rawtypes")
-    private static String getDependentKey(QuarkusControllerConfiguration configuration,
-            DependentResourceSpec spec) {
-        return getDependentKeyFromNames(configuration.getName(), spec.getName());
+    @Override
+    public Class<?> associatedResourceType(DependentResourceSpecMetadata spec) {
+        return spec.getResourceClass();
     }
 
-    private static String getDependentKeyFromNames(String controllerName, String dependentName) {
-        return controllerName + "#" + dependentName;
-    }
-
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "rawtypes" })
     public DependentResourceSpecMetadata getDependentByName(String controllerName, String dependentName) {
-        return (DependentResourceSpecMetadata) controllerConfigurations()
-                .filter(cc -> controllerName.equals(cc.getName()))
-                .findFirst()
-                .flatMap(cc -> cc.getDependentResources().stream()
-                        .filter(drs -> dependentName.equals(((DependentResourceSpec) drs).getName()))
-                        .findFirst())
-                .orElse(null);
+        final ControllerConfiguration<?> cc = getFor(controllerName);
+        if (cc == null) {
+            return null;
+        } else {
+            return cc.getWorkflowSpec().flatMap(spec -> spec.getDependentResourceSpecs().stream()
+                    .filter(r -> r.getName().equals(dependentName) && r instanceof DependentResourceSpecMetadata<?, ?, ?>)
+                    .map(DependentResourceSpecMetadata.class::cast)
+                    .findFirst())
+                    .orElse(null);
+        }
     }
 
     @SuppressWarnings("rawtypes")
@@ -262,5 +279,15 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     @Override
     public boolean ssaBasedCreateUpdateMatchForDependentResources() {
         return useSSA;
+    }
+
+    @Override
+    public boolean useSSAToPatchPrimaryResource() {
+        return useSSA;
+    }
+
+    @Override
+    public boolean cloneSecondaryResourcesWhenGettingFromCache() {
+        return defensiveCloning;
     }
 }
