@@ -567,7 +567,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_I
 endif::add-copy-button-to-env-var[]
 --
 |long
-|`2000`
+|
 
 a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-multiplier]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-multiplier[`quarkus.operator-sdk.controllers."controllers".retry.interval.multiplier`]##
 
@@ -584,7 +584,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__RETRY_I
 endif::add-copy-button-to-env-var[]
 --
 |double
-|`1.5`
+|
 
 a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-max]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-max[`quarkus.operator-sdk.controllers."controllers".retry.interval.max`]##
 
