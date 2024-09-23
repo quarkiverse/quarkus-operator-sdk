@@ -129,9 +129,11 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                     verbs.add(RBACVerbs.CREATE);
 
                     // PATCH verb is also needed when using SSA to be able to add the finalizer when creating the resource
-                    // optimistically add PATCH method if resource should use SSA as defined by configuration
-                    // note that this isn't the only thing that is taken into account in that determination but should
-                    // a good first approximation, full determination is done if we can instantiate the dependent, see below
+                    // Here, we optimistically add PATCH method if the resource configuration states that SSA should be
+                    // used, despite this not being a correct/complete determination of whether the resource actually
+                    // uses SSA. This can only be determined by instantiating the dependent, which is why, if we can 
+                    // instantiate it, we double-check the SSA status later on and remove the PATCH method if we can
+                    // actually determine that it's not needed
                     final Object dependentResourceConfig = spec.getDependentResourceConfig();
                     if (dependentResourceConfig instanceof KubernetesDependentResourceConfig<?> kubernetesDependentResourceConfig) {
                         if (kubernetesDependentResourceConfig.useSSA().orElse(false)) {
