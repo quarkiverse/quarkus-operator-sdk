@@ -183,13 +183,13 @@ jobs:
 
       - name: Check-out Fabric8 client PR if requested
         uses: actions/checkout@v4
-        if: "${{ inputs.fkc-pr != '' }}"
+        if: "${{ inputs.fkc-pr != '' && inputs.fkc-version == '' }}"
         with:
           repository: fabric8io/kubernetes-client
           path: fkc
 
       - name: Build Fabric8 client PR if requested
-        if: "${{ inputs.fkc-pr != '' }}"
+        if: "${{ inputs.fkc-pr != '' && inputs.fkc-version == '' }}"
         id: build-fkc-pr
         run: |
           cd fkc
@@ -232,11 +232,6 @@ jobs:
           echo "Computed Maven profiles: ${maven_profiles}"
           echo "maven_profiles=${maven_profiles}" >> $GITHUB_OUTPUT
 
-      - name: Change Quarkus version
-        run: |
-          echo "Using Quarkus ${{ steps.quarkus-version.outputs.quarkus_version }}"
-          ./mvnw versions:set-property -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dproperty=quarkus.version -DnewVersion=${{ steps.quarkus-version.outputs.quarkus_version }}
-
       - name: Change Fabric8 client version
         id: fkc-version
         if: "${{ inputs.fkc-pr != '' || inputs.fkc-version != '' }}"
@@ -251,22 +246,27 @@ jobs:
           ./mvnw versions:set-property -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dproperty=fabric8-client.version -DnewVersion=${fkc_version}
           echo "fkc_version=${fkc_version}" >> $GITHUB_OUTPUT
 
+      - name: Change Quarkus version
+        run: |
+          echo "Using Quarkus ${{ steps.quarkus-version.outputs.quarkus_version }}"
+          ./mvnw versions:set-property -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dproperty=quarkus.version -DnewVersion=${{ steps.quarkus-version.outputs.quarkus_version }} ${{inputs.mvnArgs}}
+
       - name: Output versions being used
         run: |
-          echo "QOSDK version: $(./mvnw help:evaluate -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dexpression=project.version -q -DforceStdout)"
-          echo "JOSDK version: $(./mvnw help:evaluate -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dexpression=java-operator-sdk.version -q -DforceStdout)"
+          echo "QOSDK version: $(./mvnw help:evaluate -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dexpression=project.version -q -DforceStdout ${{inputs.mvnArgs}})"
+          echo "JOSDK version: $(./mvnw help:evaluate -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dexpression=java-operator-sdk.version -q -DforceStdout ${{inputs.mvnArgs}})"
           echo "JOSDK Fabric8 version: ${{ steps.build-josdk-pr.outputs.josdk_f8_version }}"
           echo "JOSDK overridden Fabric8 version ${{ steps.fkc-version.outputs.fkc_version }}"
-          echo "Quarkus version: $(./mvnw help:evaluate -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dexpression=quarkus.version -q -DforceStdout)"
+          echo "Quarkus version: $(./mvnw help:evaluate -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dexpression=quarkus.version -q -DforceStdout ${{inputs.mvnArgs}})"
           echo "Quarkus Fabric8 version: ${{ steps.build-quarkus-pr.outputs.quarkus_f8_version }}"
-          echo "Effective Fabric8 version: $(./mvnw dependency:tree -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dincludes=io.fabric8:kubernetes-client-api -pl core/deployment | grep io.fabric8:kubernetes-client-api -m1 | cut -d ':' -f 4)"
+          echo "Effective Fabric8 version: $(./mvnw dependency:tree -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' ${{inputs.mvnArgs}} -Dincludes=io.fabric8:kubernetes-client-api -pl core/deployment | grep io.fabric8:kubernetes-client-api -m1 | cut -d ':' -f 4)"
 
       - name: Build with Maven (JVM)
         run: ./mvnw -B formatter:validate install -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' ${{inputs.mvnArgs}} --file pom.xml
 
       - name: Dependency tree on failure
         if: failure()
-        run: ./mvnw -B dependency:tree -Dverbose
+        run: ./mvnw -B dependency:tree -Dverbose ${{inputs.mvnArgs}}
 
       - name: Kubernetes KinD Cluster
         uses: container-tools/kind-action@v2
@@ -332,7 +332,7 @@ jobs:
           path: samples/joke/app.log
 
       - name: Build with Maven (Native)
-        run: ./mvnw -B install -Dnative --file pom.xml -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -pl '${{inputs.native-modules}}' -amd
+        run: ./mvnw -B install -Dnative --file pom.xml -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -pl '${{inputs.native-modules}}' -amd ${{inputs.mvnArgs}}
 
       - name: Run Joke sample in native mode
         if: ${{ contains(inputs.native-modules, 'samples') }}
