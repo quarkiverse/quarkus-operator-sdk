@@ -33,9 +33,16 @@ Please refer to the https://github.com/quarkiverse/quarkus-operator-sdk/blob/mai
 
 == Installation
 
-If you want to use this extension, you need to add the `quarkus-operator-sdk` extension first.
+=== Using the Quarkus platform
 
-You need to add minimally, the following to your `pom.xml` file:
+The best way to use this extension is to generate a skeleton project from https://code.quarkus.io[code.quarkus.io], search for `qosdk` (or similar) and select the Operator SDK extension.
+Doing so will automatically import the Java Operator SDK dependencies in a managed way, using the BOM from the Quarkus platform.
+
+Some of these topics along with upgrading strategies are discussed in https://developers.redhat.com/articles/2023/09/19/write-operators-java-josdk-part-4-upgrading-strategies.
+
+=== Managing the QOSDK extension yourself
+
+Alternatively, you can add the following to your `pom.xml` file, if you want to be managing the QOSDK extension yourself.
 
 [source,xml,subs=attributes+]
 ----
@@ -75,7 +82,11 @@ Exception in thread "main" java.lang.RuntimeException: java.lang.RuntimeExceptio
         at io.quarkus.deployment.dev.DevModeMain.main(DevModeMain.java:62)
 ----
 
-If you want to use the Bundle generator, you will first need to use Quarkus 2.3.0.Final or above and add the `quarkus-operator-sdk-bundle-generator` extension first:
+=== OLM bundle generator extension
+
+You can add the OLM bundle generator using the Quarkus platform via code.quarkus.io, searching for `olm` (for example).
+
+You can also add the `quarkus-operator-sdk-bundle-generator` extension manually to your dependencies in a project that's already set up to use QOSDK.
 
 [source,xml,subs=attributes+]
 ----
