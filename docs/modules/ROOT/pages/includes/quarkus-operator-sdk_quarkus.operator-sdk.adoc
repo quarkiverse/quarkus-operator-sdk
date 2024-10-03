@@ -8,7 +8,7 @@ h|[.header-title]##Configuration property##
 h|Type
 h|Default
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-validate]] [.property-path]##`quarkus.operator-sdk.crd.validate`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-validate]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-validate[`quarkus.operator-sdk.crd.validate`]##
 
 [.description]
 --
@@ -25,7 +25,7 @@ endif::add-copy-button-to-env-var[]
 |boolean
 |`true`
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-generate]] [.property-path]##`quarkus.operator-sdk.crd.generate`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-generate]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-generate[`quarkus.operator-sdk.crd.generate`]##
 
 [.description]
 --
@@ -42,7 +42,7 @@ endif::add-copy-button-to-env-var[]
 |boolean
 |
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-apply]] [.property-path]##`quarkus.operator-sdk.crd.apply`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-apply]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-apply[`quarkus.operator-sdk.crd.apply`]##
 
 [.description]
 --
@@ -59,7 +59,7 @@ endif::add-copy-button-to-env-var[]
 |boolean
 |
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-versions]] [.property-path]##`quarkus.operator-sdk.crd.versions`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-versions]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-versions[`quarkus.operator-sdk.crd.versions`]##
 
 [.description]
 --
@@ -76,7 +76,7 @@ endif::add-copy-button-to-env-var[]
 |list of string
 |`v1`
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-output-directory]] [.property-path]##`quarkus.operator-sdk.crd.output-directory`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-output-directory]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-output-directory[`quarkus.operator-sdk.crd.output-directory`]##
 
 [.description]
 --
@@ -93,7 +93,7 @@ endif::add-copy-button-to-env-var[]
 |string
 |
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-generate-all]] [.property-path]##`quarkus.operator-sdk.crd.generate-all`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-generate-all]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-generate-all[`quarkus.operator-sdk.crd.generate-all`]##
 
 [.description]
 --
@@ -110,7 +110,7 @@ endif::add-copy-button-to-env-var[]
 |boolean
 |`false`
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-generate-in-parallel]] [.property-path]##`quarkus.operator-sdk.crd.generate-in-parallel`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-generate-in-parallel]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-generate-in-parallel[`quarkus.operator-sdk.crd.generate-in-parallel`]##
 
 [.description]
 --
@@ -127,7 +127,7 @@ endif::add-copy-button-to-env-var[]
 |boolean
 |`false`
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-exclude-resources]] [.property-path]##`quarkus.operator-sdk.crd.exclude-resources`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-exclude-resources]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-exclude-resources[`quarkus.operator-sdk.crd.exclude-resources`]##
 
 [.description]
 --
@@ -144,7 +144,7 @@ endif::add-copy-button-to-env-var[]
 |list of string
 |
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-generation-aware]] [.property-path]##`quarkus.operator-sdk.generation-aware`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-generation-aware]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-generation-aware[`quarkus.operator-sdk.generation-aware`]##
 
 [.description]
 --
@@ -161,7 +161,7 @@ endif::add-copy-button-to-env-var[]
 |boolean
 |`true`
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-disable-rbac-generation]] [.property-path]##`quarkus.operator-sdk.disable-rbac-generation`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-disable-rbac-generation]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-disable-rbac-generation[`quarkus.operator-sdk.disable-rbac-generation`]##
 
 [.description]
 --
@@ -178,7 +178,7 @@ endif::add-copy-button-to-env-var[]
 |boolean
 |`false`
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-start-operator]] [.property-path]##`quarkus.operator-sdk.start-operator`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-start-operator]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-start-operator[`quarkus.operator-sdk.start-operator`]##
 
 [.description]
 --
@@ -195,7 +195,7 @@ endif::add-copy-button-to-env-var[]
 |boolean
 |`true`
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-close-client-on-stop]] [.property-path]##`quarkus.operator-sdk.close-client-on-stop`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-close-client-on-stop]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-close-client-on-stop[`quarkus.operator-sdk.close-client-on-stop`]##
 
 [.description]
 --
@@ -212,7 +212,7 @@ endif::add-copy-button-to-env-var[]
 |boolean
 |`true`
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-stop-on-informer-error-during-startup]] [.property-path]##`quarkus.operator-sdk.stop-on-informer-error-during-startup`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-stop-on-informer-error-during-startup]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-stop-on-informer-error-during-startup[`quarkus.operator-sdk.stop-on-informer-error-during-startup`]##
 
 [.description]
 --
@@ -229,7 +229,7 @@ endif::add-copy-button-to-env-var[]
 |boolean
 |`true`
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-fail-on-version-check]] [.property-path]##`quarkus.operator-sdk.fail-on-version-check`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-fail-on-version-check]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-fail-on-version-check[`quarkus.operator-sdk.fail-on-version-check`]##
 
 [.description]
 --
@@ -252,7 +252,7 @@ endif::add-copy-button-to-env-var[]
 |boolean
 |`false`
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-activate-leader-election-for-profiles]] [.property-path]##`quarkus.operator-sdk.activate-leader-election-for-profiles`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-activate-leader-election-for-profiles]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-activate-leader-election-for-profiles[`quarkus.operator-sdk.activate-leader-election-for-profiles`]##
 
 [.description]
 --
@@ -269,7 +269,7 @@ endif::add-copy-button-to-env-var[]
 |list of string
 |`prod`
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-enable-ssa]] [.property-path]##`quarkus.operator-sdk.enable-ssa`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-enable-ssa]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-enable-ssa[`quarkus.operator-sdk.enable-ssa`]##
 
 [.description]
 --
@@ -286,7 +286,7 @@ endif::add-copy-button-to-env-var[]
 |boolean
 |`true`
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-generate-with-watched-namespaces]] [.property-path]##`quarkus.operator-sdk.generate-with-watched-namespaces`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-generate-with-watched-namespaces]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-generate-with-watched-namespaces[`quarkus.operator-sdk.generate-with-watched-namespaces`]##
 
 [.description]
 --
@@ -303,7 +303,7 @@ endif::add-copy-button-to-env-var[]
 |list of string
 |
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-helm-enabled]] [.property-path]##`quarkus.operator-sdk.helm.enabled`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-helm-enabled]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-helm-enabled[`quarkus.operator-sdk.helm.enabled`]##
 
 [.description]
 --
@@ -320,7 +320,7 @@ endif::add-copy-button-to-env-var[]
 |boolean
 |`false`
 
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-concurrent-reconciliation-threads]] [.property-path]##`quarkus.operator-sdk.concurrent-reconciliation-threads`##
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-concurrent-reconciliation-threads]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-concurrent-reconciliation-threads[`quarkus.operator-sdk.concurrent-reconciliation-threads`]##
 
 [.description]
 --
@@ -337,7 +337,7 @@ endif::add-copy-button-to-env-var[]
 |int
 |
 
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-termination-timeout-seconds]] [.property-path]##`quarkus.operator-sdk.termination-timeout-seconds`##
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-termination-timeout-seconds]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-termination-timeout-seconds[`quarkus.operator-sdk.termination-timeout-seconds`]##
 
 [.description]
 --
@@ -354,7 +354,7 @@ endif::add-copy-button-to-env-var[]
 |int
 |
 
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-namespaces]] [.property-path]##`quarkus.operator-sdk.namespaces`##
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-namespaces]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-namespaces[`quarkus.operator-sdk.namespaces`]##
 
 [.description]
 --
@@ -373,7 +373,7 @@ endif::add-copy-button-to-env-var[]
 |list of string
 |`QOSDK_USE_BUILDTIME_NAMESPACES`
 
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-concurrent-workflow-threads]] [.property-path]##`quarkus.operator-sdk.concurrent-workflow-threads`##
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-concurrent-workflow-threads]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-concurrent-workflow-threads[`quarkus.operator-sdk.concurrent-workflow-threads`]##
 
 [.description]
 --
@@ -390,7 +390,7 @@ endif::add-copy-button-to-env-var[]
 |int
 |
 
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-cache-sync-timeout]] [.property-path]##`quarkus.operator-sdk.cache-sync-timeout`##
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-cache-sync-timeout]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-cache-sync-timeout[`quarkus.operator-sdk.cache-sync-timeout`]##
 
 [.description]
 --
@@ -407,7 +407,7 @@ endif::add-copy-button-to-env-var[]
 |link:https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/Duration.html[Duration] link:#duration-note-anchor-{summaryTableId}[icon:question-circle[title=More information about the Duration format]]
 |`2M`
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-generation-aware]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".generation-aware`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-generation-aware]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-generation-aware[`quarkus.operator-sdk.controllers."controllers".generation-aware`]##
 
 [.description]
 --
@@ -424,7 +424,7 @@ endif::add-copy-button-to-env-var[]
 |boolean
 |
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-generate-with-watched-namespaces]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".generate-with-watched-namespaces`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-generate-with-watched-namespaces]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-generate-with-watched-namespaces[`quarkus.operator-sdk.controllers."controllers".generate-with-watched-namespaces`]##
 
 [.description]
 --
@@ -449,7 +449,7 @@ endif::add-copy-button-to-env-var[]
 |list of string
 |
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-unowned-primary]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".unowned-primary`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-unowned-primary]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-unowned-primary[`quarkus.operator-sdk.controllers."controllers".unowned-primary`]##
 
 [.description]
 --
@@ -466,7 +466,7 @@ endif::add-copy-button-to-env-var[]
 |boolean
 |`false`
 
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-namespaces]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".namespaces`##
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-namespaces]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-namespaces[`quarkus.operator-sdk.controllers."controllers".namespaces`]##
 
 [.description]
 --
@@ -483,7 +483,7 @@ endif::add-copy-button-to-env-var[]
 |list of string
 |`QOSDK_USE_BUILDTIME_NAMESPACES`
 
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-finalizer]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".finalizer`##
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-finalizer]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-finalizer[`quarkus.operator-sdk.controllers."controllers".finalizer`]##
 
 [.description]
 --
@@ -500,7 +500,7 @@ endif::add-copy-button-to-env-var[]
 |string
 |
 
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-max-attempts]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".retry.max-attempts`##
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-max-attempts]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-max-attempts[`quarkus.operator-sdk.controllers."controllers".retry.max-attempts`]##
 
 [.description]
 --
@@ -517,7 +517,7 @@ endif::add-copy-button-to-env-var[]
 |int
 |
 
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-initial]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".retry.interval.initial`##
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-initial]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-initial[`quarkus.operator-sdk.controllers."controllers".retry.interval.initial`]##
 
 [.description]
 --
@@ -534,7 +534,7 @@ endif::add-copy-button-to-env-var[]
 |long
 |`2000`
 
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-multiplier]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".retry.interval.multiplier`##
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-multiplier]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-multiplier[`quarkus.operator-sdk.controllers."controllers".retry.interval.multiplier`]##
 
 [.description]
 --
@@ -551,7 +551,7 @@ endif::add-copy-button-to-env-var[]
 |double
 |`1.5`
 
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-max]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".retry.interval.max`##
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-max]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-retry-interval-max[`quarkus.operator-sdk.controllers."controllers".retry.interval.max`]##
 
 [.description]
 --
@@ -568,7 +568,7 @@ endif::add-copy-button-to-env-var[]
 |long
 |
 
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-selector]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".selector`##
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-selector]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-selector[`quarkus.operator-sdk.controllers."controllers".selector`]##
 
 [.description]
 --
@@ -585,7 +585,7 @@ endif::add-copy-button-to-env-var[]
 |string
 |
 
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-max-reconciliation-interval]] [.property-path]##`quarkus.operator-sdk.controllers."controllers".max-reconciliation-interval`##
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-max-reconciliation-interval]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-max-reconciliation-interval[`quarkus.operator-sdk.controllers."controllers".max-reconciliation-interval`]##
 
 [.description]
 --

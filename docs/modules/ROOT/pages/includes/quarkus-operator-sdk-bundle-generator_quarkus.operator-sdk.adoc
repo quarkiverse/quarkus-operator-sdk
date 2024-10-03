@@ -8,7 +8,7 @@ h|[.header-title]##Configuration property##
 h|Type
 h|Default
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-enabled]] [.property-path]##`quarkus.operator-sdk.bundle.enabled`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-enabled]] [.property-path]##link:#quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-enabled[`quarkus.operator-sdk.bundle.enabled`]##
 
 [.description]
 --
@@ -25,7 +25,7 @@ endif::add-copy-button-to-env-var[]
 |boolean
 |`true`
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-channels]] [.property-path]##`quarkus.operator-sdk.bundle.channels`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-channels]] [.property-path]##link:#quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-channels[`quarkus.operator-sdk.bundle.channels`]##
 
 [.description]
 --
@@ -42,7 +42,7 @@ endif::add-copy-button-to-env-var[]
 |list of string
 |`alpha`
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-default-channel]] [.property-path]##`quarkus.operator-sdk.bundle.default-channel`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-default-channel]] [.property-path]##link:#quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-default-channel[`quarkus.operator-sdk.bundle.default-channel`]##
 
 [.description]
 --
@@ -59,7 +59,7 @@ endif::add-copy-button-to-env-var[]
 |string
 |
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-replaces]] [.property-path]##`quarkus.operator-sdk.bundle.replaces`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-replaces]] [.property-path]##link:#quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-replaces[`quarkus.operator-sdk.bundle.replaces`]##
 
 [.description]
 --
@@ -76,7 +76,7 @@ endif::add-copy-button-to-env-var[]
 |string
 |
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-version]] [.property-path]##`quarkus.operator-sdk.bundle.version`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-version]] [.property-path]##link:#quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-version[`quarkus.operator-sdk.bundle.version`]##
 
 [.description]
 --
@@ -93,7 +93,7 @@ endif::add-copy-button-to-env-var[]
 |string
 |
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-bundles-bundles-annotations-annotations]] [.property-path]##`quarkus.operator-sdk.bundle.bundles."bundles".annotations."annotations"`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-bundles-bundles-annotations-annotations]] [.property-path]##link:#quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-bundles-bundles-annotations-annotations[`quarkus.operator-sdk.bundle.bundles."bundles".annotations."annotations"`]##
 
 [.description]
 --
