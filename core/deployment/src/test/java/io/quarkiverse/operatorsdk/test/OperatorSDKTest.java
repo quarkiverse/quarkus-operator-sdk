@@ -25,7 +25,7 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.utils.Serialization;
+import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
 import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
@@ -86,9 +86,9 @@ public class OperatorSDKTest {
         final var kubeManifest = kubernetesDir.resolve("kubernetes.yml");
         Assertions.assertTrue(Files.exists(kubeManifest));
         final var kubeIS = new FileInputStream(kubeManifest.toFile());
-        // use unmarshall version with parameters map to ensure code goes through the proper processing wrt multiple documents
+        final var serializer = new KubernetesSerialization();
         @SuppressWarnings("unchecked")
-        final var kubeResources = (List<HasMetadata>) Serialization.unmarshal(kubeIS);
+        final var kubeResources = (List<HasMetadata>) serializer.unmarshal(kubeIS);
 
         // check cluster role for TestReconciler
         final var testReconcilerRoleName = AddClusterRolesDecorator.getClusterRoleName(TestReconciler.NAME);
