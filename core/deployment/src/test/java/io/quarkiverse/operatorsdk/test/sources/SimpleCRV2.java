@@ -6,10 +6,8 @@ import io.fabric8.kubernetes.model.annotation.Kind;
 import io.fabric8.kubernetes.model.annotation.Version;
 
 @Group("example.com")
-@Version(value = SimpleCR.VERSION, storage = false)
+@Version(SimpleCRV2.VERSION)
 @Kind(SimpleCR.KIND)
-public class SimpleCR extends CustomResource<SimpleSpec, SimpleStatus> {
-
-    public static final String VERSION = "v1";
-    public static final String KIND = "SimpleCR";
+public class SimpleCRV2 extends CustomResource<SimpleSpecV2, SimpleStatus> {
+    public static final String VERSION = "v2";
 }
