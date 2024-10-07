@@ -152,7 +152,7 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
                     } catch (Exception e) {
                         ignore = true;
                         log.warn(" Ignoring dependent " + dependentResourceClass.getName()
-                                + " because it couldn't be instantiated as it doesn't provide a no-arg constructor, preventing its group and plural to be determined.");
+                                + " because it couldn't be instantiated as it doesn't provide a no-arg constructor, preventing its group and plural from being determined.");
                     }
                 }
 
