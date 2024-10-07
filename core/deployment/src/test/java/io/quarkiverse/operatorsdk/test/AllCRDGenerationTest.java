@@ -28,8 +28,8 @@ public class AllCRDGenerationTest {
     static final QuarkusProdModeTest config = new QuarkusProdModeTest()
             .setApplicationName("test")
             .withApplicationRoot(
-                    (jar) -> jar.addClasses(SimpleReconciler.class, SimpleCR.class, SimpleSpec.class, SimpleStatus.class,
-                            External.class, ExternalV1.class, SimpleReconcilerV2.class, SimpleCRV2.class))
+                    (jar) -> jar.addClasses(SimpleCR.class, SimpleSpec.class, SimpleStatus.class,
+                            External.class, ExternalV1.class, SimpleCRV2.class, SimpleReconcilerV2.class))
             .overrideConfigKey("quarkus.operator-sdk.crd.generate-all", "true");
 
     @ProdBuildResults

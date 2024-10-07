@@ -56,7 +56,7 @@ class CRDGeneration {
      * Generates the CRD in the location specified by the output target, using the specified CRD
      * generation configuration only if generation has been requested by call
      * {@link #scheduleForGenerationIfNeeded(CustomResourceAugmentedClassInfo, Map, Set)} or
-     * {@link #withCustomResource(Class, String, String)}
+     * {@link #withCustomResource(Class, String)}
      *
      * @param outputTarget the {@link OutputTargetBuildItem} specifying where the CRDs
      *        should be generated
@@ -101,7 +101,7 @@ class CRDGeneration {
         return new CRDGenerationInfo(shouldApply(), validateCustomResources, converted, generated);
     }
 
-    private boolean needsGeneration(Map<String, CRDInfo> existingCRDInfos, Set<String> changedClassNames, String targetCRName) {
+    private boolean needsGeneration(Map<String, CRDInfo> existingCRDInfos, Set<String> changedClassNames) {
         final boolean[] generateCurrent = { true }; // request CRD generation by default
         crdConfiguration.versions().forEach(v -> {
             final var crd = existingCRDInfos.get(v);
@@ -122,7 +122,7 @@ class CRDGeneration {
             // we've looked at all the changed classes and none have been changed for this CR/version: do not regenerate CRD
             log.infov(
                     "''{0}'' CRD generation was skipped for ''{1}'' because no changes impacting the CRD were detected",
-                    v, targetCRName);
+                    v, crd.getCrdName());
             generateCurrent[0] = false;
         });
         return generateCurrent[0];
@@ -131,21 +131,19 @@ class CRDGeneration {
     boolean scheduleForGenerationIfNeeded(CustomResourceAugmentedClassInfo crInfo,
             Map<String, CRDInfo> existingCRDInfos, Set<String> changedClasses) {
         var scheduleCurrent = true;
-        final String targetCRName = crInfo.asResourceTargeting().fullResourceName();
 
         if (existingCRDInfos != null && !existingCRDInfos.isEmpty()) {
-            scheduleCurrent = needsGeneration(existingCRDInfos, changedClasses, targetCRName);
+            scheduleCurrent = needsGeneration(existingCRDInfos, changedClasses);
         }
 
         if (scheduleCurrent) {
-            withCustomResource(crInfo.loadAssociatedClass(), targetCRName, crInfo.getAssociatedReconcilerName().orElse(null));
+            withCustomResource(crInfo.loadAssociatedClass(), crInfo.getAssociatedReconcilerName().orElse(null));
         }
 
         return scheduleCurrent;
     }
 
-    public void withCustomResource(Class<? extends CustomResource<?, ?>> crClass, String crdName,
-            String associatedControllerName) {
+    public void withCustomResource(Class<? extends CustomResource<?, ?>> crClass, String associatedControllerName) {
         // first check if the CR is not filtered out
         if (crdConfiguration.excludeResources().map(excluded -> excluded.contains(crClass.getName())).orElse(false)) {
             log.infov("CRD generation was skipped for ''{0}'' because it was excluded from generation", crClass.getName());
@@ -159,7 +157,7 @@ class CRDGeneration {
                 generator = new CRDGenerator().withParallelGenerationEnabled(crdConfiguration.generateInParallel());
             }
             final var info = CustomResourceInfo.fromClass(crClass);
-            crMappings.add(info, crdName, associatedControllerName);
+            crMappings.add(info, associatedControllerName);
             generator.customResources(info);
             needGeneration = true;
         } catch (Exception e) {

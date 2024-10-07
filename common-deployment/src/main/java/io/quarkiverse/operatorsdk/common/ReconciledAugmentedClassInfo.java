@@ -1,9 +1,7 @@
 package io.quarkiverse.operatorsdk.common;
 
 import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.loadClass;
-import static io.quarkiverse.operatorsdk.common.Constants.CUSTOM_RESOURCE;
-import static io.quarkiverse.operatorsdk.common.Constants.HAS_METADATA;
-import static io.quarkiverse.operatorsdk.common.Constants.OBJECT;
+import static io.quarkiverse.operatorsdk.common.Constants.*;
 
 import java.util.Map;
 import java.util.Optional;
@@ -65,14 +63,21 @@ public class ReconciledAugmentedClassInfo<T> extends SelectiveAugmentedClassInfo
     }
 
     @SuppressWarnings("rawtypes")
-    public static ReconciledAugmentedClassInfo createFor(ClassInfo resourceCI, String reconcilerName,
+    public static ReconciledAugmentedClassInfo createFor(ResourceAssociatedAugmentedClassInfo parent, ClassInfo resourceCI,
+            String reconcilerName,
             IndexView index, Logger log, Map<String, Object> context) {
         var isResource = false;
         var isCR = false;
+        var isGenericKubernetesResource = false;
         try {
             isResource = ClassUtils.isImplementationOf(index, resourceCI, HAS_METADATA);
             if (isResource) {
                 isCR = JandexUtil.isSubclassOf(index, resourceCI, CUSTOM_RESOURCE);
+                if (!isCR) {
+                    // check if the target resource is a generic one
+                    isGenericKubernetesResource = JandexUtil.isSubclassOf(index, parent.classInfo(),
+                            GENERIC_KUBERNETES_DEPENDENT_RESOURCE);
+                }
             }
         } catch (BuildException e) {
             log.errorv(
@@ -83,7 +88,8 @@ public class ReconciledAugmentedClassInfo<T> extends SelectiveAugmentedClassInfo
         ReconciledAugmentedClassInfo reconciledInfo;
         if (isCR) {
             reconciledInfo = new CustomResourceAugmentedClassInfo(resourceCI, reconcilerName);
-        } else if (isResource) {
+        } else if (isResource && !isGenericKubernetesResource) {
+            // only record detailed information if the target resource is not generic
             reconciledInfo = new ReconciledResourceAugmentedClassInfo<>(resourceCI, HAS_METADATA, 0,
                     reconcilerName);
         } else {
