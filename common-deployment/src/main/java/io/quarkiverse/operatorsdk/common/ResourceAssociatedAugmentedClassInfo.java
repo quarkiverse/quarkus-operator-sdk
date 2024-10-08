@@ -13,11 +13,18 @@ import org.jboss.logging.Logger;
 public class ResourceAssociatedAugmentedClassInfo extends SelectiveAugmentedClassInfo {
     private final String name;
     private ReconciledAugmentedClassInfo<?> resourceInfo;
+    private final String reconcilerName;
 
     protected ResourceAssociatedAugmentedClassInfo(ClassInfo classInfo,
             DotName extendedOrImplementedClass, int expectedParameterTypesCardinality, String name) {
+        this(classInfo, extendedOrImplementedClass, expectedParameterTypesCardinality, name, null);
+    }
+
+    protected ResourceAssociatedAugmentedClassInfo(ClassInfo classInfo,
+            DotName extendedOrImplementedClass, int expectedParameterTypesCardinality, String name, String reconcilerName) {
         super(classInfo, extendedOrImplementedClass, expectedParameterTypesCardinality);
         this.name = name;
+        this.reconcilerName = reconcilerName != null ? reconcilerName : name;
     }
 
     public DotName resourceTypeName() {
@@ -42,7 +49,7 @@ public class ResourceAssociatedAugmentedClassInfo extends SelectiveAugmentedClas
                     + "' has not been found in the Jandex index so it cannot be introspected. Please index your classes with Jandex.");
         }
 
-        resourceInfo = ReconciledAugmentedClassInfo.createFor(primaryCI, name, index, log, context);
+        resourceInfo = ReconciledAugmentedClassInfo.createFor(this, primaryCI, reconcilerName, index, log, context);
     }
 
     public ReconciledAugmentedClassInfo<?> associatedResourceInfo() {

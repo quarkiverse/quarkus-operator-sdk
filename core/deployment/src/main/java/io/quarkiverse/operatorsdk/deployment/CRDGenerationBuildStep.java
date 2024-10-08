@@ -52,22 +52,22 @@ class CRDGenerationBuildStep {
                 final ReconciledAugmentedClassInfo<?> associatedResource = raci.associatedResourceInfo();
                 if (associatedResource.isCR()) {
                     final var crInfo = associatedResource.asResourceTargeting();
-                    final String targetCRName = crInfo.fullResourceName();
+                    final String crId = crInfo.id();
 
                     // if the primary resource is unowned, mark it as "scheduled" (i.e. already handled) so that it doesn't get considered if all CRDs generation is requested
                     if (!operatorConfiguration.isControllerOwningPrimary(raci.nameOrFailIfUnset())) {
-                        scheduledForGeneration.add(targetCRName);
+                        scheduledForGeneration.add(crId);
                     } else {
                         // When we have a live reload, check if we need to regenerate the associated CRD
                         Map<String, CRDInfo> crdInfos = Collections.emptyMap();
                         if (liveReload.isLiveReload()) {
-                            crdInfos = storedCRDInfos.getCRDInfosFor(targetCRName);
+                            crdInfos = storedCRDInfos.getCRDInfosFor(crId);
                         }
 
                         // schedule the generation of associated primary resource CRD if required
                         if (crdGeneration.scheduleForGenerationIfNeeded((CustomResourceAugmentedClassInfo) crInfo, crdInfos,
                                 changedClasses)) {
-                            scheduledForGeneration.add(targetCRName);
+                            scheduledForGeneration.add(crId);
                         }
                     }
                 }
@@ -80,9 +80,8 @@ class CRDGenerationBuildStep {
                         Map.of(CustomResourceAugmentedClassInfo.EXISTING_CRDS_KEY, scheduledForGeneration))
                         .map(CustomResourceAugmentedClassInfo.class::cast)
                         .forEach(cr -> {
-                            final var targetCRName = cr.fullResourceName();
-                            crdGeneration.withCustomResource(cr.loadAssociatedClass(), targetCRName, null);
-                            log.infov("Will generate CRD for non-reconciler bound resource: {0}", targetCRName);
+                            crdGeneration.withCustomResource(cr.loadAssociatedClass(), null);
+                            log.infov("Will generate CRD for non-reconciler bound resource: {0}", cr.fullResourceName());
                         });
             }
         }

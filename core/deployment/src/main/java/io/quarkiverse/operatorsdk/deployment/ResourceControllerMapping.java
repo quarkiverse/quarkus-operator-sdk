@@ -17,8 +17,9 @@ public class ResourceControllerMapping {
         return infos;
     }
 
-    public void add(io.fabric8.crdv2.generator.CustomResourceInfo info, String crdName, String associatedControllerName) {
+    public void add(io.fabric8.crdv2.generator.CustomResourceInfo info, String associatedControllerName) {
         final var version = info.version();
+        final var crdName = info.crdName();
         final var versionsForCR = resourceFullNameToVersionToInfos.computeIfAbsent(crdName, s -> new HashMap<>());
         final var cri = versionsForCR.get(version);
         if (cri != null) {
@@ -37,17 +38,16 @@ public class ResourceControllerMapping {
             throw new IllegalStateException(msg);
         }
 
-        final var converted = augment(info, crdName, associatedControllerName);
+        final var converted = augment(info, associatedControllerName);
         versionsForCR.put(version, converted);
     }
 
-    private static ResourceInfo augment(io.fabric8.crdv2.generator.CustomResourceInfo info,
-            String crdName, String associatedControllerName) {
+    private static ResourceInfo augment(io.fabric8.crdv2.generator.CustomResourceInfo info, String associatedControllerName) {
         return new ResourceInfo(
                 info.group(), info.version(), info.kind(), info.singular(), info.plural(), info.shortNames(),
                 info.storage(),
                 info.served(), info.scope(), info.crClassName(),
-                info.statusClassName().map(ClassUtils::isStatusNotVoid).orElse(false), crdName,
+                info.statusClassName().map(ClassUtils::isStatusNotVoid).orElse(false), info.crdName(),
                 associatedControllerName);
     }
 }

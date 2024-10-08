@@ -1,6 +1,7 @@
 package io.quarkiverse.operatorsdk.common;
 
 import java.util.Map;
+import java.util.Objects;
 
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
@@ -13,12 +14,18 @@ public class ReconciledResourceAugmentedClassInfo<T extends HasMetadata> extends
 
     public static final String STATUS = "status";
     protected boolean hasStatus;
+    private final String id;
 
     protected ReconciledResourceAugmentedClassInfo(ClassInfo classInfo,
             DotName extendedOrImplementedClass, int expectedParameterTypesCardinality,
             String associatedReconcilerName) {
         super(classInfo, extendedOrImplementedClass, expectedParameterTypesCardinality,
                 associatedReconcilerName);
+        id = fullResourceName() + version();
+    }
+
+    public String id() {
+        return id;
     }
 
     public String fullResourceName() {
@@ -54,5 +61,17 @@ public class ReconciledResourceAugmentedClassInfo<T extends HasMetadata> extends
 
     public boolean hasNonVoidStatus() {
         return hasStatus;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof ReconciledResourceAugmentedClassInfo<?> that))
+            return false;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
     }
 }

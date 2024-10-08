@@ -20,14 +20,12 @@ public class CustomResourceAugmentedClassInfo extends ReconciledResourceAugmente
 
     @Override
     protected boolean doKeep(IndexView index, Logger log, Map<String, Object> context) {
-
         // only keep the information if the associated CRD hasn't already been generated
-        final var fullName = fullResourceName();
         return Optional.ofNullable(context.get(EXISTING_CRDS_KEY))
                 .map(value -> {
                     @SuppressWarnings("unchecked")
                     Set<String> generated = (Set<String>) value;
-                    return !generated.contains(fullName);
+                    return !generated.contains(id());
                 })
                 .orElse(true);
     }
