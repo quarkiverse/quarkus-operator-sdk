@@ -43,6 +43,10 @@
       <artifactId>quarkus-smallrye-health-deployment</artifactId>
     </dependency>
     <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-info-deployment-spi</artifactId>
+    </dependency>
+    <dependency>
       <groupId>io.fabric8</groupId>
       <artifactId>crd-generator-api-v2</artifactId>
     </dependency>

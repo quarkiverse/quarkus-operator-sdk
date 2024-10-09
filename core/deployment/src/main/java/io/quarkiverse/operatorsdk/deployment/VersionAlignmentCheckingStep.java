@@ -21,7 +21,7 @@ public class VersionAlignmentCheckingStep {
         log.info("QOSDK: " + version.getExtensionCompleteVersion());
         log.info("JOSDK: " + version.getSdkCompleteVersion());
 
-        final var runtimeFabric8Version = io.fabric8.kubernetes.client.Version.clientVersion();
+        final var runtimeFabric8Version = version.getRuntimeFabric8Version();
         log.info("Fabric8 (effective): " + runtimeFabric8Version);
 
         final var runtimeQuarkusVersion = io.quarkus.builder.Version.getVersion();
