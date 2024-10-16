@@ -33,20 +33,11 @@ jobs:
 
     outputs:
       released: ${{steps.wait-for-bom.outputs.published}}
-      qosdk-version: ${{steps.metadata.outputs.current-version}}
       quarkus-platform-branch: ${{steps.versions.outputs.quarkus_platform_branch}}
       needs-main-pr: ${{ steps.versions.outputs.needs_main_pr == 'true' }}
 
     steps:
       - uses: actions/checkout@v4
-
-      - uses: radcortez/project-metadata-action@main
-        name: Retrieve project metadata
-        id: metadata
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          metadata-file-path: '.github/project.yml'
-          local-file: true
 
       - name: Gather versions
         id: versions
@@ -86,7 +77,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           group-id: io.quarkiverse.operatorsdk
           artifact-id: quarkus-operator-sdk-bom
-          version: ${{steps.metadata.outputs.current-version}}
+          version: ${{github.event.inputs.tag || github.ref_name}}
           initial-delay: 10
           poll-delay: 2
           poll-iterations: 4
@@ -98,7 +89,7 @@ jobs:
     uses: ./.github/workflows/release-update-quarkus-platform.yml
     if: "${{ needs.prepare-platform-pr.outputs.released }}"
     with:
-      qosdk-version: ${{needs.prepare-platform-pr.outputs.qosdk-version}}
+      qosdk-version: ${{github.event.inputs.tag || github.ref_name}}
       quarkus-platform-branch: ${{needs.prepare-platform-pr.outputs.quarkus-platform-branch}}
       needs-main-pr: ${{ needs.prepare-platform-pr.outputs.needs-quarkus-platform-main-pr == 'true' }}
     secrets:
