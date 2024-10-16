@@ -96,6 +96,17 @@
         <module>samples</module>
       </modules>
     </profile>
+  <profile>
+      <id>no-samples-in-release</id>
+      <activation>
+        <property>
+          <name>!performRelease</name>
+        </property>
+      </activation>
+      <modules>
+        <module>samples</module>
+      </modules>
+    </profile>
     <profile>
       <id>no-docs</id>
       <activation>
