@@ -5,6 +5,7 @@ import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -42,6 +43,7 @@ import io.quarkus.gizmo.AssignableResultHandle;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
+import io.quarkus.info.deployment.spi.InfoBuildTimeValuesBuildItem;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.metrics.MetricsFactory;
 
@@ -95,6 +97,15 @@ class OperatorSDKProcessor {
         // register DefaultRateLimiter so that it can properly be configured via RateLimited annotation as expected
         additionalIndexedClasses.produce(
                 new AdditionalIndexedClassesBuildItem(QuarkusControllerConfiguration.DefaultRateLimiter.class.getName()));
+    }
+
+    @BuildStep
+    void addInfo(VersionBuildItem versionBuildItem, BuildProducer<InfoBuildTimeValuesBuildItem> infoContributor) {
+        final var version = versionBuildItem.getVersion();
+        infoContributor.produce(new InfoBuildTimeValuesBuildItem("Quarkus Operator SDK", Map.of(
+                "Java Operator SDK version", version.getSdkCompleteVersion(),
+                "Quarkus Operator SDK version", version.getExtensionCompleteVersion(),
+                "Fabric8 effective version", version.getRuntimeFabric8Version())));
     }
 
     @BuildStep(onlyIf = IsDevelopment.class)
