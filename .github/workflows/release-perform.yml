@@ -46,6 +46,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{github.event.inputs.tag || github.ref_name}}
 
       - name: Gather versions
         id: versions
