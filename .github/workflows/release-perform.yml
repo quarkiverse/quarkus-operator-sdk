@@ -36,6 +36,8 @@ jobs:
   prepare-platform-pr:
     name: Prepare Platform Update
     runs-on: ubuntu-latest
+    needs:
+      - perform-release
 
     outputs:
       released: ${{steps.wait-for-bom.outputs.published}}
