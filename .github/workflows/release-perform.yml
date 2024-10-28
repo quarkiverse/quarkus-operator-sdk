@@ -9,6 +9,11 @@ on:
       tag:
         description: 'Tag to release'
         required: true
+      dry_run:
+        description: 'Dry run the release'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   attestations: write
@@ -26,6 +31,7 @@ jobs:
     secrets: inherit
     with:
       version: ${{github.event.inputs.tag || github.ref_name}}
+      dry_run: ${{ inputs.dry-run }}
 
   prepare-platform-pr:
     name: Prepare Platform Update
@@ -73,6 +79,7 @@ jobs:
       - name: Wait for QOSDK BOM to be published
         uses: quarkusio/monitor-artifact-publication-action@main
         id: wait-for-bom
+        if: ${{ !inputs.dry-run }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           group-id: io.quarkiverse.operatorsdk
@@ -87,7 +94,7 @@ jobs:
     needs:
       - prepare-platform-pr
     uses: ./.github/workflows/release-update-quarkus-platform.yml
-    if: "${{ needs.prepare-platform-pr.outputs.released }}"
+    if: "${{ needs.prepare-platform-pr.outputs.released && !inputs.dry_run }}"
     with:
       qosdk-version: ${{github.event.inputs.tag || github.ref_name}}
       quarkus-platform-branch: ${{needs.prepare-platform-pr.outputs.quarkus-platform-branch}}
