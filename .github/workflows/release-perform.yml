@@ -81,7 +81,7 @@ jobs:
       - name: Wait for QOSDK BOM to be published
         uses: quarkusio/monitor-artifact-publication-action@main
         id: wait-for-bom
-        if: ${{ !inputs.dry_run }}
+        if: ${{ inputs.dry_run == 'false'}}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           group-id: io.quarkiverse.operatorsdk
@@ -96,7 +96,7 @@ jobs:
     needs:
       - prepare-platform-pr
     uses: ./.github/workflows/release-update-quarkus-platform.yml
-    if: "${{ needs.prepare-platform-pr.outputs.released && !inputs.dry_run }}"
+    if: "${{ needs.prepare-platform-pr.outputs.released && inputs.dry_run == 'false' }}"
     with:
       qosdk-version: ${{github.event.inputs.tag || github.ref_name}}
       quarkus-platform-branch: ${{needs.prepare-platform-pr.outputs.quarkus-platform-branch}}
