@@ -1,0 +1,96 @@
+name: Quarkiverse Perform Release
+run-name: Perform ${{github.event.inputs.tag || github.ref_name}} Release
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release'
+        required: true
+
+permissions:
+  attestations: write
+  id-token: write
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  perform-release:
+    name: Perform Release
+    uses: quarkiverse/.github/.github/workflows/perform-release.yml@main
+    secrets: inherit
+    with:
+      version: ${{github.event.inputs.tag || github.ref_name}}
+
+  prepare-platform-pr:
+    name: Prepare Platform Update
+    runs-on: ubuntu-latest
+
+    outputs:
+      released: ${{steps.wait-for-bom.outputs.published}}
+      quarkus-platform-branch: ${{steps.versions.outputs.quarkus_platform_branch}}
+      needs-main-pr: ${{ steps.versions.outputs.needs_main_pr == 'true' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gather versions
+        id: versions
+        run: |
+          echo "quarkus_version=$(./mvnw help:evaluate -Dexpression=quarkus.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+          quarkus_major=$(echo ${quarkus_version} | cut -d . -f 1,2)
+          echo "QOSDK-defined Quarkus major version: ${quarkus_major}"
+          
+          quarkus_platform_version=$(curl -s https://registry.quarkus.io/client/platforms | jq -r '.platforms[0]."current-stream-id"')
+          echo "Current platform-defined Quarkus major version: ${quarkus_platform_version}"
+          
+          quarkus_platform_branch=main
+          if [ "${quarkus_major}" = "${quarkus_platform_version}" ]; then
+            quarkus_platform_branch="${quarkus_platform_version}"
+          fi
+          echo "quarkus_platform_branch=${quarkus_platform_branch}" >> $GITHUB_OUTPUT
+          
+          if [ "${quarkus_platform_branch}" = "main" ]; then
+            echo "quarkus-platform update will target main"
+            echo "need_main_pr=true" >> $GITHUB_OUTPUT
+          else
+            echo "quarkus-platform update will target ${quarkus_platform_branch}"
+            echo "Check if quarkus-platform also needs to be updated on main"
+            if [ "${{ github.base_ref }}" = "main" ]; then
+              echo "PR targets main so assume quarkus-platform main also needs to be updated"
+              echo "need_main_pr=true" >> $GITHUB_OUTPUT
+            else
+              echo "No need for PR on quarkus-platform main"
+              echo "need_main_pr=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Wait for QOSDK BOM to be published
+        uses: quarkusio/monitor-artifact-publication-action@main
+        id: wait-for-bom
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          group-id: io.quarkiverse.operatorsdk
+          artifact-id: quarkus-operator-sdk-bom
+          version: ${{github.event.inputs.tag || github.ref_name}}
+          initial-delay: 10
+          poll-delay: 2
+          poll-iterations: 4
+          post-delay: 5
+
+  update-quarkus-platform:
+    needs:
+      - prepare-platform-pr
+    uses: ./.github/workflows/release-update-quarkus-platform.yml
+    if: "${{ needs.prepare-platform-pr.outputs.released }}"
+    with:
+      qosdk-version: ${{github.event.inputs.tag || github.ref_name}}
+      quarkus-platform-branch: ${{needs.prepare-platform-pr.outputs.quarkus-platform-branch}}
+      needs-main-pr: ${{ needs.prepare-platform-pr.outputs.needs-quarkus-platform-main-pr == 'true' }}
+    secrets:
+      qosdk-bot-token: ${{ secrets.QOSDK_BOT_TOKEN }}
