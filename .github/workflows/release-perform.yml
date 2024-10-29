@@ -9,6 +9,10 @@ on:
       tag:
         description: 'Tag to release'
         required: true
+      ref:
+        description: 'Branch or tag to deploy'
+        type: string
+        required: false
       dry_run:
         description: 'Dry run the release'
         required: false
@@ -47,7 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{github.ref}}
+          ref: ${{inputs.ref || github.ref}}
 
       - name: Gather versions
         id: versions
