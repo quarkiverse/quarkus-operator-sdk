@@ -95,7 +95,7 @@ public class BundleProcessor {
         ClassUtils.getKnownReconcilers(index, log)
                 .forEach(reconcilerInfo -> {
                     // figure out which group should be used to generate CSV
-                    final var name = reconcilerInfo.name();
+                    final var name = reconcilerInfo.nameOrFailIfUnset();
                     log.debugv("Processing reconciler: {0}", name);
 
                     // Check whether the reconciler must be shipped using a custom bundle
