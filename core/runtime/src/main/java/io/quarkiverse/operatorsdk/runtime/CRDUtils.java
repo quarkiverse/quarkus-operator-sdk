@@ -31,7 +31,7 @@ public final class CRDUtils {
                 }
             });
         } catch (Exception exception) {
-            LOGGER.debugv(exception, "Couldn't apply ''{0}'' CRD", crdName);
+            LOGGER.warnv(exception, "Couldn't apply ''{0}'' CRD", crdName);
         }
     }
 
@@ -61,13 +61,10 @@ public final class CRDUtils {
     }
 
     private static Class<?> getCRDClassFor(String v) {
-        switch (v) {
-            case "v1":
-                return CustomResourceDefinition.class;
-            case "v1beta1":
-                return io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition.class;
-            default:
-                throw new IllegalArgumentException("Unknown CRD version: " + v);
-        }
+        return switch (v) {
+            case "v1" -> CustomResourceDefinition.class;
+            case "v1beta1" -> io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition.class;
+            default -> throw new IllegalArgumentException("Unknown CRD version: " + v);
+        };
     }
 }
