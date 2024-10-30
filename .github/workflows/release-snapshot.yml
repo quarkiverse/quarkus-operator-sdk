@@ -37,6 +37,8 @@ concurrency:
 jobs:
   prepare-version:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{steps.snapshot-version.outputs.version}}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -49,16 +51,22 @@ jobs:
           cache: 'maven'
 
       - name: Retrieve and export project version
+        id: project-version
         run: |
           version=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "Project version: ${version}"
           echo "version=${version}" >> $GITHUB_OUTPUT
           
       - name: Override project version if requested
-        if: ${{ inputs.version != '' }}
+        id: snapshot-version
         run: |
-          echo "Version override requested: ${{inputs.version}}"
-          echo "version=${{inputs.version}}" >> $GITHUB_OUTPUT
+          if [ -z "${{inputs.version}}" ]; 
+          then 
+            echo "version=${{steps.project-version.outputs.version}}" >> $GITHUB_OUTPUT
+          else
+            echo "Version override requested: ${{inputs.version}}"
+            echo "version=${{inputs.version}}" >> $GITHUB_OUTPUT
+          fi
 
   deploy-snapshot:
     name: Deploy Snapshots
