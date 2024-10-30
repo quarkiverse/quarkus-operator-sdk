@@ -10,7 +10,7 @@ defaults:
 
 jobs:
   release-snapshot:
-    uses: ./.github/workflows/release-snapshot.yml
+    uses: release-snapshot-old.yml
     with:
       branch: "${{github.ref}}"
     secrets:
