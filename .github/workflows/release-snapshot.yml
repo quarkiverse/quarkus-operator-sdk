@@ -1,6 +1,16 @@
-name: Release snapshot
+name: Deploy Snapshot
 
 on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        type: string
+        required: false
+        default: 'main'
+      version:
+        type: string
+        required: false
+
   workflow_call:
     inputs:
       branch:
@@ -10,28 +20,23 @@ on:
       version:
         type: string
         required: false
-    secrets:
-      GPG_PRIVATE_KEY:
-        required: true
-      OSSRH_USERNAME:
-        required: true
-      OSSRH_TOKEN:
-        required: true
-      GPG_PASSPHRASE:
-        required: true
-
-concurrency:
-  group: "${{ github.workflow }}-${{ github.ref }}"
-  cancel-in-progress: true
 
 defaults:
   run:
     shell: bash
 
-jobs:
-  release-snapshot:
-    runs-on: ubuntu-latest
+permissions:
+  attestations: write
+  id-token: write
+  contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prepare-version:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -40,27 +45,27 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 17
+          java-version: 21
           cache: 'maven'
-          server-id: ossrh
-          server-username: MAVEN_USERNAME
-          server-password: MAVEN_PASSWORD
-          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
-          gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
-      - name: Change version to "${{inputs.version}}" if needed
+      - name: Retrieve and export project version
+        run: |
+          version=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "Project version: ${version}"
+          echo "version=${version}" >> $GITHUB_OUTPUT
+          
+      - name: Override project version if requested
         if: ${{ inputs.version != '' }}
         run: |
-          echo "Set version to ${{inputs.version}}"
-          ./mvnw versions:set -DnewVersion="${{inputs.version}}" versions:commit -Puse-snapshots
+          echo "Version override requested: ${{inputs.version}}"
+          echo "version=${{inputs.version}}" >> $GITHUB_OUTPUT
 
-      - name: Output information
-        run: echo "Release snapshot for branch ${{inputs.branch}} with version $(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)"
-
-      - name: Deploy maven snapshot
-        run: |
-          ./mvnw -B deploy -DperformRelease -Dno-samples -Dno-docs -Prelease,use-snapshots
-        env:
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+  deploy-snapshot:
+    name: Deploy Snapshots
+    uses: quarkiverse/.github/.github/workflows/perform-release.yml@main
+    secrets: inherit
+    needs:
+      - prepare-version
+    with:
+      ref: main
+      version: ${{needs.prepare-version.outputs.version}}
