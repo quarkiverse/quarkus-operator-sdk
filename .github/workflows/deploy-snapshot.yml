@@ -1,0 +1,71 @@
+name: Deploy Snapshot
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        type: string
+        required: false
+        default: 'main'
+      version:
+        type: string
+        required: false
+
+  workflow_call:
+    inputs:
+      branch:
+        type: string
+        required: false
+        default: 'main'
+      version:
+        type: string
+        required: false
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  attestations: write
+  id-token: write
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prepare-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: "${{inputs.branch}}"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 21
+          cache: 'maven'
+
+      - name: Retrieve and export project version
+        run: |
+          version=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "Project version: ${version}"
+          echo "version=${version}" >> $GITHUB_OUTPUT
+          
+      - name: Override project version if requested
+        if: ${{ inputs.version != '' }}
+        run: |
+          echo "Version override requested: ${{inputs.version}}"
+          echo "version=${{inputs.version}}" >> $GITHUB_OUTPUT
+
+  deploy-snapshot:
+    name: Deploy Snapshots
+    uses: quarkiverse/.github/.github/workflows/perform-release.yml@main
+    secrets: inherit
+    needs:
+      - prepare-version
+    with:
+      ref: main
+      version: ${{needs.prepare-version.outputs.version}}
