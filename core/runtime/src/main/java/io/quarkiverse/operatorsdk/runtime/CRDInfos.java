@@ -26,10 +26,6 @@ public class CRDInfos {
         return infos;
     }
 
-    public void putAll(Map<String, Map<String, CRDInfo>> toAdd) {
-        infos.putAll(toAdd);
-    }
-
     public void addCRDInfoFor(String crdName, String version, CRDInfo crdInfo) {
         getCRDInfosFor(crdName).put(version, crdInfo);
     }
