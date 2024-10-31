@@ -29,7 +29,6 @@ class CRDGeneration {
     private final LaunchMode mode;
     private final CRDConfiguration crdConfiguration;
     private boolean needGeneration;
-    private final ResourceControllerMapping crMappings = new ResourceControllerMapping();
 
     public CRDGeneration(CRDConfiguration crdConfig, LaunchMode mode) {
         this.crdConfiguration = crdConfig;
@@ -87,13 +86,12 @@ class CRDGeneration {
                 log.infov("Generated {0} CRD:", crdName);
                 generated.add(crdName);
 
-                final var versions = crMappings.getResourceInfos(crdName);
                 initialVersionToCRDInfoMap
                         .forEach((version, crdInfo) -> {
                             final var filePath = crdInfo.getFilePath();
                             log.infov("  - {0} -> {1}", version, filePath);
                             converted.addCRDInfoFor(crdName, version, new CRDInfo(crdInfo.getCrdName(),
-                                    version, filePath, crdInfo.getDependentClassNames(), versions));
+                                    version, filePath, crdInfo.getDependentClassNames()));
                         });
             });
         }
@@ -156,7 +154,6 @@ class CRDGeneration {
                 generator = new CRDGenerator().withParallelGenerationEnabled(crdConfiguration.generateInParallel());
             }
             final var info = CustomResourceInfo.fromClass(crClass);
-            crMappings.add(info, associatedControllerName);
             generator.customResources(info);
             needGeneration = true;
         } catch (Exception e) {
