@@ -19,7 +19,7 @@ import io.quarkiverse.operatorsdk.common.FileUtils;
 import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
-import io.quarkiverse.operatorsdk.runtime.ContextStoredCRDInfos;
+import io.quarkiverse.operatorsdk.runtime.CRDInfos;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.runtime.LaunchMode;
 
@@ -66,9 +66,9 @@ class CRDGeneration {
      * @return a {@link CRDGenerationInfo} detailing information about the CRD generation
      */
     CRDGenerationInfo generate(OutputTargetBuildItem outputTarget,
-            boolean validateCustomResources, ContextStoredCRDInfos existing) {
+            boolean validateCustomResources, CRDInfos existing) {
         // initialize CRDInfo with existing data to always have a full view even if we don't generate anything
-        final var converted = new ContextStoredCRDInfos(existing);
+        final var converted = new CRDInfos(existing);
         // record which CRDs got generated so that we only apply the changed ones
         final var generated = new HashSet<String>();
 
