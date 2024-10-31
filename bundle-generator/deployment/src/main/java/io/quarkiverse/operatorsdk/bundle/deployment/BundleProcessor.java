@@ -32,11 +32,16 @@ import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
 import io.quarkiverse.operatorsdk.bundle.runtime.BundleConfiguration;
 import io.quarkiverse.operatorsdk.bundle.runtime.BundleGenerationConfiguration;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
-import io.quarkiverse.operatorsdk.common.*;
+import io.quarkiverse.operatorsdk.common.ClassUtils;
+import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
+import io.quarkiverse.operatorsdk.common.DeserializedKubernetesResourcesBuildItem;
+import io.quarkiverse.operatorsdk.common.ReconciledAugmentedClassInfo;
+import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.deployment.VersionBuildItem;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
+import io.quarkiverse.operatorsdk.runtime.CRDInfos;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
@@ -49,21 +54,80 @@ import io.quarkus.kubernetes.deployment.ResourceNameUtil;
 
 public class BundleProcessor {
 
+    public static final String CRD_DISPLAY_NAME = "CRD_DISPLAY_NAME";
+    public static final String CRD_DESCRIPTION = "CRD_DESCRIPTION";
     private static final Logger log = Logger.getLogger(BundleProcessor.class);
     private static final DotName SHARED_CSV_METADATA = DotName.createSimple(SharedCSVMetadata.class.getName());
     private static final DotName CSV_METADATA = DotName.createSimple(CSVMetadata.class.getName());
     private static final String BUNDLE = "bundle";
     private static final String DEFAULT_PROVIDER_NAME = System.getProperty("user.name");
-    public static final String CRD_DISPLAY_NAME = "CRD_DISPLAY_NAME";
-    public static final String CRD_DESCRIPTION = "CRD_DESCRIPTION";
 
-    private static class IsGenerationEnabled implements BooleanSupplier {
+    private static ReconcilerAugmentedClassInfo augmentReconcilerInfo(
+            ReconcilerAugmentedClassInfo reconcilerInfo) {
+        // if primary resource is a CR, check if it is annotated with CSVMetadata and augment it if it is
+        final ReconciledAugmentedClassInfo<?> primaryCI = reconcilerInfo.associatedResourceInfo();
+        augmentResourceInfoIfCR(primaryCI);
 
-        private BundleGenerationConfiguration config;
+        reconcilerInfo.getDependentResourceInfos().forEach(draci -> {
+            // if the dependent is a CR, check if it is annotated with CSVMetadata and augment it if it is
+            final ReconciledAugmentedClassInfo<?> reconciledAugmentedClassInfo = draci.associatedResourceInfo();
+            augmentResourceInfoIfCR(reconciledAugmentedClassInfo);
+        });
+        return reconcilerInfo;
+    }
 
-        @Override
-        public boolean getAsBoolean() {
-            return config.enabled();
+    private static void augmentResourceInfoIfCR(ReconciledAugmentedClassInfo<?> reconciledAugmentedClassInfo) {
+        if (reconciledAugmentedClassInfo.isCR()) {
+            final var csvMetadata = reconciledAugmentedClassInfo.classInfo().annotation(CSV_METADATA);
+            if (csvMetadata != null) {
+                // extract display name and description
+                final var displayName = ConfigurationUtils.annotationValueOrDefault(csvMetadata,
+                        "displayName", AnnotationValue::asString,
+                        () -> reconciledAugmentedClassInfo.asResourceTargeting().kind());
+                reconciledAugmentedClassInfo.setExtendedInfo(CRD_DISPLAY_NAME, displayName);
+                final var description = ConfigurationUtils.annotationValueOrDefault(
+                        csvMetadata,
+                        "description", AnnotationValue::asString,
+                        () -> null);
+                if (description != null) {
+                    reconciledAugmentedClassInfo.setExtendedInfo(CRD_DESCRIPTION, description);
+                }
+            }
+        }
+    }
+
+    private static String getBundleName(AnnotationInstance csvMetadata, String defaultName) {
+        if (csvMetadata == null) {
+            return defaultName;
+        } else {
+            final var bundleName = csvMetadata.value("bundleName");
+            if (bundleName != null) {
+                return bundleName.asString();
+            } else {
+                return Optional.ofNullable(csvMetadata.value("name"))
+                        .map(AnnotationValue::asString)
+                        .orElse(defaultName);
+            }
+        }
+    }
+
+    @BuildStep(onlyIf = IsGenerationEnabled.class)
+    UnownedCRDInfoBuildItem unownedCRDInfo(BundleGenerationConfiguration bundleConfiguration,
+            OutputTargetBuildItem outputTarget) {
+        final Optional<List<String>> maybeExternalCRDs = bundleConfiguration.externalCRDLocations();
+        if (maybeExternalCRDs.isPresent()) {
+            final var moduleRoot = outputTarget.getOutputDirectory().getParent();
+            final var crds = new CRDInfos();
+            maybeExternalCRDs.get().forEach(crdLocation -> {
+                /*
+                 * Path crdPath = toPath(crdLocation);
+                 * CustomResourceDefinition crd = loadFrom(crdPath);
+                 * new CRDInfo()
+                 */
+            });
+            return new UnownedCRDInfoBuildItem(crds);
+        } else {
+            return new UnownedCRDInfoBuildItem(new CRDInfos());
         }
     }
 
@@ -148,40 +212,6 @@ public class BundleProcessor {
                 });
 
         return new CSVMetadataBuildItem(csvGroups);
-    }
-
-    private static ReconcilerAugmentedClassInfo augmentReconcilerInfo(
-            ReconcilerAugmentedClassInfo reconcilerInfo) {
-        // if primary resource is a CR, check if it is annotated with CSVMetadata and augment it if it is
-        final ReconciledAugmentedClassInfo<?> primaryCI = reconcilerInfo.associatedResourceInfo();
-        augmentResourceInfoIfCR(primaryCI);
-
-        reconcilerInfo.getDependentResourceInfos().forEach(draci -> {
-            // if the dependent is a CR, check if it is annotated with CSVMetadata and augment it if it is
-            final ReconciledAugmentedClassInfo<?> reconciledAugmentedClassInfo = draci.associatedResourceInfo();
-            augmentResourceInfoIfCR(reconciledAugmentedClassInfo);
-        });
-        return reconcilerInfo;
-    }
-
-    private static void augmentResourceInfoIfCR(ReconciledAugmentedClassInfo<?> reconciledAugmentedClassInfo) {
-        if (reconciledAugmentedClassInfo.isCR()) {
-            final var csvMetadata = reconciledAugmentedClassInfo.classInfo().annotation(CSV_METADATA);
-            if (csvMetadata != null) {
-                // extract display name and description
-                final var displayName = ConfigurationUtils.annotationValueOrDefault(csvMetadata,
-                        "displayName", AnnotationValue::asString,
-                        () -> reconciledAugmentedClassInfo.asResourceTargeting().kind());
-                reconciledAugmentedClassInfo.setExtendedInfo(CRD_DISPLAY_NAME, displayName);
-                final var description = ConfigurationUtils.annotationValueOrDefault(
-                        csvMetadata,
-                        "description", AnnotationValue::asString,
-                        () -> null);
-                if (description != null) {
-                    reconciledAugmentedClassInfo.setExtendedInfo(CRD_DESCRIPTION, description);
-                }
-            }
-        }
     }
 
     private String getMetadataOriginInformation(AnnotationInstance csvMetadataAnnotation, boolean isNameInferred,
@@ -301,21 +331,6 @@ public class BundleProcessor {
             }
         });
         return result;
-    }
-
-    private static String getBundleName(AnnotationInstance csvMetadata, String defaultName) {
-        if (csvMetadata == null) {
-            return defaultName;
-        } else {
-            final var bundleName = csvMetadata.value("bundleName");
-            if (bundleName != null) {
-                return bundleName.asString();
-            } else {
-                return Optional.ofNullable(csvMetadata.value("name"))
-                        .map(AnnotationValue::asString)
-                        .orElse(defaultName);
-            }
-        }
     }
 
     private CSVMetadataHolder createMetadataHolder(AnnotationInstance csvMetadata, CSVMetadataHolder mh,
@@ -503,5 +518,15 @@ public class BundleProcessor {
                 permissionRules,
                 requiredCRDs,
                 origin);
+    }
+
+    private static class IsGenerationEnabled implements BooleanSupplier {
+
+        private BundleGenerationConfiguration config;
+
+        @Override
+        public boolean getAsBoolean() {
+            return config.enabled();
+        }
     }
 }
