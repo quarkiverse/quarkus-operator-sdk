@@ -11,5 +11,6 @@ defaults:
 jobs:
   release-snapshot:
     uses: ./.github/workflows/release-snapshot.yml
+    secrets: inherit    
     with:
       branch: "${{github.ref}}"
