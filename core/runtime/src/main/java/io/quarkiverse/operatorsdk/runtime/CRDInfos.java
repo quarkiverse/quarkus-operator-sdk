@@ -3,18 +3,18 @@ package io.quarkiverse.operatorsdk.runtime;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ContextStoredCRDInfos {
+public class CRDInfos {
     private final Map<String, Map<String, CRDInfo>> infos;
 
-    public ContextStoredCRDInfos() {
+    public CRDInfos() {
         this(new HashMap<>());
     }
 
-    public ContextStoredCRDInfos(ContextStoredCRDInfos other) {
+    public CRDInfos(CRDInfos other) {
         this(new HashMap<>(other.infos));
     }
 
-    private ContextStoredCRDInfos(Map<String, Map<String, CRDInfo>> infos) {
+    private CRDInfos(Map<String, Map<String, CRDInfo>> infos) {
         this.infos = infos;
     }
 

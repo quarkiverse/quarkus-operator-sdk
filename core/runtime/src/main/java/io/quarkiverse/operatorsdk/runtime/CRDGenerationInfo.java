@@ -9,11 +9,11 @@ import io.quarkus.runtime.annotations.RecordableConstructor;
 public class CRDGenerationInfo {
     private final boolean applyCRDs;
     private final boolean validateCRDs;
-    private final ContextStoredCRDInfos crds;
+    private final CRDInfos crds;
     private final Set<String> generated;
 
     @RecordableConstructor // constructor needs to be recordable for the class to be passed around by Quarkus
-    public CRDGenerationInfo(boolean applyCRDs, boolean validateCRDs, ContextStoredCRDInfos crds,
+    public CRDGenerationInfo(boolean applyCRDs, boolean validateCRDs, CRDInfos crds,
             Set<String> generated) {
         this.applyCRDs = applyCRDs;
         this.validateCRDs = validateCRDs;
@@ -22,7 +22,7 @@ public class CRDGenerationInfo {
     }
 
     // Needed by Quarkus: if this method isn't present, state is not properly set
-    public ContextStoredCRDInfos getCrds() {
+    public CRDInfos getCrds() {
         return crds;
     }
 
