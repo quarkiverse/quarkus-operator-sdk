@@ -4,7 +4,6 @@ import static io.quarkus.kubernetes.deployment.Constants.KUBERNETES;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -20,6 +19,7 @@ import io.quarkiverse.operatorsdk.common.FileUtils;
 import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
+import io.quarkiverse.operatorsdk.runtime.ContextStoredCRDInfos;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.runtime.LaunchMode;
 
@@ -66,9 +66,9 @@ class CRDGeneration {
      * @return a {@link CRDGenerationInfo} detailing information about the CRD generation
      */
     CRDGenerationInfo generate(OutputTargetBuildItem outputTarget,
-            boolean validateCustomResources, Map<String, Map<String, CRDInfo>> existing) {
+            boolean validateCustomResources, ContextStoredCRDInfos existing) {
         // initialize CRDInfo with existing data to always have a full view even if we don't generate anything
-        final var converted = new HashMap<>(existing);
+        final var converted = new ContextStoredCRDInfos(existing);
         // record which CRDs got generated so that we only apply the changed ones
         final var generated = new HashSet<String>();
 
@@ -88,12 +88,11 @@ class CRDGeneration {
                 generated.add(crdName);
 
                 final var versions = crMappings.getResourceInfos(crdName);
-                final var versionToCRDInfo = converted.computeIfAbsent(crdName, s -> new HashMap<>());
                 initialVersionToCRDInfoMap
                         .forEach((version, crdInfo) -> {
                             final var filePath = crdInfo.getFilePath();
                             log.infov("  - {0} -> {1}", version, filePath);
-                            versionToCRDInfo.put(version, new CRDInfo(crdInfo.getCrdName(),
+                            converted.addCRDInfoFor(crdName, version, new CRDInfo(crdInfo.getCrdName(),
                                     version, filePath, crdInfo.getDependentClassNames(), versions));
                         });
             });

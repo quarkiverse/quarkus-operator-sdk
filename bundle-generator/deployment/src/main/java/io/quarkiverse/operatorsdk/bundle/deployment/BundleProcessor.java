@@ -209,7 +209,8 @@ public class BundleProcessor {
             GeneratedCRDInfoBuildItem generatedCustomResourcesDefinitions,
             @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<DeserializedKubernetesResourcesBuildItem> maybeGeneratedKubeResources,
             BuildProducer<GeneratedFileSystemResourceBuildItem> generatedCSVs) {
-        final var crds = generatedCustomResourcesDefinitions.getCRDGenerationInfo().getCrds()
+        // todo: encapsulate this in ContextStoredCRDInfos
+        final var crds = generatedCustomResourcesDefinitions.getCRDGenerationInfo().getCrds().getExisting()
                 .values().stream()
                 .flatMap(entry -> entry.values().stream())
                 .collect(Collectors.toMap(CRDInfo::getCrdName, Function.identity()));
