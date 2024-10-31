@@ -10,7 +10,7 @@ import io.quarkiverse.operatorsdk.common.*;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
-import io.quarkiverse.operatorsdk.runtime.ContextStoredCRDInfos;
+import io.quarkiverse.operatorsdk.runtime.CRDInfos;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.LaunchModeBuildItem;
@@ -37,9 +37,9 @@ class CRDGenerationBuildStep {
         final var crdGeneration = new CRDGeneration(crdConfig, launchMode);
 
         // retrieve the known CRD information to make sure we always have a full view
-        var stored = liveReload.getContextObject(ContextStoredCRDInfos.class);
+        var stored = liveReload.getContextObject(CRDInfos.class);
         if (stored == null) {
-            stored = new ContextStoredCRDInfos();
+            stored = new CRDInfos();
         }
 
         final var generate = CRDGeneration.shouldGenerate(crdConfig.generate(), crdConfig.apply(), launchMode);
@@ -91,7 +91,7 @@ class CRDGenerationBuildStep {
         CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, validateCustomResources, storedCRDInfos);
 
         // record CRD generation info in context for future use
-        liveReload.setContextObject(ContextStoredCRDInfos.class, storedCRDInfos);
+        liveReload.setContextObject(CRDInfos.class, storedCRDInfos);
 
         return new GeneratedCRDInfoBuildItem(crdInfo);
     }
