@@ -10,6 +10,7 @@ import io.quarkiverse.operatorsdk.common.*;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
+import io.quarkiverse.operatorsdk.runtime.ContextStoredCRDInfos;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.LaunchModeBuildItem;
@@ -87,11 +88,9 @@ class CRDGenerationBuildStep {
         }
 
         // perform "generation" even if not requested to ensure we always produce the needed build item for other steps
-        CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, validateCustomResources, storedCRDInfos.getExisting());
+        CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, validateCustomResources, storedCRDInfos);
 
         // record CRD generation info in context for future use
-        Map<String, Map<String, CRDInfo>> generatedCRDs = crdInfo.getCrds();
-        storedCRDInfos.putAll(generatedCRDs);
         liveReload.setContextObject(ContextStoredCRDInfos.class, storedCRDInfos);
 
         return new GeneratedCRDInfoBuildItem(crdInfo);

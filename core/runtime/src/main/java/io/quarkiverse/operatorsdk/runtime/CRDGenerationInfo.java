@@ -1,6 +1,5 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -10,20 +9,20 @@ import io.quarkus.runtime.annotations.RecordableConstructor;
 public class CRDGenerationInfo {
     private final boolean applyCRDs;
     private final boolean validateCRDs;
-    private final Map<String, Map<String, CRDInfo>> crds;
+    private final ContextStoredCRDInfos crds;
     private final Set<String> generated;
 
     @RecordableConstructor // constructor needs to be recordable for the class to be passed around by Quarkus
-    public CRDGenerationInfo(boolean applyCRDs, boolean validateCRDs, Map<String, Map<String, CRDInfo>> crds,
+    public CRDGenerationInfo(boolean applyCRDs, boolean validateCRDs, ContextStoredCRDInfos crds,
             Set<String> generated) {
         this.applyCRDs = applyCRDs;
         this.validateCRDs = validateCRDs;
-        this.crds = Collections.unmodifiableMap(crds);
+        this.crds = crds;
         this.generated = generated;
     }
 
     // Needed by Quarkus: if this method isn't present, state is not properly set
-    public Map<String, Map<String, CRDInfo>> getCrds() {
+    public ContextStoredCRDInfos getCrds() {
         return crds;
     }
 
@@ -43,7 +42,7 @@ public class CRDGenerationInfo {
 
     @IgnoreProperty
     public Map<String, CRDInfo> getCRDInfosFor(String crdName) {
-        return crds.get(crdName);
+        return crds.getCRDInfosFor(crdName);
     }
 
     public boolean isValidateCRDs() {
