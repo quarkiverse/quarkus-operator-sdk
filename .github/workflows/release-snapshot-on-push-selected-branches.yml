@@ -11,10 +11,6 @@ defaults:
 jobs:
   release-snapshot:
     uses: ./.github/workflows/release-snapshot.yml
+    secrets: inherit
     with:
       branch: "${{github.ref}}"
-    secrets:
-      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-      OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-      OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
-      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
