@@ -239,7 +239,8 @@ public class HelmChartProcessor {
     @BuildStep
     @Produce(ArtifactResultBuildItem.class)
     private void addCRDs(HelmTargetDirectoryBuildItem helmDirBI, GeneratedCRDInfoBuildItem generatedCRDInfoBuildItem) {
-        var crdInfos = generatedCRDInfoBuildItem.getCRDGenerationInfo().getCrds().values().stream()
+        // todo: encapsulate this in ContextStoredCRDInfos
+        var crdInfos = generatedCRDInfoBuildItem.getCRDGenerationInfo().getCrds().getExisting().values().stream()
                 .flatMap(m -> m.values().stream())
                 .toList();
 
