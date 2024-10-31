@@ -1,25 +1,21 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import java.util.Map;
 import java.util.Set;
 
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
 public class CRDInfo {
-    private final Map<String, ResourceInfo> versions;
     private final String crdName;
     private final String crdSpecVersion;
     private final String filePath;
     private final Set<String> dependentClassNames;
 
     @RecordableConstructor // constructor needs to be recordable for the class to be passed around by Quarkus
-    public CRDInfo(String crdName, String crdSpecVersion, String filePath, Set<String> dependentClassNames,
-            Map<String, ResourceInfo> versions) {
+    public CRDInfo(String crdName, String crdSpecVersion, String filePath, Set<String> dependentClassNames) {
         this.crdName = crdName;
         this.crdSpecVersion = crdSpecVersion;
         this.filePath = filePath;
         this.dependentClassNames = dependentClassNames;
-        this.versions = versions;
     }
 
     public String getCrdName() {
@@ -37,9 +33,4 @@ public class CRDInfo {
     public Set<String> getDependentClassNames() {
         return this.dependentClassNames;
     }
-
-    public Map<String, ResourceInfo> getVersions() {
-        return versions;
-    }
-
 }
