@@ -36,10 +36,6 @@ public class CRDGenerationInfo {
         return applyCRDs;
     }
 
-    public boolean shouldApplyCRD(String name) {
-        return generated.contains(name);
-    }
-
     @IgnoreProperty
     public Map<String, CRDInfo> getCRDInfosFor(String crdName) {
         return crds.getCRDInfosFor(crdName);
