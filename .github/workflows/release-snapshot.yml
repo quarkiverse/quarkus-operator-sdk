@@ -7,9 +7,11 @@ on:
         type: string
         required: false
         default: 'main'
+        description: 'The branch from which the snapshot should be built'
       version:
         type: string
         required: false
+        description: 'The desired snapshot version'
 
   workflow_call:
     inputs:
