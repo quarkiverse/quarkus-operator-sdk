@@ -98,11 +98,11 @@ public class MultipleOperatorsBundleTest {
         assertEquals(Third.DISPLAY, thirdCRD.getDisplayName());
         assertEquals(Third.DESCRIPTION, thirdCRD.getDescription());
         // CRDs should be alphabetically ordered
-        final var externalCRD = crds.getRequired().get(0);
+        final var externalCRD = crds.getRequired().get(1);
         assertEquals(HasMetadata.getFullResourceName(External.class), externalCRD.getName());
         assertEquals(External.DISPLAY_NAME, externalCRD.getDisplayName());
         assertEquals(External.DESCRIPTION, externalCRD.getDescription());
-        assertEquals(HasMetadata.getFullResourceName(SecondExternal.class), crds.getRequired().get(1).getName());
+        assertEquals(HasMetadata.getFullResourceName(SecondExternal.class), crds.getRequired().get(0).getName());
         // should list native APIs as well
         final var spec = csv.getSpec();
         final var nativeAPIs = spec.getNativeAPIs();
