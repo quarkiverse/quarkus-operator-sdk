@@ -67,6 +67,11 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     private static final Logger LOGGER = Logger.getLogger(CsvManifestsBuilder.class.getName());
     private static final String IMAGE_PNG = "image/png";
     public static final String OLM_TARGET_NAMESPACES = "metadata.annotations['olm.targetNamespaces']";
+    private static final Comparator<String> nullsFirst = Comparator.nullsFirst(String::compareTo);
+    private static final Comparator<GroupVersionKind> gvkComparator = comparing(GroupVersionKind::getGroup, nullsFirst)
+            .thenComparing(GroupVersionKind::getKind, nullsFirst)
+            .thenComparing(GroupVersionKind::getVersion, nullsFirst);
+    private static final Comparator<CRDDescription> crdDescriptionComparator = comparing(CRDDescription::getName, nullsFirst);
     private ClusterServiceVersionBuilder csvBuilder;
     private final Set<CRDDescription> ownedCRs = new HashSet<>();
     private final Set<CRDDescription> requiredCRs = new HashSet<>();
@@ -225,17 +230,14 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         }
 
         // add sorted native APIs
-        final var nullsFirst = Comparator.nullsFirst(String::compareTo);
         csvSpecBuilder.addAllToNativeAPIs(nativeApis.stream()
                 .distinct()
-                .sorted(comparing(GroupVersionKind::getGroup, nullsFirst)
-                        .thenComparing(comparing(GroupVersionKind::getKind, nullsFirst))
-                        .thenComparing(comparing(GroupVersionKind::getVersion, nullsFirst)))
+                .sorted(gvkComparator)
                 .toList());
 
         csvSpecBuilder.editOrNewCustomresourcedefinitions()
-                .addAllToOwned(ownedCRs)
-                .addAllToRequired(requiredCRs)
+                .addAllToOwned(ownedCRs.stream().sorted(crdDescriptionComparator).toList())
+                .addAllToRequired(requiredCRs.stream().sorted(crdDescriptionComparator).toList())
                 .endCustomresourcedefinitions()
                 .endSpec();
     }
