@@ -62,7 +62,7 @@ class CRDGenerationBuildStep {
                         // When we have a live reload, check if we need to regenerate the associated CRD
                         Map<String, CRDInfo> crdInfos = Collections.emptyMap();
                         if (liveReload.isLiveReload()) {
-                            crdInfos = storedCRDInfos.getCRDInfosFor(crId);
+                            crdInfos = storedCRDInfos.getOrCreateCRDSpecVersionToInfoMapping(crId);
                         }
 
                         // schedule the generation of associated primary resource CRD if required

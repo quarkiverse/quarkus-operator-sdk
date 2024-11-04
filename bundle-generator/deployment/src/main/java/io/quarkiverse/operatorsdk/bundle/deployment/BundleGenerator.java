@@ -14,6 +14,7 @@ import io.quarkiverse.operatorsdk.bundle.runtime.BundleGenerationConfiguration;
 import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder;
 import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
+import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
 import io.quarkiverse.operatorsdk.runtime.Version;
 import io.quarkus.container.util.PathsUtil;
@@ -48,14 +49,16 @@ public class BundleGenerator {
 
     public static List<ManifestsBuilder> prepareGeneration(BundleGenerationConfiguration bundleConfiguration,
             BuildTimeOperatorConfiguration operatorConfiguration, Version version,
-            Map<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>> csvGroups, Map<String, CRDInfo> crds,
+            Map<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>> csvGroups, CRDGenerationInfo crds,
             Path outputDirectory, String deploymentName) {
         List<ManifestsBuilder> builders = new ArrayList<>();
+        final var mainSourcesRoot = PathsUtil.findMainSourcesRoot(outputDirectory);
+        final var crdNameToInfoMappings = crds.getCrds().getCRDNameToInfoMappings();
+
         for (Map.Entry<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>> entry : csvGroups.entrySet()) {
             final var csvMetadata = entry.getKey();
             final var labels = generateBundleLabels(csvMetadata, bundleConfiguration, version);
 
-            final var mainSourcesRoot = PathsUtil.findMainSourcesRoot(outputDirectory);
             final var csvBuilder = new CsvManifestsBuilder(csvMetadata, operatorConfiguration, entry.getValue(),
                     mainSourcesRoot != null ? mainSourcesRoot.getKey() : null, deploymentName);
             builders.add(csvBuilder);
@@ -63,13 +66,13 @@ public class BundleGenerator {
             builders.add(new BundleDockerfileManifestsBuilder(csvMetadata, labels));
 
             // output owned CRDs in the manifest, fail if we're missing some
-            var missing = addCRDManifestBuilder(crds, builders, csvMetadata, csvBuilder.getOwnedCRs());
+            var missing = addCRDManifestBuilder(crdNameToInfoMappings, builders, csvMetadata, csvBuilder.getOwnedCRs());
             if (!missing.isEmpty()) {
                 throw new IllegalStateException(
                         "Missing owned CRD data for resources: " + missing + " for bundle: " + csvMetadata.bundleName);
             }
             // output required CRDs in the manifest, output a warning in case we're missing some
-            missing = addCRDManifestBuilder(crds, builders, csvMetadata, csvBuilder.getRequiredCRs());
+            missing = addCRDManifestBuilder(crdNameToInfoMappings, builders, csvMetadata, csvBuilder.getRequiredCRs());
             if (!missing.isEmpty()) {
                 log.warnv("Missing required CRD data for resources: {0} for bundle: {1}", missing, csvMetadata.bundleName);
             }
