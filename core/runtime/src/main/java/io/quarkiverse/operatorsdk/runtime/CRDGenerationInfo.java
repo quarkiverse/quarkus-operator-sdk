@@ -38,7 +38,7 @@ public class CRDGenerationInfo {
 
     @IgnoreProperty
     public Map<String, CRDInfo> getCRDInfosFor(String crdName) {
-        return crds.getCRDInfosFor(crdName);
+        return crds.getOrCreateCRDSpecVersionToInfoMapping(crdName);
     }
 
     public boolean isValidateCRDs() {
