@@ -12,8 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
@@ -40,7 +38,6 @@ import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.deployment.VersionBuildItem;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
-import io.quarkiverse.operatorsdk.runtime.CRDInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDInfos;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -239,11 +236,6 @@ public class BundleProcessor {
             GeneratedCRDInfoBuildItem generatedCustomResourcesDefinitions,
             @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<DeserializedKubernetesResourcesBuildItem> maybeGeneratedKubeResources,
             BuildProducer<GeneratedFileSystemResourceBuildItem> generatedCSVs) {
-        // todo: encapsulate this in ContextStoredCRDInfos
-        final var crds = generatedCustomResourcesDefinitions.getCRDGenerationInfo().getCrds().getExisting()
-                .values().stream()
-                .flatMap(entry -> entry.values().stream())
-                .collect(Collectors.toMap(CRDInfo::getCrdName, Function.identity()));
         final var outputDir = outputTarget.getOutputDirectory().resolve(BUNDLE);
         final var serviceAccounts = new LinkedList<ServiceAccount>();
         final var clusterRoleBindings = new LinkedList<ClusterRoleBinding>();
@@ -289,7 +281,8 @@ public class BundleProcessor {
         final var deploymentName = ResourceNameUtil.getResourceName(kubernetesConfig, configuration);
         final var generated = BundleGenerator.prepareGeneration(bundleConfiguration, operatorConfiguration,
                 versionBuildItem.getVersion(),
-                csvMetadata.getCsvGroups(), crds, outputTarget.getOutputDirectory(), deploymentName);
+                csvMetadata.getCsvGroups(), generatedCustomResourcesDefinitions.getCRDGenerationInfo(),
+                outputTarget.getOutputDirectory(), deploymentName);
         generated.forEach(manifestBuilder -> {
             final var fileName = manifestBuilder.getFileName();
             try {
