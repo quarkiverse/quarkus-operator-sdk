@@ -20,10 +20,9 @@ import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 class CRDGenerationBuildStep {
     static final Logger log = Logger.getLogger(CRDGenerationBuildStep.class.getName());
 
-    private BuildTimeOperatorConfiguration operatorConfiguration;
-
     @BuildStep
     GeneratedCRDInfoBuildItem generateCRDs(
+            BuildTimeOperatorConfiguration operatorConfiguration,
             ReconcilerInfosBuildItem reconcilers,
             LaunchModeBuildItem launchModeBuildItem,
             LiveReloadBuildItem liveReload,
