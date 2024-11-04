@@ -16,6 +16,7 @@ import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
+import io.quarkiverse.operatorsdk.runtime.CRDInfos;
 import io.quarkiverse.operatorsdk.runtime.Version;
 import io.quarkus.container.util.PathsUtil;
 
@@ -50,7 +51,7 @@ public class BundleGenerator {
     public static List<ManifestsBuilder> prepareGeneration(BundleGenerationConfiguration bundleConfiguration,
             BuildTimeOperatorConfiguration operatorConfiguration, Version version,
             Map<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>> csvGroups, CRDGenerationInfo crds,
-            Path outputDirectory, String deploymentName) {
+            CRDInfos unownedCRDs, Path outputDirectory, String deploymentName) {
         List<ManifestsBuilder> builders = new ArrayList<>();
         final var mainSourcesRoot = PathsUtil.findMainSourcesRoot(outputDirectory);
         final var crdNameToInfoMappings = crds.getCrds().getCRDNameToInfoMappings();
@@ -76,6 +77,10 @@ public class BundleGenerator {
             if (!missing.isEmpty()) {
                 log.warnv("Missing required CRD data for resources: {0} for bundle: {1}", missing, csvMetadata.bundleName);
             }
+
+            // output non-generated CRDs
+            unownedCRDs.getCRDNameToInfoMappings().values()
+                    .forEach(info -> builders.add(new CustomResourceManifestsBuilder(csvMetadata, info)));
         }
 
         return builders;
