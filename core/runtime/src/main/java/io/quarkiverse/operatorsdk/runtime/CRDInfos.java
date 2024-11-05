@@ -6,6 +6,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import io.quarkus.runtime.annotations.IgnoreProperty;
+import io.quarkus.runtime.annotations.RecordableConstructor;
+
 public class CRDInfos {
     private final Map<String, Map<String, CRDInfo>> infos;
 
@@ -17,14 +20,17 @@ public class CRDInfos {
         this(new ConcurrentHashMap<>(other.infos));
     }
 
+    @RecordableConstructor // constructor needs to be recordable for the class to be passed around by Quarkus
     private CRDInfos(Map<String, Map<String, CRDInfo>> infos) {
         this.infos = infos;
     }
 
+    @IgnoreProperty
     public Map<String, CRDInfo> getOrCreateCRDSpecVersionToInfoMapping(String crdName) {
         return infos.computeIfAbsent(crdName, k -> new HashMap<>());
     }
 
+    @IgnoreProperty
     public Map<String, CRDInfo> getCRDNameToInfoMappings() {
         return infos
                 .values().stream()
@@ -36,5 +42,11 @@ public class CRDInfos {
 
     public void addCRDInfoFor(String crdName, String crdSpecVersion, CRDInfo crdInfo) {
         getOrCreateCRDSpecVersionToInfoMapping(crdName).put(crdSpecVersion, crdInfo);
+    }
+
+    // Needed by Quarkus: if this method isn't present, state is not properly set
+    @SuppressWarnings("unused")
+    public Map<String, Map<String, CRDInfo>> getInfos() {
+        return infos;
     }
 }
