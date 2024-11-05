@@ -17,6 +17,7 @@ import io.quarkiverse.operatorsdk.bundle.sources.First;
 import io.quarkiverse.operatorsdk.bundle.sources.ReconcilerWithExternalCR;
 import io.quarkiverse.operatorsdk.bundle.sources.V1Beta1CRD;
 import io.quarkiverse.operatorsdk.runtime.CRDUtils;
+import io.quarkus.test.LogCollectingTestResource;
 import io.quarkus.test.ProdBuildResults;
 import io.quarkus.test.ProdModeTestResults;
 import io.quarkus.test.QuarkusProdModeTest;
@@ -52,7 +53,8 @@ public class ExternalCRDsTest {
         assertEquals(HasMetadata.getFullResourceName(V1Beta1CRD.class), v1beta1.getName());
 
         assertEquals(1, prodModeTestResults.getRetainedBuildLogRecords().stream()
-                .filter(logRecord -> logRecord.getMessage().contains("src/test/external-crds/v1beta1spec.crd.yml")).count());
+                .map(LogCollectingTestResource::format)
+                .filter(logRecord -> logRecord.contains("src/test/external-crds/v1beta1spec.crd.yml")).count());
     }
 
 }
