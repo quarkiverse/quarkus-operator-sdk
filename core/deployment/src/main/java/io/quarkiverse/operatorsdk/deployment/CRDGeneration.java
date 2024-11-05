@@ -90,7 +90,7 @@ class CRDGeneration {
                         .forEach((version, crdInfo) -> {
                             final var filePath = crdInfo.getFilePath();
                             log.infov("  - {0} -> {1}", version, filePath);
-                            converted.addCRDInfoFor(crdName, version, new CRDInfo(crdInfo.getCrdName(),
+                            converted.addCRDInfoFor(crdName, version, new CRDInfo(crdName,
                                     version, filePath, crdInfo.getDependentClassNames()));
                         });
             });

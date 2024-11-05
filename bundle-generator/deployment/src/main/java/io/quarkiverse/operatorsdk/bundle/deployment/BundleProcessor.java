@@ -118,9 +118,9 @@ public class BundleProcessor {
     UnownedCRDInfoBuildItem unownedCRDInfo(BundleGenerationConfiguration bundleConfiguration,
             CurateOutcomeBuildItem appInfoBuildItem) {
         final Optional<List<String>> maybeExternalCRDs = bundleConfiguration.externalCRDLocations();
+        final var crds = new CRDInfos();
         if (maybeExternalCRDs.isPresent()) {
             final var moduleRoot = appInfoBuildItem.getApplicationModel().getApplicationModule().getModuleDir().toPath();
-            final var crds = new CRDInfos();
             maybeExternalCRDs.get().parallelStream()
                     .filter(Predicate.not(String::isBlank))
                     .map(String::trim)
@@ -129,10 +129,8 @@ public class BundleProcessor {
                         final var crd = loadFrom(crdPath);
                         crds.addCRDInfoFor(crd.getCrdName(), crd.getCrdSpecVersion(), crd);
                     });
-            return new UnownedCRDInfoBuildItem(crds);
-        } else {
-            return new UnownedCRDInfoBuildItem(new CRDInfos());
         }
+        return new UnownedCRDInfoBuildItem(crds);
     }
 
     private CRDInfo loadFrom(Path crdPath) {
