@@ -121,7 +121,7 @@ public class BundleProcessor {
         if (maybeExternalCRDs.isPresent()) {
             final var moduleRoot = appInfoBuildItem.getApplicationModel().getApplicationModule().getModuleDir().toPath();
             final var crds = new CRDInfos();
-            maybeExternalCRDs.get().stream()
+            maybeExternalCRDs.get().parallelStream()
                     .filter(Predicate.not(String::isBlank))
                     .map(String::trim)
                     .forEach(crdLocation -> {
