@@ -2,7 +2,7 @@ package io.quarkiverse.operatorsdk.common;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.function.Function;
 
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.IndexView;
@@ -12,7 +12,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 
 public class CustomResourceAugmentedClassInfo extends ReconciledResourceAugmentedClassInfo<CustomResource<?, ?>> {
 
-    public static final String EXISTING_CRDS_KEY = "existing-crds-key";
+    public static final String KEEP_CR_PREDICATE_KEY = "keep-cr-predicate";
 
     protected CustomResourceAugmentedClassInfo(ClassInfo classInfo, String associatedReconcilerName) {
         super(classInfo, Constants.CUSTOM_RESOURCE, 2, associatedReconcilerName);
@@ -21,13 +21,14 @@ public class CustomResourceAugmentedClassInfo extends ReconciledResourceAugmente
     @Override
     protected boolean doKeep(IndexView index, Logger log, Map<String, Object> context) {
         // only keep the information if the associated CRD hasn't already been generated
-        return Optional.ofNullable(context.get(EXISTING_CRDS_KEY))
-                .map(value -> {
-                    @SuppressWarnings("unchecked")
-                    Set<String> generated = (Set<String>) value;
-                    return !generated.contains(id());
-                })
+        return Optional.ofNullable(predicateFromContext(context))
+                .map(predicate -> predicate.apply(this))
                 .orElse(true);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Function<CustomResourceAugmentedClassInfo, Boolean> predicateFromContext(Map<String, Object> context) {
+        return (Function<CustomResourceAugmentedClassInfo, Boolean>) context.get(KEEP_CR_PREDICATE_KEY);
     }
 
     @Override

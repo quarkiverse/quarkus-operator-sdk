@@ -49,4 +49,8 @@ public class CRDInfos {
     public Map<String, Map<String, CRDInfo>> getInfos() {
         return infos;
     }
+
+    public boolean contains(String crdId) {
+        return infos.containsKey(crdId);
+    }
 }
