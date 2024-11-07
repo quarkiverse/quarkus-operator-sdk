@@ -32,7 +32,7 @@ public class ExternalCRDsTest {
             .withApplicationRoot((jar) -> jar
                     .addClasses(First.class, External.class, ExternalDependentResource.class,
                             ReconcilerWithExternalCR.class))
-            .overrideConfigKey("quarkus.operator-sdk.bundle.external-crd-locations",
+            .overrideConfigKey("quarkus.operator-sdk.crd.external-crd-locations",
                     "src/test/external-crds/v1beta1spec.crd.yml, src/test/external-crds/external.crd.yml");
 
     @ProdBuildResults
