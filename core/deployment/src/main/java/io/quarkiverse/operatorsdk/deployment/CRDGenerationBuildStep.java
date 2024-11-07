@@ -2,7 +2,10 @@ package io.quarkiverse.operatorsdk.deployment;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Predicate;
 
 import org.jboss.logging.Logger;
 
@@ -11,10 +14,12 @@ import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDInfos;
+import io.quarkiverse.operatorsdk.runtime.CRDUtils;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.LaunchModeBuildItem;
 import io.quarkus.deployment.builditem.LiveReloadBuildItem;
+import io.quarkus.deployment.pkg.builditem.CurateOutcomeBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 
 class CRDGenerationBuildStep {
@@ -93,5 +98,24 @@ class CRDGenerationBuildStep {
         liveReload.setContextObject(CRDInfos.class, storedCRDInfos);
 
         return new GeneratedCRDInfoBuildItem(crdInfo);
+    }
+
+    @BuildStep
+    UnownedCRDInfoBuildItem unownedCRDInfo(BuildTimeOperatorConfiguration operatorConfiguration,
+            CurateOutcomeBuildItem appInfoBuildItem) {
+        final Optional<List<String>> maybeExternalCRDs = operatorConfiguration.crd().externalCRDLocations();
+        final var crds = new CRDInfos();
+        if (maybeExternalCRDs.isPresent()) {
+            final var moduleRoot = appInfoBuildItem.getApplicationModel().getApplicationModule().getModuleDir().toPath();
+            maybeExternalCRDs.get().parallelStream()
+                    .filter(Predicate.not(String::isBlank))
+                    .map(String::trim)
+                    .forEach(crdLocation -> {
+                        final var crdPath = moduleRoot.resolve(crdLocation);
+                        final var crd = CRDUtils.loadFromAsCRDInfo(crdPath);
+                        crds.addCRDInfoFor(crd.getCrdName(), crd.getCrdSpecVersion(), crd);
+                    });
+        }
+        return new UnownedCRDInfoBuildItem(crds);
     }
 }

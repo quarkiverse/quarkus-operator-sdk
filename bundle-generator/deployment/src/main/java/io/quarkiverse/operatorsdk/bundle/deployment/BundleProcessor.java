@@ -11,9 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BooleanSupplier;
-import java.util.function.Predicate;
 
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
@@ -38,17 +36,14 @@ import io.quarkiverse.operatorsdk.common.DeserializedKubernetesResourcesBuildIte
 import io.quarkiverse.operatorsdk.common.ReconciledAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
+import io.quarkiverse.operatorsdk.deployment.UnownedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.deployment.VersionBuildItem;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
-import io.quarkiverse.operatorsdk.runtime.CRDInfo;
-import io.quarkiverse.operatorsdk.runtime.CRDInfos;
-import io.quarkiverse.operatorsdk.runtime.CRDUtils;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.GeneratedFileSystemResourceBuildItem;
-import io.quarkus.deployment.pkg.builditem.CurateOutcomeBuildItem;
 import io.quarkus.deployment.pkg.builditem.JarBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.kubernetes.deployment.KubernetesConfig;
@@ -63,7 +58,6 @@ public class BundleProcessor {
     private static final DotName CSV_METADATA = DotName.createSimple(CSVMetadata.class.getName());
     private static final String BUNDLE = "bundle";
     private static final String DEFAULT_PROVIDER_NAME = System.getProperty("user.name");
-    private static final Set<String> EMPTY_SET = Set.of();
 
     private static ReconcilerAugmentedClassInfo augmentReconcilerInfo(
             ReconcilerAugmentedClassInfo reconcilerInfo) {
@@ -111,35 +105,6 @@ public class BundleProcessor {
                         .map(AnnotationValue::asString)
                         .orElse(defaultName);
             }
-        }
-    }
-
-    @BuildStep(onlyIf = IsGenerationEnabled.class)
-    UnownedCRDInfoBuildItem unownedCRDInfo(BuildTimeOperatorConfiguration operatorConfiguration,
-            CurateOutcomeBuildItem appInfoBuildItem) {
-        final Optional<List<String>> maybeExternalCRDs = operatorConfiguration.crd().externalCRDLocations();
-        final var crds = new CRDInfos();
-        if (maybeExternalCRDs.isPresent()) {
-            final var moduleRoot = appInfoBuildItem.getApplicationModel().getApplicationModule().getModuleDir().toPath();
-            maybeExternalCRDs.get().parallelStream()
-                    .filter(Predicate.not(String::isBlank))
-                    .map(String::trim)
-                    .forEach(crdLocation -> {
-                        final var crdPath = moduleRoot.resolve(crdLocation);
-                        final var crd = loadFrom(crdPath);
-                        crds.addCRDInfoFor(crd.getCrdName(), crd.getCrdSpecVersion(), crd);
-                    });
-        }
-        return new UnownedCRDInfoBuildItem(crds);
-    }
-
-    private CRDInfo loadFrom(Path crdPath) {
-        try {
-            final var crd = CRDUtils.loadFrom(crdPath);
-            final var crdName = crd.getMetadata().getName();
-            return new CRDInfo(crdName, CRDUtils.DEFAULT_CRD_SPEC_VERSION, crdPath.toFile().getAbsolutePath(), EMPTY_SET);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
