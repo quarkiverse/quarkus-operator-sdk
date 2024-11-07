@@ -69,13 +69,12 @@ class CRDGenerationBuildStep {
                             crdInfos = storedCRDInfos.getOrCreateCRDSpecVersionToInfoMapping(crId);
                         }
 
-                        // schedule the generation of associated primary resource CRD if required
-                        if (crdGeneration.scheduleForGenerationIfNeeded((CustomResourceAugmentedClassInfo) crInfo, crdInfos,
-                                changedClasses)) {
-                            scheduledForGeneration.add(crId);
+                            // schedule the generation of associated primary resource CRD if required
+                            if (crdGeneration.scheduleForGenerationIfNeeded((CustomResourceAugmentedClassInfo) crInfo, crdInfos,
+                                    changedClasses)) {
+                                scheduledForGeneration.add(crId);
+                            }
                         }
-                    }
-                }
             });
 
             // generate non-reconciler associated CRDs if requested
@@ -113,7 +112,7 @@ class CRDGenerationBuildStep {
                     .forEach(crdLocation -> {
                         final var crdPath = moduleRoot.resolve(crdLocation);
                         final var crd = CRDUtils.loadFromAsCRDInfo(crdPath);
-                        crds.addCRDInfoFor(crd.getCrdName(), crd.getCrdSpecVersion(), crd);
+                        crds.addCRDInfo(crd);
                     });
         }
         return new UnownedCRDInfoBuildItem(crds);
