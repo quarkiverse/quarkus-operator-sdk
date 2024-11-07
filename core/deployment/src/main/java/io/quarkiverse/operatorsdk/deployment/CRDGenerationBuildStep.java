@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import org.jboss.logging.Logger;
@@ -24,6 +26,8 @@ import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 
 class CRDGenerationBuildStep {
     static final Logger log = Logger.getLogger(CRDGenerationBuildStep.class.getName());
+    private static final String excludedCause = "it was explicitly excluded from generation";
+    private static final String externalCause = "it is associated with an externally provided CRD";
 
     @BuildStep
     GeneratedCRDInfoBuildItem generateCRDs(
@@ -32,7 +36,8 @@ class CRDGenerationBuildStep {
             LaunchModeBuildItem launchModeBuildItem,
             LiveReloadBuildItem liveReload,
             OutputTargetBuildItem outputTarget,
-            CombinedIndexBuildItem combinedIndexBuildItem) {
+            CombinedIndexBuildItem combinedIndexBuildItem,
+            UnownedCRDInfoBuildItem unownedCRDInfo) {
         final var crdConfig = operatorConfiguration.crd();
         final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(crdConfig.validate());
 
@@ -51,23 +56,32 @@ class CRDGenerationBuildStep {
         final var changedClasses = ConfigurationUtils.getChangedClasses(liveReload);
         final var scheduledForGeneration = new HashSet<String>(7);
 
-        if (generate) {
-            reconcilers.getReconcilers().values().forEach(raci -> {
-                // add associated primary resource for CRD generation if it's a CR and it's owned by the reconciler
-                final ReconciledAugmentedClassInfo<?> associatedResource = raci.associatedResourceInfo();
-                if (associatedResource.isCR()) {
-                    final var crInfo = associatedResource.asResourceTargeting();
-                    final String crId = crInfo.id();
+        final var excludedResourceClasses = crdConfig.excludeResources().map(Set::copyOf).orElseGet(Collections::emptySet);
+        final var externalCRDs = unownedCRDInfo.getCRDs();
+        // predicate to decide whether or not to consider a given resource for generation
+        Function<CustomResourceAugmentedClassInfo, Boolean> keepResourcePredicate = (
+                CustomResourceAugmentedClassInfo crInfo) -> !isExcluded(crInfo, externalCRDs, excludedResourceClasses);
 
-                    // if the primary resource is unowned, mark it as "scheduled" (i.e. already handled) so that it doesn't get considered if all CRDs generation is requested
-                    if (!operatorConfiguration.isControllerOwningPrimary(raci.nameOrFailIfUnset())) {
-                        scheduledForGeneration.add(crId);
-                    } else {
-                        // When we have a live reload, check if we need to regenerate the associated CRD
-                        Map<String, CRDInfo> crdInfos = Collections.emptyMap();
-                        if (liveReload.isLiveReload()) {
-                            crdInfos = storedCRDInfos.getOrCreateCRDSpecVersionToInfoMapping(crId);
-                        }
+        if (generate) {
+            reconcilers.getReconcilers().values().stream()
+                    .map(ResourceAssociatedAugmentedClassInfo::associatedResourceInfo)
+                    .filter(ReconciledAugmentedClassInfo::isCR) // only keep CRs
+                    .map(CustomResourceAugmentedClassInfo.class::cast)
+                    .filter(keepResourcePredicate::apply)
+                    .forEach(associatedResource -> {
+                        final var crInfo = associatedResource.asResourceTargeting();
+                        final String crId = crInfo.id();
+
+                        // if the primary resource is unowned, mark it as "scheduled" (i.e. already handled) so that it doesn't get considered if all CRDs generation is requested
+                        if (!operatorConfiguration
+                                .isControllerOwningPrimary(associatedResource.getAssociatedReconcilerName().orElseThrow())) {
+                            scheduledForGeneration.add(crId);
+                        } else {
+                            // When we have a live reload, check if we need to regenerate the associated CRD
+                            Map<String, CRDInfo> crdInfos = Collections.emptyMap();
+                            if (liveReload.isLiveReload()) {
+                                crdInfos = storedCRDInfos.getOrCreateCRDSpecVersionToInfoMapping(crId);
+                            }
 
                             // schedule the generation of associated primary resource CRD if required
                             if (crdGeneration.scheduleForGenerationIfNeeded((CustomResourceAugmentedClassInfo) crInfo, crdInfos,
@@ -75,13 +89,18 @@ class CRDGenerationBuildStep {
                                 scheduledForGeneration.add(crId);
                             }
                         }
-            });
+                    });
 
             // generate non-reconciler associated CRDs if requested
             if (crdConfig.generateAll()) {
+                // only process CRs that haven't been already considered and are not excluded
+                keepResourcePredicate = (
+                        CustomResourceAugmentedClassInfo crInfo) -> !scheduledForGeneration.contains(crInfo.id())
+                                && !isExcluded(crInfo, externalCRDs, excludedResourceClasses);
+                final Map<String, Object> context = Map.of(CustomResourceAugmentedClassInfo.KEEP_CR_PREDICATE_KEY,
+                        keepResourcePredicate);
                 ClassUtils.getProcessableSubClassesOf(Constants.CUSTOM_RESOURCE, combinedIndexBuildItem.getIndex(), log,
-                        // pass already generated CRD names so that we can only keep the unhandled ones
-                        Map.of(CustomResourceAugmentedClassInfo.EXISTING_CRDS_KEY, scheduledForGeneration))
+                        context)
                         .map(CustomResourceAugmentedClassInfo.class::cast)
                         .forEach(cr -> {
                             crdGeneration.withCustomResource(cr.loadAssociatedClass(), null);
@@ -116,5 +135,23 @@ class CRDGenerationBuildStep {
                     });
         }
         return new UnownedCRDInfoBuildItem(crds);
+    }
+
+    /**
+     * Exclude all resources that shouldn't be generated because either they've been explicitly excluded or because they're
+     * supposed to be loaded directly from a specified CRD file
+     */
+    private boolean isExcluded(CustomResourceAugmentedClassInfo crInfo, CRDInfos externalCRDs,
+            Set<String> excludedResourceClassNames) {
+        final var crClassName = crInfo.classInfo().name().toString();
+        final var excluded = excludedResourceClassNames.contains(crClassName);
+        final var external = externalCRDs.contains(crInfo.id());
+        if (excluded || external) {
+            log.infov("CRD generation was skipped for ''{0}'' because {1}", crClassName,
+                    external ? externalCause : excludedCause);
+            return true;
+        } else {
+            return false;
+        }
     }
 }
