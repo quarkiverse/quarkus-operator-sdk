@@ -3,6 +3,7 @@ package io.quarkiverse.operatorsdk.runtime;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 
 import org.jboss.logging.Logger;
 
@@ -54,6 +55,16 @@ public final class CRDUtils {
                     crdPath, DEFAULT_CRD_SPEC_VERSION, crdVersion);
         }
         return crd;
+    }
+
+    public static CRDInfo loadFromAsCRDInfo(Path crdPath) {
+        try {
+            final var crd = loadFrom(crdPath);
+            final var crdName = crd.getMetadata().getName();
+            return new CRDInfo(crdName, DEFAULT_CRD_SPEC_VERSION, crdPath.toFile().getAbsolutePath(), Collections.emptySet());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static void apply(KubernetesClient client, String v, Object crd) {

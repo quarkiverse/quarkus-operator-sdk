@@ -1,4 +1,4 @@
-package io.quarkiverse.operatorsdk.bundle.deployment;
+package io.quarkiverse.operatorsdk.deployment;
 
 import io.quarkiverse.operatorsdk.runtime.CRDInfos;
 import io.quarkus.builder.item.SimpleBuildItem;
