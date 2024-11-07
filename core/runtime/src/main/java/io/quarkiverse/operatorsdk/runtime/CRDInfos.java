@@ -40,8 +40,8 @@ public class CRDInfos {
                 .collect(Collectors.toMap(CRDInfo::getCrdName, Function.identity()));
     }
 
-    public void addCRDInfoFor(String crdName, String crdSpecVersion, CRDInfo crdInfo) {
-        getOrCreateCRDSpecVersionToInfoMapping(crdName).put(crdSpecVersion, crdInfo);
+    public void addCRDInfo(CRDInfo crdInfo) {
+        getOrCreateCRDSpecVersionToInfoMapping(crdInfo.getCrdName()).put(crdInfo.getCrdSpecVersion(), crdInfo);
     }
 
     // Needed by Quarkus: if this method isn't present, state is not properly set
