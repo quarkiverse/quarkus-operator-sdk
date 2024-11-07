@@ -4,6 +4,7 @@ import static io.quarkus.kubernetes.deployment.Constants.KUBERNETES;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -13,6 +14,7 @@ import org.jboss.logging.Logger;
 
 import io.fabric8.crdv2.generator.CRDGenerator;
 import io.fabric8.crdv2.generator.CustomResourceInfo;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.quarkiverse.operatorsdk.common.CustomResourceAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.FileUtils;
@@ -25,14 +27,20 @@ import io.quarkus.runtime.LaunchMode;
 
 class CRDGeneration {
     private static final Logger log = Logger.getLogger(CRDGeneration.class.getName());
-    private CRDGenerator generator;
     private final LaunchMode mode;
     private final CRDConfiguration crdConfiguration;
+    private final Set<String> excludedCRDNames;
+    private final Set<String> excludedResourceClassNames;
+    private CRDGenerator generator;
     private boolean needGeneration;
 
-    public CRDGeneration(CRDConfiguration crdConfig, LaunchMode mode) {
+    CRDGeneration(CRDConfiguration crdConfig, LaunchMode mode, CRDInfos externalCRDs) {
         this.crdConfiguration = crdConfig;
         this.mode = mode;
+        this.excludedCRDNames = externalCRDs.getCRDNameToInfoMappings().keySet();
+        this.excludedResourceClassNames = crdConfig.excludeResources()
+                .map(excluded -> (Set<String>) new HashSet<>(excluded))
+                .orElse(Collections.emptySet());
     }
 
     static boolean shouldGenerate(Optional<Boolean> configuredGenerate, Optional<Boolean> configuredApply,
@@ -87,11 +95,11 @@ class CRDGeneration {
                 generated.add(crdName);
 
                 initialVersionToCRDInfoMap
-                        .forEach((version, crdInfo) -> {
+                        .forEach((crdSpecVersion, crdInfo) -> {
                             final var filePath = crdInfo.getFilePath();
-                            log.infov("  - {0} -> {1}", version, filePath);
-                            converted.addCRDInfoFor(crdName, version, new CRDInfo(crdName,
-                                    version, filePath, crdInfo.getDependentClassNames()));
+                            log.infov("  - {0} -> {1}", crdSpecVersion, filePath);
+                            converted.addCRDInfo(new CRDInfo(crdName,
+                                    crdSpecVersion, filePath, crdInfo.getDependentClassNames()));
                         });
             });
         }
