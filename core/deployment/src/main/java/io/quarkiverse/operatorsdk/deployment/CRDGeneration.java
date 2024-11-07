@@ -4,7 +4,6 @@ import static io.quarkus.kubernetes.deployment.Constants.KUBERNETES;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -14,7 +13,6 @@ import org.jboss.logging.Logger;
 
 import io.fabric8.crdv2.generator.CRDGenerator;
 import io.fabric8.crdv2.generator.CustomResourceInfo;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.quarkiverse.operatorsdk.common.CustomResourceAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.FileUtils;
@@ -29,18 +27,12 @@ class CRDGeneration {
     private static final Logger log = Logger.getLogger(CRDGeneration.class.getName());
     private final LaunchMode mode;
     private final CRDConfiguration crdConfiguration;
-    private final Set<String> excludedCRDNames;
-    private final Set<String> excludedResourceClassNames;
     private CRDGenerator generator;
     private boolean needGeneration;
 
-    CRDGeneration(CRDConfiguration crdConfig, LaunchMode mode, CRDInfos externalCRDs) {
+    CRDGeneration(CRDConfiguration crdConfig, LaunchMode mode) {
         this.crdConfiguration = crdConfig;
         this.mode = mode;
-        this.excludedCRDNames = externalCRDs.getCRDNameToInfoMappings().keySet();
-        this.excludedResourceClassNames = crdConfig.excludeResources()
-                .map(excluded -> (Set<String>) new HashSet<>(excluded))
-                .orElse(Collections.emptySet());
     }
 
     static boolean shouldGenerate(Optional<Boolean> configuredGenerate, Optional<Boolean> configuredApply,
@@ -148,13 +140,7 @@ class CRDGeneration {
         return scheduleCurrent;
     }
 
-    public void withCustomResource(Class<? extends CustomResource<?, ?>> crClass, String associatedControllerName) {
-        // first check if the CR is not filtered out
-        if (crdConfiguration.excludeResources().map(excluded -> excluded.contains(crClass.getName())).orElse(false)) {
-            log.infov("CRD generation was skipped for ''{0}'' because it was excluded from generation", crClass.getName());
-            return;
-        }
-
+    void withCustomResource(Class<? extends CustomResource<?, ?>> crClass, String associatedControllerName) {
         try {
             // generator MUST be initialized before we start processing classes as initializing it
             // will reset the types information held by the generator
