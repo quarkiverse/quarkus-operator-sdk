@@ -115,9 +115,9 @@ public class BundleProcessor {
     }
 
     @BuildStep(onlyIf = IsGenerationEnabled.class)
-    UnownedCRDInfoBuildItem unownedCRDInfo(BundleGenerationConfiguration bundleConfiguration,
+    UnownedCRDInfoBuildItem unownedCRDInfo(BuildTimeOperatorConfiguration operatorConfiguration,
             CurateOutcomeBuildItem appInfoBuildItem) {
-        final Optional<List<String>> maybeExternalCRDs = bundleConfiguration.externalCRDLocations();
+        final Optional<List<String>> maybeExternalCRDs = operatorConfiguration.crd().externalCRDLocations();
         final var crds = new CRDInfos();
         if (maybeExternalCRDs.isPresent()) {
             final var moduleRoot = appInfoBuildItem.getApplicationModel().getApplicationModule().getModuleDir().toPath();
