@@ -64,4 +64,18 @@ public interface CRDConfiguration {
      * process.
      */
     Optional<List<String>> excludeResources();
+
+    /**
+     * A comma-separated list of paths where external CRDs that need to be referenced for non-generated custom resources.
+     * Typical use cases where this might be needed include when custom resource implementations are located in a different
+     * module than the controller implementation or when the CRDs are not generated at all (e.g. in integration cases where your
+     * operator needs to deal with 3rd party custom resources).
+     *
+     * <p>
+     * Paths can be either absolute or relative, in which case they will be resolved from the current module root directory.
+     * </p>
+     *
+     * @since 6.8.4
+     */
+    Optional<List<String>> externalCRDLocations();
 }
