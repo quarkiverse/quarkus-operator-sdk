@@ -1,8 +1,7 @@
 package io.quarkiverse.operatorsdk.bundle;
 
 import static io.quarkiverse.operatorsdk.bundle.Utils.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 
@@ -72,6 +71,13 @@ public class MultipleOperatorsBundleTest {
         assertEquals(FirstReconciler.REPLACES, csv.getSpec().getReplaces());
         var bundleMeta = getAnnotationsFor(bundle, "first-operator");
         assertEquals(BUNDLE_PACKAGE, bundleMeta.getAnnotations().get("operators.operatorframework.io.bundle.package.v1"));
+        assertEquals(2, csv.getSpec().getInstallModes().size());
+        var installMode = csv.getSpec().getInstallModes().get(0);
+        assertEquals("AllNamespaces", installMode.getType());
+        assertTrue(installMode.getSupported());
+        installMode = csv.getSpec().getInstallModes().get(1);
+        assertEquals("MultiNamespace", installMode.getType());
+        assertFalse(installMode.getSupported());
 
         checkBundleFor(bundle, "second-operator", Second.class);
         csv = getCSVFor(bundle, "second-operator");
@@ -85,6 +91,10 @@ public class MultipleOperatorsBundleTest {
                 .addToResources(SecondReconciler.RBAC_RULE_RES)
                 .addToVerbs(SecondReconciler.RBAC_RULE_VERBS)
                 .build()));
+        assertEquals(1, csv.getSpec().getInstallModes().size());
+        installMode = csv.getSpec().getInstallModes().get(0);
+        assertEquals("SingleNamespace", installMode.getType());
+        assertTrue(installMode.getSupported());
 
         checkBundleFor(bundle, "third-operator", Third.class);
         // also check that external CRD is present
