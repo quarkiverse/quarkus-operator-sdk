@@ -14,17 +14,20 @@ public class ReconciledResourceAugmentedClassInfo<T extends HasMetadata> extends
 
     public static final String STATUS = "status";
     protected boolean hasStatus;
-    private final String id;
+    private final Id id;
+
+    public record Id(String fullResourceName, String version) {
+    }
 
     protected ReconciledResourceAugmentedClassInfo(ClassInfo classInfo,
             DotName extendedOrImplementedClass, int expectedParameterTypesCardinality,
             String associatedReconcilerName) {
         super(classInfo, extendedOrImplementedClass, expectedParameterTypesCardinality,
                 associatedReconcilerName);
-        id = fullResourceName() + version();
+        id = new Id(fullResourceName(), version());
     }
 
-    public String id() {
+    public Id id() {
         return id;
     }
 
