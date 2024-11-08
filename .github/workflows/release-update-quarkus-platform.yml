@@ -4,6 +4,7 @@ on:
   workflow_call:
     inputs:
       tag:
+        type: string
         description: 'QOSDK tag to publish on platform'
         required: true
     secrets:
