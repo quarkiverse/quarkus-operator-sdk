@@ -35,7 +35,6 @@ jobs:
     secrets: inherit
     with:
       version: ${{github.event.inputs.tag || github.ref_name}}
-      dry_run: ${{github.event.inputs.dry_run || inputs.dry_run}}
 
   prepare-platform-pr:
     name: Prepare Platform Update
