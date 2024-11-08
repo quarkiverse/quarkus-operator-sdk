@@ -54,7 +54,7 @@ class CRDGenerationBuildStep {
         final var generate = CRDGeneration.shouldGenerate(crdConfig.generate(), crdConfig.apply(), launchMode);
         final var storedCRDInfos = stored;
         final var changedClasses = ConfigurationUtils.getChangedClasses(liveReload);
-        final var scheduledForGeneration = new HashSet<String>(7);
+        final var scheduledForGeneration = new HashSet<ReconciledResourceAugmentedClassInfo.Id>(7);
 
         final var excludedResourceClasses = crdConfig.excludeResources().map(Set::copyOf).orElseGet(Collections::emptySet);
         final var externalCRDs = unownedCRDInfo.getCRDs();
@@ -70,7 +70,7 @@ class CRDGenerationBuildStep {
                     .filter(keepResourcePredicate::apply)
                     .forEach(associatedResource -> {
                         final var crInfo = associatedResource.asResourceTargeting();
-                        final String crId = crInfo.id();
+                        final var crId = crInfo.id();
 
                         // if the primary resource is unowned, mark it as "scheduled" (i.e. already handled) so that it doesn't get considered if all CRDs generation is requested
                         if (!operatorConfiguration
@@ -80,7 +80,7 @@ class CRDGenerationBuildStep {
                             // When we have a live reload, check if we need to regenerate the associated CRD
                             Map<String, CRDInfo> crdInfos = Collections.emptyMap();
                             if (liveReload.isLiveReload()) {
-                                crdInfos = storedCRDInfos.getOrCreateCRDSpecVersionToInfoMapping(crId);
+                                crdInfos = storedCRDInfos.getOrCreateCRDSpecVersionToInfoMapping(crInfo.fullResourceName());
                             }
 
                             // schedule the generation of associated primary resource CRD if required
@@ -141,11 +141,12 @@ class CRDGenerationBuildStep {
      * Exclude all resources that shouldn't be generated because either they've been explicitly excluded or because they're
      * supposed to be loaded directly from a specified CRD file
      */
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean isExcluded(CustomResourceAugmentedClassInfo crInfo, CRDInfos externalCRDs,
             Set<String> excludedResourceClassNames) {
         final var crClassName = crInfo.classInfo().name().toString();
         final var excluded = excludedResourceClassNames.contains(crClassName);
-        final var external = externalCRDs.contains(crInfo.id());
+        final var external = externalCRDs.contains(crInfo.fullResourceName());
         if (excluded || external) {
             log.infov("CRD generation was skipped for ''{0}'' because {1}", crClassName,
                     external ? externalCause : excludedCause);
