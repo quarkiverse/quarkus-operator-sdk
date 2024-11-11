@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 import jakarta.inject.Singleton;
 
 import org.jboss.jandex.DotName;
-import org.jboss.jandex.Type;
 import org.jboss.logging.Logger;
 
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
@@ -37,7 +36,6 @@ import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.*;
 import io.quarkus.deployment.builditem.nativeimage.ForceNonWeakReflectiveClassBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveHierarchyBuildItem;
-import io.quarkus.deployment.builditem.nativeimage.ReflectiveHierarchyIgnoreWarningBuildItem;
 import io.quarkus.deployment.metrics.MetricsCapabilityBuildItem;
 import io.quarkus.gizmo.AssignableResultHandle;
 import io.quarkus.gizmo.MethodCreator;
@@ -267,56 +265,13 @@ class OperatorSDKProcessor {
 
     }
 
-    /**
-     * Ignore warnings related to non-indexed classes in the reflective hierarchy. At this point, we cannot know
-     * if they are actually needed for native compilation.
-     *
-     * <p>
-     * This could probably be removed once <a href=
-     * "https://github.com/quarkiverse/quarkus-operator-sdk/issues/941">https://github.com/quarkiverse/quarkus-operator-sdk/issues/941</a>
-     * is resolved.
-     * </p>
-     *
-     */
-    @BuildStep
-    void ignoreNonIndexedClassesWarningsInReflectiveHierarchy(
-            BuildProducer<ReflectiveHierarchyIgnoreWarningBuildItem> reflectiveHierarchyIgnoreWarningBuildItemBuildProducer) {
-        reflectiveHierarchyIgnoreWarningBuildItemBuildProducer.produce(
-                new ReflectiveHierarchyIgnoreWarningBuildItem(DotName.createSimple(io.vertx.core.Vertx.class.getName())));
-        reflectiveHierarchyIgnoreWarningBuildItemBuildProducer.produce(
-                new ReflectiveHierarchyIgnoreWarningBuildItem(
-                        DotName.createSimple(io.vertx.core.http.HttpClient.class.getName())));
-        reflectiveHierarchyIgnoreWarningBuildItemBuildProducer.produce(
-                new ReflectiveHierarchyIgnoreWarningBuildItem(
-                        DotName.createSimple(io.vertx.core.http.WebSocket.class.getName())));
-        reflectiveHierarchyIgnoreWarningBuildItemBuildProducer.produce(
-                new ReflectiveHierarchyIgnoreWarningBuildItem(
-                        DotName.createSimple(io.vertx.core.net.ProxyType.class.getName())));
-        reflectiveHierarchyIgnoreWarningBuildItemBuildProducer.produce(
-                new ReflectiveHierarchyIgnoreWarningBuildItem(
-                        DotName.createSimple("okhttp3.OkHttpClient")));
-        reflectiveHierarchyIgnoreWarningBuildItemBuildProducer.produce(
-                new ReflectiveHierarchyIgnoreWarningBuildItem(
-                        DotName.createSimple("okhttp3.OkHttpClient$Builder")));
-        reflectiveHierarchyIgnoreWarningBuildItemBuildProducer.produce(
-                new ReflectiveHierarchyIgnoreWarningBuildItem(
-                        DotName.createSimple("okhttp3.Request$Builder")));
-        reflectiveHierarchyIgnoreWarningBuildItemBuildProducer.produce(
-                new ReflectiveHierarchyIgnoreWarningBuildItem(
-                        DotName.createSimple("okhttp3.WebSocket")));
-        reflectiveHierarchyIgnoreWarningBuildItemBuildProducer.produce(
-                new ReflectiveHierarchyIgnoreWarningBuildItem(
-                        DotName.createSimple("okio.BufferedSource")));
-
-    }
-
     private void registerAssociatedClassesForReflection(BuildProducer<ReflectiveHierarchyBuildItem> reflectionClasses,
             BuildProducer<ForceNonWeakReflectiveClassBuildItem> forcedReflectionClasses,
             Set<String> classNamesToRegister) {
-        // todo: use builder API when/if https://github.com/quarkusio/quarkus/pull/38679 is available
         classNamesToRegister.forEach(cn -> {
-            reflectionClasses.produce(new ReflectiveHierarchyBuildItem.Builder()
-                    .type(Type.create(DotName.createSimple(cn), Type.Kind.CLASS)).build());
+            reflectionClasses.produce(ReflectiveHierarchyBuildItem.builder(DotName.createSimple(cn))
+                    .ignoreTypePredicate(ReflectionRegistrations.IGNORE_TYPE_FOR_REFLECTION_PREDICATE)
+                    .build());
             forcedReflectionClasses.produce(
                     new ForceNonWeakReflectiveClassBuildItem(cn));
             log.infov("Registered ''{0}'' for reflection", cn);
