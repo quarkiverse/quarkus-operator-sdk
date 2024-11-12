@@ -17,7 +17,7 @@ public class ReflectionRegistrations {
             "okio."
     };
 
-    public static final IgnoreTypeForReflectionPredicate IGNORE_TYPE_FOR_REFLECTION_PREDICATE = new IgnoreTypeForReflectionPredicate();
+    static final IgnoreTypeForReflectionPredicate IGNORE_TYPE_FOR_REFLECTION_PREDICATE = new IgnoreTypeForReflectionPredicate();
 
     private static class IgnoreTypeForReflectionPredicate implements Predicate<DotName> {
 
