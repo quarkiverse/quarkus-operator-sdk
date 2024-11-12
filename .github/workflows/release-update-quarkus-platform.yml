@@ -42,7 +42,7 @@ jobs:
           quarkus_platform_version=$(curl -s https://registry.quarkus.io/client/platforms | jq -r '.platforms[0]."current-stream-id"')
           echo "Current platform-defined Quarkus major version: ${quarkus_platform_version}"
 
-          quarkus_platform_branch=main
+          quarkus_platform_branch=${quarkus_major}
           if [ "${quarkus_major}" = "${quarkus_platform_version}" ]; then
             quarkus_platform_branch="${quarkus_platform_version}"
           fi
