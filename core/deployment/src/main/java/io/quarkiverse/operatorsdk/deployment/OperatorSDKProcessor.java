@@ -188,28 +188,6 @@ class OperatorSDKProcessor {
         return new AnnotationConfigurablesBuildItem(configurableInfos);
     }
 
-    /**
-     * Gathers the CustomResource implementations that are not part of the application index because they are part of an
-     * external, reusable module for example.
-     *
-     * <p>
-     * Note that this will be obsolete once <a href="https://github.com/quarkusio/quarkus/pull/38586">Quarkus #38586</a> is
-     * usable
-     * </p>
-     */
-    @BuildStep
-    void gatherOutOfAppCustomResourceImplementations(CombinedIndexBuildItem combinedIndexBuildItem,
-            ApplicationIndexBuildItem applicationIndexBuildItem,
-            BuildProducer<QOSDKReflectiveClassBuildItem> reflectiveClassProducer) {
-        final var combinedIndex = combinedIndexBuildItem.getIndex();
-        final var appIndex = applicationIndexBuildItem.getIndex();
-
-        // only add the CRs found in the combined index that were not already in the application one since Quarkus should already handle these
-        final var crsFromCombined = combinedIndex.getAllKnownSubclasses(Constants.CUSTOM_RESOURCE);
-        crsFromCombined.removeAll(appIndex.getAllKnownSubclasses(Constants.CUSTOM_RESOURCE));
-        crsFromCombined.forEach(ci -> reflectiveClassProducer.produce(new QOSDKReflectiveClassBuildItem(ci.name().toString())));
-    }
-
     @BuildStep
     void registerClassesForReflection(
             List<QOSDKReflectiveClassBuildItem> toRegister,
