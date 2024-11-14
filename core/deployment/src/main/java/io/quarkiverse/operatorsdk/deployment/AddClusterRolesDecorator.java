@@ -135,7 +135,9 @@ public class AddClusterRolesDecorator extends ResourceProvidingDecorator<Kuberne
 
                     // PATCH is also required when creating resources to add finalizers when using SSA
                     if (isCreator && cri.getConfigurationService().shouldUseSSA(asKubeDRClass, asHasMetadataClass,
-                            (KubernetesDependentResourceConfig<? extends HasMetadata>) spec.getDependentResourceConfig())) {
+                            (KubernetesDependentResourceConfig<? extends HasMetadata>) spec.getConfiguration()
+                                    .filter(KubernetesDependentResourceConfig.class::isInstance)
+                                    .orElse(null))) {
                         verbs.add(RBACVerbs.PATCH);
                     }
 
