@@ -79,7 +79,6 @@
       <properties>
         <skipTests>true</skipTests>
         <skipITs>true</skipITs>
-        <skipDocs>true</skipDocs>
       </properties>
       <build>
         <defaultGoal>clean install</defaultGoal>
@@ -158,7 +157,6 @@
       </build>
       <properties>
         <quarkus.package.type>native</quarkus.package.type>
-        <skipDocs>true</skipDocs>
       </properties>
     </profile>
     <profile>
