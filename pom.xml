@@ -12,7 +12,7 @@
   <packaging>pom</packaging>
   <name>Quarkus - Operator SDK - Parent</name>
   <properties>
-    <quarkus.version>3.16.3</quarkus.version>
+    <quarkus.version>3.17.0.CR1</quarkus.version>
     <java-operator-sdk.version>4.9.6</java-operator-sdk.version>
   </properties>
   <scm>
@@ -79,6 +79,7 @@
       <properties>
         <skipTests>true</skipTests>
         <skipITs>true</skipITs>
+        <skipDocs>true</skipDocs>
       </properties>
       <build>
         <defaultGoal>clean install</defaultGoal>
@@ -157,6 +158,7 @@
       </build>
       <properties>
         <quarkus.package.type>native</quarkus.package.type>
+        <skipDocs>true</skipDocs>
       </properties>
     </profile>
     <profile>

@@ -121,7 +121,7 @@ public class BundleProcessor {
 
         // note that version, replaces, etc. should probably be settable at the reconciler level
         // use version specified in bundle configuration, if not use the one extracted from the project, if available
-        final var version = kubernetesConfig.getVersion().orElse(appConfiguration.getVersion());
+        final var version = kubernetesConfig.version().orElse(appConfiguration.getVersion());
         final var defaultVersion = bundleConfiguration.version()
                 .orElse(ApplicationInfoBuildItem.UNSET_VALUE.equals(version) ? null : version);
 
