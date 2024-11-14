@@ -306,7 +306,7 @@ endif::add-copy-button-to-env-var[]
 |boolean
 |`true`
 
-a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-defensive-cloning]] [.property-path]##`quarkus.operator-sdk.defensive-cloning`##
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-defensive-cloning]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-defensive-cloning[`quarkus.operator-sdk.defensive-cloning`]##
 
 [.description]
 --
