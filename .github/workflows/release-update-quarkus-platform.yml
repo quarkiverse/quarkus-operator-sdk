@@ -71,10 +71,10 @@ jobs:
           group-id: io.quarkiverse.operatorsdk
           artifact-id: quarkus-operator-sdk-bom
           version: ${{github.event.inputs.tag || github.ref_name}}
-          initial-delay: 10
-          poll-delay: 2
-          poll-iterations: 4
-          post-delay: 5
+          initial-delay: 0
+          poll-delay: 1
+          poll-iterations: 10
+          post-delay: 0
 
   update-quarkus-platform-branch:
     uses: ./.github/workflows/release-quarkus-platform-pr.yml
