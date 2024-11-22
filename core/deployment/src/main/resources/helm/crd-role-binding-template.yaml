@@ -41,8 +41,8 @@ metadata:
   name: {reconciler-name}-role-binding
   namespace: {{ $anamespace }}
   labels:
-    app.kubernetes.io/name: {{ .Chart.Name }}
-    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    app.kubernetes.io/name: {{ $.Chart.Name }}
+    app.kubernetes.io/version: {{ $.Chart.AppVersion }}
     app.kubernetes.io/managed-by: quarkus
 roleRef:
   kind: ClusterRole
