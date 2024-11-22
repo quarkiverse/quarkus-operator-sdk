@@ -6,6 +6,7 @@ import java.util.Optional;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.quarkus.runtime.annotations.ConfigGroup;
 import io.smallrye.config.WithDefault;
+import io.smallrye.config.WithName;
 
 @ConfigGroup
 public interface CRDConfiguration {
@@ -13,6 +14,7 @@ public interface CRDConfiguration {
     String DEFAULT_OUTPUT_DIRECTORY = "kubernetes";
     String DEFAULT_VALIDATE = "true";
     String DEFAULT_VERSIONS = "v1";
+    String DEFAULT_USE_V1_CRD_GENERATOR = "false";
 
     /**
      * Whether the operator should check that the CRD is properly deployed and that the associated
@@ -78,4 +80,18 @@ public interface CRDConfiguration {
      * @since 6.8.4
      */
     Optional<List<String>> externalCRDLocations();
+
+    /**
+     * Whether or not to use the v1 version of the CRD generator. Note that this should only be used if a compatibility issue is
+     * found with the v2 generator, which is the default one and the one that is actively maintained.
+     *
+     * @return {@code true} if the v1 version of the CRD generator should be used
+     * @since 6.9.1
+     * @deprecated using this method should be reserved for blocking situations, please open an issue reporting the problem
+     *             you're facing with the v2 generator before reverting to use the v1 version
+     */
+    @Deprecated(forRemoval = true)
+    @WithDefault(DEFAULT_USE_V1_CRD_GENERATOR)
+    @WithName("use-deprecated-v1-crd-generator")
+    Boolean useV1CRDGenerator();
 }

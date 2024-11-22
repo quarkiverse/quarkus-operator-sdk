@@ -11,8 +11,6 @@ import java.util.Set;
 
 import org.jboss.logging.Logger;
 
-import io.fabric8.crdv2.generator.CRDGenerator;
-import io.fabric8.crdv2.generator.CustomResourceInfo;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.quarkiverse.operatorsdk.common.CustomResourceAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.FileUtils;
@@ -79,21 +77,7 @@ class CRDGeneration {
             FileUtils.ensureDirectoryExists(outputDir);
 
             // generate CRDs with detailed information
-            final var info = generator.forCRDVersions(crdConfiguration.versions()).inOutputDir(outputDir).detailedGenerate();
-            final var crdDetailsPerNameAndVersion = info.getCRDDetailsPerNameAndVersion();
-
-            crdDetailsPerNameAndVersion.forEach((crdName, initialVersionToCRDInfoMap) -> {
-                log.infov("Generated {0} CRD:", crdName);
-                generated.add(crdName);
-
-                initialVersionToCRDInfoMap
-                        .forEach((crdSpecVersion, crdInfo) -> {
-                            final var filePath = crdInfo.getFilePath();
-                            log.infov("  - {0} -> {1}", crdSpecVersion, filePath);
-                            converted.addCRDInfo(new CRDInfo(crdName,
-                                    crdSpecVersion, filePath, crdInfo.getDependentClassNames()));
-                        });
-            });
+            generator.generate(crdConfiguration.versions(), outputDir, generated, converted);
         }
         return new CRDGenerationInfo(shouldApply(), validateCustomResources, converted, generated);
     }
@@ -145,10 +129,10 @@ class CRDGeneration {
             // generator MUST be initialized before we start processing classes as initializing it
             // will reset the types information held by the generator
             if (generator == null) {
-                generator = new CRDGenerator().withParallelGenerationEnabled(crdConfiguration.generateInParallel());
+                generator = crdConfiguration.useV1CRDGenerator() ? new CRDGeneratorV1(crdConfiguration.generateInParallel())
+                        : new CRDGeneratorV2(crdConfiguration.generateInParallel());
             }
-            final var info = CustomResourceInfo.fromClass(crClass);
-            generator.customResources(info);
+            generator.scheduleForGeneration(crClass);
             needGeneration = true;
         } catch (Exception e) {
             throw new IllegalArgumentException("Cannot process " + crClass.getName() + " custom resource"
