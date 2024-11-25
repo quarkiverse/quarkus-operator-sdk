@@ -86,7 +86,7 @@ public interface CRDConfiguration {
      * found with the v2 generator, which is the default one and the one that is actively maintained.
      *
      * @return {@code true} if the v1 version of the CRD generator should be used
-     * @since 6.9.1
+     * @since 6.8.5
      * @deprecated using this method should be reserved for blocking situations, please open an issue reporting the problem
      *             you're facing with the v2 generator before reverting to use the v1 version
      */
