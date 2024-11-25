@@ -18,7 +18,7 @@ Please refer to the https://github.com/quarkiverse/quarkus-operator-sdk/blob/mai
     * Watches your code for changes and reload automatically your operator if needed without having to hit an endpoint
     * Only re-generates the CRDs if a change impacting its generation is detected
     * Only re-processes a reconciler's configuration if needed
-    * Automatically apply the CRD to the cluster when it has changed
+    * Automatically apply the CRD to the cluster when it has changed (only in dev mode and during tests, never in production)
 - Supports micrometer registry extensions (adding a Quarkus-supported micrometer registry extension will automatically inject said registry into the operator)
 - Automatically adds a SmallRye health check
 - Sets up reflection for native binary generation
