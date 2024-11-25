@@ -32,7 +32,10 @@ public interface CRDConfiguration {
 
     /**
      * Whether the extension should automatically apply updated CRDs when they change.
-     * When running on DEV mode, the CRD changes will always be applied automatically.
+     * <p>
+     * <strong>NOTE that this option only when *not* in Dev mode as applying the CRD to a production cluster could be
+     * dangerous.</strong>
+     * </p>
      */
     Optional<Boolean> apply();
 
@@ -49,21 +52,21 @@ public interface CRDConfiguration {
     Optional<String> outputDirectory();
 
     /**
-     * Whether the extension should generate all CRDs even if some are not tied to a Reconciler.
+     * Whether the extension should generate all CRDs for Custom Resource implementations known to the application even if some
+     * are not tied to a Reconciler.
      */
     @WithDefault("false")
     Boolean generateAll();
 
     /**
-     * Whether the CRDs should be generated in parallel. Please note that this feature is experimental
-     * and it may lead to unexpected results.
+     * Whether the CRDs should be generated in parallel.
      */
     @WithDefault("false")
     Boolean generateInParallel();
 
     /**
-     * A comma-separated list of fully-qualified class names implementing custom resources to exclude from the CRD generation
-     * process.
+     * A comma-separated list of fully-qualified class names implementing {@link CustomResource} to exclude from the CRD
+     * generation process.
      */
     Optional<List<String>> excludeResources();
 
