@@ -33,8 +33,8 @@ public interface CRDConfiguration {
     /**
      * Whether the extension should automatically apply updated CRDs when they change.
      * <p>
-     * <strong>NOTE that this option only when *not* in Dev mode as applying the CRD to a production cluster could be
-     * dangerous.</strong>
+     * <strong>NOTE that this option is only considered when *not* in production mode as applying the CRD to a production
+     * cluster could be dangerous if done automatically.</strong>
      * </p>
      */
     Optional<Boolean> apply();
