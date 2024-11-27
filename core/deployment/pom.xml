@@ -51,6 +51,10 @@
       <artifactId>crd-generator-api-v2</artifactId>
     </dependency>
     <dependency>
+      <groupId>io.fabric8</groupId>
+      <artifactId>crd-generator-api</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.semver4j</groupId>
       <artifactId>semver4j</artifactId>
       <version>5.5.0</version>
