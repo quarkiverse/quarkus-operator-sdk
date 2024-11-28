@@ -47,7 +47,7 @@ a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-s
 --
 Whether the extension should automatically apply updated CRDs when they change.
 
-*NOTE that this option only when ++*++not++*++ in Dev mode as applying the CRD to a production cluster could be dangerous.*
+*NOTE that this option is only considered when ++*++not++*++ in production mode as applying the CRD to a production cluster could be dangerous if done automatically.*
 
 
 ifdef::add-copy-button-to-env-var[]
