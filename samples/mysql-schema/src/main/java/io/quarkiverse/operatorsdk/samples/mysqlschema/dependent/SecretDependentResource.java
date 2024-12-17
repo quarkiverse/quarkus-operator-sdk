@@ -23,6 +23,7 @@ public class SecretDependentResource extends KubernetesDependentResource<Secret,
     public static final String MYSQL_SECRET_USERNAME = "mysql.secret.user.name";
     public static final String MYSQL_SECRET_PASSWORD = "mysql.secret.user.password";
 
+    // todo: automatically generate
     public SecretDependentResource() {
         super(Secret.class);
     }

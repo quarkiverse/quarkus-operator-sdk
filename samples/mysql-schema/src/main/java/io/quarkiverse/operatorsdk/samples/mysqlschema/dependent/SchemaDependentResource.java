@@ -5,6 +5,7 @@ import static io.quarkiverse.operatorsdk.samples.mysqlschema.dependent.SecretDep
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Optional;
@@ -19,8 +20,7 @@ import org.slf4j.LoggerFactory;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.EventSourceProvider;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.DependentResourceConfigurator;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ConfiguredDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingDependentResource;
 import io.quarkiverse.operatorsdk.samples.mysqlschema.MySQLSchema;
@@ -30,8 +30,8 @@ import io.quarkiverse.operatorsdk.samples.mysqlschema.schema.SchemaService;
 @ApplicationScoped
 public class SchemaDependentResource
         extends PerResourcePollingDependentResource<Schema, MySQLSchema>
-        implements EventSourceProvider<MySQLSchema>,
-        DependentResourceConfigurator<ResourcePollerConfig>,
+        implements
+        ConfiguredDependentResource<ResourcePollerConfig>,
         Creator<Schema, MySQLSchema>,
         Deleter<MySQLSchema> {
     public static final String NAME = "schema";
@@ -47,13 +47,13 @@ public class SchemaDependentResource
     @Override
     public void configureWith(ResourcePollerConfig config) {
         if (config != null) {
-            setPollingPeriod(config.getPollPeriod());
+            setPollingPeriod(Duration.ofSeconds(config.getPollPeriod()));
         }
     }
 
     @Override
     public Optional<ResourcePollerConfig> configuration() {
-        return Optional.of(new ResourcePollerConfig((int) getPollingPeriod()));
+        return Optional.of(new ResourcePollerConfig((int) getPollingPeriod().toSeconds()));
     }
 
     @Override
