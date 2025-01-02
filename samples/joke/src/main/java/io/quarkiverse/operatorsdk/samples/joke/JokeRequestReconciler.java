@@ -24,6 +24,7 @@ import jakarta.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -35,7 +36,7 @@ import io.quarkiverse.operatorsdk.samples.joke.JokeRequestSpec.ExcludedTopic;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestStatus.State;
 
 @CSVMetadata(bundleName = "joke-operator", requiredCRDs = @CSVMetadata.RequiredCRD(kind = "Joke", name = Joke.NAME, version = Joke.VERSION), icon = @Icon(fileName = "icon.png", mediatype = "image/png"))
-@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
+@ControllerConfiguration(informer = @Informer(namespaces = WATCH_CURRENT_NAMESPACE))
 @RBACRule(apiGroups = Joke.GROUP, resources = "jokes", verbs = RBACRule.ALL)
 @SuppressWarnings("unused")
 public class JokeRequestReconciler implements Reconciler<JokeRequest> {
@@ -92,6 +93,6 @@ public class JokeRequestReconciler implements Reconciler<JokeRequest> {
         }
 
         jr.setStatus(status);
-        return UpdateControl.updateStatus(jr);
+        return UpdateControl.patchStatus(jr);
     }
 }

@@ -2,6 +2,7 @@ package io.quarkiverse.operatorsdk.it;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,15 +21,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
+import io.quarkiverse.operatorsdk.runtime.DependentResourceSpecMetadata;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkus.runtime.annotations.RegisterForReflection;
@@ -87,15 +88,15 @@ public class OperatorSDKResource {
     @Path("{name}/dependents/{dependent}")
     public JSONKubernetesResourceConfig getDependentConfig(@PathParam("name") String name,
             @PathParam("dependent") String dependent) {
-        final var dr = configurationService.getDependentByName(name, dependent);
+        final DependentResourceSpecMetadata<?, ?, ?> dr = configurationService.getDependentByName(name, dependent);
         if (dr == null) {
             return null;
         }
-        final var config = dr.getDependentResourceConfig();
-        if (config instanceof KubernetesDependentResourceConfig) {
-            return new JSONKubernetesResourceConfig((KubernetesDependentResourceConfig<?>) config);
-        }
-        return null;
+        return dr.getConfiguration()
+                .filter(KubernetesDependentResourceConfig.class::isInstance)
+                .map(KubernetesDependentResourceConfig.class::cast)
+                .map(JSONKubernetesResourceConfig::new)
+                .orElse(null);
     }
 
     static class JSONConfiguration {
@@ -189,21 +190,17 @@ public class OperatorSDKResource {
         }
 
         public String[] getNamespaces() {
-            return conf.getNamespaces().toArray(new String[0]);
+            return conf.getInformerConfig().getNamespaces().toArray(new String[0]);
         }
 
         @JsonProperty("watchAllNamespaces")
         public boolean watchAllNamespaces() {
-            return conf.watchAllNamespaces();
+            return conf.getInformerConfig().watchAllNamespaces();
         }
 
         @JsonProperty("watchCurrentNamespace")
         public boolean watchCurrentNamespace() {
-            return conf.watchCurrentNamespace();
-        }
-
-        public RetryConfiguration getRetryConfiguration() {
-            return conf.getRetryConfiguration();
+            return conf.getInformerConfig().watchCurrentNamespace();
         }
 
         public Retry getRetry() {
@@ -211,14 +208,15 @@ public class OperatorSDKResource {
         }
 
         public String getLabelSelector() {
-            return conf.getLabelSelector();
+            return conf.getInformerConfig().getLabelSelector();
         }
 
         public List<JSONDependentResourceSpec> getDependents() {
-            final var dependents = conf.getDependentResources();
+            final var dependents = conf.getWorkflowSpec().map(WorkflowSpec::getDependentResourceSpecs)
+                    .orElse(Collections.emptyList());
             final var result = new ArrayList<JSONDependentResourceSpec>(dependents.size());
             return dependents.stream()
-                    .map(spec -> new JSONDependentResourceSpec(spec, conf))
+                    .map(JSONDependentResourceSpec::new)
                     .collect(Collectors.toList());
         }
 
@@ -233,17 +231,15 @@ public class OperatorSDKResource {
         }
 
         public ItemStore<?> getItemStore() {
-            return conf.getItemStore().orElse(null);
+            return conf.getInformerConfig().getItemStore();
         }
     }
 
     static class JSONDependentResourceSpec {
-        private final DependentResourceSpec<?, ?> spec;
-        private final ControllerConfiguration<?> conf;
+        private final DependentResourceSpec<?, ?, ?> spec;
 
-        JSONDependentResourceSpec(DependentResourceSpec<?, ?> spec, ControllerConfiguration<?> conf) {
+        JSONDependentResourceSpec(DependentResourceSpec<?, ?, ?> spec) {
             this.spec = spec;
-            this.conf = conf;
         }
 
         public String getDependentClass() {
@@ -251,7 +247,7 @@ public class OperatorSDKResource {
         }
 
         public Object getDependentConfig() {
-            final var c = DependentResourceConfigurationResolver.configurationFor(spec, conf);
+            final var c = spec.getConfiguration().orElse(null);
             if (c instanceof KubernetesDependentResourceConfig) {
                 return new JSONKubernetesResourceConfig((KubernetesDependentResourceConfig<?>) c);
             } else {
@@ -275,19 +271,13 @@ public class OperatorSDKResource {
         }
 
         public String getOnAddFilter() {
-            return Optional.ofNullable(config.onAddFilter())
-                    .map(f -> f.getClass().getCanonicalName())
-                    .orElse(null);
-        }
-
-        public String getResourceDiscriminator() {
-            return Optional.ofNullable(config.getResourceDiscriminator())
+            return Optional.ofNullable(config.informerConfig().getOnAddFilter())
                     .map(f -> f.getClass().getCanonicalName())
                     .orElse(null);
         }
 
         public String getLabelSelector() {
-            return config.labelSelector();
+            return config.informerConfig().getLabelSelector();
         }
     }
 

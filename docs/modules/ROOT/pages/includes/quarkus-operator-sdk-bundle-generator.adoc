@@ -8,6 +8,10 @@ h|Type
 h|Default
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-enabled]] [.property-path]##link:#quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-enabled[`quarkus.operator-sdk.bundle.enabled`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.operator-sdk.bundle.enabled+++[]
+endif::add-copy-button-to-config-props[]
+
 
 [.description]
 --
@@ -25,6 +29,10 @@ endif::add-copy-button-to-env-var[]
 |`true`
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-channels]] [.property-path]##link:#quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-channels[`quarkus.operator-sdk.bundle.channels`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.operator-sdk.bundle.channels+++[]
+endif::add-copy-button-to-config-props[]
+
 
 [.description]
 --
@@ -42,6 +50,10 @@ endif::add-copy-button-to-env-var[]
 |`alpha`
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-default-channel]] [.property-path]##link:#quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-default-channel[`quarkus.operator-sdk.bundle.default-channel`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.operator-sdk.bundle.default-channel+++[]
+endif::add-copy-button-to-config-props[]
+
 
 [.description]
 --
@@ -59,6 +71,10 @@ endif::add-copy-button-to-env-var[]
 |
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-replaces]] [.property-path]##link:#quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-replaces[`quarkus.operator-sdk.bundle.replaces`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.operator-sdk.bundle.replaces+++[]
+endif::add-copy-button-to-config-props[]
+
 
 [.description]
 --
@@ -76,6 +92,10 @@ endif::add-copy-button-to-env-var[]
 |
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-version]] [.property-path]##link:#quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-version[`quarkus.operator-sdk.bundle.version`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.operator-sdk.bundle.version+++[]
+endif::add-copy-button-to-config-props[]
+
 
 [.description]
 --
@@ -93,6 +113,10 @@ endif::add-copy-button-to-env-var[]
 |
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-bundles-bundles-annotations-annotations]] [.property-path]##link:#quarkus-operator-sdk-bundle-generator_quarkus-operator-sdk-bundle-bundles-bundles-annotations-annotations[`quarkus.operator-sdk.bundle.bundles."bundles".annotations."annotations"`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.operator-sdk.bundle.bundles."bundles".annotations."annotations"+++[]
+endif::add-copy-button-to-config-props[]
+
 
 [.description]
 --

@@ -20,6 +20,7 @@ import static io.quarkiverse.operatorsdk.samples.pingpong.PingPongOperatorCSVMet
 import jakarta.inject.Inject;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -27,7 +28,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 
 @CSVMetadata(bundleName = BUNDLE_NAME)
-@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
+@ControllerConfiguration(informer = @Informer(namespaces = WATCH_CURRENT_NAMESPACE))
 @SuppressWarnings("unused")
 public class PingReconciler implements Reconciler<Ping> {
 
@@ -51,6 +52,6 @@ public class PingReconciler implements Reconciler<Ping> {
         }
 
         ping.setStatus(new Status(Status.State.PROCESSED));
-        return UpdateControl.updateStatus(ping);
+        return UpdateControl.patchStatus(ping);
     }
 }

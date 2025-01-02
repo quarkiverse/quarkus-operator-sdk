@@ -4,7 +4,7 @@
   <parent>
     <groupId>io.quarkiverse.operatorsdk</groupId>
     <artifactId>quarkus-operator-sdk-build-parent</artifactId>
-    <version>6.9.2-SNAPSHOT</version>
+    <version>7.0.0-SNAPSHOT</version>
     <relativePath>../build-parent/pom.xml</relativePath>
   </parent>
   <artifactId>quarkus-operator-sdk-integration-tests</artifactId>
@@ -29,7 +29,7 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-test-openshift-client</artifactId>
+      <artifactId>quarkus-test-kubernetes-client</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -40,10 +40,6 @@
       <groupId>io.rest-assured</groupId>
       <artifactId>rest-assured</artifactId>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.fabric8</groupId>
-      <artifactId>istio-model-v1beta1</artifactId>
     </dependency>
     <!--  to check that MeterRegistry are properly bound to custom Metrics implementations -->
     <dependency>
