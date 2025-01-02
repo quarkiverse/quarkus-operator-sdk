@@ -29,7 +29,7 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-test-openshift-client</artifactId>
+      <artifactId>quarkus-test-kubernetes-client</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -40,10 +40,6 @@
       <groupId>io.rest-assured</groupId>
       <artifactId>rest-assured</artifactId>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.fabric8</groupId>
-      <artifactId>istio-model-v1beta1</artifactId>
     </dependency>
     <!--  to check that MeterRegistry are properly bound to custom Metrics implementations -->
     <dependency>
