@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.DisabledOnIntegrationTest;
 import io.quarkus.test.junit.QuarkusTest;
 
@@ -29,7 +29,7 @@ import io.quarkus.test.junit.QuarkusTest;
  * See also {@code maven-surefire-plugin} configuration where these same environment variables are set
  */
 @QuarkusTest
-@QuarkusTestResource(CustomKubernetesServerTestResource.class)
+@WithTestResource(CustomKubernetesServerTestResource.class)
 class OperatorSDKResourceTest {
 
     @BeforeAll
@@ -128,7 +128,7 @@ class OperatorSDKResourceTest {
                         "namespaces", hasSize(2),
                         "namespaces", hasItem("builtime-namespace1"),
                         "namespaces", hasItem("buildtime-ns2"),
-                        "retry.maxAttempts", equalTo(1),
+                        "retry.maxAttempts", equalTo(1), // should use property even if no annotation exists
                         "generationAware", equalTo(false),
                         "maxReconciliationIntervalSeconds", equalTo(TestReconciler.INTERVAL));
     }
@@ -143,9 +143,8 @@ class OperatorSDKResourceTest {
                 .body(
                         "finalizer", equalTo("from-property/finalizer"),
                         "namespaces", hasItem("bar"),
-                        "retryConfiguration.maxAttempts", equalTo(10),
-                        "retry.maxAttempts", equalTo(ConfiguredReconciler.MAX_ATTEMPTS),
-                        "retryConfiguration.initialInterval", equalTo(20000),
+                        "retry.maxAttempts", equalTo(ConfiguredReconciler.MAX_ATTEMPTS), // from annotation
+                        "retry.initialInterval", equalTo(20000), // annotation value should be overridden by property
                         "rateLimiter.refreshPeriod", equalTo(60F), // for some reason the period is reported as a float
                         "labelSelector", equalTo("environment=production,tier!=frontend"));
 
@@ -181,10 +180,7 @@ class OperatorSDKResourceTest {
                         "dependents.dependentConfig.labelSelector",
                         hasItems(ReadOnlyDependentResource.LABEL_SELECTOR, CRUDDependentResource.LABEL_SELECTOR),
                         "dependents.dependentConfig.onAddFilter",
-                        hasItem(CRUDDependentResource.TestOnAddFilter.class.getCanonicalName()),
-                        "dependents.dependentConfig.resourceDiscriminator",
-                        hasItems(ReadOnlyDependentResource.ReadOnlyResourceDiscriminator.class.getCanonicalName(),
-                                CRUDDependentResource.TestResourceDiscriminator.class.getCanonicalName()));
+                        hasItem(CRUDDependentResource.TestOnAddFilter.class.getCanonicalName()));
     }
 
     @Test
@@ -209,9 +205,8 @@ class OperatorSDKResourceTest {
                 .when()
                 .get("/operator/" + DependentDefiningReconciler.NAME + "/dependents/" + ReadOnlyDependentResource.NAME)
                 .then()
-                .statusCode(200).body(
-                        "resourceDiscriminator",
-                        is(ReadOnlyDependentResource.ReadOnlyResourceDiscriminator.class.getCanonicalName()));
+                .statusCode(200)
+                .body("labelSelector", equalTo(ReadOnlyDependentResource.LABEL_SELECTOR));
     }
 
     @Test

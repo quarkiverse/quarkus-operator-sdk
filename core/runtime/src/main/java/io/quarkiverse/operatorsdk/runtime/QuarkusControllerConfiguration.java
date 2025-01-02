@@ -2,8 +2,11 @@ package io.quarkiverse.operatorsdk.runtime;
 
 import java.lang.annotation.Annotation;
 import java.time.Duration;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
@@ -13,15 +16,13 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.RetryConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.processing.Controller;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
-import io.javaoperatorsdk.operator.processing.event.source.controller.ResourceEventFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
@@ -35,34 +36,6 @@ import io.quarkus.runtime.annotations.RecordableConstructor;
 public class QuarkusControllerConfiguration<R extends HasMetadata> implements ControllerConfiguration<R>,
         DependentResourceConfigurationProvider {
 
-    // we need to create this class because Quarkus cannot reference the default implementation that
-    // JOSDK provides as it doesn't like lambdas at build time. The class also needs to be public
-    // because otherwise Quarkus isn't able to access it… :(
-    public final static class PassthroughResourceEventFilter implements ResourceEventFilter {
-
-        @Override
-        public boolean acceptChange(Controller controller, HasMetadata hasMetadata,
-                HasMetadata p1) {
-            return true;
-        }
-    }
-
-    private final static ResourceEventFilter DEFAULT = new PassthroughResourceEventFilter();
-
-    // Needed by Quarkus because LinearRateLimiter doesn't expose setters for byte recording
-    public final static class DefaultRateLimiter extends LinearRateLimiter {
-
-        public DefaultRateLimiter() {
-            super();
-        }
-
-        @RecordableConstructor
-        @SuppressWarnings("unused")
-        public DefaultRateLimiter(Duration refreshPeriod, int limitForPeriod) {
-            super(refreshPeriod, limitForPeriod);
-        }
-    }
-
     private final String associatedReconcilerClassName;
     private final String name;
     private final String resourceTypeName;
@@ -70,30 +43,22 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final boolean generationAware;
     private final boolean statusPresentAndNotVoid;
     private final Class<R> resourceClass;
-    private final Optional<Long> informerListLimit;
-    private final ResourceEventFilter<R> eventFilter;
-    private final Optional<OnAddFilter<? super R>> onAddFilter;
-    private final Optional<OnUpdateFilter<? super R>> onUpdateFilter;
-    private final Optional<GenericFilter<? super R>> genericFilter;
     private final List<PolicyRule> additionalRBACRules;
     private final List<RoleRef> additionalRBACRoleRefs;
     private final String fieldManager;
-    private final Optional<ItemStore<R>> itemStore;
     private Class<? extends Annotation> retryConfigurationClass;
     private Class<? extends Retry> retryClass;
     private Class<? extends Annotation> rateLimiterConfigurationClass;
     private Class<? extends RateLimiter> rateLimiterClass;
     private Optional<Duration> maxReconciliationInterval;
     private String finalizer;
-    private Set<String> namespaces;
     private boolean wereNamespacesSet;
-    private RetryConfiguration retryConfiguration;
-    private String labelSelector;
-    private final Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata;
     private Retry retry;
     private RateLimiter rateLimiter;
-    private ManagedWorkflow<R> workflow;
+    private QuarkusManagedWorkflow<R> workflow;
     private ConfigurationService parent;
+    private ExternalGradualRetryConfiguration gradualRetry;
+    private QuarkusInformerConfiguration<R> informerConfig;
 
     @RecordableConstructor
     @SuppressWarnings("unchecked")
@@ -103,44 +68,32 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             String resourceTypeName,
             String crVersion, boolean generationAware,
             Class resourceClass,
-            Long nullableInformerListLimit,
-            Set<String> namespaces,
             boolean wereNamespacesSet,
-            String finalizerName, String labelSelector,
-            boolean statusPresentAndNotVoid, ResourceEventFilter eventFilter,
+            String finalizerName,
+            boolean statusPresentAndNotVoid,
             Duration maxReconciliationInterval,
-            OnAddFilter<R> onAddFilter, OnUpdateFilter<R> onUpdateFilter, GenericFilter<R> genericFilter,
             Class<? extends Retry> retryClass, Class<? extends Annotation> retryConfigurationClass,
             Class<? extends RateLimiter> rateLimiterClass, Class<? extends Annotation> rateLimiterConfigurationClass,
-            Map<String, DependentResourceSpecMetadata<?, ?, ?>> dependentsMetadata, ManagedWorkflow<R> workflow,
             List<PolicyRule> additionalRBACRules, List<RoleRef> additionalRBACRoleRefs, String fieldManager,
-            ItemStore<R> nullableItemStore) {
+            QuarkusInformerConfiguration<R> informerConfig) {
+        this.informerConfig = informerConfig;
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
         this.resourceTypeName = resourceTypeName;
         this.crVersion = crVersion;
         this.generationAware = generationAware;
         this.resourceClass = resourceClass;
-        this.informerListLimit = Optional.ofNullable(nullableInformerListLimit);
         this.additionalRBACRules = additionalRBACRules;
         this.additionalRBACRoleRefs = additionalRBACRoleRefs;
-        this.dependentsMetadata = dependentsMetadata;
-        this.workflow = workflow;
-        this.retryConfiguration = ControllerConfiguration.super.getRetryConfiguration();
-        setNamespaces(namespaces);
+        setNamespaces(informerConfig.getNamespaces());
         this.wereNamespacesSet = wereNamespacesSet;
         setFinalizer(finalizerName);
-        this.labelSelector = labelSelector;
         this.statusPresentAndNotVoid = statusPresentAndNotVoid;
-        this.eventFilter = eventFilter != null ? eventFilter : DEFAULT;
         this.maxReconciliationInterval = maxReconciliationInterval != null ? Optional.of(maxReconciliationInterval)
                 : ControllerConfiguration.super.maxReconciliationInterval();
-        this.onAddFilter = Optional.ofNullable(onAddFilter);
-        this.onUpdateFilter = Optional.ofNullable(onUpdateFilter);
-        this.genericFilter = Optional.ofNullable(genericFilter);
 
         this.retryClass = retryClass;
-        this.retry = GenericRetry.class.equals(retryClass) ? ControllerConfiguration.super.getRetry() : null;
+        this.retry = GenericRetry.class.equals(retryClass) ? new GenericRetry() : null;
         this.retryConfigurationClass = retryConfigurationClass;
 
         this.rateLimiterClass = rateLimiterClass;
@@ -148,7 +101,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.rateLimiterConfigurationClass = rateLimiterConfigurationClass;
 
         this.fieldManager = fieldManager != null ? fieldManager : ControllerConfiguration.super.fieldManager();
-        this.itemStore = Optional.ofNullable(nullableItemStore);
     }
 
     @Override
@@ -164,17 +116,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     @Override
     public Class<R> getResourceClass() {
         return resourceClass;
-    }
-
-    @Override
-    public Optional<Long> getInformerListLimit() {
-        return informerListLimit;
-    }
-
-    @SuppressWarnings("unused")
-    // this is needed by Quarkus for the RecordableConstructor
-    public Long getNullableInformerListLimit() {
-        return informerListLimit.orElse(null);
     }
 
     @Override
@@ -213,42 +154,18 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return associatedReconcilerClassName;
     }
 
-    @Override
-    public Set<String> getNamespaces() {
-        return namespaces;
-    }
-
-    @SuppressWarnings("unchecked")
-    void setNamespaces(Collection<String> namespaces) {
-        if (!namespaces.equals(this.namespaces)) {
-            this.namespaces = namespaces.stream().map(String::trim).collect(Collectors.toSet());
+    void setNamespaces(Set<String> namespaces) {
+        if (!namespaces.equals(informerConfig.getNamespaces())) {
+            informerConfig = new QuarkusInformerConfiguration<>(
+                    InformerConfiguration.builder(informerConfig)
+                            .withNamespaces(namespaces)
+                            .buildForController());
             wereNamespacesSet = true;
-            // propagate namespace changes to the dependents' config if needed
-            this.dependentsMetadata.forEach((name, spec) -> {
-                final var config = spec.getDependentResourceConfig();
-                if (config instanceof QuarkusKubernetesDependentResourceConfig qConfig) {
-                    qConfig.setNamespaces(this.namespaces);
-                }
-            });
         }
     }
 
     public boolean isWereNamespacesSet() {
         return wereNamespacesSet;
-    }
-
-    @Override
-    public RetryConfiguration getRetryConfiguration() {
-        return retryConfiguration;
-    }
-
-    void setRetryConfiguration(RetryConfiguration retryConfiguration) {
-        this.retryConfiguration = retryConfiguration != null ? retryConfiguration
-                : ControllerConfiguration.super.getRetryConfiguration();
-        // reset retry if needed
-        if (retry == null || retry instanceof GenericRetry) {
-            retry = GenericRetry.fromConfiguration(retryConfiguration);
-        }
     }
 
     @IgnoreProperty
@@ -257,13 +174,10 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return ControllerConfiguration.super.getEffectiveNamespaces();
     }
 
-    @Override
-    public String getLabelSelector() {
-        return labelSelector;
-    }
-
     void setLabelSelector(String labelSelector) {
-        this.labelSelector = labelSelector;
+        informerConfig = new QuarkusInformerConfiguration<>(InformerConfiguration.builder(informerConfig)
+                .withLabelSelector(labelSelector)
+                .buildForController());
     }
 
     public boolean isStatusPresentAndNotVoid() {
@@ -271,29 +185,31 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     }
 
     public boolean areDependentsImpactedBy(Set<String> changedClasses) {
-        return dependentsMetadata.keySet().parallelStream().anyMatch(changedClasses::contains);
+        return dependentsMetadata().keySet().parallelStream().anyMatch(changedClasses::contains);
     }
 
     public boolean needsDependentBeansCreation() {
+        final var dependentsMetadata = dependentsMetadata();
         return dependentsMetadata != null && !dependentsMetadata.isEmpty();
     }
 
-    public ManagedWorkflow<R> getWorkflow() {
+    public QuarkusManagedWorkflow<R> getWorkflow() {
         return workflow;
     }
 
-    public void setWorkflow(ManagedWorkflow<R> workflow) {
+    public void setWorkflow(QuarkusManagedWorkflow<R> workflow) {
         this.workflow = workflow;
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Object getConfigurationFor(DependentResourceSpec dependentResourceSpec) {
-        return ((DependentResourceSpecMetadata) dependentResourceSpec).getDependentResourceConfig();
+        return dependentResourceSpec.getConfiguration().orElse(null);
     }
 
     @Override
-    public List<DependentResourceSpec> getDependentResources() {
-        return dependentsMetadata.values().parallelStream().collect(Collectors.toList());
+    public Optional<WorkflowSpec> getWorkflowSpec() {
+        return workflow.getGenericSpec();
     }
 
     @Override
@@ -304,11 +220,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     @Override
     public RateLimiter getRateLimiter() {
         return rateLimiter;
-    }
-
-    @Override
-    public ResourceEventFilter<R> getEventFilter() {
-        return eventFilter;
     }
 
     public Optional<Duration> maxReconciliationInterval() {
@@ -328,34 +239,19 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     // for Quarkus' RecordableConstructor
     @SuppressWarnings("unused")
     public OnAddFilter<? super R> getOnAddFilter() {
-        return onAddFilter.orElse(null);
-    }
-
-    @Override
-    public Optional<OnAddFilter<? super R>> onAddFilter() {
-        return onAddFilter;
+        return getInformerConfig().getOnAddFilter();
     }
 
     // for Quarkus' RecordableConstructor
     @SuppressWarnings("unused")
     public OnUpdateFilter<? super R> getOnUpdateFilter() {
-        return onUpdateFilter.orElse(null);
-    }
-
-    @Override
-    public Optional<OnUpdateFilter<? super R>> onUpdateFilter() {
-        return onUpdateFilter;
+        return getInformerConfig().getOnUpdateFilter();
     }
 
     // for Quarkus' RecordableConstructor
     @SuppressWarnings("unused")
     public GenericFilter<? super R> getGenericFilter() {
-        return genericFilter.orElse(null);
-    }
-
-    @Override
-    public Optional<GenericFilter<? super R>> genericFilter() {
-        return genericFilter;
+        return getInformerConfig().getGenericFilter();
     }
 
     // for Quarkus' RecordableConstructor
@@ -364,25 +260,37 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return retryClass;
     }
 
+    void setGradualRetryConfiguration(ExternalGradualRetryConfiguration gradualRetry) {
+        this.gradualRetry = gradualRetry;
+    }
+
     // for Quarkus' RecordableConstructor
     @SuppressWarnings("unused")
     public Class<? extends RateLimiter> getRateLimiterClass() {
         return rateLimiterClass;
     }
 
-    // for Quarkus' RecordableConstructor
-    @SuppressWarnings("unused")
-    public Map<String, DependentResourceSpecMetadata<?, ?, ?>> getDependentsMetadata() {
-        return dependentsMetadata;
+    public Map<String, DependentResourceSpecMetadata> dependentsMetadata() {
+        return workflow.getSpec().map(QuarkusWorkflowSpec::getDependentResourceSpecMetadata).orElse(Collections.emptyMap());
     }
 
     void initAnnotationConfigurables(Reconciler<R> reconciler) {
         final Class<? extends Reconciler> reconcilerClass = reconciler.getClass();
-        if (retryConfigurationClass != null) {
+        if (retryConfigurationClass != null || gradualRetry != null) {
             if (retry == null) {
                 retry = ClassLoadingUtils.instantiate(retryClass);
             }
             configure(reconcilerClass, retryConfigurationClass, (AnnotationConfigurable) retry);
+            // override with configuration from application.properties (if it exists) for GradualRetry
+            if (gradualRetry != null) {
+                // configurable should be a GenericRetry as validated by RetryResolver
+                final var genericRetry = (GenericRetry) retry;
+                gradualRetry.maxAttempts().ifPresent(genericRetry::setMaxAttempts);
+                final var intervalConfiguration = gradualRetry.interval();
+                intervalConfiguration.initial().ifPresent(genericRetry::setInitialInterval);
+                intervalConfiguration.max().ifPresent(genericRetry::setMaxInterval);
+                intervalConfiguration.multiplier().ifPresent(genericRetry::setIntervalMultiplier);
+            }
             retryClass = null;
             retryConfigurationClass = null;
         }
@@ -397,13 +305,13 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         }
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings("unused")
     public Class<? extends Annotation> getRetryConfigurationClass() {
         return retryConfigurationClass;
     }
 
-    // Needed for the recordable constructor
+    // Getter required for Quarkus' RecordableConstructor, must match the associated constructor parameter name
     @SuppressWarnings("unused")
     public Class<? extends Annotation> getRateLimiterConfigurationClass() {
         return rateLimiterConfigurationClass;
@@ -439,14 +347,28 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         return fieldManager;
     }
 
-    @Override
-    public Optional<ItemStore<R>> getItemStore() {
-        return itemStore;
-    }
-
     @SuppressWarnings("unused")
     // this is needed by Quarkus for the RecordableConstructor
     public ItemStore<R> getNullableItemStore() {
-        return itemStore.orElse(null);
+        return getInformerConfig().getItemStore();
+    }
+
+    @Override
+    public InformerConfiguration<R> getInformerConfig() {
+        return informerConfig;
+    }
+
+    // Needed by Quarkus because LinearRateLimiter doesn't expose setters for byte recording
+    public final static class DefaultRateLimiter extends LinearRateLimiter {
+
+        public DefaultRateLimiter() {
+            super();
+        }
+
+        @RecordableConstructor
+        @SuppressWarnings("unused")
+        public DefaultRateLimiter(Duration refreshPeriod, int limitForPeriod) {
+            super(refreshPeriod, limitForPeriod);
+        }
     }
 }
