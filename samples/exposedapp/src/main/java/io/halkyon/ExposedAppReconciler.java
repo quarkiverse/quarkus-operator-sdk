@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowReconcileResult;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 
 @Workflow(dependents = {
@@ -44,7 +45,7 @@ public class ExposedAppReconciler implements Reconciler<ExposedApp>,
         final var name = exposedApp.getMetadata().getName();
         // retrieve the workflow reconciliation result and re-schedule if we have dependents that are not yet ready
         final var wrs = context.managedWorkflowAndDependentResourceContext().getWorkflowReconcileResult();
-        if (wrs.allDependentResourcesReady()) {
+        if (wrs.map(WorkflowReconcileResult::allDependentResourcesReady).orElse(false)) {
 
             final var url = IngressDependent.getExposedURL(
                     context.getSecondaryResource(Ingress.class).orElseThrow());
