@@ -1,0 +1,5 @@
+== Upgrading from 6.x to 7.0
+
+=== Removed deprecated code
+- `KubernetesClientSerializationCustomer` has been removed, use `io.quarkus.kubernetes.client.KubernetesClientObjectMapperCustomizer` from Quarkus instead
+
