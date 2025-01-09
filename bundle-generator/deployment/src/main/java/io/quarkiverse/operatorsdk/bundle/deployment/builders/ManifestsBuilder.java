@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -26,8 +27,9 @@ public abstract class ManifestsBuilder {
                 .enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS)
                 .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER));
         YAML_MAPPER.configure(SerializationFeature.INDENT_OUTPUT, true);
-        YAML_MAPPER.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
-        YAML_MAPPER.configure(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS, false);
+        YAML_MAPPER.setDefaultPropertyInclusion(
+                JsonInclude.Value.construct(JsonInclude.Include.ALWAYS, JsonInclude.Include.NON_NULL));
+        YAML_MAPPER.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
     }
 
     protected final CSVMetadataHolder metadata;
