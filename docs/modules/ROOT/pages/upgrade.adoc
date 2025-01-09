@@ -2,4 +2,5 @@
 
 === Removed deprecated code
 - `KubernetesClientSerializationCustomer` has been removed, use `io.quarkus.kubernetes.client.KubernetesClientObjectMapperCustomizer` from Quarkus instead
+- `BundleGenerationConfiguration.packageName` and associated property (`quarkus.operator-sdk.bundle.package-name`) have been removed, use `CSVMetadata.bundleName` instead
 

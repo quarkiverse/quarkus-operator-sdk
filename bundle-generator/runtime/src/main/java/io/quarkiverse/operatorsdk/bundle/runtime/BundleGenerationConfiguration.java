@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 import io.quarkus.runtime.annotations.ConfigRoot;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
@@ -30,14 +29,6 @@ public interface BundleGenerationConfiguration {
      * The default channel for the bundle.
      */
     Optional<String> defaultChannel();
-
-    /**
-     * The name of the package that bundle belongs to.
-     *
-     * @deprecated Use {@link CSVMetadata#bundleName()} instead
-     */
-    @Deprecated(forRemoval = true)
-    Optional<String> packageName();
 
     /**
      * The replaces value that should be used in the generated CSV.

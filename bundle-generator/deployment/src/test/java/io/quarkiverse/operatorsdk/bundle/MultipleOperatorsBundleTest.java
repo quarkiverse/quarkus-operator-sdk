@@ -23,7 +23,6 @@ import io.quarkus.test.QuarkusProdModeTest;
 public class MultipleOperatorsBundleTest {
 
     private static final String VERSION = "test-version";
-    private static final String BUNDLE_PACKAGE = "olm-package";
     private static final String OVERRIDEN_REPO_ANNOTATION = "overridden-repo-annotation";
     private static final String DEFAULT_ANNOTATION_NAME = "default-annotation-name";
     private static final String DEFAULT_ANNOTATION_VALUE = "default-annotation-value";
@@ -41,7 +40,6 @@ public class MultipleOperatorsBundleTest {
                             ExternalDependentResource.class, PodDependentResource.class))
             .overrideConfigKey("quarkus.operator-sdk.crd.generate-all", "true")
             .overrideConfigKey("quarkus.operator-sdk.bundle.replaces", FirstReconciler.REPLACES)
-            .overrideConfigKey("quarkus.operator-sdk.bundle.package-name", BUNDLE_PACKAGE)
             .overrideConfigKey("quarkus.operator-sdk.bundle.bundles." + ThirdReconciler.BUNDLE_NAME + ".annotations."
                     + BundleConfiguration.REPOSITORY_ANNOTATION, OVERRIDEN_REPO_ANNOTATION)
             .overrideConfigKey(
@@ -71,7 +69,7 @@ public class MultipleOperatorsBundleTest {
         assertEquals(FirstReconciler.VERSION, csv.getSpec().getVersion());
         assertEquals(FirstReconciler.REPLACES, csv.getSpec().getReplaces());
         var bundleMeta = getAnnotationsFor(bundle, "first-operator");
-        assertEquals(BUNDLE_PACKAGE, bundleMeta.getAnnotations().get("operators.operatorframework.io.bundle.package.v1"));
+        assertEquals("first-operator", bundleMeta.getAnnotations().get("operators.operatorframework.io.bundle.package.v1"));
 
         checkBundleFor(bundle, "second-operator", Second.class);
         csv = getCSVFor(bundle, "second-operator");

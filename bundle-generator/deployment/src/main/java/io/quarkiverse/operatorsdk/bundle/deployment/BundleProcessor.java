@@ -116,8 +116,7 @@ public class BundleProcessor {
             CombinedIndexBuildItem combinedIndexBuildItem,
             JarBuildItem jarBuildItem) {
         final var index = combinedIndexBuildItem.getIndex();
-        final var defaultName = bundleConfiguration.packageName()
-                .orElse(ResourceNameUtil.getResourceName(kubernetesConfig, appConfiguration));
+        final var defaultName = ResourceNameUtil.getResourceName(kubernetesConfig, appConfiguration);
 
         // note that version, replaces, etc. should probably be settable at the reconciler level
         // use version specified in bundle configuration, if not use the one extracted from the project, if available
