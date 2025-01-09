@@ -25,8 +25,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestSpec.Category;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestStatus.State;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectMock;
 
 @QuarkusTest
 class JokeRequestReconcilerTest {
