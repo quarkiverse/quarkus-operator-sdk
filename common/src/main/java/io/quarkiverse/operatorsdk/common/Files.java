@@ -24,7 +24,7 @@ public class Files {
     public interface MessageWriter {
         default void write(String message) {
             write(message, null, false);
-        };
+        }
 
         default void error(String message) {
             error(message, null);
