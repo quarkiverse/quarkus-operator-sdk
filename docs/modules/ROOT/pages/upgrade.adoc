@@ -1,6 +1,7 @@
 == Upgrading from 6.x to 7.0
 
 === Removed deprecated code
+
 - `KubernetesClientSerializationCustomer` has been removed, use `io.quarkus.kubernetes.client.KubernetesClientObjectMapperCustomizer` from Quarkus instead
 - `BundleGenerationConfiguration.packageName` and associated property (`quarkus.operator-sdk.bundle.package-name`) have been removed, use `CSVMetadata.bundleName` instead
 - `SharedCSVMetadata` and `CSVMetadata` from `quarkus-operator-sdk-bundle-generator` annotations that got moved to `quarkus-operator-sdk-annotations` module for better reuse
