@@ -153,13 +153,13 @@ class HelmDeploymentE2ETest {
     private void deployWithHelm(String... values) {
         File kubeConfigFile = KubeUtils.generateConfigFromClient(client);
 
-        var command = "helm install exposedapp target/helm";
-        command += " --kubeconfig " + kubeConfigFile.getPath();
+        StringBuilder command = new StringBuilder("helm install exposedapp target/helm");
+        command.append(" --kubeconfig ").append(kubeConfigFile.getPath());
         for (int i = 0; i < values.length; i = i + 2) {
-            command += " --set " + values[i] + "=" + values[i + 1];
+            command.append(" --set ").append(values[i]).append("=").append(values[i + 1]);
         }
 
-        execHelmCommand(command);
+        execHelmCommand(command.toString());
         client.apps().deployments().inNamespace(DEFAULT_NAMESPACE).withName(DEPLOYMENT_NAME)
                 .waitUntilReady(30, TimeUnit.SECONDS);
     }
