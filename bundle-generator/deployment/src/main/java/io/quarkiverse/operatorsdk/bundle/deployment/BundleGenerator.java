@@ -101,7 +101,7 @@ public class BundleGenerator {
 
     private static SortedMap<String, String> generateBundleLabels(CSVMetadataHolder csvMetadata,
             BundleGenerationConfiguration bundleConfiguration, Version version) {
-        var packageName = bundleConfiguration.packageName().orElse(csvMetadata.bundleName);
+        var packageName = csvMetadata.bundleName;
 
         SortedMap<String, String> values = new TreeMap<>();
         values.put(join(BUNDLE_PREFIX, CHANNEL, DEFAULT, ANNOTATIONS_VERSION),
