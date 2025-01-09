@@ -485,6 +485,6 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     }
 
     private static String defaultIfEmpty(String possiblyNullOrEmpty, String defaultValue) {
-        return Optional.ofNullable(possiblyNullOrEmpty).filter(s -> !s.isBlank() && !s.isEmpty()).orElse(defaultValue);
+        return Optional.ofNullable(possiblyNullOrEmpty).filter(s -> !s.isBlank()).orElse(defaultValue);
     }
 }
