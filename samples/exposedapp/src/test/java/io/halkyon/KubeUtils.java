@@ -2,12 +2,16 @@ package io.halkyon;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.List;
 
-import org.testcontainers.shaded.com.google.common.io.Files;
-
-import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.AuthInfo;
+import io.fabric8.kubernetes.api.model.Cluster;
+import io.fabric8.kubernetes.api.model.Config;
+import io.fabric8.kubernetes.api.model.Context;
+import io.fabric8.kubernetes.api.model.NamedAuthInfo;
+import io.fabric8.kubernetes.api.model.NamedCluster;
+import io.fabric8.kubernetes.api.model.NamedContext;
 import io.fabric8.kubernetes.client.KubernetesClient;
 
 public class KubeUtils {
@@ -28,7 +32,7 @@ public class KubeUtils {
             File targetFile = new File("target", "devservice-kubeconfig.yaml");
             String yaml = client.getKubernetesSerialization().asYaml(res);
 
-            Files.write(yaml, targetFile, StandardCharsets.UTF_8);
+            Files.writeString(targetFile.toPath(), yaml);
             return targetFile;
         } catch (IOException e) {
             throw new RuntimeException(e);
