@@ -18,7 +18,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
-import io.fabric8.kubernetes.client.utils.Serialization;
+import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
 import io.quarkiverse.operatorsdk.deployment.AddRoleBindingsDecorator;
 import io.quarkiverse.operatorsdk.test.sources.WatchAllReconciler;
@@ -36,6 +36,7 @@ public class WatchAllNamespacesTest {
 
     @ProdBuildResults
     private ProdModeTestResults prodModeTestResults;
+    private static final KubernetesSerialization serialization = new KubernetesSerialization();
 
     @Test
     public void shouldCreateRolesAndRoleBindings() throws IOException {
@@ -45,7 +46,7 @@ public class WatchAllNamespacesTest {
         final var kubeIS = new FileInputStream(kubeManifest.toFile());
         // use unmarshall version with parameters map to ensure code goes through the proper processing wrt multiple documents
         @SuppressWarnings("unchecked")
-        final var kubeResources = (List<HasMetadata>) Serialization.unmarshal(kubeIS);
+        final var kubeResources = (List<HasMetadata>) serialization.unmarshal(kubeIS);
 
         // check cluster role
         final var clusterRoleName = AddClusterRolesDecorator.getClusterRoleName(WatchAllReconciler.NAME);
