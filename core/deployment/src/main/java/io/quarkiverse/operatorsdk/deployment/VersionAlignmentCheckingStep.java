@@ -72,7 +72,7 @@ public class VersionAlignmentCheckingStep {
 
     private static Optional<Semver> getSemverFrom(String version) {
         try {
-            return Optional.of(Semver.coerce(version));
+            return Optional.ofNullable(Semver.coerce(version));
         } catch (Exception e) {
             log.warn("Couldn't convert version " + version);
         }
