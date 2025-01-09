@@ -6,7 +6,6 @@ import static org.hamcrest.Matchers.*;
 
 import java.time.Duration;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.ReconcilerUtils;
@@ -31,11 +30,6 @@ import io.quarkus.test.junit.QuarkusTest;
 @QuarkusTest
 @WithTestResource(CustomKubernetesServerTestResource.class)
 class OperatorSDKResourceTest {
-
-    @BeforeAll
-    static void setup() {
-    }
-
     @Test
     void shouldNotValidateCRs() {
         given().when().get("/operator/config").then().statusCode(200).body(

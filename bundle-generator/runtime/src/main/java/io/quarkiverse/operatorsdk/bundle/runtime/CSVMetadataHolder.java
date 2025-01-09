@@ -1,7 +1,6 @@
 package io.quarkiverse.operatorsdk.bundle.runtime;
 
 import static io.quarkiverse.operatorsdk.bundle.runtime.BundleConfiguration.*;
-import static io.quarkiverse.operatorsdk.bundle.runtime.BundleConfiguration.CONTAINER_IMAGE_ANNOTATION;
 
 import java.util.Collections;
 import java.util.HashMap;

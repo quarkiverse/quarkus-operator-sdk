@@ -165,11 +165,6 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         return metrics;
     }
 
-    @Override
-    public KubernetesClient getKubernetesClient() {
-        return super.getKubernetesClient();
-    }
-
     boolean shouldStartOperator() {
         return startOperator;
     }

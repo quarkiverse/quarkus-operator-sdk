@@ -1,7 +1,6 @@
 package io.quarkiverse.operatorsdk.bundle;
 
 import static io.quarkiverse.operatorsdk.bundle.Utils.*;
-import static io.quarkiverse.operatorsdk.bundle.Utils.getCRDNameFor;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;

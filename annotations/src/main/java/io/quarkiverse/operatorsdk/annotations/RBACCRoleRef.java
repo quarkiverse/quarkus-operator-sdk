@@ -19,7 +19,7 @@ public @interface RBACCRoleRef {
     enum RoleKind {
 
         ClusterRole,
-        Role;
+        Role
 
     }
 }
