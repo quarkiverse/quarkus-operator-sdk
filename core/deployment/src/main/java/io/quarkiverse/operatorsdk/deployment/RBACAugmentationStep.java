@@ -70,7 +70,7 @@ public class RBACAugmentationStep {
     }
 
     private KubernetesRoleBindingBuildItem roleBindingItemFor(RoleBinding binding) {
-        final var roleRef = convertToQuarkusRoleRef(binding.getRoleRef(), false); // todo: fix
+        final var roleRef = convertToQuarkusRoleRef(binding.getRoleRef());
         final var subjects = binding.getSubjects().stream()
                 .map(RBACAugmentationStep::convertToQuarkusSubject)
                 .toArray(Subject[]::new);
@@ -81,7 +81,7 @@ public class RBACAugmentationStep {
     }
 
     private KubernetesClusterRoleBindingBuildItem clusterRoleBindingFor(ClusterRoleBinding binding) {
-        final var roleRef = convertToQuarkusRoleRef(binding.getRoleRef(), true); // todo: fix
+        final var roleRef = convertToQuarkusRoleRef(binding.getRoleRef());
         final var subjects = binding.getSubjects().stream()
                 .map(RBACAugmentationStep::convertToQuarkusSubject)
                 .toArray(Subject[]::new);
@@ -94,8 +94,8 @@ public class RBACAugmentationStep {
         return new Subject(subject.getApiGroup(), subject.getKind(), subject.getName(), subject.getNamespace());
     }
 
-    private static RoleRef convertToQuarkusRoleRef(io.fabric8.kubernetes.api.model.rbac.RoleRef roleRef, boolean clusterWide) {
-        return new RoleRef(roleRef.getName(), clusterWide);
+    private static RoleRef convertToQuarkusRoleRef(io.fabric8.kubernetes.api.model.rbac.RoleRef roleRef) {
+        return new RoleRef(roleRef.getName(), AddRoleBindingsDecorator.CLUSTER_ROLE.equals(roleRef.getKind()));
     }
 
     private static KubernetesClusterRoleBuildItem clusterRoleBuildItemFrom(ClusterRole clusterRole) {
