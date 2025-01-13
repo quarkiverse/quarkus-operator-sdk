@@ -37,7 +37,7 @@ public class ConfiguredServiceAccountNameShouldBeUsedTest {
         assertTrue(Files.exists(bundle.resolve(APPLICATION_NAME)));
         final var csv = getCSVFor(bundle, APPLICATION_NAME);
         final var deployment = csv.getSpec().getInstall().getSpec().getDeployments().get(0);
-        assertEquals(SA_NAME, deployment.getName());
+        assertEquals(APPLICATION_NAME, deployment.getName());
         assertEquals(SA_NAME, deployment.getSpec().getTemplate().getSpec().getServiceAccount());
     }
 
