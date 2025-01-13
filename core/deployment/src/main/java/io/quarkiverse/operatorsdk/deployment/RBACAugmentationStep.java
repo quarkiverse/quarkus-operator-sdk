@@ -1,5 +1,6 @@
 package io.quarkiverse.operatorsdk.deployment;
 
+import java.util.List;
 import java.util.function.BooleanSupplier;
 
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
@@ -11,14 +12,17 @@ import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.Produce;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
 import io.quarkus.deployment.pkg.builditem.ArtifactResultBuildItem;
+import io.quarkus.kubernetes.deployment.Constants;
 import io.quarkus.kubernetes.deployment.KubernetesConfig;
 import io.quarkus.kubernetes.deployment.ResourceNameUtil;
 import io.quarkus.kubernetes.spi.KubernetesClusterRoleBindingBuildItem;
 import io.quarkus.kubernetes.spi.KubernetesClusterRoleBuildItem;
+import io.quarkus.kubernetes.spi.KubernetesEffectiveServiceAccountBuildItem;
 import io.quarkus.kubernetes.spi.KubernetesRoleBindingBuildItem;
 import io.quarkus.kubernetes.spi.PolicyRule;
 import io.quarkus.kubernetes.spi.RoleRef;
 import io.quarkus.kubernetes.spi.Subject;
+import io.quarkus.kubernetes.spi.Targetable;
 
 public class RBACAugmentationStep {
     private static final String ANY_TARGET = null;
@@ -35,19 +39,30 @@ public class RBACAugmentationStep {
 
     @BuildStep(onlyIf = IsRBACEnabled.class)
     @Produce(ArtifactResultBuildItem.class)
-    void augmentRBACForResources(BuildTimeOperatorConfiguration buildTimeConfiguration, KubernetesConfig kubernetesConfig,
+    void augmentRBACForResources(BuildTimeOperatorConfiguration buildTimeConfiguration,
+            ControllerConfigurationsBuildItem configurations,
+            KubernetesConfig kubernetesConfig,
+            ApplicationInfoBuildItem applicationInfo,
+            List<KubernetesEffectiveServiceAccountBuildItem> effectiveServiceAccounts,
             BuildProducer<KubernetesClusterRoleBuildItem> clusterRolesProducer,
             BuildProducer<KubernetesRoleBindingBuildItem> roleBindingsProducer,
-            BuildProducer<KubernetesClusterRoleBindingBuildItem> clusterRoleBindingsProducer,
-            ApplicationInfoBuildItem applicationInfo,
-            ControllerConfigurationsBuildItem configurations) {
+            BuildProducer<KubernetesClusterRoleBindingBuildItem> clusterRoleBindingsProducer) {
 
         final var configs = configurations.getControllerConfigs().values();
         AddClusterRolesDecorator.createClusterRoles(configs, buildTimeConfiguration.crd().validate())
                 .forEach(clusterRole -> clusterRolesProducer.produce(clusterRoleBuildItemFrom(clusterRole)));
 
-        final var defaultServiceAccountName = ResourceNameUtil.getResourceName(kubernetesConfig, applicationInfo);
-        final var serviceAccountName = kubernetesConfig.getServiceAccount().orElse(defaultServiceAccountName);
+        final String serviceAccountName;
+        final var potentialSAs = Targetable.filteredByTarget(effectiveServiceAccounts, Constants.KUBERNETES).toList();
+        if (potentialSAs.isEmpty()) {
+            serviceAccountName = ResourceNameUtil.getResourceName(kubernetesConfig, applicationInfo);
+        } else {
+            if (potentialSAs.size() > 1) {
+                throw new IllegalStateException(
+                        "More than one effective service account found for application " + applicationInfo.getName());
+            }
+            serviceAccountName = potentialSAs.get(0).getServiceAccountName();
+        }
         AddRoleBindingsDecorator.createRoleBindings(configs, buildTimeConfiguration, serviceAccountName)
                 .forEach(binding -> roleBindingsProducer.produce(roleBindingItemFor(binding)));
         AddRoleBindingsDecorator.createClusterRoleBindings(configs, buildTimeConfiguration, serviceAccountName)
