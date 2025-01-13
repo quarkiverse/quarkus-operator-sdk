@@ -305,7 +305,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         final var installSpec = csvSpecBuilder.editOrNewInstall()
                 .withStrategy(DEPLOYMENT).editOrNewSpec();
         handleClusterPermissions(clusterRoleBindings, clusterRoles, roles, defaultServiceAccountName, installSpec);
-        handlePermissions(clusterRoles, roleBindings, roles, defaultServiceAccountName, installSpec);
+        handlePermissions(roleBindings, clusterRoles, roles, defaultServiceAccountName, installSpec);
         handleDeployments(deployments, installSpec);
 
         // do not forget to end the elements!!
@@ -320,7 +320,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         deployments.forEach(deployment -> handleDeployment(deployment, installSpec));
     }
 
-    private void handlePermissions(List<ClusterRole> clusterRoles, List<RoleBinding> roleBindings, List<Role> roles,
+    private void handlePermissions(List<RoleBinding> roleBindings, List<ClusterRole> clusterRoles, List<Role> roles,
             String defaultServiceAccountName,
             NamedInstallStrategyFluent<?>.SpecNested<?> installSpec) {
         Map<String, List<PolicyRule>> customPermissionRules = new HashMap<>();
@@ -407,7 +407,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
     }
 
     private void handlePermission(List<PolicyRule> rules, String serviceAccountName,
-                                  NamedInstallStrategyFluent<?>.SpecNested<?> installSpec) {
+            NamedInstallStrategyFluent<?>.SpecNested<?> installSpec) {
         if (!rules.isEmpty()) {
             Predicate<StrategyDeploymentPermissionsBuilder> sameServiceAccountName = p -> serviceAccountName
                     .equals(p.getServiceAccountName());
