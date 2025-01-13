@@ -23,10 +23,10 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.DeserializedKubernetesResourcesBuildItem;
 import io.quarkiverse.operatorsdk.common.FileUtils;
-import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
-import io.quarkiverse.operatorsdk.deployment.AddRoleBindingsDecorator;
+import io.quarkiverse.operatorsdk.deployment.ClusterRoles;
 import io.quarkiverse.operatorsdk.deployment.ControllerConfigurationsBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
+import io.quarkiverse.operatorsdk.deployment.RoleBindings;
 import io.quarkiverse.operatorsdk.deployment.helm.model.Chart;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.BuildSteps;
@@ -122,7 +122,7 @@ public class HelmChartProcessor {
                 final var templatesDir = helmTargetDirectoryBuildItem.getPathToTemplatesDir();
                 final var stringBuilder = new StringBuilder();
                 controllerConfigs.forEach(cc -> cc.getAdditionalRBACRoleRefs().forEach(roleRef -> {
-                    final String bindingName = AddRoleBindingsDecorator.getSpecificRoleBindingName(cc.getName(), roleRef);
+                    final String bindingName = RoleBindings.getSpecificRoleBindingName(cc.getName(), roleRef);
                     stringBuilder.append(Qute.fmt(template, Map.of(
                             "role-binding-name", bindingName,
                             "role-ref-kind", roleRef.getKind(),
@@ -146,7 +146,7 @@ public class HelmChartProcessor {
         controllerConfigs.forEach(cc -> {
             try {
                 final var name = cc.getName();
-                var clusterRole = AddClusterRolesDecorator.createClusterRole(cc);
+                var clusterRole = ClusterRoles.createClusterRole(cc);
                 var yaml = FileUtils.asYaml(clusterRole);
                 Files.writeString(templatesDir.resolve(name + "-crd-cluster-role.yaml"), yaml);
             } catch (IOException e) {
