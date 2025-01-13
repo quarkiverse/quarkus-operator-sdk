@@ -53,19 +53,25 @@ public class RBACAugmentationStep {
                 .forEach(clusterRole -> clusterRolesProducer.produce(clusterRoleBuildItemFrom(clusterRole)));
 
         final String serviceAccountName;
+        final String serviceAccountNamespace;
         final var potentialSAs = Targetable.filteredByTarget(effectiveServiceAccounts, Constants.KUBERNETES).toList();
         if (potentialSAs.isEmpty()) {
             serviceAccountName = ResourceNameUtil.getResourceName(kubernetesConfig, applicationInfo);
+            serviceAccountNamespace = kubernetesConfig.namespace().orElse(null);
         } else {
             if (potentialSAs.size() > 1) {
                 throw new IllegalStateException(
                         "More than one effective service account found for application " + applicationInfo.getName());
             }
-            serviceAccountName = potentialSAs.get(0).getServiceAccountName();
+            final var serviceAccount = potentialSAs.get(0);
+            serviceAccountName = serviceAccount.getServiceAccountName();
+            serviceAccountNamespace = serviceAccount.getNamespace();
         }
-        AddRoleBindingsDecorator.createRoleBindings(configs, buildTimeConfiguration, serviceAccountName)
+        AddRoleBindingsDecorator
+                .createRoleBindings(configs, buildTimeConfiguration, serviceAccountName, serviceAccountNamespace)
                 .forEach(binding -> roleBindingsProducer.produce(roleBindingItemFor(binding)));
-        AddRoleBindingsDecorator.createClusterRoleBindings(configs, buildTimeConfiguration, serviceAccountName)
+        AddRoleBindingsDecorator
+                .createClusterRoleBindings(configs, buildTimeConfiguration, serviceAccountName, serviceAccountNamespace)
                 .forEach(binding -> clusterRoleBindingsProducer.produce(clusterRoleBindingFor(binding)));
     }
 
