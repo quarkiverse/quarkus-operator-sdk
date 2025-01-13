@@ -49,7 +49,7 @@ public class RBACAugmentationStep {
             BuildProducer<KubernetesClusterRoleBindingBuildItem> clusterRoleBindingsProducer) {
 
         final var configs = configurations.getControllerConfigs().values();
-        AddClusterRolesDecorator.createClusterRoles(configs, buildTimeConfiguration.crd().validate())
+        ClusterRoles.createClusterRoles(configs, buildTimeConfiguration.crd().validate())
                 .forEach(clusterRole -> clusterRolesProducer.produce(clusterRoleBuildItemFrom(clusterRole)));
 
         final String serviceAccountName;
@@ -67,10 +67,10 @@ public class RBACAugmentationStep {
             serviceAccountName = serviceAccount.getServiceAccountName();
             serviceAccountNamespace = serviceAccount.getNamespace();
         }
-        AddRoleBindingsDecorator
+        RoleBindings
                 .createRoleBindings(configs, buildTimeConfiguration, serviceAccountName, serviceAccountNamespace)
                 .forEach(binding -> roleBindingsProducer.produce(roleBindingItemFor(binding)));
-        AddRoleBindingsDecorator
+        RoleBindings
                 .createClusterRoleBindings(configs, buildTimeConfiguration, serviceAccountName, serviceAccountNamespace)
                 .forEach(binding -> clusterRoleBindingsProducer.produce(clusterRoleBindingFor(binding)));
     }
@@ -101,7 +101,7 @@ public class RBACAugmentationStep {
     }
 
     private static RoleRef convertToQuarkusRoleRef(io.fabric8.kubernetes.api.model.rbac.RoleRef roleRef) {
-        return new RoleRef(roleRef.getName(), AddRoleBindingsDecorator.CLUSTER_ROLE.equals(roleRef.getKind()));
+        return new RoleRef(roleRef.getName(), RoleBindings.CLUSTER_ROLE.equals(roleRef.getKind()));
     }
 
     private static KubernetesClusterRoleBuildItem clusterRoleBuildItemFrom(ClusterRole clusterRole) {

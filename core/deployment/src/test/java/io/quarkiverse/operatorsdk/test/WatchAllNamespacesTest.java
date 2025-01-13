@@ -19,8 +19,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
-import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
-import io.quarkiverse.operatorsdk.deployment.AddRoleBindingsDecorator;
+import io.quarkiverse.operatorsdk.deployment.ClusterRoles;
+import io.quarkiverse.operatorsdk.deployment.RoleBindings;
 import io.quarkiverse.operatorsdk.test.sources.WatchAllReconciler;
 import io.quarkus.test.ProdBuildResults;
 import io.quarkus.test.ProdModeTestResults;
@@ -49,7 +49,7 @@ public class WatchAllNamespacesTest {
         final var kubeResources = (List<HasMetadata>) serialization.unmarshal(kubeIS);
 
         // check cluster role
-        final var clusterRoleName = AddClusterRolesDecorator.getClusterRoleName(WatchAllReconciler.NAME);
+        final var clusterRoleName = ClusterRoles.getClusterRoleName(WatchAllReconciler.NAME);
         //make sure the target role exists because otherwise the test will succeed without actually checking anything
         assertTrue(kubeResources.stream()
                 .anyMatch(i -> clusterRoleName.equals(i.getMetadata().getName())));
@@ -70,7 +70,7 @@ public class WatchAllNamespacesTest {
                 });
 
         // check that we have a cluster role binding that is mapped to the proper ClusterRole
-        final var clusterRoleBindingName = AddRoleBindingsDecorator.getClusterRoleBindingName(WatchAllReconciler.NAME);
+        final var clusterRoleBindingName = RoleBindings.getClusterRoleBindingName(WatchAllReconciler.NAME);
         assertTrue(kubeResources.stream().anyMatch(i -> clusterRoleBindingName.equals(i.getMetadata().getName())));
         kubeResources.stream()
                 .filter(i -> clusterRoleBindingName.equals(i.getMetadata().getName()))

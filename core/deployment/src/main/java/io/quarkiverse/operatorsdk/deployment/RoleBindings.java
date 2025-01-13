@@ -1,7 +1,7 @@
 package io.quarkiverse.operatorsdk.deployment;
 
-import static io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator.JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME;
-import static io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator.getClusterRoleName;
+import static io.quarkiverse.operatorsdk.deployment.ClusterRoles.JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME;
+import static io.quarkiverse.operatorsdk.deployment.ClusterRoles.getClusterRoleName;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -22,14 +22,14 @@ import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 
 @SuppressWarnings("rawtypes")
-public class AddRoleBindingsDecorator {
+public class RoleBindings {
 
     public static final String CLUSTER_ROLE = "ClusterRole";
     protected static final String RBAC_AUTHORIZATION_GROUP = "rbac.authorization.k8s.io";
     public static final RoleRef CRD_VALIDATING_ROLE_REF = new RoleRef(RBAC_AUTHORIZATION_GROUP, CLUSTER_ROLE,
             JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME);
     protected static final String SERVICE_ACCOUNT = "ServiceAccount";
-    private static final Logger log = Logger.getLogger(AddRoleBindingsDecorator.class);
+    private static final Logger log = Logger.getLogger(RoleBindings.class);
     private static final ConcurrentMap<QuarkusControllerConfiguration, BindingsHolder> cachedBindings = new ConcurrentHashMap<>();
 
     private static class BindingsHolder {

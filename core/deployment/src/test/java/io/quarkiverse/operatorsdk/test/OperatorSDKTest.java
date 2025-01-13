@@ -28,8 +28,8 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
-import io.quarkiverse.operatorsdk.deployment.AddClusterRolesDecorator;
-import io.quarkiverse.operatorsdk.deployment.AddRoleBindingsDecorator;
+import io.quarkiverse.operatorsdk.deployment.ClusterRoles;
+import io.quarkiverse.operatorsdk.deployment.RoleBindings;
 import io.quarkiverse.operatorsdk.test.sources.CRUDConfigMap;
 import io.quarkiverse.operatorsdk.test.sources.CreateOnlyService;
 import io.quarkiverse.operatorsdk.test.sources.Foo;
@@ -91,7 +91,7 @@ public class OperatorSDKTest {
         final var kubeResources = (List<HasMetadata>) serializer.unmarshal(kubeIS);
 
         // check cluster role for TestReconciler
-        final var testReconcilerRoleName = AddClusterRolesDecorator.getClusterRoleName(TestReconciler.NAME);
+        final var testReconcilerRoleName = ClusterRoles.getClusterRoleName(TestReconciler.NAME);
 
         // make sure the target role exists because otherwise the test will succeed without actually checking anything
         assertTrue(kubeResources.stream().anyMatch(i -> testReconcilerRoleName.equals(i.getMetadata().getName())));
@@ -137,7 +137,7 @@ public class OperatorSDKTest {
                 });
 
         // check that we have a role binding for TestReconciler and that it uses the operator-level specified namespace
-        final var testReconcilerBindingName = AddRoleBindingsDecorator.getRoleBindingName(TestReconciler.NAME);
+        final var testReconcilerBindingName = RoleBindings.getRoleBindingName(TestReconciler.NAME);
         assertTrue(kubeResources.stream().anyMatch(i -> testReconcilerBindingName.equals(i.getMetadata().getName())));
         kubeResources.stream()
                 .filter(i -> testReconcilerBindingName.equals(i.getMetadata().getName()))
@@ -148,7 +148,7 @@ public class OperatorSDKTest {
                 });
 
         // check cluster role for SimpleReconciler
-        final var simpleReconcilerRoleName = AddClusterRolesDecorator.getClusterRoleName(SimpleReconciler.NAME);
+        final var simpleReconcilerRoleName = ClusterRoles.getClusterRoleName(SimpleReconciler.NAME);
 
         //make sure the target role exists because otherwise the test will succeed without actually checking anything
         assertTrue(kubeResources.stream()
@@ -187,7 +187,7 @@ public class OperatorSDKTest {
 
         // check that we have a role binding for SimpleReconciler and that it uses the watched namespace defined in application.properties
         // since generate-with-watched-namespaces only specifies one namespace, this should be a role binding, not a cluster role binding
-        final var simpleReconcilerBindingName = AddRoleBindingsDecorator.getRoleBindingName(SimpleReconciler.NAME);
+        final var simpleReconcilerBindingName = RoleBindings.getRoleBindingName(SimpleReconciler.NAME);
         assertTrue(kubeResources.stream().anyMatch(i -> simpleReconcilerBindingName.equals(i.getMetadata().getName())));
         kubeResources.stream()
                 .filter(i -> simpleReconcilerBindingName.equals(i.getMetadata().getName()))
@@ -198,7 +198,7 @@ public class OperatorSDKTest {
                 });
 
         // check that we have an additional role binding (again, single watched namespace) as specified by annotation on SimpleReconciler
-        final var additionalRBName = AddRoleBindingsDecorator.getSpecificRoleBindingName(SimpleReconciler.NAME,
+        final var additionalRBName = RoleBindings.getSpecificRoleBindingName(SimpleReconciler.NAME,
                 SimpleReconciler.ROLE_REF_NAME);
         assertTrue(kubeResources.stream().anyMatch(i -> additionalRBName.equals(i.getMetadata().getName())));
         kubeResources.stream()
@@ -211,10 +211,10 @@ public class OperatorSDKTest {
 
         // CRD validation is activated by default and there should therefore be a cluster role and 2 associated bindings to access CRDs (one per reconciler)
         assertTrue(kubeResources.stream()
-                .anyMatch(i -> AddClusterRolesDecorator.JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME.equals(i.getMetadata().getName())
+                .anyMatch(i -> ClusterRoles.JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME.equals(i.getMetadata().getName())
                         && i instanceof ClusterRole));
-        final var simpleCRDValidatingCRBName = AddRoleBindingsDecorator.getCRDValidatingBindingName(SimpleReconciler.NAME);
-        final var testCRDValidatingCRBName = AddRoleBindingsDecorator.getCRDValidatingBindingName(TestReconciler.NAME);
+        final var simpleCRDValidatingCRBName = RoleBindings.getCRDValidatingBindingName(SimpleReconciler.NAME);
+        final var testCRDValidatingCRBName = RoleBindings.getCRDValidatingBindingName(TestReconciler.NAME);
         kubeResources.stream()
                 .filter(ClusterRoleBinding.class::isInstance)
                 .map(ClusterRoleBinding.class::cast)
@@ -223,7 +223,7 @@ public class OperatorSDKTest {
                     assertTrue(simpleCRDValidatingCRBName.equals(name) || testCRDValidatingCRBName.equals(name));
                     // the bindings should bind the CRD validating CR to the operator's service account
                     final var roleRef = crb.getRoleRef();
-                    assertEquals(AddRoleBindingsDecorator.CRD_VALIDATING_ROLE_REF, roleRef);
+                    assertEquals(RoleBindings.CRD_VALIDATING_ROLE_REF, roleRef);
                     assertEquals(1, crb.getSubjects().size());
                     assertEquals(APPLICATION_NAME, crb.getSubjects().get(0).getName());
                     assertEquals(HasMetadata.getKind(ServiceAccount.class), crb.getSubjects().get(0).getKind());

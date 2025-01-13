@@ -27,7 +27,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 
-public class AddClusterRolesDecorator {
+public class ClusterRoles {
 
     public static final String JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME = "josdk-crd-validating-cluster-role";
     private static final ClusterRole CRD_VALIDATING_CLUSTER_ROLE = new ClusterRoleBuilder().withNewMetadata()
@@ -38,7 +38,7 @@ public class AddClusterRolesDecorator {
                     .addToVerbs("get", "list")
                     .build())
             .build();
-    private static final Logger log = Logger.getLogger(AddClusterRolesDecorator.class);
+    private static final Logger log = Logger.getLogger(ClusterRoles.class);
     private static final String ADD_CLUSTER_ROLES_DECORATOR = "AddClusterRolesDecorator";
 
     public static List<ClusterRole> createClusterRoles(Collection<QuarkusControllerConfiguration<?>> configs,
