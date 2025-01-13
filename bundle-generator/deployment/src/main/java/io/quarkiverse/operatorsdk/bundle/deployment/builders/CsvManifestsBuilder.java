@@ -348,7 +348,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             List<PolicyRule> rules = new LinkedList<>(findRules(binding.getRoleRef(), clusterRoles, roles));
             Optional.ofNullable(customPermissionRules.remove(serviceAccountName)).ifPresent(rules::addAll);
 
-            handlerPermission(rules, serviceAccountName, installSpec);
+            handlePermission(rules, serviceAccountName, installSpec);
         }
     }
 
@@ -406,8 +406,8 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         }
     }
 
-    private void handlerPermission(List<PolicyRule> rules, String serviceAccountName,
-            NamedInstallStrategyFluent<?>.SpecNested<?> installSpec) {
+    private void handlePermission(List<PolicyRule> rules, String serviceAccountName,
+                                  NamedInstallStrategyFluent<?>.SpecNested<?> installSpec) {
         if (!rules.isEmpty()) {
             Predicate<StrategyDeploymentPermissionsBuilder> sameServiceAccountName = p -> serviceAccountName
                     .equals(p.getServiceAccountName());
