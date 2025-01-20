@@ -24,44 +24,22 @@ jobs:
 
     outputs:
       released: ${{steps.wait-for-bom.outputs.published}}
-      quarkus-platform-branch: ${{steps.versions.outputs.quarkus_platform_branch}}
-      needs-main-pr: ${{ steps.versions.outputs.needs_main_pr == 'true' }}
+      quarkus-platform-branches: ${{steps.qosdk-metadata.outputs.quarkus_platform_branches}}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: radcortez/project-metadata-action@main
+        name: Retrieve project metadata
+        id: metadata
         with:
-          ref: ${{github.event.inputs.tag || github.ref_name}}
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          metadata-file-path: '.github/project.yml'
+          local-file: true
 
-      - name: Gather versions
-        id: versions
+      - name: Parse QOSDK metadata
+        id: qosdk-metadata
         run: |
-          quarkus_version=$(./mvnw help:evaluate -Dexpression=quarkus.version -q -DforceStdout)
-          quarkus_major=$(echo ${quarkus_version} | cut -d . -f 1,2)
-          echo "QOSDK-defined Quarkus version: ${quarkus_version} (-> major: ${quarkus_major})"
-
-          quarkus_platform_version=$(curl -s https://registry.quarkus.io/client/platforms | jq -r '.platforms[0]."current-stream-id"')
-          echo "Current platform-defined Quarkus major version: ${quarkus_platform_version}"
-
-          quarkus_platform_branch=${quarkus_major}
-          if [ "${quarkus_major}" = "${quarkus_platform_version}" ]; then
-            quarkus_platform_branch="${quarkus_platform_version}"
-          fi
-          echo "quarkus_platform_branch=${quarkus_platform_branch}" >> $GITHUB_OUTPUT
-
-          if [ "${quarkus_platform_branch}" = "main" ]; then
-            echo "quarkus-platform update will target main"
-            echo "need_main_pr=true" >> $GITHUB_OUTPUT
-          else
-            echo "quarkus-platform update will target ${quarkus_platform_branch}"
-            echo "Check if quarkus-platform also needs to be updated on main"
-            if [ "${{ github.base_ref }}" = "main" ]; then
-              echo "PR targets main so assume quarkus-platform main also needs to be updated"
-              echo "need_main_pr=true" >> $GITHUB_OUTPUT
-            else
-              echo "No need for PR on quarkus-platform main"
-              echo "need_main_pr=false" >> $GITHUB_OUTPUT
-            fi
-          fi
+          quarkus_platform_branches=$(echo '${{steps.metadata.outputs.json}}' | jq -c '.release.["quarkus-platform-branches"]')
+          echo "quarkus_platform_branches=${quarkus_platform_branches}" >> $GITHUB_OUTPUT
 
       - name: Wait for QOSDK BOM to be published
         uses: quarkusio/monitor-artifact-publication-action@main
@@ -76,22 +54,12 @@ jobs:
           poll-iterations: 10
           post-delay: 0
 
-  update-quarkus-platform-branch:
+  quarkus-platform-branch-pull-requests:
     uses: ./.github/workflows/release-quarkus-platform-pr.yml
     needs:
       - prepare-platform-pr
     with:
       qosdk-version: ${{github.event.inputs.tag || github.ref_name}}
-      quarkus-platform-branch: ${{needs.prepare-platform-pr.outputs.quarkus-platform-branch}}
-    secrets:
-      qosdk-bot-token: ${{ secrets.QOSDK_BOT_TOKEN }}
-
-  update-quarkus-platform-main-if-needed:
-    needs:
-      - prepare-platform-pr
-    if: ${{ needs.prepare-platform-pr.outputs.needs-main-pr && needs.prepare-platform-pr.outputs.quarkus-platform-branch != 'main' }}
-    uses: ./.github/workflows/release-quarkus-platform-pr.yml
-    with:
-      qosdk-version: ${{github.event.inputs.tag || github.ref_name}}
+      quarkus-platform-branches: ${{needs.prepare-platform-pr.outputs.quarkus-platform-branches}}
     secrets:
       qosdk-bot-token: ${{ secrets.QOSDK_BOT_TOKEN }}

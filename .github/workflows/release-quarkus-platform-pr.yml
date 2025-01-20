@@ -6,10 +6,9 @@ on:
       qosdk-version:
         type: string
         required: true
-      quarkus-platform-branch:
+      quarkus-platform-branches:
         type: string
-        required: false
-        default: 'main'
+        required: true
     secrets:
       qosdk-bot-token:
         required: true
@@ -17,11 +16,14 @@ on:
 jobs:
   quarkus-platform-pr:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        quarkus-platform-branch: ${{ fromJson(inputs.quarkus-platform-branches) }}
     steps:
       - uses: actions/checkout@v4
         with:
           repository: quarkusio/quarkus-platform
-          ref: ${{inputs.quarkus-platform-branch}}
+          ref: ${{matrix.quarkus-platform-branch}}
 
       - uses: actions/setup-java@v4
         with:
@@ -29,7 +31,7 @@ jobs:
           java-version: 17
           cache: 'maven'
 
-      - name: Update QOSDK version to ${{inputs.qosdk-version}} in quarkus-platform ${{inputs.quarkus-platform-branch}}
+      - name: Update QOSDK version to ${{inputs.qosdk-version}} in quarkus-platform ${{matrix.quarkus-platform-branch}}
         run: |
           ./mvnw -B versions:set-property -Dproperty=quarkus-operator-sdk.version -DnewVersion=${{inputs.qosdk-version}}
           ./mvnw -Dsync
@@ -38,11 +40,11 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         id: qp-pr
         with:
-          title: "Update QOSDK to ${{inputs.qosdk-version}} for ${{inputs.quarkus-platform-branch}}"
+          title: "Update QOSDK to ${{inputs.qosdk-version}} for ${{matrix.quarkus-platform-branch}}"
           commit-message: "Update QOSDK to ${{inputs.qosdk-version}}"
           committer: metacosm <metacosm@users.noreply.github.com>
           author: metacosm <metacosm@users.noreply.github.com>
-          branch: qosdk-release-${{inputs.qosdk-version}}-${{inputs.quarkus-platform-branch}}
+          branch: qosdk-release-${{inputs.qosdk-version}}-${{matrix.quarkus-platform-branch}}
           token: ${{ secrets.qosdk-bot-token }}
           push-to-fork: qosdk-bot/quarkus-platform
           delete-branch: true
