@@ -218,15 +218,18 @@ public class HelmChartProcessor {
                     .orElseThrow();
             // copy the deployment so that changes are not propagated outside of this method
             final var firstContainer = deployment.edit().editSpec().editTemplate().editSpec().editFirstContainer();
+
             controllerConfigurations.getControllerConfigs()
                     .forEach((name, unused) -> firstContainer.addNewEnv()
                             .withName(ConfigurationUtils.getNamespacesPropertyName(name, true))
                             .withValue("{watchNamespaces}").endEnv());
-            deployment = firstContainer.endContainer().endSpec().endTemplate().endSpec().build();
+
+            deployment = firstContainer.withImage("{image}").endContainer().endSpec().endTemplate().endSpec().build();
 
             // a bit hacky solution to get the exact placeholder without brackets
             final var template = FileUtils.asYaml(deployment);
             var res = template.replace("\"{watchNamespaces}\"", "{{ .Values.watchNamespaces }}");
+            res = res.replace("\"{image}\"", "{{ .Values.image }}");
             res = res.replaceAll(appInfo.getVersion(), "{{ .Chart.AppVersion }}");
             try {
                 Files.writeString(helmDirBI.getPathToTemplatesDir().resolve("deployment.yaml"), res);
@@ -255,9 +258,18 @@ public class HelmChartProcessor {
 
     @BuildStep
     @Produce(ArtifactResultBuildItem.class)
-    private void addValuesYaml(HelmTargetDirectoryBuildItem helmTargetDirectoryBuildItem) {
+    private void addValuesYaml(HelmTargetDirectoryBuildItem helmTargetDirectoryBuildItem,
+            @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<DeserializedKubernetesResourcesBuildItem> maybeDeserializedKubeResources) {
         try {
+
+            var deployment = (Deployment) maybeDeserializedKubeResources.get().getResources().stream()
+                    .filter(Deployment.class::isInstance).findFirst()
+                    .orElseThrow();
+
+            var firstContainerImage = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getImage();
+
             var values = new Values();
+            values.setImage(firstContainerImage);
             var valuesYaml = FileUtils.asYaml(values);
             var valuesFile = helmTargetDirectoryBuildItem.getPathToHelmDir().resolve(VALUES_YAML_FILENAME);
             Files.writeString(valuesFile, valuesYaml);
