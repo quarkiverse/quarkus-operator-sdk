@@ -16,17 +16,17 @@ public class QuarkusInformerConfiguration<R extends HasMetadata> extends Informe
 
     @RecordableConstructor
     public QuarkusInformerConfiguration(Class<R> resourceClass, String name, Set<String> namespaces,
-            boolean followControllerNamespacesOnChange, String labelSelector, OnAddFilter<? super R> onAddFilter,
+            boolean followControllerNamespaceChanges, String labelSelector, OnAddFilter<? super R> onAddFilter,
             OnUpdateFilter<? super R> onUpdateFilter, OnDeleteFilter<? super R> onDeleteFilter,
             GenericFilter<? super R> genericFilter, ItemStore<R> itemStore, Long informerListLimit) {
-        super(resourceClass, name, namespaces, followControllerNamespacesOnChange, labelSelector, onAddFilter, onUpdateFilter,
+        super(resourceClass, name, namespaces, followControllerNamespaceChanges, labelSelector, onAddFilter, onUpdateFilter,
                 onDeleteFilter,
                 genericFilter, itemStore, informerListLimit);
     }
 
     public QuarkusInformerConfiguration(InformerConfiguration<R> config) {
         this(config.getResourceClass(), config.getName(), sanitizeNamespaces(config.getNamespaces()),
-                config.isFollowControllerNamespacesOnChange(),
+                config.getFollowControllerNamespaceChanges(),
                 config.getLabelSelector(),
                 config.getOnAddFilter(), config.getOnUpdateFilter(), config.getOnDeleteFilter(), config.getGenericFilter(),
                 config.getItemStore(), config.getInformerListLimit());
