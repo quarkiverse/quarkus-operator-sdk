@@ -58,6 +58,7 @@ jobs:
     uses: ./.github/workflows/release-quarkus-platform-pr.yml
     needs:
       - prepare-platform-pr
+    if: "${{needs.prepare-platform-pr.outputs.released}}"
     with:
       qosdk-version: ${{github.event.inputs.tag || github.ref_name}}
       quarkus-platform-branches: ${{needs.prepare-platform-pr.outputs.quarkus-platform-branches}}
