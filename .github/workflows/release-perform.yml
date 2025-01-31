@@ -41,7 +41,6 @@ jobs:
     needs:
       - perform-release
     uses: ./.github/workflows/release-update-quarkus-platform.yml
-    if: "${{needs.prepare-platform-pr.outputs.released}}"
     with:
       tag: ${{github.event.inputs.tag || github.ref_name}}
     secrets:
