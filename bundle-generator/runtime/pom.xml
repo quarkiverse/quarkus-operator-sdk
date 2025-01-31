@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.quarkiverse.operatorsdk</groupId>
         <artifactId>quarkus-operator-sdk-bundle-generator-parent</artifactId>
-        <version>7.0.0</version>
+        <version>7.0.1-SNAPSHOT</version>
     </parent>
 
     <name>Quarkus - Operator SDK - Bundle Generator - Runtime</name>
