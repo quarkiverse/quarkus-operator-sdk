@@ -27,6 +27,10 @@ jobs:
       quarkus-platform-branches: ${{steps.qosdk-metadata.outputs.quarkus_platform_branches}}
 
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{github.event.inputs.tag || github.ref_name}}
+
       - uses: radcortez/project-metadata-action@main
         name: Retrieve project metadata
         id: metadata
