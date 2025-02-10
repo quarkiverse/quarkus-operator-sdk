@@ -67,4 +67,4 @@ jobs:
       qosdk-version: ${{github.event.inputs.tag || github.ref_name}}
       quarkus-platform-branches: ${{needs.prepare-platform-pr.outputs.quarkus-platform-branches}}
     secrets:
-      qosdk-bot-token: ${{ secrets.QOSDK_BOT_TOKEN }}
+      qosdk-bot-token: ${{ secrets.GITHUB_TOKEN }}
