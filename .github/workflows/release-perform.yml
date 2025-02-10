@@ -43,5 +43,4 @@ jobs:
     uses: ./.github/workflows/release-update-quarkus-platform.yml
     with:
       tag: ${{github.event.inputs.tag || github.ref_name}}
-    secrets:
-      qosdk-bot-token: ${{ secrets.QOSDK_BOT_TOKEN }}
+    secrets: inherit

@@ -7,9 +7,6 @@ on:
         type: string
         description: 'QOSDK tag to publish on platform'
         required: true
-    secrets:
-      qosdk-bot-token:
-        required: true
   workflow_dispatch:
     inputs:
       tag:
@@ -66,5 +63,4 @@ jobs:
     with:
       qosdk-version: ${{github.event.inputs.tag || github.ref_name}}
       quarkus-platform-branches: ${{needs.prepare-platform-pr.outputs.quarkus-platform-branches}}
-    secrets:
-      qosdk-bot-token: ${{ secrets.QOSDK_BOT_TOKEN }}
+    secrets: inherit
