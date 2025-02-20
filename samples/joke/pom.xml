@@ -42,7 +42,7 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-openshift</artifactId>
+      <artifactId>quarkus-kubernetes</artifactId>
     </dependency>
     <!--  This dependency is needed only to ensure proper building order so that this module is build after the CSV extension -->
     <dependency>
