@@ -13,6 +13,7 @@ on:
 jobs:
   quarkus-platform-pr:
     runs-on: ubuntu-latest
+    continue-on-error: true
     strategy:
       matrix:
         quarkus-platform-branch: ${{ fromJson(inputs.quarkus-platform-branches) }}
