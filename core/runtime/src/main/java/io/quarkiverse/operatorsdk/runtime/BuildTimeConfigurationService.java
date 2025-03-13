@@ -7,9 +7,11 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
 import io.quarkus.runtime.annotations.IgnoreProperty;
 
-public class BuildTimeConfigurationService implements ConfigurationService {
+public class BuildTimeConfigurationService implements ConfigurationService,
+        DependentResourceFactory<QuarkusControllerConfiguration<?>, DependentResourceSpecMetadata<?, ?, ?>> {
     private final Version version;
     private final CRDGenerationInfo crdInfo;
     private final boolean startOperator;
@@ -77,5 +79,15 @@ public class BuildTimeConfigurationService implements ConfigurationService {
 
     public boolean isDefensiveCloning() {
         return defensiveCloning;
+    }
+
+    @Override
+    public DependentResourceFactory<QuarkusControllerConfiguration<?>, DependentResourceSpecMetadata<?, ?, ?>> dependentResourceFactory() {
+        return this;
+    }
+
+    @Override
+    public Class<?> associatedResourceType(DependentResourceSpecMetadata spec) {
+        return spec.getResourceClass();
     }
 }

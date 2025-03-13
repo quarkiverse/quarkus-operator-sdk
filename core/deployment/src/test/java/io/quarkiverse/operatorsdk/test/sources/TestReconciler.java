@@ -15,7 +15,8 @@ import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
         @Dependent(type = CreateOnlyService.class),
         @Dependent(type = NonKubeResource.class),
         @Dependent(type = TypelessKubeResource.class),
-        @Dependent(type = TypelessAnotherKubeResource.class)
+        @Dependent(type = TypelessAnotherKubeResource.class),
+        @Dependent(type = NoDefaultArgConstructorDependent.class)
 })
 @ControllerConfiguration(name = TestReconciler.NAME)
 @RBACRule(verbs = RBACVerbs.UPDATE, apiGroups = RBACRule.ALL, resources = RBACRule.ALL)

@@ -33,6 +33,8 @@ import io.quarkiverse.operatorsdk.deployment.RoleBindings;
 import io.quarkiverse.operatorsdk.test.sources.CRUDConfigMap;
 import io.quarkiverse.operatorsdk.test.sources.CreateOnlyService;
 import io.quarkiverse.operatorsdk.test.sources.Foo;
+import io.quarkiverse.operatorsdk.test.sources.InjectedDependency;
+import io.quarkiverse.operatorsdk.test.sources.NoDefaultArgConstructorDependent;
 import io.quarkiverse.operatorsdk.test.sources.NonKubeResource;
 import io.quarkiverse.operatorsdk.test.sources.ReadOnlySecret;
 import io.quarkiverse.operatorsdk.test.sources.SimpleCR;
@@ -59,6 +61,7 @@ public class OperatorSDKTest {
                     .addClasses(TestReconciler.class, TestCR.class, CRUDConfigMap.class, ReadOnlySecret.class,
                             CreateOnlyService.class, NonKubeResource.class, Foo.class,
                             TypelessKubeResource.class, TypelessAnotherKubeResource.class,
+                            NoDefaultArgConstructorDependent.class, InjectedDependency.class,
                             SimpleReconciler.class, SimpleCR.class, SimpleSpec.class, SimpleStatus.class));
 
     @ProdBuildResults
