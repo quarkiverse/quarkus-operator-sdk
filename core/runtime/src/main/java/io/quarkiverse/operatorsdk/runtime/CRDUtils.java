@@ -25,15 +25,16 @@ public final class CRDUtils {
 
     public static void applyCRD(KubernetesClient client, CRDGenerationInfo crdInfo, String crdName) {
         try {
-            crdInfo.getCRDInfosFor(crdName).forEach((crdVersion, info) -> {
+            crdInfo.getCRDInfosFor(crdName).forEach((unused, info) -> {
                 final var filePath = Path.of(info.getFilePath());
+                final var crdSpecVersion = info.getCrdSpecVersion();
                 try {
-                    final var crd = loadFrom(filePath, client.getKubernetesSerialization(), getCRDClassFor(crdVersion));
-                    apply(client, crdVersion, crd);
-                    LOGGER.infov("Applied {0} CRD named ''{1}'' from {2}", crdVersion, crdName, filePath);
+                    final var crd = loadFrom(filePath, client.getKubernetesSerialization(), getCRDClassFor(crdSpecVersion));
+                    apply(client, crdSpecVersion, crd);
+                    LOGGER.infov("Applied {0} CRD named ''{1}'' from {2}", crdSpecVersion, crdName, filePath);
                 } catch (IOException ex) {
                     throw new IllegalArgumentException("Couldn't read CRD file at " + filePath
-                            + " as a " + crdVersion + " CRD for " + crdName, ex);
+                            + " as a " + crdSpecVersion + " CRD for " + crdName, ex);
                 }
             });
         } catch (Exception exception) {
