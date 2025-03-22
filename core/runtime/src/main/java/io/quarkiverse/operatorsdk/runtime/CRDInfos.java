@@ -10,29 +10,29 @@ import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
 public class CRDInfos {
-    private final Map<String, Map<String, CRDInfo>> infos;
+    private final Map<String, Map<String, CRDInfo>> nameToSpecVersionToInfos;
 
     public CRDInfos() {
         this(new ConcurrentHashMap<>());
     }
 
     public CRDInfos(CRDInfos other) {
-        this(new ConcurrentHashMap<>(other.infos));
+        this(new ConcurrentHashMap<>(other.nameToSpecVersionToInfos));
     }
 
     @RecordableConstructor // constructor needs to be recordable for the class to be passed around by Quarkus
     private CRDInfos(Map<String, Map<String, CRDInfo>> infos) {
-        this.infos = infos;
+        this.nameToSpecVersionToInfos = infos;
     }
 
     @IgnoreProperty
     public Map<String, CRDInfo> getOrCreateCRDSpecVersionToInfoMapping(String crdName) {
-        return infos.computeIfAbsent(crdName, k -> new HashMap<>());
+        return nameToSpecVersionToInfos.computeIfAbsent(crdName, k -> new HashMap<>());
     }
 
     @IgnoreProperty
     public Map<String, CRDInfo> getCRDNameToInfoMappings() {
-        return infos
+        return nameToSpecVersionToInfos
                 .values().stream()
                 // only keep CRD v1 infos
                 .flatMap(entry -> entry.values().stream()
@@ -40,17 +40,17 @@ public class CRDInfos {
                 .collect(Collectors.toMap(CRDInfo::getCrdName, Function.identity()));
     }
 
-    public void addCRDInfo(CRDInfo crdInfo) {
-        getOrCreateCRDSpecVersionToInfoMapping(crdInfo.getCrdName()).put(crdInfo.getCrdSpecVersion(), crdInfo);
+    public CRDInfo addCRDInfo(CRDInfo crdInfo) {
+        return getOrCreateCRDSpecVersionToInfoMapping(crdInfo.getCrdName()).put(crdInfo.getCrdSpecVersion(), crdInfo);
     }
 
     // Needed by Quarkus: if this method isn't present, state is not properly set
     @SuppressWarnings("unused")
     public Map<String, Map<String, CRDInfo>> getInfos() {
-        return infos;
+        return nameToSpecVersionToInfos;
     }
 
     public boolean contains(String crdId) {
-        return infos.containsKey(crdId);
+        return nameToSpecVersionToInfos.containsKey(crdId);
     }
 }

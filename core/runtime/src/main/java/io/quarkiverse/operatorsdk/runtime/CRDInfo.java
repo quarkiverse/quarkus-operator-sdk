@@ -33,4 +33,9 @@ public class CRDInfo {
     public Set<String> getDependentClassNames() {
         return this.dependentClassNames;
     }
+
+    @Override
+    public String toString() {
+        return crdName;
+    }
 }
