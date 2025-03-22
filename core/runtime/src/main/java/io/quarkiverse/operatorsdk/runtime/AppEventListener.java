@@ -40,7 +40,7 @@ public class AppEventListener {
                     event.isStandardShutdown());
             operator.stop();
         } else {
-            log.warn("Operator was configured not to start automatically, call the stop method to stop it.");
+            log.warn("Operator was configured not to stop automatically, call the stop method to stop it.");
         }
     }
 }

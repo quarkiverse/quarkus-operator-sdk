@@ -29,5 +29,6 @@
     <module>joke</module>
     <module>mysql-schema</module>
     <module>pingpong</module>
+    <module>external-crd</module>
   </modules>
 </project>
