@@ -110,7 +110,7 @@ class CRDGenerationBuildStep {
         }
 
         // perform "generation" even if not requested to ensure we always produce the needed build item for other steps
-        CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, validateCustomResources, storedCRDInfos);
+        CRDGenerationInfo crdInfo = crdGeneration.generate(outputTarget, validateCustomResources, storedCRDInfos, externalCRDs);
 
         // record CRD generation info in context for future use
         liveReload.setContextObject(CRDInfos.class, storedCRDInfos);

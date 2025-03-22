@@ -60,14 +60,25 @@ class CRDGeneration {
      * @param validateCustomResources whether the SDK should check if the CRDs are properly deployed
      *        on the server
      * @param existing the already known CRDInfos
+     * @param externalCRDs the specified external CRDs that might need to be applied
      * @return a {@link CRDGenerationInfo} detailing information about the CRD generation
      */
     CRDGenerationInfo generate(OutputTargetBuildItem outputTarget,
-            boolean validateCustomResources, CRDInfos existing) {
+            boolean validateCustomResources, CRDInfos existing, CRDInfos externalCRDs) {
         // initialize CRDInfo with existing data to always have a full view even if we don't generate anything
         final var converted = new CRDInfos(existing);
         // record which CRDs got generated so that we only apply the changed ones
         final var generated = new HashSet<String>();
+
+        // we also want to apply the external CRDs if they haven't been applied already, so cheat by putting their names in generated if they're not already part of the existing CRD infos
+        externalCRDs.getCRDNameToInfoMappings()
+                .forEach((k, v) -> {
+                    final var alreadyAdded = converted.addCRDInfo(v);
+                    if (alreadyAdded == null) {
+                        // we have not seen that external CRD before so add it to the list of CRDs that got "generated"
+                        generated.add(k);
+                    }
+                });
 
         if (needGeneration) {
             Path targetDirectory = crdConfiguration.outputDirectory()

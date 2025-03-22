@@ -1,7 +1,5 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import static io.quarkiverse.operatorsdk.runtime.CRDUtils.applyCRD;
-
 import java.time.Duration;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -44,7 +42,7 @@ public class OperatorProducer {
         final var crdInfo = configuration.getCRDGenerationInfo();
         if (crdInfo.isApplyCRDs()) {
             for (String generatedCrdName : crdInfo.getGenerated()) {
-                applyCRD(configuration.getKubernetesClient(), crdInfo, generatedCrdName);
+                CRDUtils.applyCRD(configuration.getKubernetesClient(), crdInfo, generatedCrdName);
             }
         }
 
