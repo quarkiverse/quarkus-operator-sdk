@@ -22,7 +22,7 @@ public class DevUIProcessor {
     }
 
     @SuppressWarnings("unused")
-    @BuildStep(onlyIf = IsDevelopment.class)
+    @BuildStep
     JsonRPCProvidersBuildItem createJsonRPCService() {
         return new JsonRPCProvidersBuildItem(JSONRPCService.class);
     }
