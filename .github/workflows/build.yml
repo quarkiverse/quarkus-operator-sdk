@@ -66,7 +66,7 @@ jobs:
       - extract-project-metadata
     strategy:
       matrix:
-        java-version: [ 17, 21 ]
+        java-version: [ 17, 21, 24 ]
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
       quarkus-version: ${{ needs.extract-project-metadata.outputs.qosdk_quarkus_version }}
@@ -80,7 +80,7 @@ jobs:
       - extract-project-metadata
     strategy:
       matrix:
-        java-version: [ 17, 21 ]
+        java-version: [ 17, 21, 24 ]
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
       quarkus-version: ${{ needs.extract-project-metadata.outputs.latest_stable_quarkus }}
