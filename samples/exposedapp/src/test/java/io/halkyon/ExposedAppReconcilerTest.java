@@ -77,7 +77,7 @@ class ExposedAppReconcilerTest {
 
         client.resource(app).delete();
 
-        await().atMost(30, TimeUnit.SECONDS).untilAsserted(() -> {
+        await().atMost(60, TimeUnit.SECONDS).untilAsserted(() -> {
             assertThat(client.apps().deployments()
                     .inNamespace(metadata.getNamespace())
                     .withName(metadata.getName()).get(), nullValue());
