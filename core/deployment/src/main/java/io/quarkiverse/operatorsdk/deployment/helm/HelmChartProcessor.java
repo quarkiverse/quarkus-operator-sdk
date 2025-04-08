@@ -28,6 +28,7 @@ import io.quarkiverse.operatorsdk.deployment.ControllerConfigurationsBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.deployment.RoleBindings;
 import io.quarkiverse.operatorsdk.deployment.helm.model.Chart;
+import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.BuildSteps;
 import io.quarkus.deployment.annotations.Produce;
@@ -64,8 +65,12 @@ public class HelmChartProcessor {
     public static final String ADDITIONAL_CRD_ROLE_BINDING_YAML = "additional-crd-role-binding.yaml";
 
     @BuildStep
-    HelmTargetDirectoryBuildItem createRelatedDirectories(OutputTargetBuildItem outputTarget) {
-        final var helmDir = outputTarget.getOutputDirectory().resolve("helm").toFile();
+    HelmTargetDirectoryBuildItem createRelatedDirectories(BuildTimeOperatorConfiguration config,
+            OutputTargetBuildItem outputTarget) {
+        final var helmDir = outputTarget.getOutputDirectory()
+                .resolve("helm")
+                .resolve(config.helm().name().orElse(""))
+                .toFile();
         log.infov("Generating helm chart to {0}", helmDir);
         FileUtils.ensureDirectoryExists(helmDir);
         FileUtils.ensureDirectoryExists(new File(helmDir, TEMPLATES_DIR));
