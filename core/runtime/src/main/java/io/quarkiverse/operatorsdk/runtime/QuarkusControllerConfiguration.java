@@ -16,7 +16,6 @@ import io.javaoperatorsdk.operator.ReconcilerUtils;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationProvider;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
@@ -33,8 +32,7 @@ import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
 @SuppressWarnings("rawtypes")
-public class QuarkusControllerConfiguration<R extends HasMetadata> implements ControllerConfiguration<R>,
-        DependentResourceConfigurationProvider {
+public class QuarkusControllerConfiguration<R extends HasMetadata> implements ControllerConfiguration<R> {
 
     private final String associatedReconcilerClassName;
     private final String name;
