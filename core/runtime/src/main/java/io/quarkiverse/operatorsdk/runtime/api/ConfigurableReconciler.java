@@ -11,7 +11,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
  * configuration at runtime
  *
  * @param <P> the primary resource type of the reconciler
- * @since 7.2
+ * @since 7.1.3
  */
 public interface ConfigurableReconciler<P extends HasMetadata> {
     /**
