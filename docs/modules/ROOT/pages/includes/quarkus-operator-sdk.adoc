@@ -200,6 +200,27 @@ endif::add-copy-button-to-env-var[]
 |list of string
 |
 
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-post-processor]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-post-processor[`quarkus.operator-sdk.crd.post-processor`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.operator-sdk.crd.post-processor+++[]
+endif::add-copy-button-to-config-props[]
+
+
+[.description]
+--
+The fully qualified name of a Fabric8 CRD generator v2 API `CRDPostProcessor` implementation, providing a public, no-arg constructor for instantiation
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CRD_POST_PROCESSOR+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_CRD_POST_PROCESSOR+++`
+endif::add-copy-button-to-env-var[]
+--
+|string
+|
+
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-generation-aware]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-generation-aware[`quarkus.operator-sdk.generation-aware`]##
 ifdef::add-copy-button-to-config-props[]
 config_property_copy_button:+++quarkus.operator-sdk.generation-aware+++[]

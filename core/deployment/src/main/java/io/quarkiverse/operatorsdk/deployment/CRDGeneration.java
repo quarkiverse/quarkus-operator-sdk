@@ -11,7 +11,9 @@ import java.util.Set;
 
 import org.jboss.logging.Logger;
 
+import io.fabric8.crdv2.generator.CRDPostProcessor;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.quarkiverse.operatorsdk.common.ClassLoadingUtils;
 import io.quarkiverse.operatorsdk.common.CustomResourceAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.FileUtils;
 import io.quarkiverse.operatorsdk.runtime.CRDConfiguration;
@@ -25,12 +27,27 @@ class CRDGeneration {
     private static final Logger log = Logger.getLogger(CRDGeneration.class.getName());
     private final LaunchMode mode;
     private final CRDConfiguration crdConfiguration;
-    private CRDGenerator generator;
+    private final CRDGenerator generator;
     private boolean needGeneration;
 
     CRDGeneration(CRDConfiguration crdConfig, LaunchMode mode) {
         this.crdConfiguration = crdConfig;
         this.mode = mode;
+        final var useV1 = crdConfiguration.useV1CRDGenerator();
+        if (useV1) {
+            if (crdConfiguration.crdPostProcessorClass().isPresent()) {
+                log.warn(
+                        "CRD post processing is only available when using the v2 version of the CRD generation API. Specified processor will be ignored: "
+                                + crdConfiguration.crdPostProcessorClass());
+            }
+            generator = new CRDGeneratorV1(crdConfiguration.generateInParallel());
+        } else {
+            final var postProcessor = crdConfiguration.crdPostProcessorClass()
+                    .map(processorClassName -> ClassLoadingUtils.loadClass(processorClassName, CRDPostProcessor.class))
+                    .map(ClassLoadingUtils::instantiate)
+                    .orElse(CRDPostProcessor.nullProcessor);
+            generator = new CRDGeneratorV2(crdConfiguration.generateInParallel(), postProcessor);
+        }
     }
 
     static boolean shouldGenerate(Optional<Boolean> configuredGenerate, Optional<Boolean> configuredApply,
@@ -139,10 +156,10 @@ class CRDGeneration {
         try {
             // generator MUST be initialized before we start processing classes as initializing it
             // will reset the types information held by the generator
-            if (generator == null) {
-                generator = crdConfiguration.useV1CRDGenerator() ? new CRDGeneratorV1(crdConfiguration.generateInParallel())
-                        : new CRDGeneratorV2(crdConfiguration.generateInParallel());
-            }
+            //            if (generator == null) {
+            //                generator = crdConfiguration.useV1CRDGenerator() ? new CRDGeneratorV1(crdConfiguration.generateInParallel())
+            //                        : new CRDGeneratorV2(crdConfiguration.generateInParallel());
+            //            }
             generator.scheduleForGeneration(crClass);
             needGeneration = true;
         } catch (Exception e) {

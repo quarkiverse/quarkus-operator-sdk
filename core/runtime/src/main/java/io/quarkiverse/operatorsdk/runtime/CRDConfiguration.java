@@ -97,4 +97,13 @@ public interface CRDConfiguration {
     @WithDefault(DEFAULT_USE_V1_CRD_GENERATOR)
     @WithName("use-deprecated-v1-crd-generator")
     Boolean useV1CRDGenerator();
+
+    /**
+     * The fully qualified name of a Fabric8 CRD generator v2 API {@code CRDPostProcessor} implementation, providing a public,
+     * no-arg constructor for instantiation
+     *
+     * @since 7.2.0
+     */
+    @WithName("post-processor")
+    Optional<String> crdPostProcessorClass();
 }
