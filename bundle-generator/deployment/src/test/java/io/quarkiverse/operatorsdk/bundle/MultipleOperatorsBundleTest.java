@@ -117,6 +117,10 @@ public class MultipleOperatorsBundleTest {
         assertEquals(OVERRIDEN_REPO_ANNOTATION, annotations.get(BundleConfiguration.REPOSITORY_ANNOTATION));
         assertEquals(OVERRIDEN_BY_THIRD_ANNOTATION_VALUE, annotations.get(OVERRIDDEN_DEFAULT_ANNOTATION_NAME));
         assertEquals("bar", annotations.get("foo"));
+        var labels = metadata.getLabels();
+        assertEquals(2, labels.size());
+        assertEquals("test-value", labels.get("test-label"));
+        assertEquals("test-value2", labels.get("test-label2"));
         // version should be the default application's version since it's not provided for this reconciler
         assertEquals(VERSION, spec.getVersion());
 

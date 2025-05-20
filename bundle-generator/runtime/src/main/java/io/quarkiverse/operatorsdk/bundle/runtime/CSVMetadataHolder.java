@@ -14,6 +14,7 @@ public class CSVMetadataHolder {
     public final String description;
     public final String displayName;
     public final Annotations annotations;
+    public final Map<String, String> labels;
     public final String[] keywords;
     public final String providerName;
     public final String providerURL;
@@ -152,7 +153,7 @@ public class CSVMetadataHolder {
     }
 
     public CSVMetadataHolder(String bundleName, String version, String replaces, String providerName, String origin) {
-        this(bundleName, null, null, null, null, null, providerName, null, replaces, null, version, null, null, null,
+        this(bundleName, null, null, null, null, null, null, providerName, null, replaces, null, version, null, null, null,
                 null, null,
                 null, null,
                 null,
@@ -160,6 +161,7 @@ public class CSVMetadataHolder {
     }
 
     public CSVMetadataHolder(String bundleName, String csvName, String description, String displayName, Annotations annotations,
+            Map<String, String> labels,
             String[] keywords,
             String providerName,
             String providerURL, String replaces, String[] skips, String version, String maturity,
@@ -173,6 +175,7 @@ public class CSVMetadataHolder {
         this.description = description;
         this.displayName = displayName;
         this.annotations = annotations;
+        this.labels = labels;
         this.keywords = keywords;
         this.providerURL = providerURL;
         this.replaces = replaces;
