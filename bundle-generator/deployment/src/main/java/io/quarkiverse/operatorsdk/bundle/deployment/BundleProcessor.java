@@ -5,7 +5,6 @@ import static io.quarkiverse.operatorsdk.annotations.RBACVerbs.ALL_COMMON_VERBS;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -330,15 +329,7 @@ public class BundleProcessor {
         if (annotationsField != null) {
             final var annotationsAnn = annotationsField.asNested();
 
-            final var othersAnn = annotationsAnn.value("others");
-            Map<String, String> others = Collections.emptyMap();
-            if (othersAnn != null) {
-                final var othersArray = othersAnn.asNestedArray();
-                others = new HashMap<>(othersArray.length);
-                for (AnnotationInstance other : othersArray) {
-                    others.put(other.value("name").asString(), other.value("value").asString());
-                }
-            }
+            Map<String, String> others = extractNameValueMap(annotationsAnn.value("others"));
             annotations = new CSVMetadataHolder.Annotations(
                     ConfigurationUtils.annotationValueOrDefault(annotationsAnn, "containerImage",
                             AnnotationValue::asString, () -> null),
@@ -361,6 +352,8 @@ public class BundleProcessor {
         if (bundleConfig != null) {
             annotations = CSVMetadataHolder.Annotations.override(annotations, bundleConfig.annotations());
         }
+
+        Map<String, String> labels = extractNameValueMap(csvMetadata.value("labels"));
 
         final var maintainersField = csvMetadata.value("maintainers");
         CSVMetadataHolder.Maintainer[] maintainers;
@@ -472,7 +465,7 @@ public class BundleProcessor {
                         AnnotationValue::asString, () -> mh.description),
                 ConfigurationUtils.annotationValueOrDefault(csvMetadata, "displayName",
                         AnnotationValue::asString, () -> mh.displayName),
-                annotations,
+                annotations, labels,
                 ConfigurationUtils.annotationValueOrDefault(csvMetadata, "keywords",
                         AnnotationValue::asStringArray, () -> mh.keywords),
                 providerName, providerURL,
@@ -493,6 +486,21 @@ public class BundleProcessor {
                 permissionRules,
                 requiredCRDs,
                 origin);
+    }
+
+    private static Map<String, String> extractNameValueMap(AnnotationValue annotationValue) {
+        Map<String, String> map;
+        if (annotationValue != null) {
+            final var array = annotationValue.asNestedArray();
+            map = new HashMap<>(array.length);
+            for (AnnotationInstance instance : array) {
+                map.put(instance.value("name").asString(), instance.value("value").asString());
+            }
+        } else {
+            map = new HashMap<>();
+        }
+
+        return map;
     }
 
     private static class IsGenerationEnabled implements BooleanSupplier {

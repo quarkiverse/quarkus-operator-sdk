@@ -49,6 +49,11 @@ public @interface CSVMetadata {
      */
     Annotations annotations() default @Annotations;
 
+    /**
+     * Extra labels that should be added to the CSV metadata.
+     */
+    Label[] labels() default {};
+
     String description() default "";
 
     String displayName() default "";
@@ -99,6 +104,12 @@ public @interface CSVMetadata {
 
             String value();
         }
+    }
+
+    @interface Label {
+        String name();
+
+        String value();
     }
 
     @interface Icon {

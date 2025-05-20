@@ -102,6 +102,9 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                 metadata.annotations.others.forEach(metadataBuilder::addToAnnotations);
             }
         }
+        if (metadata.labels != null) {
+            metadata.labels.forEach(metadataBuilder::addToLabels);
+        }
         csvBuilder = metadataBuilder.endMetadata();
 
         final var csvSpecBuilder = csvBuilder
