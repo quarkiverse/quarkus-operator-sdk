@@ -33,6 +33,8 @@ class CRDGeneration {
     CRDGeneration(CRDConfiguration crdConfig, LaunchMode mode) {
         this.crdConfiguration = crdConfig;
         this.mode = mode;
+        // generator MUST be initialized before we start processing classes as initializing it
+        // will reset the types information held by the generator
         final var useV1 = crdConfiguration.useV1CRDGenerator();
         if (useV1) {
             if (crdConfiguration.crdPostProcessorClass().isPresent()) {
@@ -154,12 +156,6 @@ class CRDGeneration {
 
     void withCustomResource(Class<? extends CustomResource<?, ?>> crClass, String associatedControllerName) {
         try {
-            // generator MUST be initialized before we start processing classes as initializing it
-            // will reset the types information held by the generator
-            //            if (generator == null) {
-            //                generator = crdConfiguration.useV1CRDGenerator() ? new CRDGeneratorV1(crdConfiguration.generateInParallel())
-            //                        : new CRDGeneratorV2(crdConfiguration.generateInParallel());
-            //            }
             generator.scheduleForGeneration(crClass);
             needGeneration = true;
         } catch (Exception e) {
