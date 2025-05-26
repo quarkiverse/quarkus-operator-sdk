@@ -29,7 +29,7 @@ class CRDGeneratorV1 implements CRDGenerator {
             initialVersionToCRDInfoMap
                     .forEach((crdSpecVersion, crdInfo) -> {
                         final var filePath = crdInfo.getFilePath();
-                        Log.infov("  - {0} -> {1}", crdSpecVersion, filePath);
+                        Log.infov("  - ''{0}'' CDR spec -> {1}", crdSpecVersion, filePath);
                         converted.addCRDInfo(new CRDInfo(crdName,
                                 crdSpecVersion, filePath, crdInfo.getDependentClassNames()));
                     });
