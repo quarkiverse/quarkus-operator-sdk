@@ -1,4 +1,4 @@
-== Deploying your operator with OLM
+= Deploying your operator with OLM
 
 The https://olm.operatorframework.io/[Operator Lifecycle Manager (OLM)] provides a declarative way to install, manage and upgrade operators on Kubernetes clusters.
 How exactly this is accomplished is outside of the scope of this documentation and we recommend reading the https://olm.operatorframework.io/docs/[OLM documentation].
