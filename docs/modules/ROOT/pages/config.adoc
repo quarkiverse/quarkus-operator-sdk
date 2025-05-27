@@ -1,0 +1,10 @@
+= Configuration reference
+
+== General configuration reference
+
+include::includes/quarkus-operator-sdk.adoc[]
+
+== OLM bundle generator configuration reference
+
+include::includes/quarkus-operator-sdk-bundle-generator.adoc[]
+
