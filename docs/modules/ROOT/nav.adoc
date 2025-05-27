@@ -1,3 +1,4 @@
 * xref:index.adoc[Quarkus Operator SDK (QOSDK)]
 * xref:deploy-with-olm.adoc[Deploying with OLM]
+* xref:upgrade.adoc[Upgrading]
 * xref:includes/quarkus-operator-sdk.adoc[Config Reference]
