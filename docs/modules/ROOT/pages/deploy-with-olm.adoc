@@ -5,11 +5,11 @@ How exactly this is accomplished is outside of the scope of this documentation a
 
 That said, among the https://olm.operatorframework.io/docs/tasks/[core tasks] that are required to deploy your operator using OLM, the `bundle-generator` extension will facilitate the first two steps: generating the operator manifests and the associated bundle, as detailed below.
 
-=== Requirements
+== Requirements
 
 Make sure you have installed the https://github.com/operator-framework/operator-registry[opm] command tool and are connected to a Kubernetes cluster on which OLM is installed.
 
-=== Generate the Operator image and bundle manifests
+== Generate the Operator image and bundle manifests
 
 Quarkus provides https://quarkus.io/guides/container-image[several extensions] to build the container image.
 For example, the https://github.com/quarkiverse/quarkus-operator-sdk/tree/main/samples/joke#deployment[Joke] sample uses the https://quarkus.io/guides/container-image#jib[Quarkus Jib container image extension] to build the image.
@@ -59,7 +59,7 @@ This is done make updating your operator simpler.
 If, for some reason, you need that label to be added to the selectors, just set the property to `true`.
 ====
 
-=== Controlling manifests metadata with `CSVMetadata`
+== Controlling manifests metadata with `CSVMetadata`
 
 While the extension attempts to infer a lot of the required information from your project itself and it is possible to generate valid bundles without providing extra information, it might still be useful or needed to specify additional metadata to help the generation process or provide data that cannot be inferred.
 
@@ -76,7 +76,7 @@ You can see this behavior in action in the tests of the `quarkus-operator-sdk-bu
 Note:
 If you provide a `SharedCSVMetadata` implementation without specifying a bundle name, then the specified metadata will be shared among all reconcilers that don't specify an explicit bundle name.
 
-=== Validating the generated bundle
+== Validating the generated bundle
 
 It is recommended that you validate your bundle before proceeding further.
 The recommended way to do so is to run the following command:
@@ -86,12 +86,12 @@ The recommended way to do so is to run the following command:
 operator-sdk bundle validate  target/bundle/<your operator name> --select-optional suite=operatorframework
 ----
 
-=== Build the Operator Bundle image
+== Build the Operator Bundle image
 
 An Operator Bundle is a container image that stores Kubernetes manifests and metadata associated with an operator.
 You can find more information about this https://olm.operatorframework.io/docs/tasks/creating-operator-bundle/#bundle-images[here].
 In the previous step, we generated the bundle manifests in `target/bundle` which includes a ready-to-use `target/bundle/bundle.Dockerfile` Dockerfile that you can use for this step, according to the https://olm.operatorframework.io/docs/tasks/creating-operator-bundle/#bundle-images[OLM instructions to create bundle images].
 
-=== Other OLM tasks
+== Other OLM tasks
 
 Once the bundle image is generated, you can then proceed with https://olm.operatorframework.io/docs/tasks/creating-a-catalog/[creating a catalog of operators] and then go down the list of https://olm.operatorframework.io/docs/tasks/[steps].
