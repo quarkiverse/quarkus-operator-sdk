@@ -1,4 +1,4 @@
-== Upgrading from 6.x to 7.0
+= Upgrading from 6.x to 7.0
 
 === Removed deprecated code
 
