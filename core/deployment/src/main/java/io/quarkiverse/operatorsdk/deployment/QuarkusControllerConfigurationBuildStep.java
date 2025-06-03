@@ -280,7 +280,6 @@ class QuarkusControllerConfigurationBuildStep {
                 reconcilerClassName,
                 name,
                 resourceFullName,
-                primaryAsResource.version(),
                 configExtractor.generationAware(),
                 resourceClass,
                 wereNamespacesSet,
