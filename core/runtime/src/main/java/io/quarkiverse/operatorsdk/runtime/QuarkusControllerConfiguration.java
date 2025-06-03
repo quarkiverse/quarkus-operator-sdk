@@ -37,7 +37,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     private final String associatedReconcilerClassName;
     private final String name;
     private final String resourceTypeName;
-    private final String crVersion;
     private final boolean generationAware;
     private final boolean statusPresentAndNotVoid;
     private final Class<R> resourceClass;
@@ -64,7 +63,7 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
             String associatedReconcilerClassName,
             String name,
             String resourceTypeName,
-            String crVersion, boolean generationAware,
+            boolean generationAware,
             Class resourceClass,
             boolean wereNamespacesSet,
             String finalizerName,
@@ -78,7 +77,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
         this.resourceTypeName = resourceTypeName;
-        this.crVersion = crVersion;
         this.generationAware = generationAware;
         this.resourceClass = resourceClass;
         this.additionalRBACRules = additionalRBACRules;
@@ -124,12 +122,6 @@ public class QuarkusControllerConfiguration<R extends HasMetadata> implements Co
     @Override
     public String getResourceTypeName() {
         return resourceTypeName;
-    }
-
-    @SuppressWarnings("unused")
-    // this is needed by Quarkus for the RecordableConstructor
-    public String getCrVersion() {
-        return crVersion;
     }
 
     @Override
