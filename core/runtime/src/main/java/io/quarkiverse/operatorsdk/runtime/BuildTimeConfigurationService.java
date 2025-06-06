@@ -11,7 +11,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFac
 import io.quarkus.runtime.annotations.IgnoreProperty;
 
 public class BuildTimeConfigurationService implements ConfigurationService,
-        DependentResourceFactory<QuarkusControllerConfiguration<?>, DependentResourceSpecMetadata<?, ?, ?>> {
+        DependentResourceFactory<QuarkusBuildTimeControllerConfiguration<?>, DependentResourceSpecMetadata<?, ?, ?>> {
     private final Version version;
     private final CRDGenerationInfo crdInfo;
     private final boolean startOperator;
@@ -82,7 +82,7 @@ public class BuildTimeConfigurationService implements ConfigurationService,
     }
 
     @Override
-    public DependentResourceFactory<QuarkusControllerConfiguration<?>, DependentResourceSpecMetadata<?, ?, ?>> dependentResourceFactory() {
+    public DependentResourceFactory<QuarkusBuildTimeControllerConfiguration<?>, DependentResourceSpecMetadata<?, ?, ?>> dependentResourceFactory() {
         return this;
     }
 

@@ -27,7 +27,7 @@ public class ConfigurationServiceRecorder {
 
     public Supplier<QuarkusConfigurationService> configurationServiceSupplier(
             BuildTimeConfigurationService buildTimeConfigurationService,
-            Map<String, QuarkusControllerConfiguration<?>> configurations,
+            Map<String, QuarkusBuildTimeControllerConfiguration<?>> configurations,
             RunTimeOperatorConfiguration runTimeConfiguration) {
         final var maxThreads = runTimeConfiguration.concurrentReconciliationThreads()
                 .orElse(ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
@@ -37,16 +37,16 @@ public class ConfigurationServiceRecorder {
                 .orElse(ConfigurationService.DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER);
         final var cacheSyncTimeout = runTimeConfiguration.cacheSyncTimeout();
 
-        configurations.forEach((name, c) -> {
-            final var extConfig = runTimeConfiguration.controllers().get(name);
+        final var externalControllerConfigs = runTimeConfiguration.controllers();
+        final List<QuarkusControllerConfiguration> runtimeConfigurations = configurations.values().stream().map(c -> {
+            final var extConfig = externalControllerConfigs.get(c.getName());
 
             // then override with controller-specific configuration if present
             if (extConfig != null) {
                 extConfig.finalizer().ifPresent(c::setFinalizer);
                 extConfig.selector().ifPresent(c::setLabelSelector);
                 extConfig.maxReconciliationInterval().ifPresent(c::setMaxReconciliationInterval);
-                GradualRetryResolver.gradualRetryIfConfigurationExists(c, extConfig.retry())
-                        .ifPresent(c::setGradualRetryConfiguration);
+                c.updateRetryConfiguration(extConfig.retry());
                 setNamespacesFromRuntime(c, extConfig.namespaces());
             }
 
@@ -54,7 +54,12 @@ public class ConfigurationServiceRecorder {
             if (!c.isWereNamespacesSet()) {
                 setNamespacesFromRuntime(c, runTimeConfiguration.namespaces());
             }
-        });
+
+            return new QuarkusControllerConfiguration(c.getInformerConfig(), c.getName(), c.isGenerationAware(),
+                    c.getAssociatedReconcilerClassName(), c.getRetry(), c.getRateLimiter(),
+                    c.getMaxReconciliationInterval(), c.getFinalizerName(), c.fieldManager(), c.getWorkflow(),
+                    c.getResourceTypeName(), c.getResourceClass());
+        }).toList();
 
         return () -> {
             final var container = Arc.container();
@@ -72,7 +77,7 @@ public class ConfigurationServiceRecorder {
 
             return new QuarkusConfigurationService(
                     buildTimeConfigurationService.getVersion(),
-                    configurations.values(),
+                    runtimeConfigurations,
                     container.instance(KubernetesClient.class).get(),
                     buildTimeConfigurationService.getCrdInfo(),
                     maxThreads,
@@ -91,7 +96,7 @@ public class ConfigurationServiceRecorder {
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked", "OptionalUsedAsFieldOrParameterType" })
-    private static void setNamespacesFromRuntime(QuarkusControllerConfiguration controllerConfig,
+    private static void setNamespacesFromRuntime(QuarkusBuildTimeControllerConfiguration controllerConfig,
             Optional<List<String>> runtimeNamespaces) {
         // The namespaces field has a default value so that we are able to detect if the configuration value is set to "".
         // Setting the value to "" will reset the configuration and result in an empty Optional.

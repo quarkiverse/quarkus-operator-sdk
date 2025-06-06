@@ -31,8 +31,8 @@ import io.quarkiverse.operatorsdk.runtime.KubernetesClientObjectMapperCustomizer
 import io.quarkiverse.operatorsdk.runtime.NoOpMetricsProvider;
 import io.quarkiverse.operatorsdk.runtime.OperatorHealthCheck;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
+import io.quarkiverse.operatorsdk.runtime.QuarkusBuildTimeControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
-import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
@@ -105,7 +105,8 @@ class OperatorSDKProcessor {
 
         // register DefaultRateLimiter so that it can properly be configured via RateLimited annotation as expected
         additionalIndexedClasses.produce(
-                new AdditionalIndexedClassesBuildItem(QuarkusControllerConfiguration.DefaultRateLimiter.class.getName()));
+                new AdditionalIndexedClassesBuildItem(
+                        QuarkusBuildTimeControllerConfiguration.DefaultRateLimiter.class.getName()));
     }
 
     @BuildStep
@@ -217,7 +218,7 @@ class OperatorSDKProcessor {
             BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
 
         configurations.getControllerConfigs().values().stream()
-                .filter(QuarkusControllerConfiguration::needsDependentBeansCreation)
+                .filter(QuarkusBuildTimeControllerConfiguration::needsDependentBeansCreation)
                 .forEach(config -> {
                     final var raci = reconcilers.getReconcilers().get(config.getName());
                     // register the dependent beans so that they can be found during dev mode after a restart
