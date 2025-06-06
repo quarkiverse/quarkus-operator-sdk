@@ -1,6 +1,5 @@
 package io.quarkiverse.operatorsdk.deployment;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -10,10 +9,6 @@ import io.quarkiverse.operatorsdk.runtime.QuarkusBuildTimeControllerConfiguratio
 @SuppressWarnings("rawtypes")
 class ContextStoredControllerConfigurations {
     private final Map<String, QuarkusBuildTimeControllerConfiguration> configurations = new HashMap<>();
-
-    Map<String, QuarkusBuildTimeControllerConfiguration> getConfigurations() {
-        return Collections.unmodifiableMap(configurations);
-    }
 
     void recordConfiguration(QuarkusBuildTimeControllerConfiguration configuration) {
         // if we get passed null, assume that it's because the configuration had already been generated and therefore doesn't need to be recorded again

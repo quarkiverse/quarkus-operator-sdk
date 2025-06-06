@@ -25,6 +25,7 @@ public class ConfigurationServiceRecorder {
 
     static final Logger log = Logger.getLogger(ConfigurationServiceRecorder.class.getName());
 
+    @SuppressWarnings({ "rawtypes", "unchecked", "resource" })
     public Supplier<QuarkusConfigurationService> configurationServiceSupplier(
             BuildTimeConfigurationService buildTimeConfigurationService,
             Map<String, QuarkusBuildTimeControllerConfiguration<?>> configurations,

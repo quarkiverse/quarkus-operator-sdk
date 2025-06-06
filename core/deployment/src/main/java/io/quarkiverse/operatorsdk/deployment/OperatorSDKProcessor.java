@@ -69,6 +69,7 @@ class OperatorSDKProcessor {
 
     private BuildTimeOperatorConfiguration buildTimeConfiguration;
 
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     @BuildStep
     void setup(BuildProducer<IndexDependencyBuildItem> indexDependency,
             BuildProducer<FeatureBuildItem> features,

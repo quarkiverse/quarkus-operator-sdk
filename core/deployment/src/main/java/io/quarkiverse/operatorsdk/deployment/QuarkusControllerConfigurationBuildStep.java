@@ -307,6 +307,7 @@ class QuarkusControllerConfigurationBuildStep {
         return configuration;
     }
 
+    @SuppressWarnings("unchecked")
     private static <T> T configureIfNeeded(Class<? extends Reconciler> reconcilerClass,
             Class<? extends Annotation> configurationClass,
             Class<T> configurableClass) {
