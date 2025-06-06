@@ -30,4 +30,13 @@ public class CustomRateLimiter implements RateLimiter, AnnotationConfigurable<Cu
     public int getValue() {
         return value;
     }
+
+    /*
+     * Needed to allow proper byte recording as custom implementation configuration is now done at build time, thus requiring
+     * configuration results to be recorded to be replayed at runtime.
+     */
+    @SuppressWarnings("unused")
+    public void setValue(int value) {
+        this.value = value;
+    }
 }

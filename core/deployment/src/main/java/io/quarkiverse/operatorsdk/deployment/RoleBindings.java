@@ -19,7 +19,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
-import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
+import io.quarkiverse.operatorsdk.runtime.QuarkusBuildTimeControllerConfiguration;
 
 @SuppressWarnings("rawtypes")
 public class RoleBindings {
@@ -30,7 +30,7 @@ public class RoleBindings {
             JOSDK_CRD_VALIDATING_CLUSTER_ROLE_NAME);
     protected static final String SERVICE_ACCOUNT = "ServiceAccount";
     private static final Logger log = Logger.getLogger(RoleBindings.class);
-    private static final ConcurrentMap<QuarkusControllerConfiguration, BindingsHolder> cachedBindings = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<QuarkusBuildTimeControllerConfiguration, BindingsHolder> cachedBindings = new ConcurrentHashMap<>();
 
     private static class BindingsHolder {
         private List<RoleBinding> roleBindings;
@@ -130,7 +130,7 @@ public class RoleBindings {
         }
     }
 
-    public static List<RoleBinding> createRoleBindings(Collection<QuarkusControllerConfiguration<?>> configs,
+    public static List<RoleBinding> createRoleBindings(Collection<QuarkusBuildTimeControllerConfiguration<?>> configs,
             BuildTimeOperatorConfiguration operatorConfiguration, String serviceAccountName, String serviceAccountNamespace) {
         return configs.stream()
                 .flatMap(config -> bindingsFor(config, operatorConfiguration, serviceAccountName, serviceAccountNamespace)
@@ -138,7 +138,8 @@ public class RoleBindings {
                 .toList();
     }
 
-    public static List<ClusterRoleBinding> createClusterRoleBindings(Collection<QuarkusControllerConfiguration<?>> configs,
+    public static List<ClusterRoleBinding> createClusterRoleBindings(
+            Collection<QuarkusBuildTimeControllerConfiguration<?>> configs,
             BuildTimeOperatorConfiguration operatorConfiguration, String serviceAccountName, String serviceAccountNamespace) {
         return configs.stream()
                 .flatMap(config -> bindingsFor(config, operatorConfiguration, serviceAccountName, serviceAccountNamespace)
@@ -147,7 +148,7 @@ public class RoleBindings {
                 .toList();
     }
 
-    private static BindingsHolder bindingsFor(QuarkusControllerConfiguration<?> controllerConfiguration,
+    private static BindingsHolder bindingsFor(QuarkusBuildTimeControllerConfiguration<?> controllerConfiguration,
             BuildTimeOperatorConfiguration operatorConfiguration, String serviceAccountName, String serviceAccountNamespace) {
         var bindings = cachedBindings.get(controllerConfiguration);
         if (bindings != null) {

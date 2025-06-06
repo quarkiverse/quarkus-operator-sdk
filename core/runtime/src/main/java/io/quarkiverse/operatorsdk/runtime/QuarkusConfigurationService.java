@@ -51,9 +51,10 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     private final boolean useSSA;
     private final boolean defensiveCloning;
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public QuarkusConfigurationService(
             Version version,
-            Collection<QuarkusControllerConfiguration<?>> configurations,
+            Collection<QuarkusControllerConfiguration> configurations,
             KubernetesClient kubernetesClient,
             CRDGenerationInfo crdInfo, int maxThreads, int maxWorflowThreads,
             int timeout, Duration cacheSyncTimeout, Metrics metrics, boolean startOperator,
@@ -106,9 +107,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     @Override
     public <R extends HasMetadata> QuarkusControllerConfiguration<R> getConfigurationFor(Reconciler<R> reconciler) {
         final var unwrapped = unwrap(reconciler);
-        final var configuration = (QuarkusControllerConfiguration<R>) super.getConfigurationFor(unwrapped);
-        configuration.initAnnotationConfigurables(unwrapped);
-        return configuration;
+        return (QuarkusControllerConfiguration<R>) super.getConfigurationFor(unwrapped);
     }
 
     @Override

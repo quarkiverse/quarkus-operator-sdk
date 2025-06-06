@@ -25,7 +25,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.GenericKubern
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
-import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
+import io.quarkiverse.operatorsdk.runtime.QuarkusBuildTimeControllerConfiguration;
 
 public class ClusterRoles {
 
@@ -41,7 +41,7 @@ public class ClusterRoles {
     private static final Logger log = Logger.getLogger(ClusterRoles.class);
     private static final String ADD_CLUSTER_ROLES_DECORATOR = "AddClusterRolesDecorator";
 
-    public static List<ClusterRole> createClusterRoles(Collection<QuarkusControllerConfiguration<?>> configs,
+    public static List<ClusterRole> createClusterRoles(Collection<QuarkusBuildTimeControllerConfiguration<?>> configs,
             boolean validateCRDs) {
         List<ClusterRole> roles = new ArrayList<>(configs.size() + 1);
         configs.forEach(cri -> {
@@ -57,7 +57,7 @@ public class ClusterRoles {
         return roles;
     }
 
-    public static ClusterRole createClusterRole(QuarkusControllerConfiguration<?> cri) {
+    public static ClusterRole createClusterRole(QuarkusBuildTimeControllerConfiguration<?> cri) {
         final var rules = new LinkedHashMap<String, PolicyRule>();
         final var clusterRolePolicyRuleFromPrimaryResource = getClusterRolePolicyRuleFromPrimaryResource(cri);
         final var primaryRuleKey = getKeyFor(clusterRolePolicyRuleFromPrimaryResource);
@@ -93,7 +93,8 @@ public class ClusterRoles {
     }
 
     @SuppressWarnings("unchecked")
-    private static Set<PolicyRule> getClusterRolePolicyRulesFromDependentResources(QuarkusControllerConfiguration<?> cri) {
+    private static Set<PolicyRule> getClusterRolePolicyRulesFromDependentResources(
+            QuarkusBuildTimeControllerConfiguration<?> cri) {
         Set<PolicyRule> rules = new LinkedHashSet<>();
         final var dependentsMetadata = cri.dependentsMetadata();
         dependentsMetadata.forEach((name, spec) -> {
@@ -159,7 +160,7 @@ public class ClusterRoles {
         return rules;
     }
 
-    private static PolicyRule getClusterRolePolicyRuleFromPrimaryResource(QuarkusControllerConfiguration<?> cri) {
+    private static PolicyRule getClusterRolePolicyRuleFromPrimaryResource(QuarkusBuildTimeControllerConfiguration<?> cri) {
         final var rule = new PolicyRuleBuilder();
         final var resourceClass = cri.getResourceClass();
         final var plural = HasMetadata.getPlural(resourceClass);
