@@ -5,17 +5,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
+import io.quarkiverse.operatorsdk.runtime.QuarkusBuildTimeControllerConfiguration;
 
 @SuppressWarnings("rawtypes")
 class ContextStoredControllerConfigurations {
-    private final Map<String, QuarkusControllerConfiguration> configurations = new HashMap<>();
+    private final Map<String, QuarkusBuildTimeControllerConfiguration> configurations = new HashMap<>();
 
-    Map<String, QuarkusControllerConfiguration> getConfigurations() {
+    Map<String, QuarkusBuildTimeControllerConfiguration> getConfigurations() {
         return Collections.unmodifiableMap(configurations);
     }
 
-    void recordConfiguration(QuarkusControllerConfiguration configuration) {
+    void recordConfiguration(QuarkusBuildTimeControllerConfiguration configuration) {
         // if we get passed null, assume that it's because the configuration had already been generated and therefore doesn't need to be recorded again
         if (configuration != null) {
             configurations.put(configuration.getAssociatedReconcilerClassName(), configuration);
@@ -54,15 +54,15 @@ class ContextStoredControllerConfigurations {
      * @return the configuration associated with the specified reconciler or {@code null} if it doesn't already exist or needs to be regenerated
      */
     // @formatter:on
-    public QuarkusControllerConfiguration<?> configurationOrNullIfNeedGeneration(String reconcilerClassName,
+    public QuarkusBuildTimeControllerConfiguration<?> configurationOrNullIfNeedGeneration(String reconcilerClassName,
             Set<String> changedClasses, Set<String> changedResources) {
-        QuarkusControllerConfiguration<?> configuration = configurations.get(reconcilerClassName);
+        QuarkusBuildTimeControllerConfiguration<?> configuration = configurations.get(reconcilerClassName);
         return configuration != null &&
                 shouldRegenerate(reconcilerClassName, changedClasses, changedResources, configuration) ? null : configuration;
     }
 
     private boolean shouldRegenerate(String reconcilerClassName, Set<String> changedClasses,
-            Set<String> changedResources, QuarkusControllerConfiguration<?> configuration) {
+            Set<String> changedResources, QuarkusBuildTimeControllerConfiguration<?> configuration) {
         return changedClasses.contains(reconcilerClassName)
                 || changedClasses.contains(configuration.getResourceTypeName())
                 || changedResources.contains("application.properties")
