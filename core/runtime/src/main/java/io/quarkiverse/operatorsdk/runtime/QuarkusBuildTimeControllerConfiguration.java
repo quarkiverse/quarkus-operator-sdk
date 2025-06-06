@@ -1,6 +1,5 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import java.lang.annotation.Annotation;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -13,13 +12,11 @@ import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.event.rate.LinearRateLimiter;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
@@ -27,7 +24,6 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
-import io.quarkiverse.operatorsdk.common.ClassLoadingUtils;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
@@ -44,11 +40,12 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
     private final List<PolicyRule> additionalRBACRules;
     private final List<RoleRef> additionalRBACRoleRefs;
     private final String fieldManager;
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private Optional<Duration> maxReconciliationInterval;
     private String finalizer;
     private boolean wereNamespacesSet;
-    private Retry retry;
-    private RateLimiter rateLimiter;
+    private final Retry retry;
+    private final RateLimiter rateLimiter;
     private QuarkusManagedWorkflow<R> workflow;
     private ConfigurationService parent;
     private QuarkusInformerConfiguration<R> informerConfig;
@@ -252,18 +249,6 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
             intervalConfiguration.initial().ifPresent(genericRetry::setInitialInterval);
             intervalConfiguration.max().ifPresent(genericRetry::setMaxInterval);
             intervalConfiguration.multiplier().ifPresent(genericRetry::setIntervalMultiplier);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void configure(Class<? extends Reconciler> reconcilerClass, Class<? extends Annotation> configurationClass,
-            Class<? extends AnnotationConfigurable> configurableClass) {
-        final var configurable = ClassLoadingUtils.instantiate(configurableClass);
-        if (configurationClass != null) {
-            var annotation = reconcilerClass.getAnnotation(configurationClass);
-            if (annotation != null) {
-                configurable.initFrom(annotation);
-            }
         }
     }
 
