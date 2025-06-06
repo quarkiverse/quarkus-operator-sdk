@@ -226,7 +226,7 @@ class QuarkusControllerConfigurationBuildStep {
 
             final var retryConfigurableInfo = configurableInfos.get(retryClass.getName());
             final var retryConfigurationClass = getConfigurationAnnotationClass(reconcilerInfo, retryConfigurableInfo);
-            retry = configureIfNeeded(name, reconcilerClass, retryConfigurationClass, retryClass);
+            retry = configureIfNeeded(reconcilerClass, retryConfigurationClass, retryClass);
 
             final var rateLimiterClass = ConfigurationUtils.annotationValueOrDefault(
                     controllerAnnotation,
@@ -235,7 +235,7 @@ class QuarkusControllerConfigurationBuildStep {
             final var rateLimiterConfigurableInfo = configurableInfos.get(rateLimiterClass.getName());
             final var rateLimiterConfigurationClass = getConfigurationAnnotationClass(reconcilerInfo,
                     rateLimiterConfigurableInfo);
-            rateLimiter = configureIfNeeded(name, reconcilerClass, rateLimiterConfigurationClass, rateLimiterClass);
+            rateLimiter = configureIfNeeded(reconcilerClass, rateLimiterConfigurationClass, rateLimiterClass);
 
             fieldManager = ConfigurationUtils.annotationValueOrDefault(controllerAnnotation, "fieldManager",
                     AnnotationValue::asString, NULL_STRING_SUPPLIER);
@@ -307,7 +307,7 @@ class QuarkusControllerConfigurationBuildStep {
         return configuration;
     }
 
-    private static <T> T configureIfNeeded(String reconcilerName, Class<? extends Reconciler> reconcilerClass,
+    private static <T> T configureIfNeeded(Class<? extends Reconciler> reconcilerClass,
             Class<? extends Annotation> configurationClass,
             Class<T> configurableClass) {
         if (configurationClass != null) {
@@ -315,10 +315,12 @@ class QuarkusControllerConfigurationBuildStep {
             if (maybeConfigurable instanceof AnnotationConfigurable configurable) {
                 var annotation = reconcilerClass.getAnnotation(configurationClass);
                 if (annotation != null) {
-                    log.warnv(
-                            "Make sure {0} (configured by {1}) follows the rules for bytecode recording (https://quarkus.io/guides/writing-extensions#bytecode-recording-2) to ensure your configuration is taken into account.",
-                            configurableClass.getName(),
-                            configurationClass.getName());
+                    if (!DefaultRateLimiter.class.equals(configurableClass) && !GenericRetry.class.equals(configurableClass)) {
+                        log.warnv(
+                                "Make sure {0} (configured by {1}) follows the rules for bytecode recording (https://quarkus.io/guides/writing-extensions#bytecode-recording-2) to ensure your configuration is taken into account.",
+                                configurableClass.getName(),
+                                configurationClass.getName());
+                    }
                     configurable.initFrom(annotation);
                 }
             }
