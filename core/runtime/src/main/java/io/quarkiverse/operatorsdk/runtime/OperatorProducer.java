@@ -12,8 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
+import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkiverse.operatorsdk.runtime.api.ConfigurableReconciler;
 import io.quarkus.arc.DefaultBean;
@@ -21,6 +21,29 @@ import io.quarkus.arc.DefaultBean;
 @Singleton
 public class OperatorProducer {
     private static final Logger log = LoggerFactory.getLogger(OperatorProducer.class);
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private static <P extends HasMetadata> void register(QuarkusConfigurationService configurationService,
+            Reconciler<P> reconciler, Operator operator) {
+        if (reconciler instanceof ConfigurableReconciler configurable) {
+            final var conf = configurationService.getConfigurationFor(reconciler);
+            if (conf != null) {
+                final var override = ControllerConfigurationOverrider.override(conf);
+                configurable.updateConfigurationFrom(override);
+                final var updated = override.build();
+                final Duration maxReconciliationInterval = updated.maxReconciliationInterval()
+                        .orElse(Duration.ofHours(MaxReconciliationInterval.DEFAULT_INTERVAL));
+                final var qConf = new QuarkusControllerConfiguration(updated.getInformerConfig(), updated.getName(),
+                        updated.isGenerationAware(), conf.getAssociatedReconcilerClassName(), updated.getRetry(),
+                        updated.getRateLimiter(), maxReconciliationInterval, updated.getFinalizerName(), updated.fieldManager(),
+                        conf.getWorkflow(), conf.getResourceTypeName(), conf.getResourceClass());
+                qConf.setParent(configurationService);
+                operator.register(reconciler, qConf);
+                return;
+            }
+        }
+        operator.register(reconciler);
+    }
 
     /**
      * Produces an application-scoped Operator, given the provided configuration and detected reconcilers. We previously
@@ -33,7 +56,6 @@ public class OperatorProducer {
      * @param reconcilers the detected {@link Reconciler} implementations
      * @return a properly configured {@link Operator} instance
      */
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Produces
     @DefaultBean
     @ApplicationScoped
@@ -52,14 +74,7 @@ public class OperatorProducer {
 
         Operator operator = new Operator(configuration);
         for (Reconciler<? extends HasMetadata> reconciler : reconcilers) {
-            if (reconciler instanceof ConfigurableReconciler configurable) {
-                ControllerConfiguration conf = configuration.getConfigurationFor(reconciler);
-                final var override = ControllerConfigurationOverrider.override(conf);
-                conf = configurable.updateConfigurationFrom(override);
-                operator.register(reconciler, conf);
-            } else {
-                operator.register(reconciler);
-            }
+            register(configuration, reconciler, operator);
         }
 
         // if we set a termination timeout, install a shutdown hook
