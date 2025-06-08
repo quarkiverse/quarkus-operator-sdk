@@ -9,7 +9,6 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
 
@@ -122,7 +121,7 @@ public class QuarkusControllerConfiguration<P extends HasMetadata> implements Co
         return resourceClass;
     }
 
-    public ManagedWorkflow<P> getWorkflow() {
+    public QuarkusManagedWorkflow<P> getWorkflow() {
         return workflow;
     }
 }
