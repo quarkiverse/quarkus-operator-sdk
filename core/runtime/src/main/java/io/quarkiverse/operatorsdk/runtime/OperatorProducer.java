@@ -12,10 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.quarkiverse.operatorsdk.runtime.api.ConfigurableReconciler;
 import io.quarkus.arc.DefaultBean;
 
 @Singleton
@@ -52,14 +49,7 @@ public class OperatorProducer {
 
         Operator operator = new Operator(configuration);
         for (Reconciler<? extends HasMetadata> reconciler : reconcilers) {
-            if (reconciler instanceof ConfigurableReconciler configurable) {
-                ControllerConfiguration conf = configuration.getConfigurationFor(reconciler);
-                final var override = ControllerConfigurationOverrider.override(conf);
-                conf = configurable.updateConfigurationFrom(override);
-                operator.register(reconciler, conf);
-            } else {
-                operator.register(reconciler);
-            }
+            operator.register(reconciler);
         }
 
         // if we set a termination timeout, install a shutdown hook
