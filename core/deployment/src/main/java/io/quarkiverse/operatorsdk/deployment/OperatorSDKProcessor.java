@@ -130,7 +130,7 @@ class OperatorSDKProcessor {
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
             CombinedIndexBuildItem combinedIndex) {
         // if the app doesn't provide a main class, add the AppEventListener
-        if (combinedIndex.getIndex().getAllKnownImplementors(DotName.createSimple(QuarkusApplication.class.getName()))
+        if (combinedIndex.getIndex().getAllKnownImplementations(DotName.createSimple(QuarkusApplication.class.getName()))
                 .isEmpty()) {
             additionalBeans.produce(AdditionalBeanBuildItem.builder()
                     .addBeanClass(AppEventListener.class)
