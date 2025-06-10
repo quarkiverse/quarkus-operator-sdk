@@ -27,7 +27,7 @@ public class RuntimeConfigurationOverrideTest {
     ConfiguredReconciler configuredReconciler;
 
     @Test
-    void checkDefaultOperatorLevelNamespaces() {
+    void checkThatConfigureReconcilerProperlyHasOverriddenConfiguration() {
         final var config = operator.getConfigurationService().getConfigurationFor(configuredReconciler);
         // configuration service is not updated when a controller is registered with a different configuration
         assertNotEquals(ConfiguredReconciler.LABEL_SELECTOR, config.getInformerConfig().getLabelSelector());
