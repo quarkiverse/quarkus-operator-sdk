@@ -2,11 +2,10 @@ package io.quarkiverse.operatorsdk.test.sources;
 
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkiverse.operatorsdk.runtime.api.ConfigurableReconciler;
 
-public class ConfiguredReconciler implements Reconciler<TestCR>, ConfigurableReconciler<TestCR> {
+public class ConfiguredReconciler implements ConfigurableReconciler<TestCR> {
 
     public static final String LABEL_SELECTOR = "foo=bar";
 
