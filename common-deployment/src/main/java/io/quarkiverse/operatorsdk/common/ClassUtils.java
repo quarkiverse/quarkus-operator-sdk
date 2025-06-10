@@ -52,7 +52,7 @@ public class ClassUtils {
     private static Stream<? extends SelectiveAugmentedClassInfo> getProcessableImplementationsOrExtensionsOf(
             DotName implementedOrExtendedClass,
             IndexView index, Logger log, Map<String, Object> context, boolean isInterface) {
-        final var extensions = isInterface ? index.getAllKnownImplementors(implementedOrExtendedClass)
+        final var extensions = isInterface ? index.getAllKnownImplementations(implementedOrExtendedClass)
                 : index.getAllKnownSubclasses(implementedOrExtendedClass);
         return extensions.stream()
                 .map(classInfo -> createAugmentedClassInfoFor(implementedOrExtendedClass, classInfo))
