@@ -3,6 +3,7 @@ package io.quarkiverse.operatorsdk.runtime.api;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 
 /**
  * Implement to change a {@link io.javaoperatorsdk.operator.api.reconciler.Reconciler}'s
@@ -11,7 +12,7 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
  * @param <P> the primary resource type of the reconciler
  * @since 7.2.0
  */
-public interface ConfigurableReconciler<P extends HasMetadata> {
+public interface ConfigurableReconciler<P extends HasMetadata> extends Reconciler<P> {
     /**
      * Updates the reconciler's configuration by applying the modifications specified by the provided
      * {@link ControllerConfigurationOverrider}. Note that the resulting configuration update won't be recorded by the

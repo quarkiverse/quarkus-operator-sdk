@@ -34,6 +34,7 @@ import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
 import io.quarkiverse.operatorsdk.runtime.QuarkusBuildTimeControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
+import io.quarkiverse.operatorsdk.runtime.api.ConfigurableReconciler;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
@@ -104,10 +105,13 @@ class OperatorSDKProcessor {
         // register health check
         additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorHealthCheck.class));
 
-        // register DefaultRateLimiter so that it can properly be configured via RateLimited annotation as expected
+        // index DefaultRateLimiter so that it can properly be configured via RateLimited annotation as expected
         additionalIndexedClasses.produce(
                 new AdditionalIndexedClassesBuildItem(
                         QuarkusBuildTimeControllerConfiguration.DefaultRateLimiter.class.getName()));
+
+        // index ConfigurableReconciler so that implementations can be found directly
+        additionalIndexedClasses.produce(new AdditionalIndexedClassesBuildItem(ConfigurableReconciler.class.getName()));
     }
 
     @BuildStep
@@ -147,10 +151,10 @@ class OperatorSDKProcessor {
             ConfigurationServiceRecorder recorder,
             RunTimeOperatorConfiguration runTimeConfiguration,
             BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
-            ControllerConfigurationsBuildItem serviceBuildItem) {
+            ControllerConfigurationsBuildItem controllerConfigurations) {
         final var supplier = recorder.configurationServiceSupplier(
                 buildTimeConfigurationServiceBuildItem.getConfigurationService(),
-                serviceBuildItem.getControllerConfigs(),
+                controllerConfigurations.getControllerConfigs(),
                 runTimeConfiguration);
         syntheticBeanBuildItemBuildProducer.produce(
                 SyntheticBeanBuildItem.configure(QuarkusConfigurationService.class)
