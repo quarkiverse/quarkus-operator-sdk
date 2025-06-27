@@ -3,19 +3,24 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>io.quarkiverse.operatorsdk</groupId>
-    <artifactId>quarkus-operator-sdk-core-parent</artifactId>
+    <artifactId>quarkus-operator-sdk-helm-parent</artifactId>
     <version>7.2.1-SNAPSHOT</version>
   </parent>
-  <artifactId>quarkus-operator-sdk-deployment</artifactId>
-  <name>Quarkus - Operator SDK - Core - Deployment</name>
+  <artifactId>quarkus-operator-sdk-helm-deployment</artifactId>
+  <name>Quarkus - Operator SDK - Helm - Deployment</name>
   <dependencies>
     <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-arc-deployment</artifactId>
+      <groupId>io.quarkiverse.operatorsdk</groupId>
+      <artifactId>quarkus-operator-sdk-helm</artifactId>
+      <version>7.2.1-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>io.quarkiverse.operatorsdk</groupId>
-      <artifactId>quarkus-operator-sdk</artifactId>
+      <artifactId>quarkus-operator-sdk-deployment</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-arc-deployment</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkiverse.operatorsdk</groupId>
@@ -62,7 +67,7 @@
     <dependency>
       <groupId>org.semver4j</groupId>
       <artifactId>semver4j</artifactId>
-      <version>6.0.0</version>
+      <version>5.7.1</version>
     </dependency>
     <dependency>
       <groupId>io.dekorate</groupId>

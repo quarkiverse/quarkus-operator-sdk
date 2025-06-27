@@ -15,7 +15,7 @@ public class GeneratedKubernetesManifestsProcessor {
         @Override
         public boolean getAsBoolean() {
             final var helmEnabled = ConfigProvider.getConfig()
-                    .getOptionalValue("quarkus.operator-sdk.helm.enabled", Boolean.class).orElse(false);
+                    .getOptionalValue("quarkus.helm.enabled", Boolean.class).orElse(false);
             final var bundleEnabled = ConfigProvider.getConfig()
                     .getOptionalValue("quarkus.operator-sdk.bundle.enabled", Boolean.class).orElse(false);
             return helmEnabled || bundleEnabled;
