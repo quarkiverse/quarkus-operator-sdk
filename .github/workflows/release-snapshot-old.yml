@@ -59,7 +59,7 @@ jobs:
 
       - name: Deploy maven snapshot
         run: |
-          ./mvnw -B deploy -DperformRelease -Dno-samples -Dno-docs -Prelease,use-snapshots
+          ./mvnw -B deploy -Dno-samples -Dno-docs -Prelease,use-snapshots
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
