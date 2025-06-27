@@ -13,6 +13,9 @@ public class DevUIProcessor {
     @BuildStep(onlyIf = IsDevelopment.class)
     CardPageBuildItem create() {
         final var card = new CardPageBuildItem();
+        card.addLibraryVersion("io.javaoperatorsdk", "operator-framework-core", "Java Operator SDK",
+                "https://github.com/operator-framework/java-operator-sdk");
+        card.setLogo("logo_dark.svg", "logo_light.svg");
         card.addPage(Page.webComponentPageBuilder()
                 .title("Controllers")
                 .componentLink("qwc-qosdk-controllers.js")
