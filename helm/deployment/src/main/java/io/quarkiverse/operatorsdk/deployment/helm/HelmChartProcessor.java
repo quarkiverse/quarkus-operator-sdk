@@ -74,10 +74,14 @@ public class HelmChartProcessor {
             HelmChartConfig helmChartConfig,
             Optional<CustomHelmOutputDirBuildItem> customHelmOutputDirBuildItem,
             OutputTargetBuildItem outputTargetBuildItem) {
-        log.error("Generating QOSDK Helm resources for the following Helm charts - " + helmChartBuildItems);
+        log.info("Generating QOSDK Helm resources for the following Helm charts - " + helmChartBuildItems);
+        final var helmOutputDirectory = customHelmOutputDirBuildItem
+                .map(CustomHelmOutputDirBuildItem::getOutputDir)
+                .orElse(outputTargetBuildItem.getOutputDirectory().resolve(helmChartConfig.outputDirectory()));
         helmChartBuildItems.forEach(helmChartBuildItem -> {
-            final var helmTargetDirectory = getHelmDirectory(helmChartConfig, customHelmOutputDirBuildItem,
-                    outputTargetBuildItem, helmChartBuildItem);
+            final var helmTargetDirectory = helmOutputDirectory
+                    .resolve(helmChartBuildItem.getDeploymentTarget())
+                    .resolve(helmChartBuildItem.getName());
             helmTargetDirectoryBuildItemBuildProducer.produce(new HelmTargetDirectoryBuildItem(helmTargetDirectory.toFile()));
         });
     }
@@ -254,12 +258,4 @@ public class HelmChartProcessor {
         });
     }
 
-    private Path getHelmDirectory(HelmChartConfig config, Optional<CustomHelmOutputDirBuildItem> customHelmOutputDir,
-            OutputTargetBuildItem outputTarget, HelmChartBuildItem helmChartBuildItem) {
-        return customHelmOutputDir
-                .map(CustomHelmOutputDirBuildItem::getOutputDir)
-                .orElse(outputTarget.getOutputDirectory().resolve(config.outputDirectory()))
-                .resolve(helmChartBuildItem.getDeploymentTarget())
-                .resolve(helmChartBuildItem.getName());
-    }
 }
