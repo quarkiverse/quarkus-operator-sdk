@@ -49,19 +49,6 @@ public class HelmChartProcessor {
     private static final Logger log = Logger.getLogger(HelmChartProcessor.class);
 
     static final String TEMPLATES_DIR = "templates";
-    private static final String HELM_TEMPLATES_STATIC_DIR = "/helm/static/";
-    private static final String[] TEMPLATE_FILES = new String[] {
-            "generic-crd-cluster-role.yaml",
-            "generic-crd-cluster-role-binding.yaml",
-            "service.yaml",
-            "serviceaccount.yaml"
-    };
-    private static final String[] ROOT_STATIC_FILES = new String[] {
-            "README.md",
-            "values.schema.json"
-    };
-    public static final String CHART_YAML_FILENAME = "Chart.yaml";
-    public static final String VALUES_YAML_FILENAME = "values.yaml";
     public static final String CRD_DIR = "crds";
     public static final String CRD_ROLE_BINDING_TEMPLATE_PATH = "/helm/crd-role-binding-template.yaml";
     public static final String CRD_ADDITIONAL_ROLE_BINDING_TEMPLATE_PATH = "/helm/additional-crd-role-binding-template.yaml";
@@ -72,7 +59,7 @@ public class HelmChartProcessor {
             BuildProducer<HelmTargetDirectoryBuildItem> helmTargetDirectoryBuildItemBuildProducer,
             List<HelmChartBuildItem> helmChartBuildItems,
             HelmChartConfig helmChartConfig,
-            Optional<CustomHelmOutputDirBuildItem> customHelmOutputDirBuildItem,
+            @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<CustomHelmOutputDirBuildItem> customHelmOutputDirBuildItem,
             OutputTargetBuildItem outputTargetBuildItem) {
         log.info("Generating QOSDK Helm resources for the following Helm charts - " + helmChartBuildItems);
         final var helmOutputDirectory = customHelmOutputDirBuildItem
