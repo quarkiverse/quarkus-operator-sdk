@@ -9,15 +9,9 @@ import io.quarkus.builder.item.MultiBuildItem;
 
 final class HelmTargetDirectoryBuildItem extends MultiBuildItem {
     private final Path helmDir;
-    private final Path templatesDir;
 
     HelmTargetDirectoryBuildItem(File helmDir) {
         this.helmDir = helmDir.toPath();
-        this.templatesDir = Path.of(helmDir.getPath(), TEMPLATES_DIR);
-    }
-
-    public File getHelmDir() {
-        return helmDir.toFile();
     }
 
     public Path getPathToHelmDir() {
@@ -25,6 +19,6 @@ final class HelmTargetDirectoryBuildItem extends MultiBuildItem {
     }
 
     public Path getPathToTemplatesDir() {
-        return templatesDir;
+        return helmDir.resolve(TEMPLATES_DIR);
     }
 }
