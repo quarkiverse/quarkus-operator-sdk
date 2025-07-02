@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.jboss.logging.Logger;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
@@ -24,12 +26,12 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
-import io.quarkus.logging.Log;
 import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
 @SuppressWarnings("rawtypes")
 public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> implements ControllerConfiguration<R> {
+    private static final Logger log = Logger.getLogger(QuarkusBuildTimeControllerConfiguration.class);
 
     private final String associatedReconcilerClassName;
     private final String name;
@@ -237,10 +239,9 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
         // override with configuration from application.properties (if it exists) for GradualRetry
         if (externalGradualRetryConfiguration != null) {
             if (!(retry instanceof GenericRetry genericRetry)) {
-                Log.warn(
-                        "Retry configuration in application.properties is only appropriate when using the GenericRetry implementation, yet your Reconciler is configured to use "
-                                + retry.getClass().getName()
-                                + " as Retry implementation. Configuration from application.properties will therefore be ignored.");
+                log.warnv(
+                        "Retry configuration in application.properties is only appropriate when using the GenericRetry implementation, yet your Reconciler is configured to use {0} as Retry implementation. Configuration from application.properties will therefore be ignored.",
+                        retry.getClass().getName());
                 return;
             }
             // configurable should be a GenericRetry as validated by RetryResolver
