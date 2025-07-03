@@ -239,8 +239,8 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
         // override with configuration from application.properties (if it exists) for GradualRetry
         if (externalGradualRetryConfiguration != null) {
             if (!(retry instanceof GenericRetry genericRetry)) {
-                log.warnv(
-                        "Retry configuration in application.properties is only appropriate when using the GenericRetry implementation, yet your Reconciler is configured to use {0} as Retry implementation. Configuration from application.properties will therefore be ignored.",
+                log.warnf(
+                        "Retry configuration in application.properties is only appropriate when using the GenericRetry implementation, yet your Reconciler is configured to use %s as Retry implementation. Configuration from application.properties will therefore be ignored.",
                         retry.getClass().getName());
                 return;
             }

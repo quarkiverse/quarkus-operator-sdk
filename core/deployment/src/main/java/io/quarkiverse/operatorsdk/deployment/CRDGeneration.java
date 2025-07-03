@@ -38,9 +38,9 @@ class CRDGeneration {
         final var useV1 = crdConfiguration.useV1CRDGenerator();
         if (useV1) {
             if (crdConfiguration.crdPostProcessorClass().isPresent()) {
-                log.warn(
-                        "CRD post processing is only available when using the v2 version of the CRD generation API. Specified processor will be ignored: "
-                                + crdConfiguration.crdPostProcessorClass());
+                log.warnf(
+                        "CRD post processing is only available when using the v2 version of the CRD generation API. Specified processor will be ignored: %s",
+                        crdConfiguration.crdPostProcessorClass());
             }
             generator = new CRDGeneratorV1(crdConfiguration.generateInParallel());
         } else {
@@ -131,8 +131,8 @@ class CRDGeneration {
             }
 
             // we've looked at all the changed classes and none have been changed for this CR/version: do not regenerate CRD
-            log.infov(
-                    "''{0}'' CRD generation was skipped for ''{1}'' because no changes impacting the CRD were detected",
+            log.infof(
+                    "'%s' CRD generation was skipped for '%s' because no changes impacting the CRD were detected",
                     v, crd.getCrdName());
             generateCurrent[0] = false;
         });

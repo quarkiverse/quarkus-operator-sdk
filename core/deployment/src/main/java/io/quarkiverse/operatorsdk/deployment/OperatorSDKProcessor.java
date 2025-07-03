@@ -231,7 +231,7 @@ class OperatorSDKProcessor {
                     final var info = raci.classInfo();
                     final var reconcilerClassName = info.toString();
 
-                    log.debugv("Created dependent beans for ''{0}'' reconciler",
+                    log.debugf("Created dependent beans for '%s' reconciler",
                             reconcilerClassName);
                     raci.getDependentResourceInfos().forEach(dependent -> additionalBeans.produce(
                             AdditionalBeanBuildItem.builder()
@@ -269,7 +269,7 @@ class OperatorSDKProcessor {
                     .build());
             forcedReflectionClasses.produce(
                     new ForceNonWeakReflectiveClassBuildItem(cn));
-            log.infov("Registered ''{0}'' for reflection", cn);
+            log.infof("Registered '%s' for reflection", cn);
         });
     }
 

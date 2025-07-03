@@ -71,7 +71,7 @@ public class HelmChartProcessor {
                 .resolve("helm")
                 .resolve(config.helm().name().orElse(""))
                 .toFile();
-        log.infov("Generating helm chart to {0}", helmDir);
+        log.infof("Generating helm chart to %s", helmDir);
         FileUtils.ensureDirectoryExists(helmDir);
         FileUtils.ensureDirectoryExists(new File(helmDir, TEMPLATES_DIR));
         FileUtils.ensureDirectoryExists(new File(helmDir, CRD_DIR));

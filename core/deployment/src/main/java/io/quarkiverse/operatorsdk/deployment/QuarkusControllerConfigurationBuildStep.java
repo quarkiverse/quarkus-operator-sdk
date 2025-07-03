@@ -301,8 +301,8 @@ class QuarkusControllerConfigurationBuildStep {
         // compute workflow and set it
         initializeWorkflowIfNeeded(configuration, reconcilerInfo, index);
 
-        log.infov(
-                "Processed ''{0}'' reconciler named ''{1}'' for ''{2}'' resource (version ''{3}'')",
+        log.infof(
+                "Processed '%s' reconciler named '%s' for '%s' resource (version '%s')",
                 reconcilerClassName, name, resourceFullName, HasMetadata.getApiVersion(resourceClass));
         return configuration;
     }
@@ -317,8 +317,8 @@ class QuarkusControllerConfigurationBuildStep {
                 var annotation = reconcilerClass.getAnnotation(configurationClass);
                 if (annotation != null) {
                     if (!DefaultRateLimiter.class.equals(configurableClass) && !GenericRetry.class.equals(configurableClass)) {
-                        log.warnv(
-                                "Make sure {0} (configured by {1}) follows the rules for bytecode recording (https://quarkus.io/guides/writing-extensions#bytecode-recording-2) to ensure your configuration is taken into account.",
+                        log.warnf(
+                                "Make sure %s (configured by %s) follows the rules for bytecode recording (https://quarkus.io/guides/writing-extensions#bytecode-recording-2) to ensure your configuration is taken into account.",
                                 configurableClass.getName(),
                                 configurationClass.getName());
                     }

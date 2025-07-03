@@ -16,7 +16,7 @@ public class GeneratedResourcesUtils {
     public static List<HasMetadata> loadFrom(List<GeneratedKubernetesResourceBuildItem> generatedResources,
             String resourceName) {
         if (generatedResources.isEmpty()) {
-            log.debugv("Couldn't load resource {0} because no resources were generated", resourceName);
+            log.debugf("Couldn't load resource %s because no resources were generated", resourceName);
             return Collections.emptyList();
         }
         var buildItem = generatedResources.stream()

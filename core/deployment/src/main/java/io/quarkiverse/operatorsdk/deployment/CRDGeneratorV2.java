@@ -30,13 +30,13 @@ class CRDGeneratorV2 implements CRDGenerator {
         final var crdDetailsPerNameAndVersion = info.getCRDDetailsPerNameAndVersion();
 
         crdDetailsPerNameAndVersion.forEach((crdName, initialVersionToCRDInfoMap) -> {
-            log.infov("Generated {0} CRD:", crdName);
+            log.infof("Generated %s CRD:", crdName);
             generated.add(crdName);
 
             initialVersionToCRDInfoMap
                     .forEach((crdSpecVersion, crdInfo) -> {
                         final var filePath = crdInfo.getFilePath();
-                        log.infov("  - ''{0}'' CRD spec -> {1}", crdSpecVersion, filePath);
+                        log.infof("  - '%s' CRD spec -> %s", crdSpecVersion, filePath);
                         converted.addCRDInfo(new CRDInfo(crdName,
                                 crdSpecVersion, filePath, crdInfo.getDependentClassNames()));
                     });

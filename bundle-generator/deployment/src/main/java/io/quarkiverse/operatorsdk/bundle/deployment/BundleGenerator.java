@@ -75,7 +75,7 @@ public class BundleGenerator {
             // output required CRDs in the manifest, output a warning in case we're missing some
             missing = addCRDManifestBuilder(crdNameToInfoMappings, builders, csvMetadata, csvBuilder.getRequiredCRs());
             if (!missing.isEmpty()) {
-                log.warnv("Missing required CRD data for resources: {0} for bundle: {1}", missing, csvMetadata.bundleName);
+                log.warnf("Missing required CRD data for resources: %s for bundle: %s", missing, csvMetadata.bundleName);
             }
 
             // output non-generated CRDs

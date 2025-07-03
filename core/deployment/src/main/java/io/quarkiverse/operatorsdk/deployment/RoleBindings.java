@@ -87,7 +87,7 @@ public class RoleBindings {
             String targetNamespace,
             RoleRef roleRef) {
         final var nsMsg = (targetNamespace == null ? "current" : "'" + targetNamespace + "'") + " namespace";
-        log.infov("Creating ''{0}'' RoleBinding to be applied to {1}", roleBindingName, nsMsg);
+        log.infof("Creating '%s' RoleBinding to be applied to %s", roleBindingName, nsMsg);
         return new RoleBindingBuilder()
                 .withNewMetadata()
                 .withName(roleBindingName)
@@ -106,7 +106,7 @@ public class RoleBindings {
             RoleRef roleRef) {
         outputWarningIfNeeded(serviceAccountNamespace, controllerName, bindingName, controllerConfMessage);
         roleRef = roleRef == null ? createDefaultRoleRef(controllerName) : roleRef;
-        log.infov("Creating ''{0}'' ClusterRoleBinding to be applied to ''{1}'' namespace", bindingName,
+        log.infof("Creating '%s' ClusterRoleBinding to be applied to '%s' namespace", bindingName,
                 serviceAccountNamespace);
         return new ClusterRoleBindingBuilder()
                 .withNewMetadata().withName(bindingName)
@@ -122,10 +122,10 @@ public class RoleBindings {
             String controllerConfMessage) {
         // the decorator can be called several times but we only want to output the warning once
         if (serviceAccountNamespace == null || serviceAccountNamespace.isEmpty()) {
-            log.warnv(
-                    "''{0}'' controller is configured to "
+            log.warnf(
+                    "'%s' controller is configured to "
                             + controllerConfMessage
-                            + ", this requires a ClusterRoleBinding which REQUIRES a namespace for the operator ServiceAccount, which has NOT been provided. You can specify the ServiceAccount's namespace using the ''quarkus.kubernetes.rbac.service-accounts.<service account name>.namespace=<service account namespace>'' property (or, alternatively, ''quarkus.kubernetes.namespace'', though using this property will use the specified namespace for ALL your resources. Leaving the namespace blank to be provided by the user by editing the ''{1}'' ClusterRoleBinding to provide the namespace in which the operator will be deployed.",
+                            + ", this requires a ClusterRoleBinding which REQUIRES a namespace for the operator ServiceAccount, which has NOT been provided. You can specify the ServiceAccount's namespace using the 'quarkus.kubernetes.rbac.service-accounts.<service account name>.namespace=<service account namespace>' property (or, alternatively, 'quarkus.kubernetes.namespace', though using this property will use the specified namespace for ALL your resources. Leaving the namespace blank to be provided by the user by editing the '%s' ClusterRoleBinding to provide the namespace in which the operator will be deployed.",
                     controllerName, crBindingName);
         }
     }
@@ -196,7 +196,7 @@ public class RoleBindings {
             controllerConfiguration.getAdditionalRBACRoleRefs().forEach(
                     roleRef -> {
                         if (!CLUSTER_ROLE.equals(roleRef.getKind())) {
-                            log.warnv("Cannot create a ClusterRoleBinding for RoleRef ''{0}'' because it's not a ClusterRole",
+                            log.warnf("Cannot create a ClusterRoleBinding for RoleRef '%s' because it's not a ClusterRole",
                                     roleRef);
                         } else {
                             clusterRoleBindings.add(createClusterRoleBinding(

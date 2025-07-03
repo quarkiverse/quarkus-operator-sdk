@@ -104,7 +104,7 @@ class CRDGenerationBuildStep {
                         .map(CustomResourceAugmentedClassInfo.class::cast)
                         .forEach(cr -> {
                             crdGeneration.withCustomResource(cr.loadAssociatedClass(), null);
-                            log.infov("Will generate CRD for non-reconciler bound resource: {0}", cr.fullResourceName());
+                            log.infof("Will generate CRD for non-reconciler bound resource: %s", cr.fullResourceName());
                         });
             }
         }
@@ -148,7 +148,7 @@ class CRDGenerationBuildStep {
         final var excluded = excludedResourceClassNames.contains(crClassName);
         final var external = externalCRDs.contains(crInfo.fullResourceName());
         if (excluded || external) {
-            log.infov("CRD generation was skipped for ''{0}'' because {1}", crClassName,
+            log.infof("CRD generation was skipped for '%s' because %s", crClassName,
                     external ? externalCause : excludedCause);
             return true;
         } else {
