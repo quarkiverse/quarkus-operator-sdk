@@ -42,14 +42,14 @@ public abstract class SelectiveAugmentedClassInfo {
         final var targetClassName = extendedOrImplementedClassName();
         final var consideredClassName = classInfo.name();
         if (Modifier.isAbstract(classInfo.flags())) {
-            log.debugv("Skipping ''{0}'' {1} because it''s abstract",
+            log.debugf("Skipping '%s' {1} because it's abstract",
                     consideredClassName, targetClassName);
             return false;
         }
 
         // Ignore implementations annotated with @Ignore
         if (classInfo.annotationsMap().containsKey(IGNORE_ANNOTATION)) {
-            log.debugv("Skipping ''{0}'' {1} because it''s annotated with @Ignore",
+            log.debugf("Skipping '%s' %s because it's annotated with @Ignore",
                     consideredClassName, targetClassName);
             return false;
         }

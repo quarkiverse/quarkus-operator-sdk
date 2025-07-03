@@ -80,8 +80,8 @@ public class ReconciledAugmentedClassInfo<T> extends SelectiveAugmentedClassInfo
                 }
             }
         } catch (BuildException e) {
-            log.errorv(
-                    "Couldn't ascertain if ''{0}'' is a CustomResource or HasMetadata subclass. Assumed not to be.",
+            log.errorf(
+                    "Couldn't ascertain if '%s' is a CustomResource or HasMetadata subclass. Assumed not to be.",
                     e);
         }
 

@@ -135,7 +135,7 @@ public class BundleProcessor {
                 .forEach(reconcilerInfo -> {
                     // figure out which group should be used to generate CSV
                     final var name = reconcilerInfo.nameOrFailIfUnset();
-                    log.debugv("Processing reconciler: {0}", name);
+                    log.debugf("Processing reconciler: %s", name);
 
                     // Check whether the reconciler must be shipped using a custom bundle
                     final var csvMetadataAnnotation = reconcilerInfo.classInfo()
@@ -173,12 +173,12 @@ public class BundleProcessor {
                                         DEFAULT_PROVIDER_NAME, origin),
                                 bundleConfig, origin);
                         if (DEFAULT_PROVIDER_NAME.equals(csvMetadata.providerName)) {
-                            log.warnv(
-                                    "It is recommended that you provide a provider name provided for {0}: ''{1}'' was used as default value.",
+                            log.warnf(
+                                    "It is recommended that you provide a provider name provided for %s: '%s' was used as default value.",
                                     origin, DEFAULT_PROVIDER_NAME);
                         }
                     }
-                    log.infov("Assigning ''{0}'' reconciler to {1}",
+                    log.infof("Assigning '%s' reconciler to %s",
                             reconcilerInfo.nameOrFailIfUnset(),
                             getMetadataOriginInformation(csvMetadataAnnotation, isNameInferred, csvMetadata));
 
@@ -272,12 +272,12 @@ public class BundleProcessor {
                                 Path.of(BUNDLE).resolve(name).resolve(fileName).toString(),
                                 manifestBuilder.getManifestData(serviceAccounts, clusterRoleBindings, clusterRoles,
                                         roleBindings, roles, deployments)));
-                log.infov("Processing {0} for ''{1}'' controller -> {2}",
+                log.infof("Processing %s for '%s' controller -> %s",
                         manifestBuilder.getManifestType(),
                         name,
                         outputDir.resolve(name).resolve(fileName));
             } catch (IOException e) {
-                log.errorv("Cannot process {0} for ''{1}'' controller: {2}",
+                log.errorf("Cannot process %s for '%s' controller: %s",
                         manifestBuilder.getManifestType(), name, e.getMessage());
             }
         });
