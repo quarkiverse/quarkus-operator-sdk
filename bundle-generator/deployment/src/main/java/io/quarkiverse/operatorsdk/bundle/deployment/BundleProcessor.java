@@ -288,7 +288,7 @@ public class BundleProcessor {
             BundleConfiguration defaultBundleConfig, IndexView index) {
         CSVMetadataHolder csvMetadata = new CSVMetadataHolder(name, version, defaultReplaces, DEFAULT_PROVIDER_NAME,
                 "default");
-        final var sharedMetadataImpls = index.getAllKnownImplementors(SHARED_CSV_METADATA);
+        final var sharedMetadataImpls = index.getAllKnownImplementations(SHARED_CSV_METADATA);
         final var result = new HashMap<String, CSVMetadataHolder>(sharedMetadataImpls.size() + 1);
         sharedMetadataImpls.forEach(sharedMetadataImpl -> {
             final var csvMetadataAnn = sharedMetadataImpl.declaredAnnotation(CSV_METADATA);
