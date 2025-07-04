@@ -386,6 +386,8 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
                         .map(ResourceAssociatedAugmentedClassInfo::nameOrFailIfUnset)
                         .forEach(reconcilerName -> {
                             final var envVarName = ConfigurationUtils.getNamespacesPropertyName(reconcilerName, true);
+                            // remove existing env var if already present to avoid duplication
+                            containerBuilder.removeMatchingFromEnv(env -> envVarName.equals(env.getName()));
                             containerBuilder
                                     .addNewEnv()
                                     .withName(envVarName)
