@@ -125,8 +125,6 @@ public class MultipleOperatorsBundleTest {
         assertEquals(VERSION, spec.getVersion());
 
         // check that the env variable to set the reconciler namespaces is properly set
-
-        //disabled because of https://github.com/quarkusio/quarkus/issues/36041
         final var firstContainer = spec.getInstall().getSpec().getDeployments().get(0).getSpec().getTemplate().getSpec()
                 .getContainers().get(0);
         assertTrue(firstContainer.getEnv().stream()
