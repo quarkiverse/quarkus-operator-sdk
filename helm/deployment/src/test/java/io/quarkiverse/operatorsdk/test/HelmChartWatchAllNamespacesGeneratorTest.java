@@ -79,22 +79,27 @@ class HelmChartWatchAllNamespacesGeneratorTest {
         assertThat(new File(helmDir, "values.yaml"), FileMatchers.anExistingFile());
 
         File templatesDir = new File(helmDir, "templates");
+        assertThat(Objects.requireNonNull(templatesDir.listFiles()).length, equalTo(8));
 
-        assertThat(Objects.requireNonNull(templatesDir.listFiles()).length, equalTo(10));
-
-        File kubernetesYml = new File(templatesDir, "kubernetes.yml");
+        File kubernetesYml = prodModeTestResults.getBuildDir().resolve("kubernetes").resolve("kubernetes.yml").toFile();
         assertThat(kubernetesYml, FileMatchers.anExistingFile());
         String kubernetesYmlContents = Files.readString(kubernetesYml.toPath());
         @SuppressWarnings("unchecked")
         List<HasMetadata> resource = (List<HasMetadata>) FileUtils.unmarshalFrom(
                 kubernetesYmlContents.getBytes(StandardCharsets.UTF_8));
-        assertThat(resource, hasSize(5));
+        assertThat(resource, hasSize(11));
         assertThat(resource, containsInAnyOrder(
                 hasProperty("kind", equalTo("ServiceAccount")),
+                hasProperty("kind", equalTo("ClusterRole")),
+                hasProperty("kind", equalTo("ClusterRole")),
+                hasProperty("kind", equalTo("ClusterRole")),
+                hasProperty("kind", equalTo("ClusterRoleBinding")),
+                hasProperty("kind", equalTo("ClusterRoleBinding")),
+                hasProperty("kind", equalTo("ClusterRoleBinding")),
                 hasProperty("kind", equalTo("Role")),
                 hasProperty("kind", equalTo("RoleBinding")),
-                hasProperty("kind", equalTo("ClusterRole")),
-                hasProperty("kind", equalTo("ClusterRoleBinding"))));
+                hasProperty("kind", equalTo("Service")),
+                hasProperty("kind", equalTo("Deployment"))));
     }
 
 }
