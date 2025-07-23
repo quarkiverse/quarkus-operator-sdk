@@ -1,0 +1,17 @@
+name: Operator SDK
+description: Quarkus extension for the Java Operator SDK (https://javaoperatorsdk.io) Helm integration
+metadata:
+  keywords:
+  - operator
+  - kubernetes
+  - openshift
+  - helm
+  categories:
+  - "cloud"
+  short-name: "qosdk-helm"
+  status: "stable"
+  guide: "https://docs.quarkiverse.io/quarkus-operator-sdk/dev/index.html"
+  config:
+    - "quarkus.operator-sdk.helm"
+  cli-plugins:
+  - "${project.groupId}:quarkus-operator-sdk-cli:${project.version}"
