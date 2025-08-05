@@ -22,7 +22,6 @@ import org.mockito.Mockito;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.Operator;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestSpec.Category;
 import io.quarkiverse.operatorsdk.samples.joke.JokeRequestStatus.State;
 import io.quarkus.test.InjectMock;
@@ -38,13 +37,8 @@ class JokeRequestReconcilerTest {
     @Inject
     KubernetesClient client;
 
-    @Inject
-    Operator operator;
-
     @Test
     void canReconcile() {
-        operator.start();
-
         // arrange
         final JokeModel joke = new JokeModel();
         joke.id = 1;
