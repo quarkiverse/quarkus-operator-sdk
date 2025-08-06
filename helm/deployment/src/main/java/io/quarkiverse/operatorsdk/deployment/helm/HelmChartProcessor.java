@@ -31,8 +31,7 @@ public class HelmChartProcessor {
 
     //Added line
     static final String TEMPLATES_DIR = "templates";
-    public static final String CRD_DIR = "crdss";
-    public static final String ADDITIONAL_CRD_ROLE_BINDING_YAML = "additional-crd-role-binding.yaml";
+    public static final String CRD_DIR = "crds";
 
     @BuildStep
     void produceHelmTargetDirectories(
