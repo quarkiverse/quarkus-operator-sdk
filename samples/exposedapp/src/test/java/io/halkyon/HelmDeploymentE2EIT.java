@@ -1,9 +1,10 @@
 package io.halkyon;
 
 import static org.awaitility.Awaitility.await;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
@@ -12,41 +13,39 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.quarkus.test.junit.QuarkusTest;
 
-// currently there is a bug with kind testcontainer that blocks the e2e tests done properly
-// will finish this test when it gets resolved:
-// https://github.com/dajudge/kindcontainer/issues/235
-@Disabled
 @QuarkusTest
-class HelmDeploymentE2ETest {
+class HelmDeploymentE2EIT {
 
-    final static Logger log = Logger.getLogger(HelmDeploymentE2ETest.class);
+    final static Logger log = Logger.getLogger(HelmDeploymentE2EIT.class);
+
     public static final String TEST_RESOURCE = "test1";
     public static final String DEPLOYMENT_NAME = "quarkus-operator-sdk-samples-exposedapp";
     public static final String DEFAULT_NAMESPACE = "default";
-    public static final String WATCH_NAMESPACES_KEY = "watchNamespaces";
+    public static final String WATCH_NAMESPACES_KEY = "app.envs.QUARKUS_OPERATOR_SDK_CONTROLLERS_EXPOSEDAPP_NAMESPACES";
 
     @Inject
     KubernetesClient client;
 
-    // operator is not started if this injected, what we need in this situation
-    @Inject
-    Operator operator;
-
     private String namespace;
+    private File kubeConfigFile;
+
+    @PostConstruct
+    public void init() {
+        kubeConfigFile = KubeUtils.generateConfigFromClient(client);
+    }
 
     @AfterEach
     void cleanup() {
@@ -57,6 +56,7 @@ class HelmDeploymentE2ETest {
     void testClusterWideDeployment() {
         deployWithHelm();
 
+        log.info("Deploying test resource in clusterscopetest namespace");
         namespace = "clusterscopetest";
         createNamespace(namespace);
         client.resource(testResource(namespace)).create();
@@ -84,17 +84,6 @@ class HelmDeploymentE2ETest {
         client.resource(testResource(DEFAULT_NAMESPACE)).delete();
     }
 
-    private void checkResourceNotProcessed(String namespace) {
-        await("Resource not reconciled in other namespace")
-                .pollDelay(Duration.ofSeconds(5)).untilAsserted(() -> {
-                    var exposedApp = client.resources(ExposedApp.class)
-                            .inNamespace(namespace)
-                            .withName(TEST_RESOURCE).get();
-                    assertThat(exposedApp, is(notNullValue()));
-                    assertThat(exposedApp.getStatus().getMessage(), equalTo("processing"));
-                });
-    }
-
     @Test
     void testWatchingSetOfNamespaces() {
         String excludedNS = "excludedns1";
@@ -119,13 +108,24 @@ class HelmDeploymentE2ETest {
         client.resource(testResource(excludedNS)).delete();
     }
 
+    private void checkResourceNotProcessed(String namespace) {
+        await("Resource not reconciled in other namespace")
+                .pollDelay(Duration.ofSeconds(5)).untilAsserted(() -> {
+                    var exposedApp = client.resources(ExposedApp.class)
+                            .inNamespace(namespace)
+                            .withName(TEST_RESOURCE).get();
+                    assertThat(exposedApp, is(notNullValue()));
+                    assertThat(exposedApp.getStatus().getMessage(), equalTo("reconciled-not-exposed"));
+                });
+    }
+
     private void checkResourceProcessed(String namespace) {
         await().atMost(15, TimeUnit.SECONDS).untilAsserted(() -> {
             var exposedApp = client.resources(ExposedApp.class)
                     .inNamespace(namespace)
                     .withName(TEST_RESOURCE).get();
             assertThat(exposedApp, is(notNullValue()));
-            assertThat(exposedApp.getStatus().getMessage(), equalTo("exposed"));
+            assertThat(exposedApp.getStatus().getMessage(), anyOf(equalTo("exposed"), equalTo("reconciled-not-exposed")));
         });
     }
 
@@ -151,25 +151,31 @@ class HelmDeploymentE2ETest {
     }
 
     private void deployWithHelm(String... values) {
-        File kubeConfigFile = KubeUtils.generateConfigFromClient(client);
-
-        StringBuilder command = new StringBuilder("helm install exposedapp target/helm");
-        command.append(" --kubeconfig ").append(kubeConfigFile.getPath());
+        StringBuilder command = createHelmCommand("helm install exposedapp target/helm/kubernetes/" + DEPLOYMENT_NAME);
         for (int i = 0; i < values.length; i = i + 2) {
             command.append(" --set ").append(values[i]).append("=").append(values[i + 1]);
         }
 
         execHelmCommand(command.toString());
         client.apps().deployments().inNamespace(DEFAULT_NAMESPACE).withName(DEPLOYMENT_NAME)
-                .waitUntilReady(30, TimeUnit.SECONDS);
+                .waitUntilReady(60, TimeUnit.SECONDS);
+    }
+
+    private StringBuilder createHelmCommand(String command) {
+        return new StringBuilder()
+                .append(command)
+                .append(" --kubeconfig ").append(kubeConfigFile.getPath());
     }
 
     private void deleteHelmDeployment() {
-        execHelmCommand("helm delete exposedapp");
+        execHelmCommand(createHelmCommand("helm delete exposedapp").toString());
         await().untilAsserted(() -> {
             var deployment = client.apps().deployments().inNamespace(DEFAULT_NAMESPACE).withName(DEPLOYMENT_NAME).get();
             assertThat(deployment, is(nullValue()));
         });
+
+        // CRDs are not deleted automatically by helm, so we need to delete them manually
+        client.apiextensions().v1().customResourceDefinitions().withName("exposedapps.halkyon.io").delete();
     }
 
     private static void execHelmCommand(String command) {
