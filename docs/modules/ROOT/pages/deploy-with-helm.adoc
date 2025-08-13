@@ -20,4 +20,4 @@ automatically detect it and include the generated CRDs in the generated Helm cha
 ----
 
 No further configuration is needed. You can find more information about the Helm extension
-in its documentation available at https://docs.quarkiverse.io/quarkus-helm/dev/index.html or at it's GitHub repository https://github.com/quarkiverse/quarkus-helm.
+in its documentation available at https://docs.quarkiverse.io/quarkus-helm/dev/index.html or at its GitHub repository https://github.com/quarkiverse/quarkus-helm.
