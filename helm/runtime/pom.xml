@@ -3,63 +3,20 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>io.quarkiverse.operatorsdk</groupId>
-    <artifactId>quarkus-operator-sdk-core-parent</artifactId>
+    <artifactId>quarkus-operator-sdk-helm-parent</artifactId>
     <version>7.2.1-SNAPSHOT</version>
   </parent>
-  <artifactId>quarkus-operator-sdk</artifactId>
-  <name>Quarkus - Operator SDK - Core - Runtime</name>
+  <artifactId>quarkus-operator-sdk-helm</artifactId>
+  <name>Quarkus - Operator SDK - Helm - Runtime</name>
   <dependencies>
     <dependency>
       <groupId>io.quarkiverse.operatorsdk</groupId>
-      <artifactId>quarkus-operator-sdk-common</artifactId>
+      <artifactId>quarkus-operator-sdk</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-arc</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.javaoperatorsdk</groupId>
-      <artifactId>operator-framework-core</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>io.fabric8</groupId>
-          <artifactId>openshift-client</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>io.javaoperatorsdk</groupId>
-      <artifactId>micrometer-support</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus.arc</groupId>
-      <artifactId>arc</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-kubernetes-client</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-kubernetes</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-smallrye-health</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-micrometer</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-junit5</artifactId>
-      <scope>test</scope>
+      <groupId>io.quarkiverse.helm</groupId>
+      <artifactId>quarkus-helm</artifactId>
+      <version>${io.quarkiverse.helm.version}</version>
     </dependency>
   </dependencies>
   <build>
@@ -76,15 +33,16 @@
         <version>${quarkus.version}</version>
         <executions>
           <execution>
-            <phase>process-resources</phase>
+            <phase>compile</phase>
             <goals>
               <goal>extension-descriptor</goal>
             </goals>
             <configuration>
-              <deployment>${project.groupId}:${project.artifactId}-deployment:${project.version}</deployment>
-              <conditionalDependencies>
-                <artifact>io.quarkiverse.operatorsdk:quarkus-operator-sdk-helm:${project.version}</artifact>
-              </conditionalDependencies>
+              <deployment>${project.groupId}:${project.artifactId}-deployment:${project.version}
+              </deployment>
+              <dependencyCondition>
+                <artifact>io.quarkiverse.helm:quarkus-helm</artifact>
+              </dependencyCondition>
             </configuration>
           </execution>
         </executions>

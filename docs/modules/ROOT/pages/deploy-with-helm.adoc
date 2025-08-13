@@ -1,0 +1,23 @@
+= Deploying your operator with Helm
+
+https://helm.sh/[Helm] is a package manager for Kubernetes that allows you to define,
+install, and upgrade Kubernetes applications. Quarkus Operator SDK integrates with the
+https://github.com/quarkiverse/quarkus-helm[Quarkus Helm] Quarkiverse extension to
+generate Helm charts for your operators.
+
+== Usage
+
+If you include the `quarkus-helm` extension in your project, the Quarkus Operator SDK will
+automatically detect it and include the generated CRDs in the generated Helm chart.
+
+[source,xml,subs=attributes+]
+----
+<dependency>
+  <groupId>io.quarkiverse.helm</groupId>
+  <artifactId>quarkus-helm</artifactId>
+  <version>${version.io.quarkiverse.helm}</version>
+</dependency>
+----
+
+No further configuration is needed. You can find more information about the Helm extension
+in its documentation available at https://docs.quarkiverse.io/quarkus-helm/dev/index.html or at it's GitHub repository https://github.com/quarkiverse/quarkus-helm.

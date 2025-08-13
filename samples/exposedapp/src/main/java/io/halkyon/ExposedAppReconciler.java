@@ -1,6 +1,6 @@
 package io.halkyon;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_ALL_NAMESPACES;
 
 import java.time.Duration;
 import java.util.Map;
@@ -22,7 +22,7 @@ import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
         @Dependent(name = "service", type = ServiceDependent.class),
         @Dependent(type = IngressDependent.class, readyPostcondition = IngressDependent.class)
 })
-@ControllerConfiguration(informer = @Informer(namespaces = WATCH_CURRENT_NAMESPACE), name = "exposedapp")
+@ControllerConfiguration(informer = @Informer(namespaces = WATCH_ALL_NAMESPACES), name = "exposedapp")
 @CSVMetadata(displayName = "ExposedApp operator", description = "A sample operator that shows how to use JOSDK's main features with the Quarkus extension")
 public class ExposedAppReconciler implements Reconciler<ExposedApp>,
         ContextInitializer<ExposedApp> {
@@ -53,9 +53,10 @@ public class ExposedAppReconciler implements Reconciler<ExposedApp>,
             log.info("App {} is exposed and ready to be used at {}", name, exposedApp.getStatus().getHost());
             return UpdateControl.patchStatus(exposedApp);
         } else {
+            exposedApp.setStatus(new ExposedAppStatus(null, null));
             final var duration = Duration.ofSeconds(1);
             log.info("App {} is not ready yet, rescheduling reconciliation after {}s", name, duration.toSeconds());
-            return UpdateControl.<ExposedApp> noUpdate().rescheduleAfter(duration);
+            return UpdateControl.patchStatus(exposedApp).rescheduleAfter(duration);
         }
     }
 

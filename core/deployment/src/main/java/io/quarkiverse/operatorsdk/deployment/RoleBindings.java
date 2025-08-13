@@ -113,7 +113,8 @@ public class RoleBindings {
                 .endMetadata()
                 .withRoleRef(roleRef)
                 .addNewSubject()
-                .withKind(SERVICE_ACCOUNT).withName(serviceAccountName).withNamespace(serviceAccountNamespace)
+                .withKind(SERVICE_ACCOUNT).withName(serviceAccountName)
+                .withNamespace(serviceAccountNamespace != null ? serviceAccountNamespace : "default")
                 .endSubject()
                 .build();
     }
