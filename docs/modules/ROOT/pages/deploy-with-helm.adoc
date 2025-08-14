@@ -21,3 +21,5 @@ automatically detect it and include the generated CRDs in the generated Helm cha
 
 No further configuration is needed. You can find more information about the Helm extension
 in its documentation available at https://docs.quarkiverse.io/quarkus-helm/dev/index.html or at its GitHub repository https://github.com/quarkiverse/quarkus-helm.
+
+NOTE: The generated files layout has changed: they have moved from the `helm` directory to the `helm/kubernetes/<application name>` directory. While the layout and files have changed, the functionality should be now better as the `quarkus-helm` extension is much more full-featured than the previous Helm support used by QOSDK. The values should also be pretty self-explanatory, the only thing of note being that the watched namespaces are now set via the `app.envs.QUARKUS_OPERATOR_SDK_CONTROLLERS_<reconciler name>_NAMESPACES` value (i.e. you're now setting the env variable that is used to configure the namespaces at runtime in the operator's `Deployment`).
