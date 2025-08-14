@@ -33,7 +33,6 @@ import io.quarkiverse.operatorsdk.runtime.OperatorHealthCheck;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
 import io.quarkiverse.operatorsdk.runtime.QuarkusBuildTimeControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
-import io.quarkiverse.operatorsdk.runtime.RunTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.api.ConfigurableReconciler;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
@@ -149,13 +148,11 @@ class OperatorSDKProcessor {
     void updateControllerConfigurations(
             BuildTimeConfigurationServiceBuildItem buildTimeConfigurationServiceBuildItem,
             ConfigurationServiceRecorder recorder,
-            RunTimeOperatorConfiguration runTimeConfiguration,
             BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
             ControllerConfigurationsBuildItem controllerConfigurations) {
         final var supplier = recorder.configurationServiceSupplier(
                 buildTimeConfigurationServiceBuildItem.getConfigurationService(),
-                controllerConfigurations.getControllerConfigs(),
-                runTimeConfiguration);
+                controllerConfigurations.getControllerConfigs());
         syntheticBeanBuildItemBuildProducer.produce(
                 SyntheticBeanBuildItem.configure(QuarkusConfigurationService.class)
                         .scope(Singleton.class)
