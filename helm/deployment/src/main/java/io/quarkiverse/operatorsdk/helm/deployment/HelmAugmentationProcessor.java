@@ -38,7 +38,7 @@ public class HelmAugmentationProcessor {
 
     @BuildStep
     @Produce(ArtifactResultBuildItem.class)
-    void produceHelmTargetDirectories(
+    void addCRDsToHelmChart(
             List<HelmChartBuildItem> helmChartBuildItems,
             HelmChartConfig helmChartConfig,
             @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<CustomHelmOutputDirBuildItem> customHelmOutputDirBuildItem,
