@@ -37,20 +37,22 @@ class HelmDeploymentE2EIT {
     final static Logger log = Logger.getLogger(HelmDeploymentE2EIT.class);
 
     static class RunOnlyIfHelmIsAvailableCondition implements ExecutionCondition {
+        private static Boolean helmIsAvailable;
 
         @Override
         public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
-            boolean helmAvailable = false;
-            try {
-                Process exec = Runtime.getRuntime().exec("helm");
-                if (exec.waitFor() == 0) {
-                    helmAvailable = true;
+            if (helmIsAvailable == null) {
+                try {
+                    Process exec = Runtime.getRuntime().exec("helm");
+                    if (exec.waitFor() == 0) {
+                        helmIsAvailable = true;
+                    }
+                } catch (Exception e) {
+                    // ignore
+                    helmIsAvailable = false;
                 }
-            } catch (Exception e) {
-                // ignore
             }
-
-            if (helmAvailable) {
+            if (helmIsAvailable) {
                 return ConditionEvaluationResult.enabled("Helm is available");
             } else {
                 log.info("Helm is not available, skipping this test");
