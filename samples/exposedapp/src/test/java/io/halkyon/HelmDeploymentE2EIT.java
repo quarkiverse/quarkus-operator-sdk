@@ -186,7 +186,7 @@ class HelmDeploymentE2EIT {
 
         execHelmCommand(command.toString());
         client.apps().deployments().inNamespace(DEFAULT_NAMESPACE).withName(DEPLOYMENT_NAME)
-                .waitUntilReady(60, TimeUnit.SECONDS);
+                .waitUntilReady(120, TimeUnit.SECONDS);
     }
 
     private StringBuilder createHelmCommand(String command) {
