@@ -19,6 +19,10 @@ import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ConditionEvaluationResult;
+import org.junit.jupiter.api.extension.ExecutionCondition;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -27,9 +31,33 @@ import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest
+@ExtendWith(HelmDeploymentE2EIT.RunOnlyIfHelmIsAvailableCondition.class)
 class HelmDeploymentE2EIT {
 
     final static Logger log = Logger.getLogger(HelmDeploymentE2EIT.class);
+
+    static class RunOnlyIfHelmIsAvailableCondition implements ExecutionCondition {
+
+        @Override
+        public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
+            boolean helmAvailable = false;
+            try {
+                Process exec = Runtime.getRuntime().exec("helm");
+                if (exec.waitFor() == 0) {
+                    helmAvailable = true;
+                }
+            } catch (Exception e) {
+                // ignore
+            }
+
+            if (helmAvailable) {
+                return ConditionEvaluationResult.enabled("Helm is available");
+            } else {
+                log.info("Helm is not available, skipping this test");
+                return ConditionEvaluationResult.disabled("Helm is not available");
+            }
+        }
+    }
 
     public static final String TEST_RESOURCE = "test1";
     public static final String DEPLOYMENT_NAME = "quarkus-operator-sdk-samples-exposedapp";
