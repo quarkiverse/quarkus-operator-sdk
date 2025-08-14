@@ -91,8 +91,6 @@
             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
             <maven.home>${maven.home}</maven.home>
           </systemPropertyVariables>
-          <skipTests>true</skipTests>
-          <skip>true</skip>
         </configuration>
       </plugin>
       <plugin>
@@ -112,8 +110,41 @@
             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
             <maven.home>${maven.home}</maven.home>
           </systemPropertyVariables>
+          <excludes>
+            <exclude>**/HelmDeploymentE2EIT.java</exclude>
+          </excludes>
         </configuration>
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>all-test</id>
+      <activation>
+        <property>
+          <name>allTests</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <version>${surefire-plugin.version}</version>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration combine.self="override">
+              <!-- run all tests including the excluded HelmDeploymentE2EIT, don't remove this override -->
+            </configuration>
+          </plugin>
+
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
