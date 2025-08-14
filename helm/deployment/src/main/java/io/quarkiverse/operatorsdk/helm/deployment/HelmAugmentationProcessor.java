@@ -44,7 +44,7 @@ public class HelmAugmentationProcessor {
             @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<CustomHelmOutputDirBuildItem> customHelmOutputDirBuildItem,
             OutputTargetBuildItem outputTargetBuildItem,
             GeneratedCRDInfoBuildItem generatedCRDInfoBuildItem) {
-        log.info("Generating QOSDK Helm resources for the following Helm charts - " + helmChartBuildItems);
+        log.info("Adding CRDs to the following Helm charts - " + helmChartBuildItems);
 
         final var helmOutputDirectory = customHelmOutputDirBuildItem
                 .map(CustomHelmOutputDirBuildItem::getOutputDir)
