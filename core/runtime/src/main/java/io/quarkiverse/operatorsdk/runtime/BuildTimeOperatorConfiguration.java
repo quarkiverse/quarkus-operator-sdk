@@ -108,11 +108,6 @@ public interface BuildTimeOperatorConfiguration {
      */
     Optional<List<String>> generateWithWatchedNamespaces();
 
-    /**
-     * Helm Chart related configurations.
-     */
-    HelmConfiguration helm();
-
     default boolean isControllerOwningPrimary(String controllerName) {
         final var controllerConfiguration = controllers().get(controllerName);
         return controllerConfiguration == null || !controllerConfiguration.unownedPrimary();
