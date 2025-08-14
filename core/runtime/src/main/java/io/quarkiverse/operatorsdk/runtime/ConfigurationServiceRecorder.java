@@ -17,6 +17,7 @@ import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.quarkus.arc.Arc;
+import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.annotations.Recorder;
 import io.quarkus.runtime.configuration.ConfigUtils;
 
@@ -24,12 +25,17 @@ import io.quarkus.runtime.configuration.ConfigUtils;
 public class ConfigurationServiceRecorder {
 
     static final Logger log = Logger.getLogger(ConfigurationServiceRecorder.class.getName());
+    private final RuntimeValue<RunTimeOperatorConfiguration> runTimeConfigurationRuntimeValue;
+
+    public ConfigurationServiceRecorder(RuntimeValue<RunTimeOperatorConfiguration> runTimeConfigurationRuntimeValue) {
+        this.runTimeConfigurationRuntimeValue = runTimeConfigurationRuntimeValue;
+    }
 
     @SuppressWarnings({ "rawtypes", "unchecked", "resource" })
     public Supplier<QuarkusConfigurationService> configurationServiceSupplier(
             BuildTimeConfigurationService buildTimeConfigurationService,
-            Map<String, QuarkusBuildTimeControllerConfiguration<?>> configurations,
-            RunTimeOperatorConfiguration runTimeConfiguration) {
+            Map<String, QuarkusBuildTimeControllerConfiguration<?>> configurations) {
+        final var runTimeConfiguration = runTimeConfigurationRuntimeValue.getValue();
         final var maxThreads = runTimeConfiguration.concurrentReconciliationThreads()
                 .orElse(ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
         final var timeout = runTimeConfiguration.terminationTimeoutSeconds()

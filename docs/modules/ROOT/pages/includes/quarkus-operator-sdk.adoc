@@ -26,7 +26,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_CRD_VALIDATE+++`
 endif::add-copy-button-to-env-var[]
 --
 |boolean
-|`true`
+|`+++true+++`
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-generate]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-generate[`quarkus.operator-sdk.crd.generate`]##
 ifdef::add-copy-button-to-config-props[]
@@ -91,7 +91,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_CRD_VERSIONS+++`
 endif::add-copy-button-to-env-var[]
 --
 |list of string
-|`v1`
+|`+++v1+++`
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-output-directory]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-output-directory[`quarkus.operator-sdk.crd.output-directory`]##
 ifdef::add-copy-button-to-config-props[]
@@ -133,7 +133,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_CRD_GENERATE_ALL+++`
 endif::add-copy-button-to-env-var[]
 --
 |boolean
-|`false`
+|`+++false+++`
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-generate-in-parallel]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-generate-in-parallel[`quarkus.operator-sdk.crd.generate-in-parallel`]##
 ifdef::add-copy-button-to-config-props[]
@@ -154,7 +154,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_CRD_GENERATE_IN_PARALLEL+++`
 endif::add-copy-button-to-env-var[]
 --
 |boolean
-|`false`
+|`+++false+++`
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-exclude-resources]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-exclude-resources[`quarkus.operator-sdk.crd.exclude-resources`]##
 ifdef::add-copy-button-to-config-props[]
@@ -240,7 +240,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_GENERATION_AWARE+++`
 endif::add-copy-button-to-env-var[]
 --
 |boolean
-|`true`
+|`+++true+++`
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-disable-rbac-generation]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-disable-rbac-generation[`quarkus.operator-sdk.disable-rbac-generation`]##
 ifdef::add-copy-button-to-config-props[]
@@ -261,7 +261,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_DISABLE_RBAC_GENERATION+++`
 endif::add-copy-button-to-env-var[]
 --
 |boolean
-|`false`
+|`+++false+++`
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-start-operator]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-start-operator[`quarkus.operator-sdk.start-operator`]##
 ifdef::add-copy-button-to-config-props[]
@@ -282,7 +282,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_START_OPERATOR+++`
 endif::add-copy-button-to-env-var[]
 --
 |boolean
-|`true`
+|`+++true+++`
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-close-client-on-stop]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-close-client-on-stop[`quarkus.operator-sdk.close-client-on-stop`]##
 ifdef::add-copy-button-to-config-props[]
@@ -303,7 +303,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_CLOSE_CLIENT_ON_STOP+++`
 endif::add-copy-button-to-env-var[]
 --
 |boolean
-|`true`
+|`+++true+++`
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-stop-on-informer-error-during-startup]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-stop-on-informer-error-during-startup[`quarkus.operator-sdk.stop-on-informer-error-during-startup`]##
 ifdef::add-copy-button-to-config-props[]
@@ -324,7 +324,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_STOP_ON_INFORMER_ERROR_DURING_STA
 endif::add-copy-button-to-env-var[]
 --
 |boolean
-|`true`
+|`+++true+++`
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-fail-on-version-check]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-fail-on-version-check[`quarkus.operator-sdk.fail-on-version-check`]##
 ifdef::add-copy-button-to-config-props[]
@@ -351,7 +351,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_FAIL_ON_VERSION_CHECK+++`
 endif::add-copy-button-to-env-var[]
 --
 |boolean
-|`false`
+|`+++false+++`
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-activate-leader-election-for-profiles]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-activate-leader-election-for-profiles[`quarkus.operator-sdk.activate-leader-election-for-profiles`]##
 ifdef::add-copy-button-to-config-props[]
@@ -372,7 +372,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_ACTIVATE_LEADER_ELECTION_FOR_PROF
 endif::add-copy-button-to-env-var[]
 --
 |list of string
-|`prod`
+|`+++prod+++`
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-enable-ssa]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-enable-ssa[`quarkus.operator-sdk.enable-ssa`]##
 ifdef::add-copy-button-to-config-props[]
@@ -393,7 +393,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_ENABLE_SSA+++`
 endif::add-copy-button-to-env-var[]
 --
 |boolean
-|`true`
+|`+++true+++`
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-defensive-cloning]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-defensive-cloning[`quarkus.operator-sdk.defensive-cloning`]##
 ifdef::add-copy-button-to-config-props[]
@@ -414,7 +414,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_DEFENSIVE_CLONING+++`
 endif::add-copy-button-to-env-var[]
 --
 |boolean
-|`false`
+|`+++false+++`
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-generate-with-watched-namespaces]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-generate-with-watched-namespaces[`quarkus.operator-sdk.generate-with-watched-namespaces`]##
 ifdef::add-copy-button-to-config-props[]
@@ -456,7 +456,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_HELM_ENABLED+++`
 endif::add-copy-button-to-env-var[]
 --
 |boolean
-|`false`
+|`+++false+++`
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-helm-name]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-helm-name[`quarkus.operator-sdk.helm.name`]##
 ifdef::add-copy-button-to-config-props[]
@@ -542,7 +542,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_NAMESPACES+++`
 endif::add-copy-button-to-env-var[]
 --
 |list of string
-|`QOSDK_USE_BUILDTIME_NAMESPACES`
+|`+++QOSDK_USE_BUILDTIME_NAMESPACES+++`
 
 a| [[quarkus-operator-sdk_quarkus-operator-sdk-concurrent-workflow-threads]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-concurrent-workflow-threads[`quarkus.operator-sdk.concurrent-workflow-threads`]##
 ifdef::add-copy-button-to-config-props[]
@@ -584,7 +584,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_CACHE_SYNC_TIMEOUT+++`
 endif::add-copy-button-to-env-var[]
 --
 |link:https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/Duration.html[Duration] link:#duration-note-anchor-quarkus-operator-sdk_quarkus-operator-sdk[icon:question-circle[title=More information about the Duration format]]
-|`2M`
+|`+++2M+++`
 
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-generation-aware]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-generation-aware[`quarkus.operator-sdk.controllers."controllers".generation-aware`]##
 ifdef::add-copy-button-to-config-props[]
@@ -653,7 +653,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__UNOWNED
 endif::add-copy-button-to-env-var[]
 --
 |boolean
-|`false`
+|`+++false+++`
 
 a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-namespaces]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-namespaces[`quarkus.operator-sdk.controllers."controllers".namespaces`]##
 ifdef::add-copy-button-to-config-props[]
@@ -674,7 +674,7 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__NAMESPA
 endif::add-copy-button-to-env-var[]
 --
 |list of string
-|`QOSDK_USE_BUILDTIME_NAMESPACES`
+|`+++QOSDK_USE_BUILDTIME_NAMESPACES+++`
 
 a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-finalizer]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-finalizer[`quarkus.operator-sdk.controllers."controllers".finalizer`]##
 ifdef::add-copy-button-to-config-props[]
