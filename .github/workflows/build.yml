@@ -41,7 +41,7 @@ jobs:
         shell: bash
         run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
         id: extract_branch
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Retrieve Quarkus version
         id: quarkus-version
