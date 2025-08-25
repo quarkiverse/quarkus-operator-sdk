@@ -6,14 +6,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * @deprecated Use {@link RBACRoleRef} instead
- */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE })
-@Repeatable(AdditionalRBACCRoleRefs.class)
-@Deprecated(forRemoval = true)
-public @interface RBACCRoleRef {
+@Repeatable(AdditionalRBACRoleRefs.class)
+public @interface RBACRoleRef {
     String RBAC_API_GROUP = "rbac.authorization.k8s.io";
 
     RoleKind kind() default RoleKind.Role;

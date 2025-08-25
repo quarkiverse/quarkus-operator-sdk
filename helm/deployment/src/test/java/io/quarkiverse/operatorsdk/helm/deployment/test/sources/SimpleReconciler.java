@@ -4,14 +4,14 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.quarkiverse.operatorsdk.annotations.RBACCRoleRef;
+import io.quarkiverse.operatorsdk.annotations.RBACRoleRef;
 import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
 
 @ControllerConfiguration(name = SimpleReconciler.NAME)
 @RBACRule(verbs = RBACVerbs.UPDATE, apiGroups = SimpleReconciler.CERTIFICATES_K8S_IO_GROUP, resources = SimpleReconciler.ADDITIONAL_UPDATE_RESOURCE)
 @RBACRule(verbs = SimpleReconciler.SIGNERS_VERB, apiGroups = SimpleReconciler.CERTIFICATES_K8S_IO_GROUP, resources = SimpleReconciler.SIGNERS_RESOURCE, resourceNames = SimpleReconciler.SIGNERS_RESOURCE_NAMES)
-@RBACCRoleRef(name = SimpleReconciler.ROLE_REF_NAME, kind = RBACCRoleRef.RoleKind.ClusterRole)
+@RBACRoleRef(name = SimpleReconciler.ROLE_REF_NAME, kind = RBACRoleRef.RoleKind.ClusterRole)
 public class SimpleReconciler implements Reconciler<SimpleCR> {
 
     public static final String NAME = "simple";
