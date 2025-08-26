@@ -17,7 +17,7 @@ import io.quarkiverse.operatorsdk.samples.mysqlschema.MySQLSchema;
 @ApplicationScoped
 public class SecretDependentResource extends KubernetesDependentResource<Secret, MySQLSchema>
         implements Creator<Secret, MySQLSchema> {
-
+    public static final String DEPENDENT_NAME = "secret-dependent";
     public static final String SECRET_FORMAT = "%s-secret";
     public static final String USERNAME_FORMAT = "%s-user";
     public static final String MYSQL_SECRET_USERNAME = "mysql.secret.user.name";

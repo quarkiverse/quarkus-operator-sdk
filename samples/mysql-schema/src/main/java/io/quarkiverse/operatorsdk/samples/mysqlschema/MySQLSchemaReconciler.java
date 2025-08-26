@@ -19,12 +19,11 @@ import io.quarkiverse.operatorsdk.samples.mysqlschema.schema.SchemaService;
 import io.quarkus.logging.Log;
 
 @Workflow(dependents = {
-        @Dependent(type = SecretDependentResource.class),
-        @Dependent(type = SchemaDependentResource.class, name = SchemaDependentResource.NAME)
+        @Dependent(type = SecretDependentResource.class, name = SecretDependentResource.DEPENDENT_NAME),
+        @Dependent(type = SchemaDependentResource.class, dependsOn = SecretDependentResource.DEPENDENT_NAME)
 })
 @SuppressWarnings("unused")
 public class MySQLSchemaReconciler implements Reconciler<MySQLSchema> {
-
     @Inject
     SchemaService schemaService;
 
@@ -33,7 +32,7 @@ public class MySQLSchemaReconciler implements Reconciler<MySQLSchema> {
         // we only need to update the status if we just built the schema, i.e. when it's
         // present in the context
         return context.getSecondaryResource(Secret.class)
-                .map(secret -> context.getSecondaryResource(Schema.class, SchemaDependentResource.NAME)
+                .map(secret -> context.getSecondaryResource(Schema.class)
                         .map(s -> {
                             updateStatusPojo(schema, secret.getMetadata().getName(),
                                     decode(secret.getData().get(MYSQL_SECRET_USERNAME)));
