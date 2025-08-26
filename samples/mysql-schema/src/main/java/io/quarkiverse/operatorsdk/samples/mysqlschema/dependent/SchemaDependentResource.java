@@ -7,7 +7,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
@@ -34,7 +33,6 @@ public class SchemaDependentResource
         ConfiguredDependentResource<ResourcePollerConfig>,
         Creator<Schema, MySQLSchema>,
         Deleter<MySQLSchema> {
-    public static final String NAME = "schema";
     private static final Logger log = LoggerFactory.getLogger(SchemaDependentResource.class);
 
     @Inject
@@ -63,6 +61,7 @@ public class SchemaDependentResource
 
     @Override
     public Schema create(Schema target, MySQLSchema mySQLSchema, Context<MySQLSchema> context) {
+        log.info("Creating Schema: {}", target);
         try (Connection connection = schemaService.getConnection()) {
             final var secret = context.getSecondaryResource(Secret.class).orElseThrow();
             var username = decode(secret.getData().get(MYSQL_SECRET_USERNAME));
@@ -90,13 +89,17 @@ public class SchemaDependentResource
     }
 
     @Override
-    public Set<Schema> fetchResources(MySQLSchema primaryResource) {
+    public Optional<Schema> getSecondaryResource(MySQLSchema primary, Context<MySQLSchema> context) {
         try (Connection connection = schemaService.getConnection()) {
-            return schemaService.getSchema(connection, primaryResource.getMetadata().getName())
-                    .map(Set::of).orElse(Collections.emptySet());
+            return schemaService.getSchema(connection, primary.getMetadata().getName());
         } catch (SQLException e) {
             throw new RuntimeException("Error while trying read Schema", e);
         }
+    }
+
+    @Override
+    public Set<Schema> fetchResources(MySQLSchema primaryResource) {
+        return getSecondaryResource(primaryResource, null).map(Set::of).orElse(Set.of());
     }
 
     public static String decode(String value) {
