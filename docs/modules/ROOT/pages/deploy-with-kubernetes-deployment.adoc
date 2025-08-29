@@ -1,0 +1,101 @@
+= Deploying your operator with Kubernetes deployment
+
+The easiest way to deploy your operator is to use a traditional Kubernetes
+deployment. Thanks to Quarkus, you can create a small container image that
+contains your operator and deploy it to your Kubernetes cluster.
+
+It is surely possible to build the image of your operator and create all
+required Kubernetes manifests manually, but Quarkus provides all required
+tooling to do that for you, which can greatly simplify the overall workflow.
+
+== Building the operator image
+
+Quarkus applications automatically generate with a few `Dockerfile` files in `src/main/docker` but this is not the only way to build the image of your operator. You can read about the available extensions that do this for you automatically in the
+https://quarkus.io/guides/container-image[Container images] guide.
+
+After you have chosen and added the relevant container extension to your
+operator project (e.g., `quarkus extension add container-image-docker`) and
+configured the relevant
+https://quarkus.io/guides/container-image#container-image-options[configuration]
+for your image deployment, you can build and push the image of your operator
+with the following command:
+
+[source,bash]
+----
+$ ./mvnw install \
+  -Dquarkus.container-image.build=true \
+  -Dquarkus.container-image.push=true \
+  -Dquarkus.container-image.image=<registry>/<user>/<image>:<tag>
+----
+
+Or you can optionally specify the image name in the application properties:
+
+[source,properties]
+----
+quarkus.container-image.image=<registry>/<user>/<image>:<tag>
+----
+
+Check the available options in the
+https://quarkus.io/guides/container-image#container-image-options[container
+image guide].
+
+== Deploying CRDs
+
+Before deploying your operator, you need to deploy the required Custom Resource
+Definitions (CRDs) to your cluster. You can generate the required CRD manifests
+with the following command:
+
+[source,bash]
+----
+$ ./mvnw package
+----
+
+This will generate the required CRD manifests in the `target/kubernetes` folder. You
+can then apply them to your cluster with the `kubectl` command:
+
+[source,bash]
+----
+$ kubectl apply -f target/kubernetes/<crd-name>.<crd-group>-<crd-version>.yml
+----
+
+== Deploying to Kubernetes/OpenShift
+
+To deploy your operator to Kubernetes or OpenShift, you need to add one of the relevant extensions to your project:
+
+[source,bash]
+----
+# Kubernetes
+$ quarkus extension add kubernetes
+
+# OpenShift
+$ quarkus extension add openshift
+----
+
+Note that openshift is also an alternative to container image extensions so you
+need to
+https://quarkus.io/guides/container-image#selecting-among-multiple-extensions[adjust
+your projects accordingly], if you want to use different container image
+extensions.
+
+After you have added the relevant extension, you can generate the required
+Kubernetes or OpenShift manifests with the normal build command:
+
+[source,bash]
+----
+$ ./mvnw package
+
+# Or if you don't have your image configured in the application properties
+$ ./mvnw package -Dquarkus.container-image.image=<registry>/<user>/<image>:<tag>
+----
+
+This will generate the required manifests in the `target/kubernetes` or
+`target/openshift` folder. You can then apply them to your cluster with the
+`kubectl` or `oc` command:
+
+[source,bash]
+----
+$ kubectl apply -f target/kubernetes/kubernetes.yml
+
+# Or for OpenShift
+$ oc apply -f target/kubernetes/openshift.yml
+----

@@ -1,4 +1,5 @@
 * xref:index.adoc[Quarkus Operator SDK (QOSDK)]
+* xref:deploy-with-kubernetes-deployment.adoc[Deploying with a Kubernetes Deployment]
 * xref:deploy-with-olm.adoc[Deploying with OLM]
 * xref:deploy-with-helm.adoc[Deploying with Helm]
 * xref:upgrade.adoc[Upgrading]
