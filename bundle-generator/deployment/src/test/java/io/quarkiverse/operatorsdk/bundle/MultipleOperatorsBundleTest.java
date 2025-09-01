@@ -37,7 +37,8 @@ public class MultipleOperatorsBundleTest {
                     .addClasses(First.class, FirstReconciler.class,
                             Second.class, SecondReconciler.class,
                             Third.class, External.class, SecondExternal.class, ThirdReconciler.class,
-                            ExternalDependentResource.class, PodDependentResource.class))
+                            ExternalDependentResource.class, PodDependentResource.class, OptionalImplicitNativeDependent.class,
+                            OptionalExplicitNativeDependent.class))
             .overrideConfigKey("quarkus.operator-sdk.crd.generate-all", "true")
             .overrideConfigKey("quarkus.operator-sdk.bundle.replaces", FirstReconciler.REPLACES)
             .overrideConfigKey("quarkus.operator-sdk.bundle.bundles." + ThirdReconciler.BUNDLE_NAME + ".annotations."

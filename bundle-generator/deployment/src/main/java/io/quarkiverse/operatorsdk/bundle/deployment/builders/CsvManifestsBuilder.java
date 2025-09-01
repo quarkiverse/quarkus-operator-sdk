@@ -207,6 +207,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
             final var dependents = raci.getDependentResourceInfos();
             if (dependents != null && !dependents.isEmpty()) {
                 dependents.stream()
+                        .filter(draci -> !draci.isOptional())
                         .map(ResourceAssociatedAugmentedClassInfo::associatedResourceInfo)
                         .filter(ReconciledAugmentedClassInfo::isResource)
                         .map(ReconciledAugmentedClassInfo::asResourceTargeting)
