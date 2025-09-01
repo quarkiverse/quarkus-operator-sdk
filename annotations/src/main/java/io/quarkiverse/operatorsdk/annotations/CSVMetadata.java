@@ -174,4 +174,14 @@ public @interface CSVMetadata {
 
         String name();
     }
+
+    /**
+     * Whether the associated resource is explicitly marked as optional, i.e. the operator can work without it being present on
+     * the cluster. This will have the effect of not requiring the associated resource in the generated OLM bundle.
+     *
+     * @since 7.3.0
+     */
+    @interface Optional {
+        boolean value() default true;
+    }
 }
