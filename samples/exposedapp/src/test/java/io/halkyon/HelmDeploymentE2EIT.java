@@ -93,7 +93,7 @@ class HelmDeploymentE2EIT {
 
         checkResourceProcessed(namespace);
 
-        client.resource(testResource(namespace)).delete();
+        ensureResourceDeleted(testResource(namespace));
     }
 
     @Test
@@ -110,8 +110,8 @@ class HelmDeploymentE2EIT {
         client.resource(testResource(DEFAULT_NAMESPACE)).create();
         checkResourceProcessed(DEFAULT_NAMESPACE);
 
-        client.resource(testResource(namespace)).delete();
-        client.resource(testResource(DEFAULT_NAMESPACE)).delete();
+        ensureResourceDeleted(testResource(namespace));
+        ensureResourceDeleted(testResource(DEFAULT_NAMESPACE));
     }
 
     @Test
@@ -133,9 +133,19 @@ class HelmDeploymentE2EIT {
         checkResourceProcessed(ns1);
         checkResourceProcessed(ns2);
 
-        client.resource(testResource(ns1)).delete();
-        client.resource(testResource(ns2)).delete();
-        client.resource(testResource(excludedNS)).delete();
+        ensureResourceDeleted(testResource(ns1));
+        ensureResourceDeleted(testResource(ns2));
+        ensureResourceDeleted(testResource(excludedNS));
+    }
+
+    private void ensureResourceDeleted(ExposedApp resource) {
+        client.resource(resource).delete();
+        await().atMost(15, TimeUnit.SECONDS).untilAsserted(() -> {
+            var exposedApp = client.resources(ExposedApp.class)
+                    .inNamespace(resource.getMetadata().getNamespace())
+                    .withName(resource.getMetadata().getName()).get();
+            assertThat(exposedApp, is(nullValue()));
+        });
     }
 
     private void checkResourceNotProcessed(String namespace) {
