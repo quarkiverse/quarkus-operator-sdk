@@ -12,7 +12,7 @@
 
   <properties>
     <maven.compiler.parameters>true</maven.compiler.parameters>
-    <surefire-plugin.version>3.5.3</surefire-plugin.version>
+    <surefire-plugin.version>3.5.4</surefire-plugin.version>
   </properties>
 
   <packaging>jar</packaging>
