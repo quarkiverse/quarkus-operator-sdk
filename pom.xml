@@ -13,7 +13,7 @@
   <name>Quarkus - Operator SDK - Parent</name>
   <properties>
     <quarkus.version>3.26.3</quarkus.version>
-    <java-operator-sdk.version>5.1.2</java-operator-sdk.version>
+    <java-operator-sdk.version>5.1.3-SNAPSHOT</java-operator-sdk.version>
     <io.quarkiverse.helm.version>1.2.7</io.quarkiverse.helm.version>
   </properties>
   <scm>
@@ -163,9 +163,9 @@
         </repository>
 
         <repository>
-          <id>oss-sonatype</id>
-          <name>oss-sonatype</name>
-          <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+          <id>central-snapshots</id>
+          <name>Maven Central Snapshots</name>
+          <url>https://central.sonatype.com/repository/maven-snapshots/</url>
           <snapshots>
             <enabled>true</enabled>
           </snapshots>
