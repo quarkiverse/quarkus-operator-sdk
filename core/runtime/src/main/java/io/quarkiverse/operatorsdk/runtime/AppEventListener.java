@@ -4,15 +4,14 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.event.Observes;
 import jakarta.interceptor.Interceptor;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 import io.javaoperatorsdk.operator.Operator;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 
 public class AppEventListener {
-    private static final Logger log = LoggerFactory.getLogger(AppEventListener.class);
+    private static final Logger log = Logger.getLogger(AppEventListener.class);
     private final Operator operator;
     private final QuarkusConfigurationService configurationService;
 
@@ -36,7 +35,7 @@ public class AppEventListener {
 
     public void onShutdown(@Observes ShutdownEvent event) {
         if (configurationService.shouldStartOperator()) {
-            log.info("Quarkus Java Operator SDK extension is shutting down. Is standard shutdown: {}",
+            log.infof("Quarkus Java Operator SDK extension is shutting down. Is standard shutdown: %s",
                     event.isStandardShutdown());
             operator.stop();
         } else {

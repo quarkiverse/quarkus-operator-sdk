@@ -18,21 +18,21 @@ public class VersionAlignmentCheckingStep {
     @BuildStep
     VersionBuildItem checkVersionsAlignment(BuildTimeOperatorConfiguration buildTimeConfiguration) {
         final var version = Version.loadFromProperties();
-        log.info("QOSDK: " + version.getExtensionCompleteVersion());
-        log.info("JOSDK: " + version.getSdkCompleteVersion());
+        log.infof("QOSDK: %s", version.getExtensionCompleteVersion());
+        log.infof("JOSDK: %s", version.getSdkCompleteVersion());
 
         final var runtimeFabric8Version = version.getRuntimeFabric8Version();
-        log.info("Fabric8 (effective): " + runtimeFabric8Version);
+        log.infof("Fabric8 (effective): %s", runtimeFabric8Version);
 
         final var runtimeQuarkusVersion = io.quarkus.builder.Version.getVersion();
         checkVersionCompatibility(buildTimeConfiguration, runtimeQuarkusVersion, version.getQuarkusVersion(), "Quarkus");
 
         final var josdkFabric8Version = version.getKubernetesClientVersion();
-        log.info("Fabric8 (JOSDK-defined): " + josdkFabric8Version);
+        log.infof("Fabric8 (JOSDK-defined): %s", josdkFabric8Version);
         checkVersionCompatibility(buildTimeConfiguration, runtimeFabric8Version, josdkFabric8Version,
                 "JOSDK Fabric8 Kubernetes Client");
         final var quarkusFabric8Version = io.quarkus.kubernetes.client.deployment.Versions.KUBERNETES_CLIENT;
-        log.info("Fabric8 (Quarkus): " + quarkusFabric8Version);
+        log.infof("Fabric8 (Quarkus): %s", quarkusFabric8Version);
         checkVersionCompatibility(buildTimeConfiguration, runtimeFabric8Version, quarkusFabric8Version,
                 "Quarkus-provided Fabric8 Kubernetes Client");
 
@@ -74,7 +74,7 @@ public class VersionAlignmentCheckingStep {
         try {
             return Optional.ofNullable(Semver.coerce(version));
         } catch (Exception e) {
-            log.warn("Couldn't convert version " + version);
+            log.warnf("Couldn't convert version %s", version);
         }
         return Optional.empty();
     }
