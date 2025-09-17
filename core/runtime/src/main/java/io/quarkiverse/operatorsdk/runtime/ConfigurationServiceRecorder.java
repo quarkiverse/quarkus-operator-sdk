@@ -77,9 +77,10 @@ public class ConfigurationServiceRecorder {
             if (buildTimeConfigurationService.activateLeaderElection(profiles)) {
                 leaderElectionConfiguration = container.instance(LeaderElectionConfiguration.class).get();
             } else {
-                log.info("Leader election deactivated because it is only activated for "
-                        + buildTimeConfigurationService.getLeaderElectionActivationProfiles()
-                        + " profiles. Currently active profiles: " + profiles);
+                log.infof(
+                        "Leader election deactivated because it is only activated for %s profiles. Currently active profiles: %s",
+                        buildTimeConfigurationService.getLeaderElectionActivationProfiles(),
+                        profiles);
             }
 
             return new QuarkusConfigurationService(

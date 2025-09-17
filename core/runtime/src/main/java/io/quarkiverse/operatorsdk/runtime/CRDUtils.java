@@ -31,14 +31,14 @@ public final class CRDUtils {
                 try {
                     final var crd = loadFrom(filePath, client.getKubernetesSerialization(), getCRDClassFor(crdSpecVersion));
                     apply(client, crdSpecVersion, crd);
-                    LOGGER.infov("Applied {0} CRD named ''{1}'' from {2}", crdSpecVersion, crdName, filePath);
+                    LOGGER.infof("Applied %s CRD named '%s' from %s", crdSpecVersion, crdName, filePath);
                 } catch (IOException ex) {
                     throw new IllegalArgumentException("Couldn't read CRD file at " + filePath
                             + " as a " + crdSpecVersion + " CRD for " + crdName, ex);
                 }
             });
         } catch (Exception exception) {
-            LOGGER.warnv(exception, "Couldn't apply ''{0}'' CRD", crdName);
+            LOGGER.warnf(exception, "Couldn't apply '%s' CRD", crdName);
         }
     }
 
@@ -51,9 +51,9 @@ public final class CRDUtils {
         final var crd = loadFrom(crdPath, null, CustomResourceDefinition.class);
         final var crdVersion = crd.getApiVersion().split("/")[1];
         if (!DEFAULT_CRD_SPEC_VERSION.equals(crdVersion)) {
-            LOGGER.warnv(
-                    "CRD at {0} was loaded as a {1} CRD but is defined as using {2} CRD spec version. While things might still work as expected, we recommend that you only use CRDs using the {1} CRD spec version.",
-                    crdPath, DEFAULT_CRD_SPEC_VERSION, crdVersion);
+            LOGGER.warnf(
+                    "CRD at %s was loaded as a %s CRD but is defined as using %s CRD spec version. While things might still work as expected, we recommend that you only use CRDs using the %s CRD spec version.",
+                    crdPath, DEFAULT_CRD_SPEC_VERSION, crdVersion, DEFAULT_CRD_SPEC_VERSION);
         }
         return crd;
     }

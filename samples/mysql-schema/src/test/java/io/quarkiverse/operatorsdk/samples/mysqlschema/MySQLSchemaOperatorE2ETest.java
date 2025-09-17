@@ -18,7 +18,6 @@ import java.util.Optional;
 
 import jakarta.inject.Inject;
 
-import org.jboss.logging.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,13 +27,13 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
 import io.quarkiverse.operatorsdk.samples.mysqlschema.schema.Schema;
 import io.quarkiverse.operatorsdk.samples.mysqlschema.schema.SchemaService;
+import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 
 @QuarkusTest
 class MySQLSchemaOperatorE2ETest {
 
-    final static Logger log = Logger.getLogger(MySQLSchemaOperatorE2ETest.class);
     private static final String DB_NAME = "mydb1";
     private static final String ENCODING = "utf8";
 
@@ -73,10 +72,10 @@ class MySQLSchemaOperatorE2ETest {
         testSchema.setSpec(new SchemaSpec());
         testSchema.getSpec().setEncoding(ENCODING);
 
-        log.infof("Creating test MySQLSchema object: %s", testSchema);
+        Log.infof("Creating test MySQLSchema object: %s", testSchema);
         client.resource(testSchema).serverSideApply();
 
-        log.info("Waiting 10 seconds for expected resources to be created and updated");
+        Log.info("Waiting 10 seconds for expected resources to be created and updated");
         await().pollDelay(9, SECONDS).atMost(10, SECONDS).untilAsserted(() -> {
             MySQLSchema updatedSchema = client.resources(MySQLSchema.class)
                     .inNamespace(testSchema.getMetadata().getNamespace())

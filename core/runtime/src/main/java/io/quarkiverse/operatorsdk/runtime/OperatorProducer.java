@@ -7,8 +7,7 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Singleton;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.Operator;
@@ -20,7 +19,7 @@ import io.quarkus.arc.DefaultBean;
 
 @Singleton
 public class OperatorProducer {
-    private static final Logger log = LoggerFactory.getLogger(OperatorProducer.class);
+    private static final Logger log = Logger.getLogger(OperatorProducer.class);
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     private static <P extends HasMetadata> void register(QuarkusConfigurationService configurationService,
@@ -61,7 +60,7 @@ public class OperatorProducer {
     @ApplicationScoped
     Operator operator(QuarkusConfigurationService configuration, Instance<Reconciler<? extends HasMetadata>> reconcilers) {
         if (configuration.getVersion() instanceof Version version) {
-            log.info("Quarkus Java Operator SDK extension {}", version.getExtensionCompleteVersion());
+            log.infof("Quarkus Java Operator SDK extension %s", version.getExtensionCompleteVersion());
         }
 
         // if some CRDs just got generated and need to be applied, apply them

@@ -13,9 +13,6 @@ import java.util.Set;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
@@ -25,6 +22,7 @@ import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePoll
 import io.quarkiverse.operatorsdk.samples.mysqlschema.MySQLSchema;
 import io.quarkiverse.operatorsdk.samples.mysqlschema.schema.Schema;
 import io.quarkiverse.operatorsdk.samples.mysqlschema.schema.SchemaService;
+import io.quarkus.logging.Log;
 
 @ApplicationScoped
 public class SchemaDependentResource
@@ -33,7 +31,6 @@ public class SchemaDependentResource
         ConfiguredDependentResource<ResourcePollerConfig>,
         Creator<Schema, MySQLSchema>,
         Deleter<MySQLSchema> {
-    private static final Logger log = LoggerFactory.getLogger(SchemaDependentResource.class);
 
     @Inject
     SchemaService schemaService;
@@ -61,7 +58,7 @@ public class SchemaDependentResource
 
     @Override
     public Schema create(Schema target, MySQLSchema mySQLSchema, Context<MySQLSchema> context) {
-        log.info("Creating Schema: {}", target);
+        Log.infof("Creating Schema: %s", target);
         try (Connection connection = schemaService.getConnection()) {
             final var secret = context.getSecondaryResource(Secret.class).orElseThrow();
             var username = decode(secret.getData().get(MYSQL_SECRET_USERNAME));
@@ -71,14 +68,14 @@ public class SchemaDependentResource
                     target.getName(),
                     target.getCharacterSet(), username, password);
         } catch (SQLException e) {
-            log.error("Error while creating Schema", e);
+            Log.error("Error while creating Schema", e);
             throw new IllegalStateException(e);
         }
     }
 
     @Override
     public void delete(MySQLSchema primary, Context<MySQLSchema> context) {
-        log.info("Delete schema");
+        Log.info("Delete schema");
         try (Connection connection = schemaService.getConnection()) {
             var userName = primary.getStatus() != null ? primary.getStatus().getUserName() : null;
             schemaService.deleteSchemaAndRelatedUser(connection, primary.getMetadata().getName(),

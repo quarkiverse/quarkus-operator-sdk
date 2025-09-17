@@ -5,9 +5,6 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_ALL_NAM
 import java.time.Duration;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
@@ -16,6 +13,7 @@ import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.WorkflowReconcileResult;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
+import io.quarkus.logging.Log;
 
 @Workflow(dependents = {
         @Dependent(type = DeploymentDependent.class),
@@ -27,7 +25,6 @@ import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 public class ExposedAppReconciler implements Reconciler<ExposedApp>,
         ContextInitializer<ExposedApp> {
 
-    static final Logger log = LoggerFactory.getLogger(ExposedAppReconciler.class);
     static final String APP_LABEL = "app.kubernetes.io/name";
     static final String LABELS_CONTEXT_KEY = "labels";
 
@@ -50,12 +47,12 @@ public class ExposedAppReconciler implements Reconciler<ExposedApp>,
             final var url = IngressDependent.getExposedURL(
                     context.getSecondaryResource(Ingress.class).orElseThrow());
             exposedApp.setStatus(new ExposedAppStatus(url, exposedApp.getSpec().getEndpoint()));
-            log.info("App {} is exposed and ready to be used at {}", name, exposedApp.getStatus().getHost());
+            Log.infof("App %s is exposed and ready to be used at %s", name, exposedApp.getStatus().getHost());
             return UpdateControl.patchStatus(exposedApp);
         } else {
             exposedApp.setStatus(new ExposedAppStatus(null, null));
             final var duration = Duration.ofSeconds(1);
-            log.info("App {} is not ready yet, rescheduling reconciliation after {}s", name, duration.toSeconds());
+            Log.infof("App %s is not ready yet, rescheduling reconciliation after %ss", name, duration.toSeconds());
             return UpdateControl.patchStatus(exposedApp).rescheduleAfter(duration);
         }
     }
