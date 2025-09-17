@@ -1,10 +1,12 @@
 package io.quarkiverse.operatorsdk.runtime;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
+import io.javaoperatorsdk.operator.api.config.informer.FieldSelector;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
@@ -18,10 +20,11 @@ public class QuarkusInformerConfiguration<R extends HasMetadata> extends Informe
     public QuarkusInformerConfiguration(Class<R> resourceClass, String name, Set<String> namespaces,
             boolean followControllerNamespaceChanges, String labelSelector, OnAddFilter<? super R> onAddFilter,
             OnUpdateFilter<? super R> onUpdateFilter, OnDeleteFilter<? super R> onDeleteFilter,
-            GenericFilter<? super R> genericFilter, ItemStore<R> itemStore, Long informerListLimit) {
+            GenericFilter<? super R> genericFilter, ItemStore<R> itemStore, Long informerListLimit,
+            QuarkusFieldSelector fieldSelector) {
         super(resourceClass, name, namespaces, followControllerNamespaceChanges, labelSelector, onAddFilter, onUpdateFilter,
                 onDeleteFilter,
-                genericFilter, itemStore, informerListLimit);
+                genericFilter, itemStore, informerListLimit, fieldSelector);
     }
 
     public QuarkusInformerConfiguration(InformerConfiguration<R> config) {
@@ -29,10 +32,21 @@ public class QuarkusInformerConfiguration<R extends HasMetadata> extends Informe
                 config.getFollowControllerNamespaceChanges(),
                 config.getLabelSelector(),
                 config.getOnAddFilter(), config.getOnUpdateFilter(), config.getOnDeleteFilter(), config.getGenericFilter(),
-                config.getItemStore(), config.getInformerListLimit());
+                config.getItemStore(), config.getInformerListLimit(), sanitizeFieldSelector(config.getFieldSelector()));
+    }
+
+    public static class QuarkusFieldSelector extends FieldSelector {
+        @RecordableConstructor
+        public QuarkusFieldSelector(List<Field> fields) {
+            super(fields);
+        }
     }
 
     private static Set<String> sanitizeNamespaces(Set<String> namespaces) {
         return namespaces.stream().map(String::trim).collect(Collectors.toSet());
+    }
+
+    private static QuarkusFieldSelector sanitizeFieldSelector(FieldSelector fieldSelector) {
+        return fieldSelector != null ? new QuarkusFieldSelector(fieldSelector.getFields()) : null;
     }
 }
