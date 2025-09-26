@@ -24,10 +24,14 @@ import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.DependentResourceNode;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
 import io.quarkus.arc.Arc;
+import io.quarkus.arc.ArcContainer;
 import io.quarkus.arc.ClientProxy;
+import io.quarkus.arc.InstanceHandle;
 
 public class QuarkusConfigurationService extends AbstractConfigurationService implements
         DependentResourceFactory<QuarkusControllerConfiguration<?>, DependentResourceSpecMetadata<?, ?, ?>>,
@@ -237,6 +241,35 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
             }
         }
         return dependentResource;
+    }
+
+    @Override
+    public DependentResourceNode createNodeFrom(DependentResourceSpecMetadata spec,
+            DependentResource dependentResource) {
+        final var container = Arc.container();
+        if (container != null) {
+            return new DependentResourceNode(
+                    getBeanInstanceOrDefault(container, spec.getReconcileCondition()),
+                    getBeanInstanceOrDefault(container, spec.getDeletePostCondition()),
+                    getBeanInstanceOrDefault(container, spec.getReadyCondition()),
+                    getBeanInstanceOrDefault(container, spec.getActivationCondition()),
+                    dependentResource);
+        } else {
+            return DependentResourceFactory.super.createNodeFrom(spec, dependentResource);
+        }
+    }
+
+    private Condition getBeanInstanceOrDefault(ArcContainer container, Condition reconcileCondition) {
+        if (reconcileCondition == null) {
+            return null;
+        }
+        try (InstanceHandle<? extends Condition> instance = container.instance(reconcileCondition.getClass())) {
+            if (instance.isAvailable()) {
+                return instance.get();
+            } else {
+                return reconcileCondition;
+            }
+        }
     }
 
     @Override
