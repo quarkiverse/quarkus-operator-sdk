@@ -61,10 +61,8 @@ public class VersionAlignmentCheckingStep {
             } else {
                 final var diff = expectedVersion.diff(foundVersion);
                 if (diff.compareTo(VersionDiff.MINOR) >= 0) {
-                    log.warn(message
+                    log.debug(message
                             + " by at least a minor version and things might not work as expected.");
-                } else {
-                    log.debug(message);
                 }
             }
         }
