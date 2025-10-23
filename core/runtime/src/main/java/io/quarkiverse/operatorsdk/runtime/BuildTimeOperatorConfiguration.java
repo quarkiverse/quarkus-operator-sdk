@@ -61,7 +61,7 @@ public interface BuildTimeOperatorConfiguration {
     Boolean stopOnInformerErrorDuringStartup();
 
     /**
-     * Whether to fail or emit a debug-level (warning-level when misalignment is at the minor or above version level) log when
+     * Whether to fail or emit a debug-level (when misalignment is at the minor or above version level) log when
      * the extension detects that there are misaligned versions.
      * <p/>
      * The following versions are checked for alignment:
@@ -70,6 +70,15 @@ public interface BuildTimeOperatorConfiguration {
      * <li>Fabric8 client version used by JOSDK vs. actually used Fabric8 client version</li>
      * <li>Fabric8 client version used by Quarkus vs. actually used Fabric8 client version</li>
      * </ul>
+     * <p>
+     * Checking the alignment of these versions used to be more important than it is now as it happened that attempting to use
+     * this extension with differing versions of the client between JOSDK and Quarkus caused issues. Usually, this manifested
+     * with otherwise unexplained issues when using native compilation (e.g. improper serialization of objects) so version
+     * alignment check was implemented to help diagnose such issues.
+     * </p>
+     * Prior to version 7.3.0, this version alignment check was outputting warning-level information whenever versions were
+     * mismatched at least at the minor level, sometimes causing confusion. Since issues caused by such misalignments have been
+     * rare now that the project is more mature, it was decided to move these logs to debug-level instead.
      */
     @WithDefault("false")
     Boolean failOnVersionCheck();
