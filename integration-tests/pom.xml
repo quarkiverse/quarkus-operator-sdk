@@ -12,5 +12,6 @@
   <packaging>pom</packaging>
   <modules>
     <module>basic</module>
+    <module>cdi</module>
   </modules>
 </project>
