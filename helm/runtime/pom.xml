@@ -4,7 +4,7 @@
   <parent>
     <groupId>io.quarkiverse.operatorsdk</groupId>
     <artifactId>quarkus-operator-sdk-helm-parent</artifactId>
-    <version>7.2.3-SNAPSHOT</version>
+    <version>7.2.3</version>
   </parent>
   <artifactId>quarkus-operator-sdk-helm</artifactId>
   <name>Quarkus - Operator SDK - Helm - Runtime</name>
