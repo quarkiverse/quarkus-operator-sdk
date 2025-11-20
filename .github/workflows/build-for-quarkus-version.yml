@@ -261,18 +261,18 @@ jobs:
           echo "Quarkus Fabric8 version: ${{ steps.build-quarkus-pr.outputs.quarkus_f8_version }}"
           echo "Effective Fabric8 version: $(./mvnw dependency:tree -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' ${{inputs.mvnArgs}} -Dincludes=io.fabric8:kubernetes-client-api -pl core/deployment | grep io.fabric8:kubernetes-client-api -m1 | cut -d ':' -f 4)"
 
+      - name: Kubernetes KinD Cluster
+        uses: container-tools/kind-action@v2
+        with:
+          registry: true
+          version: v0.30.0
+
       - name: Build with Maven (JVM)
         run: ./mvnw -B formatter:validate install -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' ${{inputs.mvnArgs}} -DallTests --file pom.xml
 
       - name: Dependency tree on failure
         if: failure()
         run: ./mvnw -B dependency:tree -Dverbose ${{inputs.mvnArgs}}
-
-      - name: Kubernetes KinD Cluster
-        uses: container-tools/kind-action@v2
-        with:
-          registry: true
-          version: v0.30.0
 
       - name: Install OPM and Operator SDK tool
         uses: redhat-actions/openshift-tools-installer@v1
