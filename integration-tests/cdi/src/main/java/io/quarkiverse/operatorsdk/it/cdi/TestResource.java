@@ -8,5 +8,5 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("josdk.quarkiverse.io")
 @Version("v1alpha1")
 @ShortNames("tr")
-public class TestResource extends CustomResource<TestSpec, TestStatus> {
+public class TestResource extends CustomResource<Void, Void> {
 }

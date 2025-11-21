@@ -74,7 +74,6 @@ class ConditionsCDITest {
         var tr = new TestResource();
         tr.setMetadata(new ObjectMetaBuilder()
                 .withName("test-resource-sample").build());
-        tr.setSpec(new TestSpec());
         return tr;
     }
 }
