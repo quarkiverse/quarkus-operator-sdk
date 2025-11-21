@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.time.Duration;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import jakarta.inject.Inject;
 
 import org.junit.jupiter.api.AfterEach;
@@ -17,6 +20,20 @@ import io.quarkus.test.junit.QuarkusTest;
 
 /**
  * Verify that the Condition subclasses are properly recognized as CDI beans.
+ * </p>
+ * The test sets up a CR with two dependents - Deployment and ConfigMap. Deployment
+ * dependent sets the readyPostcondition, activationCondition, and reconcilePrecondition conditions
+ * which are all evaluated when the CR and thus the Deployment dependent are created. The
+ * ConfigMap then defines only the deletePostcondition condition, but it depends on the
+ * Deployment dependent which is evaluated when the CR and the Deployment is deleted.
+ * </p>
+ * All conditions are defined as CDI beans and inject an instance of {@link TestUUIDBean}. When their
+ * {@link io.javaoperatorsdk.operator.processing.dependent.workflow.Condition#isMet(DependentResource, HasMetadata, Context)}
+ * method is invoked, they save the random UUID produced by the bean to be verified in this test.
+ * </p>
+ * The test creates a new CR and verifies that all of readyPostcondition, activationCondition,
+ * and reconcilePrecondition conditions correctly injected the CDI bean. Then it deletes the CR
+ * to check the last deletePostcondition in the same manner.
  */
 @QuarkusTest
 class ConditionsCDITest {
