@@ -18,7 +18,7 @@ jobs:
       matrix:
         quarkus-platform-branch: ${{ fromJson(inputs.quarkus-platform-branches) }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           repository: quarkusio/quarkus-platform
           ref: ${{matrix.quarkus-platform-branch}}
