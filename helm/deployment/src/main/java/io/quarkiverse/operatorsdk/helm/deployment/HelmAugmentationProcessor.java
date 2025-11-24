@@ -3,10 +3,13 @@ package io.quarkiverse.operatorsdk.helm.deployment;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.jboss.logging.Logger;
@@ -15,12 +18,14 @@ import io.quarkiverse.helm.deployment.HelmChartConfig;
 import io.quarkiverse.helm.spi.CustomHelmOutputDirBuildItem;
 import io.quarkiverse.helm.spi.HelmChartBuildItem;
 import io.quarkiverse.operatorsdk.common.FileUtils;
+import io.quarkiverse.operatorsdk.deployment.ControllerConfigurationsBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.Produce;
 import io.quarkus.deployment.pkg.builditem.ArtifactResultBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.kubernetes.spi.KubernetesClusterRoleBindingBuildItem;
+import io.quarkus.qute.Qute;
 
 /**
  * This processor copies the generated CRDs into the Helm chart output directories.
@@ -37,6 +42,8 @@ public class HelmAugmentationProcessor {
     private static final Logger log = Logger.getLogger(HelmAugmentationProcessor.class);
 
     public static final String CRD_DIR = "crds";
+    public static final String TEMPLATES_DIR = "templates";
+    public static final String CRD_ROLE_BINDING_TEMPLATE_PATH = "/helm/crd-role-binding-template.yaml";
 
     @BuildStep
     @Produce(ArtifactResultBuildItem.class)
@@ -46,7 +53,8 @@ public class HelmAugmentationProcessor {
             @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<CustomHelmOutputDirBuildItem> customHelmOutputDirBuildItem,
             OutputTargetBuildItem outputTargetBuildItem,
             GeneratedCRDInfoBuildItem generatedCRDInfoBuildItem,
-            List<KubernetesClusterRoleBindingBuildItem> clusterRoleBindingBuildItems) {
+            List<KubernetesClusterRoleBindingBuildItem> clusterRoleBindingBuildItems,
+            ControllerConfigurationsBuildItem controllerConfigurations) {
         log.infof("Adding CRDs to the following Helm charts - %s", helmChartBuildItems);
         outputWarningIfNeeded(clusterRoleBindingBuildItems);
 
@@ -57,9 +65,12 @@ public class HelmAugmentationProcessor {
         var crdInfos = generatedCRDInfoBuildItem.getCRDGenerationInfo().getCrds().getCRDNameToInfoMappings().values();
 
         helmChartBuildItems.forEach(helmChartBuildItem -> {
-            final var crdDir = helmOutputDirectory
+            Path chartDir = helmOutputDirectory
                     .resolve(helmChartBuildItem.getDeploymentTarget())
-                    .resolve(helmChartBuildItem.getName())
+                    .resolve(helmChartBuildItem.getName());
+
+            // CRDs
+            final var crdDir = chartDir
                     .resolve(CRD_DIR);
 
             FileUtils.ensureDirectoryExists(crdDir.toFile());
@@ -72,7 +83,34 @@ public class HelmAugmentationProcessor {
                     throw new IllegalStateException(e);
                 }
             });
+
+            // RoleBindings allowing runtime Helm overrides
+            final var template = parseTemplateRoleBindingFile();
+            final var templatesDir = chartDir.resolve(TEMPLATES_DIR);
+
+            controllerConfigurations.getControllerConfigs().values().forEach(cc -> {
+                try {
+                    final var name = cc.getName();
+                    String res = Qute.fmt(template, Map.of("reconciler-name", name));
+                    Files.writeString(templatesDir.resolve(name + "-crd-role-binding.yaml"), res);
+
+                } catch (IOException e) {
+                    throw new IllegalStateException(e);
+                }
+            });
         });
+    }
+
+    private String parseTemplateRoleBindingFile() {
+        try (InputStream file = Thread.currentThread().getContextClassLoader()
+                .getResourceAsStream(CRD_ROLE_BINDING_TEMPLATE_PATH)) {
+            if (file == null) {
+                throw new IllegalArgumentException("Template file " + CRD_ROLE_BINDING_TEMPLATE_PATH + " doesn't exist");
+            }
+            return new String(file.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private static void outputWarningIfNeeded(List<KubernetesClusterRoleBindingBuildItem> clusterRoleBindingBuildItems) {
