@@ -121,7 +121,7 @@ jobs:
           echo "profiles: ${{ inputs.profiles }}"
           echo "repository (workflow_call): ${{ inputs.repository }}"
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ inputs.branch }}
           repository: ${{ inputs.repository }}
@@ -134,7 +134,7 @@ jobs:
           cache: 'maven'
 
       - name: Check-out JOSDK if building from PR is requested
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         if: "${{ inputs.josdk-pr != '' }}"
         with:
           repository: operator-framework/java-operator-sdk
@@ -163,7 +163,7 @@ jobs:
         run: ./mvnw versions:set-property -Dproperty='java-operator-sdk.version' -DnewVersion=${{ steps.build-josdk-pr.outputs.josdk_version }}
 
       - name: Check-out Quarkus if building from PR is requested
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         if: "${{ inputs.quarkus-pr != '' }}"
         with:
           repository: quarkusio/quarkus
@@ -182,7 +182,7 @@ jobs:
           cd -
 
       - name: Check-out Fabric8 client PR if requested
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         if: "${{ inputs.fkc-pr != '' && inputs.fkc-version == '' }}"
         with:
           repository: fabric8io/kubernetes-client
