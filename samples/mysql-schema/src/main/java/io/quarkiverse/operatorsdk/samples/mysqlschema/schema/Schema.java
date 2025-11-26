@@ -3,7 +3,9 @@ package io.quarkiverse.operatorsdk.samples.mysqlschema.schema;
 import java.io.Serializable;
 import java.util.Objects;
 
-public class Schema implements Serializable {
+import io.javaoperatorsdk.operator.processing.ResourceIDProvider;
+
+public class Schema implements Serializable, ResourceIDProvider<String> {
 
     private final String name;
     private final String characterSet;
@@ -39,5 +41,10 @@ public class Schema implements Serializable {
     @Override
     public String toString() {
         return "Schema{" + "name='" + name + '\'' + ", characterSet='" + characterSet + "'}";
+    }
+
+    @Override
+    public String resourceId() {
+        return getName();
     }
 }
