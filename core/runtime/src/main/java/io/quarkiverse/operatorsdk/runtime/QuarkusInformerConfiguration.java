@@ -18,18 +18,25 @@ public class QuarkusInformerConfiguration<R extends HasMetadata> extends Informe
     public QuarkusInformerConfiguration(Class<R> resourceClass, String name, Set<String> namespaces,
             boolean followControllerNamespaceChanges, String labelSelector, OnAddFilter<? super R> onAddFilter,
             OnUpdateFilter<? super R> onUpdateFilter, OnDeleteFilter<? super R> onDeleteFilter,
-            GenericFilter<? super R> genericFilter, ItemStore<R> itemStore, Long informerListLimit) {
+            GenericFilter<? super R> genericFilter, ItemStore<R> itemStore, Long informerListLimit,
+            QuarkusFieldSelector fieldSelector) {
         super(resourceClass, name, namespaces, followControllerNamespaceChanges, labelSelector, onAddFilter, onUpdateFilter,
-                onDeleteFilter,
-                genericFilter, itemStore, informerListLimit);
+                onDeleteFilter, genericFilter, itemStore, informerListLimit, fieldSelector);
     }
 
     public QuarkusInformerConfiguration(InformerConfiguration<R> config) {
-        this(config.getResourceClass(), config.getName(), sanitizeNamespaces(config.getNamespaces()),
+        this(config.getResourceClass(),
+                config.getName(),
+                sanitizeNamespaces(config.getNamespaces()),
                 config.getFollowControllerNamespaceChanges(),
                 config.getLabelSelector(),
-                config.getOnAddFilter(), config.getOnUpdateFilter(), config.getOnDeleteFilter(), config.getGenericFilter(),
-                config.getItemStore(), config.getInformerListLimit());
+                config.getOnAddFilter(),
+                config.getOnUpdateFilter(),
+                config.getOnDeleteFilter(),
+                config.getGenericFilter(),
+                config.getItemStore(),
+                config.getInformerListLimit(),
+                config.getFieldSelector() == null ? null : new QuarkusFieldSelector(config.getFieldSelector()));
     }
 
     private static Set<String> sanitizeNamespaces(Set<String> namespaces) {
