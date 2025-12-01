@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import org.jboss.logging.Logger;
 
 import io.quarkiverse.helm.deployment.HelmChartConfig;
@@ -21,6 +20,7 @@ import io.quarkiverse.helm.spi.HelmChartBuildItem;
 import io.quarkiverse.operatorsdk.common.FileUtils;
 import io.quarkiverse.operatorsdk.deployment.ControllerConfigurationsBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
+import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.Produce;
 import io.quarkus.deployment.pkg.builditem.ArtifactResultBuildItem;
@@ -106,7 +106,7 @@ public class HelmAugmentationProcessor {
             if (operatorConfiguration.crd().validate()) {
                 try {
                     Files.writeString(templatesDir.resolve("validating-clusterrolebinding.yaml"),
-                        parseTemplateFile(VALIDATING_CLUSTER_ROLE_BINDING_PATH));
+                            parseTemplateFile(VALIDATING_CLUSTER_ROLE_BINDING_PATH));
                 } catch (IOException e) {
                     throw new IllegalStateException(e);
                 }
