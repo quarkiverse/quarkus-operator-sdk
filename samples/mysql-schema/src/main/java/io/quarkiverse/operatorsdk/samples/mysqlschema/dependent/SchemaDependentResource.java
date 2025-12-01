@@ -26,7 +26,7 @@ import io.quarkus.logging.Log;
 
 @ApplicationScoped
 public class SchemaDependentResource
-        extends PerResourcePollingDependentResource<Schema, MySQLSchema>
+        extends PerResourcePollingDependentResource<Schema, MySQLSchema, String>
         implements
         ConfiguredDependentResource<ResourcePollerConfig>,
         Creator<Schema, MySQLSchema>,
