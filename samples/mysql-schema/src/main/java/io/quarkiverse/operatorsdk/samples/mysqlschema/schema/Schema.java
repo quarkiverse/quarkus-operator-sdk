@@ -45,6 +45,8 @@ public class Schema implements Serializable, ResourceIDProvider<String> {
 
     @Override
     public String resourceId() {
+        // in this case, we use the naming mechanism as the resource identifying mechanism for ResourceIDProvider
+        // so we use the implementation provided by getName
         return getName();
     }
 }
