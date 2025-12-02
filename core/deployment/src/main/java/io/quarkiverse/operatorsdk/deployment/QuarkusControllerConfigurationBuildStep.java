@@ -41,8 +41,6 @@ import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
-import io.quarkiverse.operatorsdk.annotations.AdditionalRBACCRoleRefs;
-import io.quarkiverse.operatorsdk.annotations.RBACCRoleRef;
 import io.quarkiverse.operatorsdk.annotations.RBACRoleRef;
 import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ClassLoadingUtils;
@@ -248,14 +246,6 @@ class QuarkusControllerConfigurationBuildStep {
 
         // check if we have additional RBAC role refs to handle
         var additionalRBACRoleRefs = extractAdditionalRBACRoleRefs(info);
-        // todo: remove when RBACCRoleRef is removed
-        if (info.hasAnnotation(RBACCRoleRef.class)) {
-            if (additionalRBACRoleRefs.isEmpty()) {
-                additionalRBACRoleRefs = extractAdditionalRBACCRoleRefs(info);
-            } else {
-                additionalRBACRoleRefs.addAll(extractAdditionalRBACCRoleRefs(info));
-            }
-        }
 
         // remember whether or not we explicitly set the namespaces
         final boolean wereNamespacesSet;
@@ -406,9 +396,6 @@ class QuarkusControllerConfigurationBuildStep {
                 QuarkusControllerConfigurationBuildStep::extractRoleRef);
     }
 
-    private static final DotName RBACC_ROLE_REF = DotName.createSimple(RBACCRoleRef.class.getName());
-    private static final DotName ADDITIONAL_RBACC_ROLE_REFS = DotName.createSimple(AdditionalRBACCRoleRefs.class.getName());
-
     private static PolicyRule extractRule(AnnotationInstance ruleAnnotation) {
         final var builder = new PolicyRuleBuilder();
 
@@ -438,15 +425,6 @@ class QuarkusControllerConfigurationBuildStep {
                 NULL_STRING_ARRAY_SUPPLIER));
 
         return builder.build();
-    }
-
-    /**
-     * @deprecated only here to support backwards compatibility with RBACCRoleRef annotation that will be removed
-     */
-    @Deprecated(forRemoval = true)
-    private static List<RoleRef> extractAdditionalRBACCRoleRefs(ClassInfo info) {
-        return extractRepeatableAnnotations(info, RBACC_ROLE_REF, ADDITIONAL_RBACC_ROLE_REFS,
-                QuarkusControllerConfigurationBuildStep::extractRoleRef);
     }
 
     private static RoleRef extractRoleRef(AnnotationInstance roleRefAnnotation) {
