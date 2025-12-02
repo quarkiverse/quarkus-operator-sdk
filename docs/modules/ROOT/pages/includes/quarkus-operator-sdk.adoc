@@ -785,6 +785,29 @@ endif::add-copy-button-to-env-var[]
 |link:https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/Duration.html[Duration] link:#duration-note-anchor-quarkus-operator-sdk_quarkus-operator-sdk[icon:question-circle[title=More information about the Duration format]]
 |
 
+a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-crd-use-deprecated-v1-crd-generator]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-crd-use-deprecated-v1-crd-generator[[.line-through]#`quarkus.operator-sdk.crd.use-deprecated-v1-crd-generator`#]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.operator-sdk.crd.use-deprecated-v1-crd-generator+++[]
+endif::add-copy-button-to-config-props[]
+
+
+[.description]
+--
+_This property is deprecated: using this method should be reserved for blocking situations, please open an issue reporting the problem you're facing with the v2 generator before reverting to use the v1 version._
+
+Whether or not to use the v1 version of the CRD generator. Note that this should only be used if a compatibility issue is found with the v2 generator, which is the default one and the one that is actively maintained.
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CRD_USE_DEPRECATED_V1_CRD_GENERATOR+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_CRD_USE_DEPRECATED_V1_CRD_GENERATOR+++`
+endif::add-copy-button-to-env-var[]
+--
+|boolean
+|`+++false+++`
+
 |===
 
 ifndef::no-duration-note[]
