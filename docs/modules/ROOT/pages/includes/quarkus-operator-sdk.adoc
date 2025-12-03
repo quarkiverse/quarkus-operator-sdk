@@ -751,7 +751,7 @@ endif::add-copy-button-to-config-props[]
 
 [.description]
 --
-An optional list of comma-separated label selectors that Custom Resources must match to trigger the controller. See link:https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/[...] for more details on selectors.
+An optional list of comma-separated label selectors that Custom Resources must match to trigger the controller. See link:https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/[Kubernetes' labels documentation] for more details on label selectors.
 
 
 ifdef::add-copy-button-to-env-var[]
@@ -762,6 +762,27 @@ Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__SELECTO
 endif::add-copy-button-to-env-var[]
 --
 |string
+|
+
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-field-selectors]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-field-selectors[`quarkus.operator-sdk.controllers."controllers".field-selectors`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.operator-sdk.controllers."controllers".field-selectors+++[]
+endif::add-copy-button-to-config-props[]
+
+
+[.description]
+--
+An optional list of comma-separated field selectors that Custom Resources must match to trigger the controller. See link:https://kubernetes.io/docs/concepts/overview/working-with-objects/field-selectors/[Kubernetes' field selector documentation] for more details on field selectors.
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__FIELD_SELECTORS+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__FIELD_SELECTORS+++`
+endif::add-copy-button-to-env-var[]
+--
+|list of string
 |
 
 a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-max-reconciliation-interval]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-max-reconciliation-interval[`quarkus.operator-sdk.controllers."controllers".max-reconciliation-interval`]##

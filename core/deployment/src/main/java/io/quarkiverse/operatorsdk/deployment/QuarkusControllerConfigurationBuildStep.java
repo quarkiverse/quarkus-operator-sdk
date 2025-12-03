@@ -311,7 +311,8 @@ class QuarkusControllerConfigurationBuildStep {
                 informerConfig,
                 triggerReconcilerOnAllEvents);
 
-        // setting the configuration service with build-time known information for resolution of some information such as resource classes associated with dependent resources or whether SSA should be used for a given dependent
+        // setting the configuration service with build-time known information for resolution of some information such
+        // as resource classes associated with dependent resources or whether SSA should be used for a given dependent
         configuration.setParent(buildTimeConfigurationService);
 
         // compute workflow and set it

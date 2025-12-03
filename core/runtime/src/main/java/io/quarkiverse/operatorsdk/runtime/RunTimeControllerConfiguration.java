@@ -39,10 +39,19 @@ public interface RunTimeControllerConfiguration {
 
     /**
      * An optional list of comma-separated label selectors that Custom Resources must match to trigger the controller.
-     * See <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/">...</a> for more details on
-     * selectors.
+     * See <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/">Kubernetes' labels
+     * documentation</a> for more details on
+     * label selectors.
      */
     Optional<String> selector();
+
+    /**
+     * An optional list of comma-separated field selectors that Custom Resources must match to trigger the controller.
+     * See <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/field-selectors/">Kubernetes' field
+     * selector documentation</a> for more details on
+     * field selectors.
+     */
+    Optional<List<String>> fieldSelectors();
 
     /**
      * An optional {@link Duration} to specify the maximum time that is allowed to elapse before a reconciliation will happen

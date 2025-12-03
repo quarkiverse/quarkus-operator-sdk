@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -14,7 +15,6 @@ import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.ReconcilerUtils;
-import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
@@ -50,8 +50,11 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
     private final Retry retry;
     private final RateLimiter rateLimiter;
     private QuarkusManagedWorkflow<R> workflow;
-    private ConfigurationService parent;
+    private BuildTimeConfigurationService parent;
     private QuarkusInformerConfiguration<R> informerConfig;
+    private Set<String> namespaces;
+    private String labelSelector;
+    private QuarkusFieldSelector fieldSelector;
 
     @RecordableConstructor
     @SuppressWarnings("unchecked")
@@ -79,7 +82,6 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
         this.resourceClass = resourceClass;
         this.additionalRBACRules = additionalRBACRules;
         this.additionalRBACRoleRefs = additionalRBACRoleRefs;
-        setNamespaces(informerConfig.getNamespaces());
         this.wereNamespacesSet = wereNamespacesSet;
         setFinalizer(finalizerName);
         this.statusPresentAndNotVoid = statusPresentAndNotVoid;
@@ -93,11 +95,11 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
 
     @Override
     @IgnoreProperty
-    public ConfigurationService getConfigurationService() {
+    public BuildTimeConfigurationService getConfigurationService() {
         return parent;
     }
 
-    public void setParent(ConfigurationService parent) {
+    public void setParent(BuildTimeConfigurationService parent) {
         this.parent = parent;
     }
 
@@ -138,10 +140,7 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
 
     void setNamespaces(Set<String> namespaces) {
         if (!namespaces.equals(informerConfig.getNamespaces())) {
-            informerConfig = new QuarkusInformerConfiguration<>(
-                    InformerConfiguration.builder(informerConfig)
-                            .withNamespaces(namespaces)
-                            .buildForController());
+            this.namespaces = namespaces;
             wereNamespacesSet = true;
         }
     }
@@ -157,9 +156,15 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
     }
 
     void setLabelSelector(String labelSelector) {
-        informerConfig = new QuarkusInformerConfiguration<>(InformerConfiguration.builder(informerConfig)
-                .withLabelSelector(labelSelector)
-                .buildForController());
+        if (!Objects.equals(informerConfig.getLabelSelector(), labelSelector)) {
+            this.labelSelector = labelSelector;
+        }
+    }
+
+    void setFieldSelector(List<String> fieldSelectors) {
+        if (!Objects.equals(informerConfig.getFieldSelector(), fieldSelectors)) {
+            this.fieldSelector = QuarkusFieldSelector.from(fieldSelectors, resourceClass, parent);
+        }
     }
 
     public boolean isStatusPresentAndNotVoid() {
@@ -285,6 +290,23 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
 
     @Override
     public InformerConfiguration<R> getInformerConfig() {
+        if (labelSelector != null || fieldSelector != null || namespaces != null) {
+            final var builder = InformerConfiguration.builder(informerConfig);
+            if (namespaces != null) {
+                builder.withNamespaces(namespaces);
+            }
+            if (fieldSelector != null) {
+                builder.withFieldSelector(fieldSelector);
+            }
+            if (labelSelector != null) {
+                builder.withLabelSelector(labelSelector);
+            }
+            informerConfig = new QuarkusInformerConfiguration<>(builder.buildForController());
+            // reset so that we know that we don't need to regenerate the informer config next time if these values haven't changed since
+            labelSelector = null;
+            fieldSelector = null;
+            namespaces = null;
+        }
         return informerConfig;
     }
 

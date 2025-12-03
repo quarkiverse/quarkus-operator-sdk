@@ -9,6 +9,7 @@ import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
@@ -21,6 +22,10 @@ public final class CRDUtils {
     public static final String V1BETA1_CRD_SPEC_VERSION = "v1beta1";
 
     private CRDUtils() {
+    }
+
+    public static String crdNameFor(Class<? extends HasMetadata> clazz) {
+        return HasMetadata.getFullResourceName(clazz);
     }
 
     public static void applyCRD(KubernetesClient client, CRDGenerationInfo crdInfo, String crdName) {
