@@ -80,4 +80,11 @@ public interface RunTimeOperatorConfiguration {
      */
     @WithDefault("2M")
     Duration cacheSyncTimeout();
+
+    /**
+     * Start of the operator won't block the application start. This is useful for instance if your cluster contains
+     * many resources and not exposing HTTP probes might cause your health probes to fail or restart the application.
+     */
+    @WithDefault("false")
+    Boolean asyncStart();
 }

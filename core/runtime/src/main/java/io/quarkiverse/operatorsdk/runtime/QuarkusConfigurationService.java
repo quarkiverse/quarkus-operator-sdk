@@ -50,6 +50,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     private final boolean stopOnInformerErrorDuringStartup;
     private final int concurrentWorkflowExecutorThreads;
     private final Duration cacheSyncTimeout;
+    private final boolean asyncStart;
     @SuppressWarnings("rawtypes")
     private final Map<String, DependentResource> knownDependents = new ConcurrentHashMap<>();
     private final boolean useSSA;
@@ -61,7 +62,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
             Collection<QuarkusControllerConfiguration> configurations,
             KubernetesClient kubernetesClient,
             CRDGenerationInfo crdInfo, int maxThreads, int maxWorflowThreads,
-            int timeout, Duration cacheSyncTimeout, Metrics metrics, boolean startOperator,
+            int timeout, Duration cacheSyncTimeout, boolean asyncStart, Metrics metrics, boolean startOperator,
             LeaderElectionConfiguration leaderElectionConfiguration, InformerStoppedHandler informerStoppedHandler,
             boolean closeClientOnStop, boolean stopOnInformerErrorDuringStartup,
             boolean useSSA, boolean defensiveCloning) {
@@ -88,6 +89,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         this.concurrentWorkflowExecutorThreads = maxWorflowThreads;
         this.terminationTimeout = timeout;
         this.cacheSyncTimeout = cacheSyncTimeout;
+        this.asyncStart = asyncStart;
         this.informerStoppedHandler = informerStoppedHandler;
         this.leaderElectionConfiguration = leaderElectionConfiguration;
         this.useSSA = useSSA;
@@ -199,6 +201,10 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     @Override
     public Duration cacheSyncTimeout() {
         return cacheSyncTimeout;
+    }
+
+    public boolean isAsyncStart() {
+        return asyncStart;
     }
 
     @Override

@@ -43,6 +43,7 @@ public class ConfigurationServiceRecorder {
         final var workflowThreads = runTimeConfiguration.concurrentWorkflowThreads()
                 .orElse(ConfigurationService.DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER);
         final var cacheSyncTimeout = runTimeConfiguration.cacheSyncTimeout();
+        final var asyncStart = runTimeConfiguration.asyncStart();
 
         final var externalControllerConfigs = runTimeConfiguration.controllers();
         final List<QuarkusControllerConfiguration> runtimeConfigurations = configurations.values().stream().map(c -> {
@@ -92,6 +93,7 @@ public class ConfigurationServiceRecorder {
                     workflowThreads,
                     timeout,
                     cacheSyncTimeout,
+                    asyncStart,
                     container.instance(Metrics.class).get(),
                     buildTimeConfigurationService.isStartOperator(),
                     leaderElectionConfiguration,
