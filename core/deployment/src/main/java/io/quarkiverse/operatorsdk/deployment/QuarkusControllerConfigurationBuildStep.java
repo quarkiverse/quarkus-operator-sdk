@@ -175,6 +175,7 @@ class QuarkusControllerConfigurationBuildStep {
         Set<String> namespaces = null;
         String informerName = null;
         String labelSelector = null;
+        boolean triggerReconcilerOnAllEvents = false;
         if (controllerAnnotation != null) {
             final var intervalFromAnnotation = ConfigurationUtils.annotationValueOrDefault(
                     controllerAnnotation, "maxReconciliationInterval", AnnotationValue::asNested,
@@ -224,6 +225,10 @@ class QuarkusControllerConfigurationBuildStep {
                 namespaces = Optional.ofNullable(informerConfigAnnotation.value("namespaces"))
                         .map(v -> new HashSet<>(Arrays.asList(v.asStringArray())))
                         .orElse(null);
+
+                // triggering on all events?
+                triggerReconcilerOnAllEvents = ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
+                        "triggerReconcilerOnAllEvents", AnnotationValue::asBoolean, () -> false);
             }
 
             final var retryConfigurableInfo = configurableInfos.get(retryClass.getName());
@@ -303,7 +308,8 @@ class QuarkusControllerConfigurationBuildStep {
                 maxReconciliationInterval,
                 retry, rateLimiter, additionalRBACRules, additionalRBACRoleRefs,
                 fieldManager,
-                informerConfig);
+                informerConfig,
+                triggerReconcilerOnAllEvents);
 
         // setting the configuration service with build-time known information for resolution of some information such as resource classes associated with dependent resources or whether SSA should be used for a given dependent
         configuration.setParent(buildTimeConfigurationService);
