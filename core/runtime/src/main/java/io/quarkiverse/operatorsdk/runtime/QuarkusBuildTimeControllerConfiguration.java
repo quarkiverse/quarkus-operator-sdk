@@ -42,6 +42,7 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
     private final List<PolicyRule> additionalRBACRules;
     private final List<RoleRef> additionalRBACRoleRefs;
     private final String fieldManager;
+    private final boolean triggerReconcilerOnAllEvents;
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private Optional<Duration> maxReconciliationInterval;
     private String finalizer;
@@ -65,8 +66,11 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
             boolean statusPresentAndNotVoid,
             Duration maxReconciliationInterval,
             Retry retry, RateLimiter rateLimiter,
-            List<PolicyRule> additionalRBACRules, List<RoleRef> additionalRBACRoleRefs, String fieldManager,
-            QuarkusInformerConfiguration<R> informerConfig) {
+            List<PolicyRule> additionalRBACRules,
+            List<RoleRef> additionalRBACRoleRefs,
+            String fieldManager,
+            QuarkusInformerConfiguration<R> informerConfig,
+            boolean triggerReconcilerOnAllEvents) {
         this.informerConfig = informerConfig;
         this.associatedReconcilerClassName = associatedReconcilerClassName;
         this.name = name;
@@ -84,6 +88,7 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
         this.retry = retry == null ? new GenericRetry() : retry;
         this.rateLimiter = rateLimiter == null ? new DefaultRateLimiter() : rateLimiter;
         this.fieldManager = fieldManager != null ? fieldManager : ControllerConfiguration.super.fieldManager();
+        this.triggerReconcilerOnAllEvents = triggerReconcilerOnAllEvents;
     }
 
     @Override
@@ -295,5 +300,11 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
         public DefaultRateLimiter(Duration refreshPeriod, int limitForPeriod) {
             super(refreshPeriod, limitForPeriod);
         }
+    }
+
+    @SuppressWarnings("unused")
+    // this is needed by Quarkus for the RecordableConstructor
+    public boolean isTriggerReconcilerOnAllEvents() {
+        return triggerReconcilerOnAllEvents;
     }
 }
