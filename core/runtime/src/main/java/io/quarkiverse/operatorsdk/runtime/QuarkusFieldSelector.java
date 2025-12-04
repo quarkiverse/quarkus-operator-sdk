@@ -113,43 +113,54 @@ public class QuarkusFieldSelector extends FieldSelector {
         }
 
         final var equalsIndex = fieldSelector.indexOf('=');
-        if (equalsIndex < 0) {
-            throw new IllegalArgumentException(
-                    "Field selector must be use the <field><op><value> format where 'op' is one of '=', '==' or '!='. Was: "
-                            + fieldSelector);
-        }
+        illegalArgIf(equalsIndex == -1, fieldSelector);
 
-        var fieldNameWithPossibleBang = fieldSelector.substring(0, equalsIndex).trim();
-        if (fieldNameWithPossibleBang.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Field selector must be use the <field><op><value> format where 'op' is one of '=', '==' or '!='. Was: "
-                            + fieldSelector);
-        }
-        // check for possible ! as last character if the field is negated
-        boolean negated = false;
-        final var lastIndex = fieldNameWithPossibleBang.length() - 1;
-        if (fieldNameWithPossibleBang.indexOf('!') == lastIndex) {
-            negated = true;
-            fieldNameWithPossibleBang = fieldNameWithPossibleBang.substring(0, lastIndex).trim();
-        }
-
-        if (!DEFAULT_FIELD_SELECTOR_NAMES.contains(fieldNameWithPossibleBang)
-                && (validFieldNames == null || !validFieldNames.contains(fieldNameWithPossibleBang))) {
-            throw new IllegalArgumentException("'" + fieldNameWithPossibleBang + "' is not a valid field name for resource "
+        final var nameAndNegated = extractNameAndNegatedStatus(fieldSelector, equalsIndex);
+        final var name = nameAndNegated.name();
+        if (!DEFAULT_FIELD_SELECTOR_NAMES.contains(name)
+                && (validFieldNames == null || !validFieldNames.contains(name))) {
+            throw new IllegalArgumentException("'" + name + "' is not a valid field name for resource "
                     + resourceClass.getSimpleName());
         }
 
+        final var value = extractValue(fieldSelector, equalsIndex);
+
+        return new Field(name, value, nameAndNegated.negated());
+    }
+
+    private static NameAndNegated extractNameAndNegatedStatus(String fieldSelector, int equalsIndex) {
+        var fieldNameWithPossibleBang = fieldSelector.substring(0, equalsIndex).trim();
+        illegalArgIf(fieldNameWithPossibleBang.isEmpty(), fieldSelector);
+
+        // check for possible ! as last character if the field is negated
+        boolean negated = false;
+        final var lastIndex = fieldNameWithPossibleBang.length() - 1;
+        if (fieldNameWithPossibleBang.charAt(lastIndex) == '!') {
+            negated = true;
+            fieldNameWithPossibleBang = fieldNameWithPossibleBang.substring(0, lastIndex).trim();
+        }
+        return new NameAndNegated(fieldNameWithPossibleBang, negated);
+    }
+
+    private record NameAndNegated(String name, boolean negated) {
+    }
+
+    private static String extractValue(String fieldSelector, int equalsIndex) {
         var valueWithPossibleEquals = fieldSelector.substring(equalsIndex + 1).trim();
-        if (valueWithPossibleEquals.isEmpty()) {
+        illegalArgIf(valueWithPossibleEquals.isEmpty(), fieldSelector);
+
+        // check for possible = as first character if the operator is == instead of simply =
+        if (valueWithPossibleEquals.charAt(0) == '=') {
+            valueWithPossibleEquals = valueWithPossibleEquals.substring(1);
+        }
+        return valueWithPossibleEquals;
+    }
+
+    private static void illegalArgIf(boolean predicate, String fieldSelector) {
+        if (predicate) {
             throw new IllegalArgumentException(
                     "Field selector must be use the <field><op><value> format where 'op' is one of '=', '==' or '!='. Was: "
                             + fieldSelector);
         }
-        // check for possible = as first character if the operator is == instead of simply =
-        if (valueWithPossibleEquals.indexOf('=') == 0) {
-            valueWithPossibleEquals = valueWithPossibleEquals.substring(1);
-        }
-
-        return new Field(fieldNameWithPossibleBang, valueWithPossibleEquals, negated);
     }
 }
