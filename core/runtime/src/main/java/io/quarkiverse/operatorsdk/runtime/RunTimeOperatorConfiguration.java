@@ -82,8 +82,10 @@ public interface RunTimeOperatorConfiguration {
     Duration cacheSyncTimeout();
 
     /**
-     * Start of the operator won't block the application start. This is useful for instance if your cluster contains
-     * many resources and not exposing HTTP probes might cause your health probes to fail or restart the application.
+     * Whether or not starting the operator should occur asynchronously. This is useful when your operator starts slowly (which
+     * can happen if you have lots of resources that need to be put in the informers' caches), resulting in HTTP probes not
+     * being exposed quickly enough to prevent Kubernetes from considering your operator unhealthy and thus attempting to
+     * restart it.
      */
     @WithDefault("false")
     Boolean asyncStart();
