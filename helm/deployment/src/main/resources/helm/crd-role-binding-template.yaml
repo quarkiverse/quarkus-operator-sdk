@@ -1,52 +1,53 @@
-{{ if eq $.Values.watchNamespaces "JOSDK_WATCH_CURRENT" }}
+{{ if eq $.Values.app.envs.QUARKUS_OPERATOR_SDK_CONTROLLERS_EXPOSEDAPP_NAMESPACES "JOSDK_WATCH_CURRENT" }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {role-binding-name}
+  name: {reconciler-name}-role-binding
   namespace: {{ $.Release.Namespace }}
   labels:
     app.kubernetes.io/name: {{ .Chart.Name }}
     app.kubernetes.io/version: {{ .Chart.AppVersion }}
     app.kubernetes.io/managed-by: quarkus
 roleRef:
-  kind: {role-ref-kind}
-  apiGroup: {role-ref-api-group}
-  name: {role-ref-name}
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: {reconciler-name}-cluster-role
 subjects:
   - kind: ServiceAccount
     name: {{ $.Chart.Name }}
-{{ else if eq $.Values.watchNamespaces "JOSDK_ALL_NAMESPACES" }}
+    namespace: {{ $.Release.Namespace }}
+{{ else if eq $.Values.app.envs.QUARKUS_OPERATOR_SDK_CONTROLLERS_EXPOSEDAPP_NAMESPACES "JOSDK_ALL_NAMESPACES" }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {role-binding-name}
+  name: {reconciler-name}-role-binding
   labels:
     app.kubernetes.io/name: {{ .Chart.Name }}
     app.kubernetes.io/version: {{ .Chart.AppVersion }}
     app.kubernetes.io/managed-by: quarkus
 roleRef:
-  kind: {role-ref-kind}
-  apiGroup: {role-ref-api-group}
-  name: {role-ref-name}
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: {reconciler-name}-cluster-role
 subjects:
   - kind: ServiceAccount
     name: {{ $.Chart.Name }}
     namespace: {{ $.Release.Namespace }}
 {{ else }}
-{{ range $anamespace := ( split "," $.Values.watchNamespaces ) }}
+{{ range $anamespace := ( split "," $.Values.app.envs.QUARKUS_OPERATOR_SDK_CONTROLLERS_EXPOSEDAPP_NAMESPACES ) }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {role-binding-name}
+  name: {reconciler-name}-role-binding
   namespace: {{ $anamespace }}
   labels:
-    app.kubernetes.io/name: {{ .Chart.Name }}
-    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    app.kubernetes.io/name: {{ $.Chart.Name }}
+    app.kubernetes.io/version: {{ $.Chart.AppVersion }}
     app.kubernetes.io/managed-by: quarkus
 roleRef:
-  kind: {role-ref-kind}
-  apiGroup: {role-ref-api-group}
-  name: {role-ref-name}
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: {reconciler-name}-cluster-role
 subjects:
   - kind: ServiceAccount
     name: {{ $.Chart.Name }}
