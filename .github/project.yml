@@ -1,6 +1,6 @@
 name: Java Operator SDK Extension
 release:
-  current-version: 7.3.0
-  next-version: 7.3.1-SNAPSHOT
+  current-version: 7.4.0
+  next-version: 7.4.1-SNAPSHOT
   quarkus-platform-branches:
     - "main"
