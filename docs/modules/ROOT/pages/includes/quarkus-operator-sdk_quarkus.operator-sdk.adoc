@@ -548,6 +548,27 @@ endif::add-copy-button-to-env-var[]
 |link:https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/Duration.html[Duration] link:#duration-note-anchor-quarkus-operator-sdk_quarkus-operator-sdk[icon:question-circle[title=More information about the Duration format]]
 |`+++2M+++`
 
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-async-start]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-async-start[`quarkus.operator-sdk.async-start`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.operator-sdk.async-start+++[]
+endif::add-copy-button-to-config-props[]
+
+
+[.description]
+--
+Whether or not starting the operator should occur asynchronously. This is useful when your operator starts slowly (which can happen if you have lots of resources that need to be put in the informers' caches), resulting in HTTP probes not being exposed quickly enough to prevent Kubernetes from considering your operator unhealthy and thus attempting to restart the operator.
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_ASYNC_START+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_ASYNC_START+++`
+endif::add-copy-button-to-env-var[]
+--
+|boolean
+|`+++false+++`
+
 a|icon:lock[title=Fixed at build time] [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-generation-aware]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-generation-aware[`quarkus.operator-sdk.controllers."controllers".generation-aware`]##
 ifdef::add-copy-button-to-config-props[]
 config_property_copy_button:+++quarkus.operator-sdk.controllers."controllers".generation-aware+++[]
