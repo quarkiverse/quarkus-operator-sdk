@@ -18,6 +18,7 @@ public class AppEventListener {
     private final QuarkusConfigurationService configurationService;
     private final ExecutorService executor;
 
+    // The ExecutorService is the default Quarkus managed ExecutorService that comes from the ArC extension
     public AppEventListener(Operator operator, QuarkusConfigurationService quarkusConfigurationService,
             ExecutorService executor) {
         this.operator = operator;
