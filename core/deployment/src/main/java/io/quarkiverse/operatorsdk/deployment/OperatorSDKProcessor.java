@@ -19,6 +19,8 @@ import org.jboss.logging.Logger;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.javaoperatorsdk.operator.processing.ResourceIDProvider;
+import io.javaoperatorsdk.operator.processing.dependent.AbstractExternalDependentResource;
 import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
 import io.quarkiverse.operatorsdk.common.Constants;
@@ -41,8 +43,10 @@ import io.quarkus.deployment.IsDevelopment;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
+import io.quarkus.deployment.annotations.Produce;
 import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.AdditionalIndexedClassesBuildItem;
+import io.quarkus.deployment.builditem.ApplicationIndexBuildItem;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.ConsoleCommandBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
@@ -51,6 +55,7 @@ import io.quarkus.deployment.builditem.RunTimeConfigurationDefaultBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ForceNonWeakReflectiveClassBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveHierarchyBuildItem;
 import io.quarkus.deployment.metrics.MetricsCapabilityBuildItem;
+import io.quarkus.deployment.pkg.builditem.ArtifactResultBuildItem;
 import io.quarkus.gizmo.AssignableResultHandle;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
@@ -66,6 +71,7 @@ class OperatorSDKProcessor {
 
     private static final String FEATURE = "operator-sdk";
     private static final String DEFAULT_METRIC_BINDER_CLASS_NAME = "io.quarkiverse.operatorsdk.runtime.MicrometerMetricsProvider";
+    private static final DotName RESOURCE_ID_PROVIDER_DOTNAME = DotName.createSimple(ResourceIDProvider.class.getName());
 
     private BuildTimeOperatorConfiguration buildTimeConfiguration;
 
@@ -255,6 +261,23 @@ class OperatorSDKProcessor {
                     namespaces));
         });
 
+    }
+
+    @BuildStep
+    @Produce(ArtifactResultBuildItem.class)
+    void checkMissingResourceIDProviderImplementations(ApplicationIndexBuildItem applicationIndexBuildItem) {
+        applicationIndexBuildItem.getIndex()
+                .getAllKnownSubclasses(DotName.createSimple(AbstractExternalDependentResource.class.getName()))
+                .forEach(classInfo -> {
+                    if (!classInfo.interfaceNames().contains(RESOURCE_ID_PROVIDER_DOTNAME)) {
+                        throw new IllegalStateException(String.format(
+                                "%s implementation or subclass '%s' does not implement ResourceIDProvider interface, "
+                                        + "which may lead to issues when multiple instances of the same resource are managed by the operator. "
+                                        + "It is recommended to implement ResourceIDProvider in your external dependent resources.",
+                                AbstractExternalDependentResource.class.getSimpleName(), classInfo.name()));
+                    }
+
+                });
     }
 
     private void registerAssociatedClassesForReflection(BuildProducer<ReflectiveHierarchyBuildItem> reflectionClasses,
