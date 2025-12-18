@@ -29,6 +29,9 @@ import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.ResourceIDMapper;
+import io.javaoperatorsdk.operator.processing.ResourceIDProvider;
+import io.javaoperatorsdk.operator.processing.dependent.AbstractExternalDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentConverter;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
@@ -52,6 +55,7 @@ import io.quarkiverse.operatorsdk.common.ReconcilerAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.SelectiveAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.runtime.*;
 import io.quarkiverse.operatorsdk.runtime.QuarkusBuildTimeControllerConfiguration.DefaultRateLimiter;
+import io.quarkus.builder.BuildException;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.LiveReloadBuildItem;
@@ -484,6 +488,9 @@ class QuarkusControllerConfigurationBuildStep {
         }
 
         final var dependentTypeName = drTypeName.toString();
+
+        failOnMissingResourceIDProvider(dependentTypeName, resourceTypeName, index);
+
         final var dependentClass = loadClass(dependentTypeName, DependentResource.class);
         final var resourceClass = loadClass(resourceTypeName, Object.class);
 
@@ -518,6 +525,31 @@ class QuarkusControllerConfigurationBuildStep {
         DependentResourceConfigurationResolver.configureSpecFromConfigured(spec, configuration, dependentClass);
 
         return spec;
+    }
+
+    private static void failOnMissingResourceIDProvider(String dependentTypeName, String resourceTypeName, IndexView index) {
+        if (!index.getAllKnownImplementations(DotName.createSimple(ResourceIDMapper.class)).isEmpty()) {
+            // if user overrides the ResourceIDMapper we skip the check as they might have custom logic
+            return;
+        }
+
+        ClassInfo dependentClassInfo = index.getClassByName(dependentTypeName);
+        ClassInfo resourceClassInfo = index.getClassByName(resourceTypeName);
+        try {
+            if (JandexUtil.isSubclassOf(index, dependentClassInfo,
+                    DotName.createSimple(AbstractExternalDependentResource.class))) {
+                if (!resourceClassInfo.interfaceNames().contains(DotName.createSimple(ResourceIDProvider.class))) {
+                    throw new IllegalStateException(
+                            "DependentResource '"
+                                    + dependentTypeName
+                                    + "' is extending AbstractExternalDependentResource but the associated resource type '"
+                                    + resourceTypeName
+                                    + "' does not implement ResourceIDProvider. Please implement ResourceIDProvider or provide a custom ResourceIDMapper implementation.");
+                }
+            }
+        } catch (BuildException e) {
+            throw new IllegalStateException("Failed to analyze DependentResource '" + dependentTypeName + "'", e);
+        }
     }
 
     private static String getFinalizer(AnnotationInstance controllerAnnotation, String crdName) {
