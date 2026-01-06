@@ -94,7 +94,8 @@ public class HelmAugmentationProcessor {
             controllerConfigurations.getControllerConfigs().values().forEach(cc -> {
                 try {
                     final var name = cc.getName();
-                    String res = Qute.fmt(clusterRoleBindingTemplate, Map.of("reconciler-name", name));
+                    String res = Qute.fmt(clusterRoleBindingTemplate,
+                            Map.of("reconciler-name", name, "reconciler-name-uppercase", name.toUpperCase()));
                     Files.writeString(templatesDir.resolve(name + "-crd-role-binding.yaml"), res);
 
                 } catch (IOException e) {

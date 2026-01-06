@@ -1,4 +1,4 @@
-{{ if eq $.Values.app.envs.QUARKUS_OPERATOR_SDK_CONTROLLERS_EXPOSEDAPP_NAMESPACES "JOSDK_WATCH_CURRENT" }}
+{{ if eq $.Values.app.envs.QUARKUS_OPERATOR_SDK_CONTROLLERS_{reconciler-name-uppercase}_NAMESPACES "JOSDK_WATCH_CURRENT" }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -16,7 +16,7 @@ subjects:
   - kind: ServiceAccount
     name: {{ $.Chart.Name }}
     namespace: {{ $.Release.Namespace }}
-{{ else if eq $.Values.app.envs.QUARKUS_OPERATOR_SDK_CONTROLLERS_EXPOSEDAPP_NAMESPACES "JOSDK_ALL_NAMESPACES" }}
+{{ else if eq $.Values.app.envs.QUARKUS_OPERATOR_SDK_CONTROLLERS_{reconciler-name-uppercase}_NAMESPACES "JOSDK_ALL_NAMESPACES" }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -34,7 +34,7 @@ subjects:
     name: {{ $.Chart.Name }}
     namespace: {{ $.Release.Namespace }}
 {{ else }}
-{{ range $anamespace := ( split "," $.Values.app.envs.QUARKUS_OPERATOR_SDK_CONTROLLERS_EXPOSEDAPP_NAMESPACES ) }}
+{{ range $anamespace := ( split "," $.Values.app.envs.QUARKUS_OPERATOR_SDK_CONTROLLERS_{reconciler-name-uppercase}_NAMESPACES ) }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
