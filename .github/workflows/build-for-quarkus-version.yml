@@ -29,7 +29,7 @@ on:
       java-version:
         type: string
         required: true
-        default: '17'
+        default: '21'
       branch:
         type: string
         required: true
@@ -80,7 +80,7 @@ on:
         description: 'Java version to build with'
         type: string
         required: true
-        default: '17'
+        default: '21'
       branch:
         description: 'QOSDK branch to build'
         type: string
