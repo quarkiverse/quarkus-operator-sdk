@@ -10,11 +10,10 @@
 
     <name>Quarkus - Operator SDK - Quarkus CLI Commands</name>
     <artifactId>quarkus-operator-sdk-cli</artifactId>
+    <packaging>quarkus</packaging>
 
     <properties>
         <maven.compiler.parameters>true</maven.compiler.parameters>
-        <quarkus.package.jar.enabled>true</quarkus.package.jar.enabled>
-        <quarkus.package.jar.type>uber-jar</quarkus.package.jar.type>
     </properties>
 
     <dependencies>
@@ -37,15 +36,6 @@
             <plugin>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>build</goal>
-                            <goal>generate-code</goal>
-                            <goal>generate-code-tests</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

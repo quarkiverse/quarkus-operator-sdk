@@ -9,7 +9,7 @@
 
   <artifactId>quarkus-operator-sdk-samples-joke</artifactId>
   <name>Quarkus - Operator SDK - Samples - Joke</name>
-  <packaging>jar</packaging>
+  <packaging>quarkus</packaging>
 
   <properties>
     <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -66,13 +66,6 @@
       <plugin>
         <groupId>io.quarkus</groupId>
         <artifactId>quarkus-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>build</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>
