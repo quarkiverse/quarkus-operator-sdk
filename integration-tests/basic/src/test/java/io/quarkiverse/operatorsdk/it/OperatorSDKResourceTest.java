@@ -8,7 +8,7 @@ import java.time.Duration;
 
 import org.junit.jupiter.api.Test;
 
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.DisabledOnIntegrationTest;
 import io.quarkus.test.junit.QuarkusTest;
@@ -94,11 +94,11 @@ class OperatorSDKResourceTest {
         assertThat(names, arrayContainingInAnyOrder(ApplicationScopedReconciler.NAME,
                 ConfiguredReconciler.NAME,
                 TestReconciler.NAME,
-                ReconcilerUtils.getDefaultNameFor(GatewayReconciler.class),
+                ReconcilerUtilsInternal.getDefaultNameFor(GatewayReconciler.class),
                 DependentDefiningReconciler.NAME, NamespaceFromEnvReconciler.NAME,
                 EmptyReconciler.NAME, VariableNSReconciler.NAME,
                 AnnotatedDependentReconciler.NAME,
-                ReconcilerUtils.getDefaultNameFor(KeycloakController.class),
+                ReconcilerUtilsInternal.getDefaultNameFor(KeycloakController.class),
                 NameWithSpaceReconciler.NAME,
                 CustomRateLimiterReconciler.NAME,
                 SecretReconciler.NAME));
@@ -244,7 +244,7 @@ class OperatorSDKResourceTest {
 
         given()
                 .when()
-                .get("/operator/" + ReconcilerUtils.getDefaultNameFor(KeycloakController.class) + "/config")
+                .get("/operator/" + ReconcilerUtilsInternal.getDefaultNameFor(KeycloakController.class) + "/config")
                 .then()
                 .statusCode(200)
                 .body(

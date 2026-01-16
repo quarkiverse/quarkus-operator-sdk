@@ -13,7 +13,7 @@ import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.IndexView;
 
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.quarkus.bootstrap.app.ClassChangeInformation;
 import io.quarkus.deployment.builditem.LiveReloadBuildItem;
@@ -143,7 +143,7 @@ public class ConfigurationUtils {
     }
 
     public static String getReconcilerName(String reconcilerClassName, AnnotationInstance configuration) {
-        final var defaultControllerName = ReconcilerUtils.getDefaultReconcilerName(reconcilerClassName);
+        final var defaultControllerName = ReconcilerUtilsInternal.getDefaultReconcilerName(reconcilerClassName);
         return ConfigurationUtils.annotationValueOrDefault(
                 configuration, "name", AnnotationValue::asString, () -> defaultControllerName);
     }
