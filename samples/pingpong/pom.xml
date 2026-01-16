@@ -9,7 +9,7 @@
 
   <artifactId>quarkus-operator-sdk-samples-pingpong</artifactId>
   <name>Quarkus - Operator SDK - Samples - Ping Pong</name>
-  <packaging>jar</packaging>
+  <packaging>quarkus</packaging>
 
   <properties>
     <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -42,12 +42,12 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-junit5</artifactId>
+      <artifactId>quarkus-junit</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-junit5-mockito</artifactId>
+      <artifactId>quarkus-junit-mockito</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -67,13 +67,6 @@
       <plugin>
         <groupId>io.quarkus</groupId>
         <artifactId>quarkus-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>build</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>
