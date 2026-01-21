@@ -14,7 +14,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
@@ -125,7 +125,7 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
 
     public void setFinalizer(String finalizer) {
         this.finalizer = finalizer != null && !finalizer.isBlank() ? finalizer
-                : ReconcilerUtils.getDefaultFinalizerName(resourceTypeName);
+                : ReconcilerUtilsInternal.getDefaultFinalizerName(resourceTypeName);
     }
 
     @Override
