@@ -9,7 +9,7 @@
   </parent>
   <artifactId>quarkus-operator-sdk-integration-tests-basic</artifactId>
   <name>Quarkus - Operator SDK - Integration Tests - Basic</name>
-  <packaging>quarkus</packaging>
+  <packaging>jar</packaging>
   <dependencies>
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -54,6 +54,13 @@
       <plugin>
         <groupId>io.quarkus</groupId>
         <artifactId>quarkus-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>build</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
