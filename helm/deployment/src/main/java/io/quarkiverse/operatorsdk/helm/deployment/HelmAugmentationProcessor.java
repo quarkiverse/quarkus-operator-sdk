@@ -17,6 +17,7 @@ import org.jboss.logging.Logger;
 import io.quarkiverse.helm.deployment.HelmChartConfig;
 import io.quarkiverse.helm.spi.CustomHelmOutputDirBuildItem;
 import io.quarkiverse.helm.spi.HelmChartBuildItem;
+import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.common.FileUtils;
 import io.quarkiverse.operatorsdk.deployment.ControllerConfigurationsBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
@@ -93,9 +94,10 @@ public class HelmAugmentationProcessor {
             final var clusterRoleBindingTemplate = parseTemplateFile(CRD_ROLE_BINDING_TEMPLATE_PATH);
             controllerConfigurations.getControllerConfigs().values().forEach(cc -> {
                 try {
-                    final var name = cc.getName();
+                    final var name = cc.getName().replaceAll("\\s+", "-");
                     String res = Qute.fmt(clusterRoleBindingTemplate,
-                            Map.of("reconciler-name", name, "reconciler-name-uppercase", name.toUpperCase()));
+                            Map.of("reconciler-name", name, "reconciler-name-config-name",
+                                    ConfigurationUtils.getNamespacesPropertyName(name, true)));
                     Files.writeString(templatesDir.resolve(name + "-crd-role-binding.yaml"), res);
 
                 } catch (IOException e) {
