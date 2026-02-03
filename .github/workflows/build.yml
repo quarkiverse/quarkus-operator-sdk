@@ -44,6 +44,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Retrieve Quarkus version
+        shell: bash
         id: quarkus-version
         run: echo "quarkus_version=$(./mvnw help:evaluate -Dexpression=quarkus.version -q -DforceStdout -Puse-snapshots)" >> $GITHUB_OUTPUT
 
