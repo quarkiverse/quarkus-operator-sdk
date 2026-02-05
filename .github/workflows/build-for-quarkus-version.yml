@@ -95,7 +95,6 @@ on:
         description: 'Maven profiles to apply to build'
         type: string
         required: false
-        default: 'use-snapshots'
 
 concurrency:
   group: "${{ inputs.quarkus-version }}-${{inputs.java-version}}-${{ github.ref }}-${{inputs.quarkus-pr}}"
@@ -178,7 +177,7 @@ jobs:
           git switch pr-to-check
           ./update-version.sh 999.${{ inputs.quarkus-pr }}-SNAPSHOT
           echo "quarkus_f8_version=$(./mvnw help:evaluate -Dexpression=kubernetes-client.version -q -DforceStdout)" >> $GITHUB_OUTPUT
-          ./mvnw -Dquickly -Puse-snapshots
+          ./mvnw -Dquickly
           cd -
 
       - name: Check-out Fabric8 client PR if requested
