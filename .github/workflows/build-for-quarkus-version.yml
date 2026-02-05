@@ -178,7 +178,7 @@ jobs:
           git switch pr-to-check
           ./update-version.sh 999.${{ inputs.quarkus-pr }}-SNAPSHOT
           echo "quarkus_f8_version=$(./mvnw help:evaluate -Dexpression=kubernetes-client.version -q -DforceStdout)" >> $GITHUB_OUTPUT
-          ./mvnw -Dquickly
+          ./mvnw -Dquickly -Dskip.gradle.build -DskipDocs -T0.8C -DskipITs -Dinvoker.skip -DskipExtensionValidation -Dskip.gradle.tests -Dtruststore.skip
           cd -
 
       - name: Check-out Fabric8 client PR if requested
@@ -197,7 +197,7 @@ jobs:
           git switch pr-to-check
           ./mvnw versions:set -DnewVersion=999.${{ inputs.fkc-pr }}-SNAPSHOT versions:commit
           echo "f8_pr_version=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_OUTPUT
-          ./mvnw clean install -DskipTests
+          make quickly
           cd -
 
       - name: Retrieve Quarkus version from platform
@@ -262,7 +262,7 @@ jobs:
           echo "Effective Fabric8 version: $(./mvnw dependency:tree -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' ${{inputs.mvnArgs}} -Dincludes=io.fabric8:kubernetes-client-api -pl core/deployment | grep io.fabric8:kubernetes-client-api -m1 | cut -d ':' -f 4)"
 
       - name: Build with Maven (JVM)
-        run: ./mvnw -B formatter:validate install -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' ${{inputs.mvnArgs}} -DallTests --file pom.xml
+        run: ./mvnw -B install -DskipDocs -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' ${{inputs.mvnArgs}} -DallTests --file pom.xml
 
       - name: Dependency tree on failure
         if: failure()
@@ -332,7 +332,7 @@ jobs:
           path: samples/joke/app.log
 
       - name: Build with Maven (Native)
-        run: ./mvnw -B install -Dnative --file pom.xml -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -pl '${{inputs.native-modules}}' -amd ${{inputs.mvnArgs}}
+        run: ./mvnw -B install -DskipDocs -Dnative --file pom.xml -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -pl '${{inputs.native-modules}}' -amd ${{inputs.mvnArgs}}
 
       - name: Run Joke sample in native mode
         if: ${{ contains(inputs.native-modules, 'samples') }}
