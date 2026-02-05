@@ -87,10 +87,10 @@
       </build>
     </profile>
     <profile>
-      <id>no-samples</id>
+      <id>samples</id>
       <activation>
         <property>
-          <name>!no-samples</name>
+          <name>!skipSamples</name>
         </property>
       </activation>
       <modules>
@@ -98,10 +98,10 @@
       </modules>
     </profile>
     <profile>
-      <id>no-docs</id>
+      <id>docs</id>
       <activation>
         <property>
-          <name>!no-docs</name>
+          <name>!skipDocs</name>
         </property>
       </activation>
       <modules>
