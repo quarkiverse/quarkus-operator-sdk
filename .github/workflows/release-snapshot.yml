@@ -55,7 +55,7 @@ jobs:
       - name: Retrieve and export project version
         id: project-version
         run: |
-          version=$(./mvnw help:evaluate -Puse-snapshots -Dexpression=project.version -q -DforceStdout)
+          version=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "Project version: ${version}"
           echo "version=${version}" >> $GITHUB_OUTPUT
 
