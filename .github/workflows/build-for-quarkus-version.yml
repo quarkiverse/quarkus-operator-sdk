@@ -95,6 +95,7 @@ on:
         description: 'Maven profiles to apply to build'
         type: string
         required: false
+        default: 'default'
 
 concurrency:
   group: "${{ inputs.quarkus-version }}-${{inputs.java-version}}-${{ github.ref }}-${{inputs.quarkus-pr}}"
