@@ -178,7 +178,7 @@ jobs:
           git switch pr-to-check
           ./update-version.sh 999.${{ inputs.quarkus-pr }}-SNAPSHOT
           echo "quarkus_f8_version=$(./mvnw help:evaluate -Dexpression=kubernetes-client.version -q -DforceStdout)" >> $GITHUB_OUTPUT
-          ./mvnw -Dquickly -Dskip.gradle.build -DskipDocs -T0.8C -DskipITs -Dinvoker.skip -DskipExtensionValidation -Dskip.gradle.tests -Dtruststore.skip
+          ./mvnw -Dquickly -DskipDocs -T0.8C -DskipITs -Dinvoker.skip -DskipExtensionValidation -Dskip.gradle.tests -Dtruststore.skip
           cd -
 
       - name: Check-out Fabric8 client PR if requested
