@@ -9,7 +9,7 @@
   </parent>
   <artifactId>quarkus-operator-sdk-integration-tests-cdi</artifactId>
   <name>Quarkus - Operator SDK - Integration Tests - CDI</name>
-  <packaging>jar</packaging>
+  <packaging>quarkus</packaging>
   <dependencies>
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -54,13 +54,6 @@
       <plugin>
         <groupId>io.quarkus</groupId>
         <artifactId>quarkus-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>build</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -68,7 +61,30 @@
         <executions>
           <execution>
             <goals>
+              <goal>jar</goal>
               <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-install-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>install</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>deploy</goal>
             </goals>
           </execution>
         </executions>
