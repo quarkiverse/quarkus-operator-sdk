@@ -278,7 +278,7 @@ jobs:
         uses: redhat-actions/openshift-tools-installer@v1
         with:
           source: "github"
-          opm: "latest"
+          opm: "v1.62.0"
           operator-sdk: "latest"
 
       - name: Install Operator Lifecycle Manager and Operator SDK into Kind
@@ -374,7 +374,7 @@ jobs:
           name: native.log
           path: samples/joke/native.log
 
-      - name: Run Joke sample into Kubernetes using OLM
+      - name: Run Joke sample on Kubernetes using OLM
         run: |
           SCRIPTS=$(pwd)/.github/scripts
 
@@ -390,7 +390,7 @@ jobs:
             exit 1;
           fi;
 
-      - name: Run Ping Pong sample into Kubernetes using OLM
+      - name: Run Ping Pong sample on Kubernetes using OLM
         run: |
           SCRIPTS=$(pwd)/.github/scripts
 
