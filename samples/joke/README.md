@@ -112,7 +112,7 @@ For example, if our catalog name is `joke-catalog`, our container registry for t
 
 ---
 **NOTE**
-If you're using an insecure registry, you'd need to append the argument `--skip-tls` to the `opm index` command.
+If you're using an insecure registry, you'd need to append the arguments `--use-http and --skip-tls-verify` to the `opm index` command.
 ---
 
 Once we have our catalog image built and pushed at `$CATALOG_IMAGE` image, we need to install it on our cluster using the `CatalogSource` resource by doing the next command:
