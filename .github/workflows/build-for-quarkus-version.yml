@@ -278,7 +278,7 @@ jobs:
         uses: redhat-actions/openshift-tools-installer@v1
         with:
           source: "github"
-          opm: "v1.62.0"
+          opm: "latest"
           operator-sdk: "latest"
 
       - name: Install Operator Lifecycle Manager and Operator SDK into Kind
