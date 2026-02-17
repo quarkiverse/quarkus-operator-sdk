@@ -13,7 +13,7 @@ kubectl config set-context --current --namespace=$K8S_NAMESPACE
 
 # Build manifests and images
 cd $OPERATOR_LOCATION || exit
-"$CURRENT_PWD"/mvnw clean package -Dquarkus.container-image.build=true \
+"$CURRENT_PWD"/mvnw clean package -DskipTests -Dquarkus.container-image.build=true \
   -Dquarkus.container-image.push=true \
   -Dquarkus.container-image.insecure=true \
   -Dquarkus.container-image.registry=$KIND_REGISTRY \
