@@ -96,6 +96,11 @@ on:
         type: string
         required: false
         default: 'default'
+      only-olm:
+        description: 'Only run OLM tests'
+        type: boolean
+        required: false
+        default: false
 
 concurrency:
   group: "${{ inputs.quarkus-version }}-${{inputs.java-version}}-${{ github.ref }}-${{inputs.quarkus-pr}}"
@@ -291,6 +296,7 @@ jobs:
           find . -type d -name bundle | grep -v joke | xargs -I {} find {} -type d -maxdepth 1 -mindepth 1 | xargs -I {} operator-sdk bundle validate {} --select-optional suite=operatorframework      
 
       - name: Run Joke sample using Quarkus DEV mode
+        if: ${{ !inputs.only-olm }}
         run: |
           SCRIPTS=$(pwd)/.github/scripts
           K8S_NAMESPACE=dev
@@ -332,10 +338,11 @@ jobs:
           path: samples/joke/app.log
 
       - name: Build with Maven (Native)
+        if: ${{ !inputs.only-olm }}
         run: ./mvnw -B install -DskipDocs -Dnative --file pom.xml -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -pl '${{inputs.native-modules}}' -amd ${{inputs.mvnArgs}}
 
       - name: Run Joke sample in native mode
-        if: ${{ contains(inputs.native-modules, 'samples') }}
+        if: ${{ !inputs.only-olm && contains(inputs.native-modules, 'samples') }}
         run: |
           SCRIPTS=$(pwd)/.github/scripts
           K8S_NAMESPACE=native
