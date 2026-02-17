@@ -18,7 +18,8 @@ cd $OPERATOR_LOCATION || exit
   -Dquarkus.container-image.insecure=true \
   -Dquarkus.container-image.registry=$KIND_REGISTRY \
   -Dquarkus.container-image.group=$REGISTRY_NAMESPACE \
-  -Dquarkus.kubernetes.namespace=$K8S_NAMESPACE
+  -Dquarkus.kubernetes.namespace=$K8S_NAMESPACE \
+  -Dquarkus.tls.protocols=TLSv1.2
 
 # Build Operator Bundle
 docker build -t $BUNDLE_IMAGE -f target/bundle/$NAME-operator/bundle.Dockerfile target/bundle/$NAME-operator
