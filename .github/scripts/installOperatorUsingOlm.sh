@@ -26,7 +26,7 @@ docker push $BUNDLE_IMAGE
 
 # Build Catalog image
 opm version
-opm index add --bundles $BUNDLE_IMAGE --tag $CATALOG_IMAGE --build-tool docker --use-http --skip-tls-verify
+opm index add --bundles $BUNDLE_IMAGE --tag $CATALOG_IMAGE --build-tool docker --use-http
 docker push $CATALOG_IMAGE
 
 # Create OLM catalog resource
