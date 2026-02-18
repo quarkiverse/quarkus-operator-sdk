@@ -267,35 +267,35 @@ jobs:
           echo "Effective Fabric8 version: $(./mvnw dependency:tree -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' ${{inputs.mvnArgs}} -Dincludes=io.fabric8:kubernetes-client-api -pl core/deployment | grep io.fabric8:kubernetes-client-api -m1 | cut -d ':' -f 4)"
 
       - name: Build with Maven (JVM)
-        run: ./mvnw -B install -DskipDocs -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' ${{inputs.mvnArgs}} -DallTests --file pom.xml
+        run: ./mvnw -B install -DskipDocs -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' ${{inputs.mvnArgs}} -DallTests --file pom.xml -DskipTests
+
+      - name: Dependency tree on failure
+        if: failure()
+        run: ./mvnw -B dependency:tree -Dverbose ${{inputs.mvnArgs}}
+
+      - name: Kubernetes KinD Cluster
+        uses: helm/kind-action@v1
+        id: kind
+        with:
+          registry: true
+          registry_name: kind-registry
+          registry_enable_delete: true
+
+      - name: Install OPM and Operator SDK tool
+        uses: redhat-actions/openshift-tools-installer@v1
+        with:
+          source: "github"
+          opm: "latest"
+          operator-sdk: "latest"
 #
-#      - name: Dependency tree on failure
-#        if: failure()
-#        run: ./mvnw -B dependency:tree -Dverbose ${{inputs.mvnArgs}}
-#
-#      - name: Kubernetes KinD Cluster
-#        uses: helm/kind-action@v1
-#        id: kind
-#        with:
-#          registry: true
-#          registry_name: kind-registry
-#          registry_enable_delete: true
-#
-#      - name: Install OPM and Operator SDK tool
-#        uses: redhat-actions/openshift-tools-installer@v1
-#        with:
-#          source: "github"
-#          opm: "latest"
-#          operator-sdk: "latest"
-#
-#      - name: Install Operator Lifecycle Manager and Operator SDK into Kind
-#        run: operator-sdk olm install --version v0.23.0
-#
+      - name: Install Operator Lifecycle Manager and Operator SDK into Kind
+        run: operator-sdk olm install --version v0.23.0
+
 #      # Joke sample currently doesn't validate with OLM v1 because it bundles required Joke CRD, which v1 thinks should be owned
-#      - name: Validate OLM bundles (excluding Joke sample)
-#        run: |
-#          cd samples/
-#          find . -type d -name bundle | grep -v joke | xargs -I {} find {} -type d -maxdepth 1 -mindepth 1 | xargs -I {} operator-sdk bundle validate {} --select-optional suite=operatorframework
+      - name: Validate OLM bundles (excluding Joke sample)
+        run: |
+          cd samples/
+          find . -type d -name bundle | grep -v joke | xargs -I {} find {} -type d -maxdepth 1 -mindepth 1 | xargs -I {} operator-sdk bundle validate {} --select-optional suite=operatorframework
 #
 #      - name: Run Joke sample using Quarkus DEV mode
 #        if: ${{ !inputs.only-olm }}
