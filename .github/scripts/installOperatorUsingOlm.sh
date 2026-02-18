@@ -22,11 +22,11 @@ cd $OPERATOR_LOCATION || exit
 
 # Build Operator Bundle
 docker build -t $BUNDLE_IMAGE -f target/bundle/$NAME-operator/bundle.Dockerfile target/bundle/$NAME-operator
-docker push $BUNDLE_IMAGE
+docker save $BUNDLE_IMAGE | skopeo copy --insecure-policy --dest-tls-verify=false docker-archive:/dev/stdin docker://$BUNDLE_IMAGE
 
 # Build Catalog image
-opm index add --bundles $BUNDLE_IMAGE --tag $CATALOG_IMAGE --build-tool docker --skip-tls
-docker push $CATALOG_IMAGE
+opm index add --bundles $BUNDLE_IMAGE --tag $CATALOG_IMAGE --build-tool docker --use-http
+docker save $CATALOG_IMAGE | skopeo copy --insecure-policy --dest-tls-verify=false docker-archive:/dev/stdin docker://$CATALOG_IMAGE
 
 # Create OLM catalog resource
 cat <<EOF | kubectl apply -f -

@@ -267,7 +267,7 @@ jobs:
           echo "Effective Fabric8 version: $(./mvnw dependency:tree -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' ${{inputs.mvnArgs}} -Dincludes=io.fabric8:kubernetes-client-api -pl core/deployment | grep io.fabric8:kubernetes-client-api -m1 | cut -d ':' -f 4)"
 
       - name: Build with Maven (JVM)
-        run: ./mvnw -B install -DskipDocs -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' ${{inputs.mvnArgs}} -DallTests --file pom.xml
+        run: ./mvnw -B install -DskipDocs -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' ${{inputs.mvnArgs}} -DallTests --file pom.xml -DskipTests
 
       - name: Dependency tree on failure
         if: failure()
@@ -278,6 +278,8 @@ jobs:
         id: kind
         with:
           registry: true
+          registry_name: kind-registry
+          registry_enable_delete: true
 
       - name: Install OPM and Operator SDK tool
         uses: redhat-actions/openshift-tools-installer@v1
@@ -293,7 +295,7 @@ jobs:
       - name: Validate OLM bundles (excluding Joke sample)
         run: |
           cd samples/
-          find . -type d -name bundle | grep -v joke | xargs -I {} find {} -type d -maxdepth 1 -mindepth 1 | xargs -I {} operator-sdk bundle validate {} --select-optional suite=operatorframework      
+          find . -type d -name bundle | grep -v joke | xargs -I {} find {} -type d -maxdepth 1 -mindepth 1 | xargs -I {} operator-sdk bundle validate {} --select-optional suite=operatorframework
 
       - name: Run Joke sample using Quarkus DEV mode
         if: ${{ !inputs.only-olm }}
@@ -318,14 +320,14 @@ jobs:
           if ! $SCRIPTS/testJokeSample.sh $K8S_NAMESPACE; then
             ERROR=1
           fi
-          
+
           # Kill all running java processes
           killall -9 java
 
           # Delete namespace
           kubectl delete namespace $K8S_NAMESPACE
-          
-          if [ ERROR = 1 ]; then 
+
+          if [ $ERROR = 1 ]; then
             echo "Tests failed"
             exit 1
           fi
@@ -353,7 +355,7 @@ jobs:
           kubectl config set-context --current --namespace=$K8S_NAMESPACE
 
           # Run operator in native mode
-          cd samples/joke 
+          cd samples/joke
           find . -type f -name '*-runner' -exec {} \; >native.log 2>&1 &
           PID=$(echo $!)
           cd $CURRENT_PWD
@@ -362,14 +364,14 @@ jobs:
           if ! $SCRIPTS/testJokeSample.sh $K8S_NAMESPACE; then
             ERROR=1
           fi
-          
+
           # Kill running process
           kill -9 $PID
 
           # Delete namespace
           kubectl delete namespace $K8S_NAMESPACE
-          
-          if [ ERROR = 1 ]; then 
+
+          if [ $ERROR = 1 ]; then
             echo "Tests failed"
             exit 1
           fi
