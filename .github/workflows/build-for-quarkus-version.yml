@@ -274,10 +274,10 @@ jobs:
         run: ./mvnw -B dependency:tree -Dverbose ${{inputs.mvnArgs}}
 
       - name: Kubernetes KinD Cluster
-        uses: container-tools/kind-action@v2
+        uses: helm/kind-action@v1
+        id: kind
         with:
           registry: true
-          version: v0.31.0
 
       - name: Install OPM and Operator SDK tool
         uses: redhat-actions/openshift-tools-installer@v1
@@ -386,7 +386,7 @@ jobs:
           SCRIPTS=$(pwd)/.github/scripts
 
           # Install Joke operator
-          if ! $SCRIPTS/installOperatorUsingOlm.sh joke $(pwd)/samples/joke $KIND_REGISTRY; then
+          if ! $SCRIPTS/installOperatorUsingOlm.sh joke $(pwd)/samples/joke ${{ steps.kind.outputs.LOCAL_REGISTRY }}; then
             echo "Failed to install operator"
             exit 1;
           fi
@@ -402,7 +402,7 @@ jobs:
           SCRIPTS=$(pwd)/.github/scripts
 
           # Install Ping Pong operator
-          if ! $SCRIPTS/installOperatorUsingOlm.sh pingpong $(pwd)/samples/pingpong $KIND_REGISTRY; then
+          if ! $SCRIPTS/installOperatorUsingOlm.sh pingpong $(pwd)/samples/pingpong ${{ steps.kind.outputs.LOCAL_REGISTRY }}; then
             echo "Failed to install operator"
             exit 1;
           fi
