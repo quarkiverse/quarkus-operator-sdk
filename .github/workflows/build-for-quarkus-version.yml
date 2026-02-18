@@ -287,101 +287,101 @@ jobs:
           source: "github"
           opm: "latest"
           operator-sdk: "latest"
-#
+
       - name: Install Operator Lifecycle Manager and Operator SDK into Kind
         run: operator-sdk olm install --version v0.23.0
 
-#      # Joke sample currently doesn't validate with OLM v1 because it bundles required Joke CRD, which v1 thinks should be owned
+      # Joke sample currently doesn't validate with OLM v1 because it bundles required Joke CRD, which v1 thinks should be owned
       - name: Validate OLM bundles (excluding Joke sample)
         run: |
           cd samples/
           find . -type d -name bundle | grep -v joke | xargs -I {} find {} -type d -maxdepth 1 -mindepth 1 | xargs -I {} operator-sdk bundle validate {} --select-optional suite=operatorframework
-#
-#      - name: Run Joke sample using Quarkus DEV mode
-#        if: ${{ !inputs.only-olm }}
-#        run: |
-#          SCRIPTS=$(pwd)/.github/scripts
-#          K8S_NAMESPACE=dev
-#          CURRENT_PWD=$(pwd)
-#
-#          # Create and set namespace
-#          kubectl create namespace $K8S_NAMESPACE
-#          kubectl config set-context --current --namespace=$K8S_NAMESPACE
-#
-#          # Run operator in DEV mode
-#          cd samples/joke
-#          # Need to override application.properties setting to avoid using dev services instead of set up cluster
-#          "$CURRENT_PWD"/mvnw quarkus:dev -Dquarkus.kubernetes-client.devservices.override-kubeconfig=false >app.log 2>&1 &
-#          PID=$(echo $!)
-#          cd $CURRENT_PWD
-#
-#          # test joke sample
-#          ERROR=0
-#          if ! $SCRIPTS/testJokeSample.sh $K8S_NAMESPACE; then
-#            ERROR=1
-#          fi
-#
-#          # Kill all running java processes
-#          killall -9 java
-#
-#          # Delete namespace
-#          kubectl delete namespace $K8S_NAMESPACE
-#
-#          if [ $ERROR = 1 ]; then
-#            echo "Tests failed"
-#            exit 1
-#          fi
-#
-#      - name: Archive Dev Mode application logs
-#        uses: actions/upload-artifact@v6
-#        if: failure()
-#        with:
-#          name: dev-mode-app.log
-#          path: samples/joke/app.log
-#
-#      - name: Build with Maven (Native)
-#        if: ${{ !inputs.only-olm }}
-#        run: ./mvnw -B install -DskipDocs -Dnative --file pom.xml -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -pl '${{inputs.native-modules}}' -amd ${{inputs.mvnArgs}}
-#
-#      - name: Run Joke sample in native mode
-#        if: ${{ !inputs.only-olm && contains(inputs.native-modules, 'samples') }}
-#        run: |
-#          SCRIPTS=$(pwd)/.github/scripts
-#          K8S_NAMESPACE=native
-#          CURRENT_PWD=$(pwd)
-#
-#          # Create and set namespace
-#          kubectl create namespace $K8S_NAMESPACE
-#          kubectl config set-context --current --namespace=$K8S_NAMESPACE
-#
-#          # Run operator in native mode
-#          cd samples/joke
-#          find . -type f -name '*-runner' -exec {} \; >native.log 2>&1 &
-#          PID=$(echo $!)
-#          cd $CURRENT_PWD
-#
-#          ERROR=0
-#          if ! $SCRIPTS/testJokeSample.sh $K8S_NAMESPACE; then
-#            ERROR=1
-#          fi
-#
-#          # Kill running process
-#          kill -9 $PID
-#
-#          # Delete namespace
-#          kubectl delete namespace $K8S_NAMESPACE
-#
-#          if [ $ERROR = 1 ]; then
-#            echo "Tests failed"
-#            exit 1
-#          fi
-#
-#      - name: Archive native application logs
-#        uses: actions/upload-artifact@v6
-#        if: failure()
-#        with:
-#          name: native.log
-#          path: samples/joke/native.log
+
+      - name: Run Joke sample using Quarkus DEV mode
+        if: ${{ !inputs.only-olm }}
+        run: |
+          SCRIPTS=$(pwd)/.github/scripts
+          K8S_NAMESPACE=dev
+          CURRENT_PWD=$(pwd)
+
+          # Create and set namespace
+          kubectl create namespace $K8S_NAMESPACE
+          kubectl config set-context --current --namespace=$K8S_NAMESPACE
+
+          # Run operator in DEV mode
+          cd samples/joke
+          # Need to override application.properties setting to avoid using dev services instead of set up cluster
+          "$CURRENT_PWD"/mvnw quarkus:dev -Dquarkus.kubernetes-client.devservices.override-kubeconfig=false >app.log 2>&1 &
+          PID=$(echo $!)
+          cd $CURRENT_PWD
+
+          # test joke sample
+          ERROR=0
+          if ! $SCRIPTS/testJokeSample.sh $K8S_NAMESPACE; then
+            ERROR=1
+          fi
+
+          # Kill all running java processes
+          killall -9 java
+
+          # Delete namespace
+          kubectl delete namespace $K8S_NAMESPACE
+
+          if [ $ERROR = 1 ]; then
+            echo "Tests failed"
+            exit 1
+          fi
+
+      - name: Archive Dev Mode application logs
+        uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: dev-mode-app.log
+          path: samples/joke/app.log
+
+      - name: Build with Maven (Native)
+        if: ${{ !inputs.only-olm }}
+        run: ./mvnw -B install -DskipDocs -Dnative --file pom.xml -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -pl '${{inputs.native-modules}}' -amd ${{inputs.mvnArgs}}
+
+      - name: Run Joke sample in native mode
+        if: ${{ !inputs.only-olm && contains(inputs.native-modules, 'samples') }}
+        run: |
+          SCRIPTS=$(pwd)/.github/scripts
+          K8S_NAMESPACE=native
+          CURRENT_PWD=$(pwd)
+
+          # Create and set namespace
+          kubectl create namespace $K8S_NAMESPACE
+          kubectl config set-context --current --namespace=$K8S_NAMESPACE
+
+          # Run operator in native mode
+          cd samples/joke
+          find . -type f -name '*-runner' -exec {} \; >native.log 2>&1 &
+          PID=$(echo $!)
+          cd $CURRENT_PWD
+
+          ERROR=0
+          if ! $SCRIPTS/testJokeSample.sh $K8S_NAMESPACE; then
+            ERROR=1
+          fi
+
+          # Kill running process
+          kill -9 $PID
+
+          # Delete namespace
+          kubectl delete namespace $K8S_NAMESPACE
+
+          if [ $ERROR = 1 ]; then
+            echo "Tests failed"
+            exit 1
+          fi
+
+      - name: Archive native application logs
+        uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: native.log
+          path: samples/joke/native.log
 
       - name: Run Joke sample into Kubernetes using OLM
         run: |
