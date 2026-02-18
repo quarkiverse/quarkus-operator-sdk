@@ -278,6 +278,8 @@ jobs:
         id: kind
         with:
           registry: true
+          registry_name: kind-registry
+          registry_enable_delete: true
 
       - name: Install OPM and Operator SDK tool
         uses: redhat-actions/openshift-tools-installer@v1
@@ -325,7 +327,7 @@ jobs:
           # Delete namespace
           kubectl delete namespace $K8S_NAMESPACE
           
-          if [ ERROR = 1 ]; then 
+          if [ $ERROR = 1 ]; then
             echo "Tests failed"
             exit 1
           fi
@@ -369,7 +371,7 @@ jobs:
           # Delete namespace
           kubectl delete namespace $K8S_NAMESPACE
           
-          if [ ERROR = 1 ]; then 
+          if [ $ERROR = 1 ]; then
             echo "Tests failed"
             exit 1
           fi
