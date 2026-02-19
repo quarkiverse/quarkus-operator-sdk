@@ -12,28 +12,35 @@ CURRENT_PWD=$(pwd)
 kubectl config set-context --current --namespace=$K8S_NAMESPACE
 
 # Build manifests and images
-cd $OPERATOR_LOCATION || exit
+cd "$OPERATOR_LOCATION" || exit
 "$CURRENT_PWD"/mvnw clean package -Dquarkus.container-image.build=true \
   -Dquarkus.container-image.push=true \
   -Dquarkus.container-image.insecure=true \
-  -Dquarkus.container-image.registry=$KIND_REGISTRY \
-  -Dquarkus.container-image.group=$REGISTRY_NAMESPACE \
+  -Dquarkus.container-image.registry="$KIND_REGISTRY" \
+  -Dquarkus.container-image.group="$REGISTRY_NAMESPACE" \
   -Dquarkus.kubernetes.namespace=$K8S_NAMESPACE
 
+copy_image_to_registry() {
+  # create image and push it to the insecure internal registry, using skopeo since it seems it's not possible to do it directly using docker only
+  docker save "$1" | skopeo copy --insecure-policy --dest-tls-verify=false docker-archive:/dev/stdin docker://"$1"
+}
+
 # Build Operator Bundle
-docker build -t $BUNDLE_IMAGE -f target/bundle/$NAME-operator/bundle.Dockerfile target/bundle/$NAME-operator
-docker save $BUNDLE_IMAGE | skopeo copy --insecure-policy --dest-tls-verify=false docker-archive:/dev/stdin docker://$BUNDLE_IMAGE
+bundle_name="$NAME"-operator
+catalog_name="$NAME"-catalog
+docker build -t "$BUNDLE_IMAGE" -f target/bundle/"$bundle_name"/bundle.Dockerfile target/bundle/"$bundle_name"
+copy_image_to_registry "$BUNDLE_IMAGE"
 
 # Build Catalog image
-opm index add --bundles $BUNDLE_IMAGE --tag $CATALOG_IMAGE --build-tool docker --use-http
-docker save $CATALOG_IMAGE | skopeo copy --insecure-policy --dest-tls-verify=false docker-archive:/dev/stdin docker://$CATALOG_IMAGE
+opm index add --bundles "$BUNDLE_IMAGE" --tag "$CATALOG_IMAGE" --build-tool docker --use-http
+copy_image_to_registry "$CATALOG_IMAGE"
 
 # Create OLM catalog resource
 cat <<EOF | kubectl apply -f -
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: $NAME-catalog
+  name: $catalog_name
   namespace: $K8S_NAMESPACE
 spec:
   sourceType: grpc
@@ -41,7 +48,7 @@ spec:
 EOF
 
 # Wait until the catalog source of our operator is up and running
-if ! "$CURRENT_PWD"/.github/scripts/waitFor.sh pods $K8S_NAMESPACE Running "--selector=olm.catalogSource=$NAME-catalog -o jsonpath='{..status.phase}'"; then
+if ! "$CURRENT_PWD"/.github/scripts/waitFor.sh pods $K8S_NAMESPACE Running "--selector=olm.catalogSource=$catalog_name -o jsonpath='{..status.phase}'"; then
   exit 1;
 fi
 
@@ -54,13 +61,13 @@ metadata:
   namespace: $K8S_NAMESPACE
 spec:
   channel: alpha
-  name: $NAME-operator
-  source: $NAME-catalog
+  name: $bundle_name
+  source: $catalog_name
   sourceNamespace: $K8S_NAMESPACE
 EOF
 
 # Wait until the operator is up and running
-if ! "$CURRENT_PWD"/.github/scripts/waitFor.sh csv $K8S_NAMESPACE Succeeded "$NAME-operator -o jsonpath='{.status.phase}'"; then
+if ! "$CURRENT_PWD"/.github/scripts/waitFor.sh csv $K8S_NAMESPACE Succeeded "$bundle_name -o jsonpath='{.status.phase}'"; then
   exit 1;
 fi
 
