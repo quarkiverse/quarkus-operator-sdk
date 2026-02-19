@@ -1,0 +1,15 @@
+name: Build against latest JOSDK version
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  build-with-latest-josdk-snapshot:
+    uses: ./.github/workflows/build-for-quarkus-version.yml
+    with:
+      java-version: 25
+      native-modules: "integration-tests,samples"
+      profiles: "use-snapshots"
+      mvnArgs: "-DskipDocs"
+      branch: "next"
