@@ -4,7 +4,7 @@
   <parent>
     <groupId>io.quarkiverse.operatorsdk</groupId>
     <artifactId>quarkus-operator-sdk-integration-tests-parent</artifactId>
-    <version>7.5.3-SNAPSHOT</version>
+    <version>7.6.0</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>quarkus-operator-sdk-integration-tests-cdi</artifactId>
