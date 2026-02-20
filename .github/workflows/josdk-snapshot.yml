@@ -22,7 +22,4 @@ jobs:
       quarkus-version: ${{inputs.quarkus-version}}
       quarkus-pr: ${{inputs.quarkus-pr}}
       java-version: 25
-      native-modules: "integration-tests,samples"
-      profiles: "use-snapshots"
-      mvnArgs: "-DskipDocs"
       branch: "next"
