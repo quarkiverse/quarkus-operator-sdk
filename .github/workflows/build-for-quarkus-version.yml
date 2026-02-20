@@ -7,6 +7,7 @@ on:
         description: 'jq command to extract which Quarkus version to use from https://registry.quarkus.io/client/platforms'
         type: string
         required: false
+        default: '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current) | .releases[0].version'
       quarkus-version:
         type: string
         required: false
