@@ -226,6 +226,10 @@ jobs:
           if [[ -n "${{ inputs.quarkus-pr }}" ]]; then
             quarkus_version=999.${{ inputs.quarkus-pr }}-SNAPSHOT
           fi
+          if [[ -z "$quarkus_version" ]]; then
+            quarkus_version=$(./mvnw help:evaluate -Dexpression=quarkus.version -q -DforceStdout)
+            echo "Using Quarkus version from POM: $quarkus_version"
+          fi
           echo "quarkus_version=${quarkus_version}" >> $GITHUB_OUTPUT
 
       - name: Use snapshots profile for non-main builds
