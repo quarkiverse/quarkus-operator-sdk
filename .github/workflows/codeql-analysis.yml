@@ -70,7 +70,13 @@ jobs:
 
     - name: Perform quick build
       run: |
-       ./mvnw -Dquickly -DskipDocs
+        echo "${{ github.ref_name }}"
+        echo "${{ github.ref }}"
+        if [ "${{ github.ref_name }}" == "next" ]; then
+           ./mvnw -Dquickly -DskipDocs -Puse-snapshots -T1C
+        else
+           ./mvnw -Dquickly -DskipDocs -T1C
+        fi
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4

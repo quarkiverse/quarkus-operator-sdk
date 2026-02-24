@@ -14,4 +14,12 @@
     <module>basic</module>
     <module>cdi</module>
   </modules>
+  <dependencies>
+    <!-- To ensure tests run after the core module is built -->
+    <dependency>
+      <groupId>io.quarkiverse.operatorsdk</groupId>
+      <artifactId>quarkus-operator-sdk-deployment</artifactId>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
 </project>
