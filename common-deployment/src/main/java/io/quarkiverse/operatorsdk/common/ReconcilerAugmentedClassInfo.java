@@ -32,8 +32,8 @@ public class ReconcilerAugmentedClassInfo extends ResourceAssociatedAugmentedCla
         if (primaryTypeDN.toString() == null || CUSTOM_RESOURCE.equals(primaryTypeDN)
                 || HAS_METADATA.equals(primaryTypeDN)) {
             log.warnf(
-                    "Skipped processing of '%s' {1} as it's not parameterized with a CustomResource or HasMetadata sub-class",
-                    name(), extendedOrImplementedClassName());
+                    "Skipped processing of '%s' %s as it's not parameterized with a CustomResource or HasMetadata sub-class",
+                    nameOrFailIfUnset(), extendedOrImplementedClassName());
             return false;
         }
         return true;
