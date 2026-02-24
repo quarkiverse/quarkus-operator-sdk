@@ -80,7 +80,7 @@ public class Version extends io.javaoperatorsdk.operator.api.config.Version {
             try {
                 properties.load(is);
             } catch (IOException e) {
-                log.warnf("Couldn't load extension version information: {0}", e.getMessage());
+                log.warnf("Couldn't load extension version information: %s", e.getMessage());
             }
         } else {
             log.warn("Couldn't find extension-version.properties file. Default version information will be used.");
