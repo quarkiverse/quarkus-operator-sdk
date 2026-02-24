@@ -70,7 +70,7 @@ jobs:
 
     - name: Perform quick build
       run: |
-       ./mvnw -Dquickly -DskipDocs
+       ./mvnw -Dquickly -DskipDocs -Puse-snapshots
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4

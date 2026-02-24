@@ -15,6 +15,7 @@ on:
   pull_request:
     branches-ignore:
       - "next-fabric8-version" # only build that branch daily in specific workflow
+      - "next" # already uses a specific workflow
     paths-ignore:
       - '.gitignore'
       - 'CODEOWNERS'
