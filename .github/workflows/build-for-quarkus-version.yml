@@ -209,16 +209,16 @@ jobs:
       - name: Retrieve Quarkus version from platform
         if: "${{ inputs.quarkus-version == '' && inputs.quarkus-pr == ''}}"
         id: get-quarkus-version
-        uses: sergeysova/jq-action@v2
-        with:
-          cmd: curl https://registry.quarkus.io/client/platforms | jq '${{inputs.quarkus-version-jq-cmd}}'
+        run: |
+          quarkus_version=$(curl https://registry.quarkus.io/client/platforms | jq '${{inputs.quarkus-version-jq-cmd}}')
+          echo "quarkus_version=$quarkus_version" >> $GITHUB_OUTPUT
 
       - name: Select Quarkus version
         id: quarkus-version
         run: |
           echo ${{ inputs.quarkus-version }}
-          if [[ -n "${{ steps.get-quarkus-version.outputs.value }}" ]]; then
-            quarkus_version="${{ steps.get-quarkus-version.outputs.value }}"
+          if [[ -n "${{ steps.get-quarkus-version.outputs.quarkus_version }}" ]]; then
+            quarkus_version="${{ steps.get-quarkus-version.outputs.quarkus_version }}"
           fi
           if [[ -n "${{ inputs.quarkus-version }}" ]]; then
             quarkus_version="${{ inputs.quarkus-version }}" 
