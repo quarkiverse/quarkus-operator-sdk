@@ -83,7 +83,9 @@ jobs:
       repository: ${{ github.event.pull_request.head.repo.full_name }}
 
   build-with-latest-stable-quarkus-version:
-    if: ${{ !needs.extract-project-metadata.outputs.same_quarkus_versions }}
+    # fromJSON to force conversion of output value to boolean
+    # see https://github.com/orgs/community/discussions/163013#discussioncomment-13487972 for more details
+    if: ${{ !fromJSON(needs.extract-project-metadata.outputs.same_quarkus_versions) }}
     needs:
       - extract-project-metadata
     strategy:
