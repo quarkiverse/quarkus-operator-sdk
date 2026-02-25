@@ -17,7 +17,7 @@ on:
 jobs:
   prepare-platform-pr:
     name: Prepare Platform Update
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
 
     outputs:
       released: ${{steps.wait-for-bom.outputs.published}}
