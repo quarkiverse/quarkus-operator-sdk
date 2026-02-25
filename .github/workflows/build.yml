@@ -55,13 +55,19 @@ jobs:
           quarkus_version=$(curl -s https://registry.quarkus.io/client/platforms | jq -r '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current) | .releases[0].version')
           echo "quarkus_version=$quarkus_version" >> $GITHUB_OUTPUT
 
-      - name: Output retrieved versions
+      - name: Output retrieved versions and compare them
         id: output-versions
         run: |
-          echo "Project defined Quarkus version: '${{ steps.quarkus-version.outputs.quarkus_version }}'"
-          echo "Latest platform Quarkus version: '${{ steps.get-quarkus-version.outputs.quarkus_version }}'"
-          echo "Different? ${{ needs.extract-project-metadata.outputs.qosdk_quarkus_version != needs.extract-project-metadata.outputs.latest_stable_quarkus }}"
-          echo "same_quarkus_versions=${{ needs.extract-project-metadata.outputs.qosdk_quarkus_version == needs.extract-project-metadata.outputs.latest_stable_quarkus }}" >> $GITHUB_OUTPUT
+          from_project=${{ steps.quarkus-version.outputs.quarkus_version }}
+          from_registry=${{ steps.get-quarkus-version.outputs.quarkus_version }}
+          echo "Project defined Quarkus version: '$from_project'"
+          echo "Latest platform Quarkus version: '$from_registry'"
+          same=false
+          if [ "$from_project" = "$from_registry" ]; then
+             same=true
+          fi
+          echo "Same? $same"
+          echo "same_quarkus_versions=$same" >> $GITHUB_OUTPUT
 
   build-with-defined-quarkus-version:
     needs:
