@@ -7,13 +7,8 @@ on:
     - cron: '0 0 * * *'
   workflow_dispatch:
     inputs:
-      quarkus-version:
-        description: 'Quarkus version to build against'
-        type: string
-        required: false
-        default: ''
       quarkus-pr:
-        description: 'Quarkus PR number to use to run a QOSDK build with'
+        description: 'Quarkus PR number to use to run a QOSDK build with, takes priority over version'
         type: string
         required: false
 
@@ -21,7 +16,7 @@ jobs:
   build-with-latest-josdk-snapshot:
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
-      quarkus-version: ${{inputs.quarkus-version}}
+      quarkus-version: '999-SNAPSHOT'
       quarkus-pr: ${{inputs.quarkus-pr}}
       java-version: 25
       branch: "next"
