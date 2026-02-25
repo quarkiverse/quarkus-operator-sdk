@@ -166,7 +166,7 @@ jobs:
 
       - name: Set JOSDK version from build PR if requested
         if: "${{ inputs.josdk-pr != '' }}"
-        run: yq '.project.properties."java-operator-sdk.version" = ${{ steps.build-josdk-pr.outputs.josdk_version }}' -i  pom.xml
+        run: yq '.project.properties."java-operator-sdk.version" = "${{ steps.build-josdk-pr.outputs.josdk_version }}"' -i  pom.xml
 
       - name: Check-out Quarkus if building from PR is requested
         uses: actions/checkout@v6
@@ -259,7 +259,7 @@ jobs:
       - name: Change Quarkus version
         run: |
           echo "Using Quarkus ${{ steps.quarkus-version.outputs.quarkus_version }}"
-          yq '.project.properties."quarkus.version" = ${{ steps.quarkus-version.outputs.quarkus_version }}' -i  pom.xml
+          yq '.project.properties."quarkus.version" = "${{ steps.quarkus-version.outputs.quarkus_version }}"' -i  pom.xml
 
       - name: Output versions being used
         run: |
