@@ -52,7 +52,7 @@ jobs:
       - name: Retrieve latest stable Quarkus version from platform
         id: get-quarkus-version
         run: |
-          quarkus_version=$(curl https://registry.quarkus.io/client/platforms | jq '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current) | .releases[0].version')
+          quarkus_version=$(curl -s https://registry.quarkus.io/client/platforms | jq -r '.platforms[0]."current-stream-id" as $current | .platforms[0].streams[] | select(.id == $current) | .releases[0].version')
           echo "quarkus_version=$quarkus_version" >> $GITHUB_OUTPUT
 
       - name: Output retrieved versions
