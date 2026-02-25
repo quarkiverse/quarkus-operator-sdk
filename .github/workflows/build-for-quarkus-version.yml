@@ -166,7 +166,7 @@ jobs:
 
       - name: Set JOSDK version from build PR if requested
         if: "${{ inputs.josdk-pr != '' }}"
-        run: ./mvnw versions:set-property -Dproperty='java-operator-sdk.version' -DnewVersion=${{ steps.build-josdk-pr.outputs.josdk_version }}
+        run: yq '.project.properties."java-operator-sdk.version" = ${{ steps.build-josdk-pr.outputs.josdk_version }}' -i  pom.xml
 
       - name: Check-out Quarkus if building from PR is requested
         uses: actions/checkout@v6
@@ -201,7 +201,7 @@ jobs:
           cd fkc
           git fetch origin pull/${{ inputs.fkc-pr }}/head:pr-to-check
           git switch pr-to-check
-          ./mvnw versions:set -DnewVersion=999.${{ inputs.fkc-pr }}-SNAPSHOT versions:commit
+          ./mvnw versions:set -DnewVersion=999.${{ inputs.fkc-pr }}-SNAPSHOT -DgenerateBackupPoms=false
           echo "f8_pr_version=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_OUTPUT
           make quickly
           cd -
@@ -253,13 +253,13 @@ jobs:
            fkc_version=${{ steps.build-fkc-pr.outputs.f8_pr_version }}
           fi
           echo "Using Fabric8 ${fkc_version}"
-          ./mvnw versions:set-property -Dproperty=fabric8-client.version -DnewVersion=${fkc_version}
+          yq '.project.properties."fabric8-client.version" = strenv(fkc_version)' -i  pom.xml
           echo "fkc_version=${fkc_version}" >> $GITHUB_OUTPUT
 
       - name: Change Quarkus version
         run: |
           echo "Using Quarkus ${{ steps.quarkus-version.outputs.quarkus_version }}"
-          ./mvnw versions:set-property -Dproperty=quarkus.version -DnewVersion=${{ steps.quarkus-version.outputs.quarkus_version }} ${{inputs.mvnArgs}}
+          yq '.project.properties."quarkus.version" = ${{ steps.quarkus-version.outputs.quarkus_version }}' -i  pom.xml
 
       - name: Output versions being used
         run: |
