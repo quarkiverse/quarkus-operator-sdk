@@ -8,7 +8,7 @@
   </parent>
   <groupId>io.quarkiverse.operatorsdk</groupId>
   <artifactId>quarkus-operator-sdk-parent</artifactId>
-  <version>7.6.1-SNAPSHOT</version>
+  <version>7.6.1</version>
   <packaging>pom</packaging>
   <name>Quarkus - Operator SDK - Parent</name>
   <properties>
@@ -20,7 +20,7 @@
     <connection>:git:git@github.com:quarkiverse/quarkus-operator-sdk.git</connection>
     <developerConnection>scm:git:git@github.com:quarkiverse/quarkus-operator-sdk.git</developerConnection>
     <url>https://github.com/quarkiverse/quarkus-operator-sdk</url>
-    <tag>HEAD</tag>
+    <tag>7.6.1</tag>
   </scm>
   <distributionManagement>
     <snapshotRepository>
