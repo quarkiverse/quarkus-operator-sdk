@@ -31,7 +31,7 @@ concurrency:
 
 jobs:
   extract-project-metadata:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     outputs:
       branch_name: ${{ steps.extract_branch.outputs.branch }}
       qosdk_quarkus_version: ${{ steps.quarkus-version.outputs.quarkus_version }}
