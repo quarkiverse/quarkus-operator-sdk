@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,9 @@ import io.quarkus.test.junit.QuarkusTest;
 @QuarkusTest
 @ExtendWith(HelmDeploymentE2EIT.RunOnlyIfHelmIsAvailableCondition.class)
 class HelmDeploymentE2EIT {
+
+    @ConfigProperty(name = "quarkus.application.version")
+    String qosdkVersion;
 
     final static Logger log = Logger.getLogger(HelmDeploymentE2EIT.class);
 
@@ -136,6 +140,16 @@ class HelmDeploymentE2EIT {
         ensureResourceDeleted(testResource(ns1));
         ensureResourceDeleted(testResource(ns2));
         ensureResourceDeleted(testResource(excludedNS));
+    }
+
+    @Test
+    void testTarHelmDeployment() {
+        StringBuilder command = createHelmCommand(
+                "helm install exposedapp target/helm/kubernetes/" + DEPLOYMENT_NAME + "-" + qosdkVersion + ".tar.gz");
+
+        execHelmCommand(command.toString());
+        client.apps().deployments().inNamespace(DEFAULT_NAMESPACE).withName(DEPLOYMENT_NAME)
+                .waitUntilReady(120, TimeUnit.SECONDS);
     }
 
     private void ensureResourceDeleted(ExposedApp resource) {
