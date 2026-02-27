@@ -278,13 +278,14 @@ jobs:
         if: failure()
         run: ./mvnw -B dependency:tree -Dverbose ${{inputs.mvnArgs}}
 
-      - name: Kubernetes KinD Cluster
-        uses: helm/kind-action@v1
-        id: kind
+      - name: Set up Minikube
+        uses: manusa/actions-setup-minikube@v2.15.0
         with:
-          registry: true
-          registry_name: kind-registry
-          registry_enable_delete: true
+          minikube version: 'v1.35.0'
+          kubernetes version: 'v1.35.0'
+          driver: 'docker'
+          github token: ${{ secrets.GITHUB_TOKEN }}
+          start args: '--addons=registry'
 
       - name: Install OPM and Operator SDK tool
         uses: redhat-actions/openshift-tools-installer@v1
