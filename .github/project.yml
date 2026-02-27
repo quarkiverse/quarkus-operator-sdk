@@ -4,3 +4,4 @@ release:
   next-version: 7.6.3-SNAPSHOT
   quarkus-platform-branches:
     - "main"
+    - "3.32"
