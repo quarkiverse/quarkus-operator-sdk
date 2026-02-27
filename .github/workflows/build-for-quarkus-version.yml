@@ -276,7 +276,7 @@ jobs:
 
       - name: Dependency tree on failure
         if: failure()
-        run: ./mvnw -B dependency:tree -Dverbose ${{inputs.mvnArgs}}
+        run: ./mvnw -B dependency:tree -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dverbose ${{inputs.mvnArgs}}
 
       - name: Kubernetes KinD Cluster
         uses: helm/kind-action@v1
@@ -316,7 +316,7 @@ jobs:
           # Run operator in DEV mode
           cd samples/joke
           # Need to override application.properties setting to avoid using dev services instead of set up cluster
-          "$CURRENT_PWD"/mvnw quarkus:dev -Dquarkus.kubernetes-client.devservices.override-kubeconfig=false >app.log 2>&1 &
+          "$CURRENT_PWD"/mvnw quarkus:dev -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -Dquarkus.kubernetes-client.devservices.override-kubeconfig=false >app.log &
           PID=$(echo $!)
           cd $CURRENT_PWD
 
