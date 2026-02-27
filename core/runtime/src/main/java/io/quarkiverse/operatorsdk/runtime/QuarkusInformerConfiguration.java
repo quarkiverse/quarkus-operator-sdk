@@ -19,9 +19,9 @@ public class QuarkusInformerConfiguration<R extends HasMetadata> extends Informe
             boolean followControllerNamespaceChanges, String labelSelector, OnAddFilter<? super R> onAddFilter,
             OnUpdateFilter<? super R> onUpdateFilter, OnDeleteFilter<? super R> onDeleteFilter,
             GenericFilter<? super R> genericFilter, ItemStore<R> itemStore, Long informerListLimit,
-            QuarkusFieldSelector fieldSelector) {
+            QuarkusFieldSelector fieldSelector, boolean comparableResourceVersions) {
         super(resourceClass, name, namespaces, followControllerNamespaceChanges, labelSelector, onAddFilter, onUpdateFilter,
-                onDeleteFilter, genericFilter, itemStore, informerListLimit, fieldSelector);
+                onDeleteFilter, genericFilter, itemStore, informerListLimit, fieldSelector, comparableResourceVersions);
     }
 
     public QuarkusInformerConfiguration(InformerConfiguration<R> config) {
@@ -36,7 +36,8 @@ public class QuarkusInformerConfiguration<R extends HasMetadata> extends Informe
                 config.getGenericFilter(),
                 config.getItemStore(),
                 config.getInformerListLimit(),
-                config.getFieldSelector() == null ? null : new QuarkusFieldSelector(config.getFieldSelector()));
+                config.getFieldSelector() == null ? null : new QuarkusFieldSelector(config.getFieldSelector()),
+                config.isComparableResourceVersions());
     }
 
     private static Set<String> sanitizeNamespaces(Set<String> namespaces) {

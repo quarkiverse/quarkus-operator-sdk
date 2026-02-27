@@ -20,7 +20,7 @@ import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
-import io.javaoperatorsdk.operator.ReconcilerUtils;
+import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
 import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
@@ -524,6 +524,6 @@ class QuarkusControllerConfigurationBuildStep {
         return ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
                 "finalizerName",
                 AnnotationValue::asString,
-                () -> ReconcilerUtils.getDefaultFinalizerName(crdName));
+                () -> ReconcilerUtilsInternal.getDefaultFinalizerName(crdName));
     }
 }
