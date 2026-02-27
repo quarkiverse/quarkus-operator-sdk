@@ -15,6 +15,7 @@ import java.util.Optional;
 import org.jboss.logging.Logger;
 
 import io.quarkiverse.helm.deployment.HelmChartConfig;
+import io.quarkiverse.helm.spi.AdditionalHelmTemplateBuildItem;
 import io.quarkiverse.helm.spi.CustomHelmOutputDirBuildItem;
 import io.quarkiverse.helm.spi.HelmChartBuildItem;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
@@ -22,6 +23,7 @@ import io.quarkiverse.operatorsdk.common.FileUtils;
 import io.quarkiverse.operatorsdk.deployment.ControllerConfigurationsBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
+import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.Produce;
 import io.quarkus.deployment.pkg.builditem.ArtifactResultBuildItem;
@@ -44,21 +46,43 @@ public class HelmAugmentationProcessor {
     private static final Logger log = Logger.getLogger(HelmAugmentationProcessor.class);
 
     public static final String CRD_DIR = "crds";
-    public static final String TEMPLATES_DIR = "templates";
     public static final String CRD_ROLE_BINDING_TEMPLATE_PATH = "/helm/crd-role-binding-template.yaml";
     public static final String VALIDATING_CLUSTER_ROLE_BINDING_PATH = "/helm/validating-cluster-role-binding-template.yaml";
+
+    @BuildStep
+    void generatedKubernetesResourcesForHelm(
+            ControllerConfigurationsBuildItem controllerConfigurations,
+            BuildTimeOperatorConfiguration operatorConfiguration,
+            BuildProducer<AdditionalHelmTemplateBuildItem> additionalHelmTemplateBuildItemBuildProducer) {
+        // add the ClusterRoleBindings for the CRD
+        final var clusterRoleBindingTemplate = parseTemplateFile(CRD_ROLE_BINDING_TEMPLATE_PATH);
+        controllerConfigurations.getControllerConfigs().values().forEach(cc -> {
+            final var name = cc.getName().replaceAll("\\s+", "-");
+            String res = Qute.fmt(clusterRoleBindingTemplate,
+                    Map.of("reconciler-name", name, "reconciler-name-config-name",
+                            ConfigurationUtils.getNamespacesPropertyName(name, true)));
+            String rbName = name + "-crd-role-binding";
+            additionalHelmTemplateBuildItemBuildProducer.produce(new AdditionalHelmTemplateBuildItem(
+                    rbName + ".yaml", res.getBytes(), "kubernetes"));
+        });
+
+        // Copy the validating ClusterRoleBinding if requested by the configuration
+        if (operatorConfiguration.crd().validate()) {
+            additionalHelmTemplateBuildItemBuildProducer.produce(new AdditionalHelmTemplateBuildItem(
+                    "validating-clusterrolebinding.yaml", parseTemplateFile(VALIDATING_CLUSTER_ROLE_BINDING_PATH).getBytes(),
+                    "kubernetes"));
+        }
+    }
 
     @BuildStep
     @Produce(ArtifactResultBuildItem.class)
     void addCRDsToHelmChart(
             List<HelmChartBuildItem> helmChartBuildItems,
             HelmChartConfig helmChartConfig,
-            BuildTimeOperatorConfiguration operatorConfiguration,
             @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<CustomHelmOutputDirBuildItem> customHelmOutputDirBuildItem,
             OutputTargetBuildItem outputTargetBuildItem,
             GeneratedCRDInfoBuildItem generatedCRDInfoBuildItem,
-            List<KubernetesClusterRoleBindingBuildItem> clusterRoleBindingBuildItems,
-            ControllerConfigurationsBuildItem controllerConfigurations) {
+            List<KubernetesClusterRoleBindingBuildItem> clusterRoleBindingBuildItems) {
         log.infof("Adding CRDs to the following Helm charts - %s", helmChartBuildItems);
         outputWarningIfNeeded(clusterRoleBindingBuildItems);
 
@@ -86,38 +110,6 @@ public class HelmAugmentationProcessor {
                     throw new IllegalStateException(e);
                 }
             });
-
-            // RoleBindings allowing runtime Helm overrides
-            final var templatesDir = chartDir.resolve(TEMPLATES_DIR);
-
-            // add the ClusterRoleBindings for the CRD
-            final var clusterRoleBindingTemplate = parseTemplateFile(CRD_ROLE_BINDING_TEMPLATE_PATH);
-            controllerConfigurations.getControllerConfigs().values().forEach(cc -> {
-                try {
-                    final var name = cc.getName().replaceAll("\\s+", "-");
-                    String res = Qute.fmt(clusterRoleBindingTemplate,
-                            Map.of("reconciler-name", name, "reconciler-name-config-name",
-                                    ConfigurationUtils.getNamespacesPropertyName(name, true)));
-                    Files.writeString(templatesDir.resolve(name + "-crd-role-binding.yaml"), res);
-
-                } catch (IOException e) {
-                    throw new IllegalStateException(e);
-                }
-            });
-
-            // Copy the validating ClusterRoleBinding if requested by the configuration
-            if (operatorConfiguration.crd().validate()) {
-                try {
-                    Files.writeString(templatesDir.resolve("validating-clusterrolebinding.yaml"),
-                            parseTemplateFile(VALIDATING_CLUSTER_ROLE_BINDING_PATH));
-                } catch (IOException e) {
-                    throw new IllegalStateException(e);
-                }
-            }
-
-            // Remove the automatically created templates that freeze build time role bindings
-            templatesDir.resolve("clusterrolebinding.yaml").toFile().delete();
-            templatesDir.resolve("rolebinding.yaml").toFile().delete();
         });
     }
 
