@@ -294,7 +294,7 @@ jobs:
           operator-sdk: "latest"
 
       - name: Install Operator Lifecycle Manager and Operator SDK into Kind
-        run: operator-sdk olm install --version v0.23.0
+        run: operator-sdk olm install
 
       # Joke sample currently doesn't validate with OLM v1 because it bundles required Joke CRD, which v1 thinks should be owned
       - name: Validate OLM bundles (excluding Joke sample)
