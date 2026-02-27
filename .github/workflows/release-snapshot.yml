@@ -46,16 +46,10 @@ jobs:
         with:
           ref: "${{inputs.branch}}"
 
-      - uses: actions/setup-java@v5
-        with:
-          distribution: 'temurin'
-          java-version: 21
-          cache: 'maven'
-
       - name: Retrieve and export project version
         id: project-version
         run: |
-          version=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
+          version=$(yq '.project.version' pom.xml)
           echo "Project version: ${version}"
           echo "version=${version}" >> $GITHUB_OUTPUT
 
