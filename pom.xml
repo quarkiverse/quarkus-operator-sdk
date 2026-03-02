@@ -151,6 +151,8 @@
           <plugin>
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
+              <!-- Needed to skip running the tests in VM mode. Presumably, these have been run before attempting a native build and therefore do not need to run again. -->
+              <!-- Pass -DskipTests=false to the build command if you want to run the tests in VM mode anyway -->
               <skip>true</skip>
             </configuration>
           </plugin>
