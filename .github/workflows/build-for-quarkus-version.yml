@@ -338,7 +338,7 @@ jobs:
           fi
 
       - name: Archive Dev Mode application logs
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: dev-mode-app.log
@@ -382,7 +382,7 @@ jobs:
           fi
 
       - name: Archive native application logs
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: native.log
