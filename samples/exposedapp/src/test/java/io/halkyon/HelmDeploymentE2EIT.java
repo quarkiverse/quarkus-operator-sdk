@@ -238,6 +238,8 @@ class HelmDeploymentE2EIT {
 
         // CRDs are not deleted automatically by helm, so we need to delete them manually
         client.apiextensions().v1().customResourceDefinitions().withName("exposedapps.halkyon.io").delete();
+        await().atMost(60, TimeUnit.SECONDS).until(() -> client.apiextensions().v1()
+                .customResourceDefinitions().withName("exposedapps.halkyon.io").get() == null);
     }
 
     private static void execHelmCommand(String command) {
