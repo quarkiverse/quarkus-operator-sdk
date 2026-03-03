@@ -346,7 +346,9 @@ jobs:
 
       - name: Build with Maven (Native)
         if: ${{ !inputs.only-olm }}
-        run: ./mvnw -B install -DskipDocs -Dnative --file pom.xml -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -pl '${{inputs.native-modules}}' -amd ${{inputs.mvnArgs}}
+#        run: ./mvnw -B install -DskipDocs -Dnative --file pom.xml -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -pl '${{inputs.native-modules}}' -amd ${{inputs.mvnArgs}}
+#        temporary fix for quarkusio/quarkus#52863
+        run: ./mvnw -B install -DskipDocs -Dnative --file pom.xml -P'${{steps.set-mvn-profiles.outputs.maven_profiles}}' -amd ${{inputs.mvnArgs}}
 
       - name: Run Joke sample in native mode
         if: ${{ !inputs.only-olm && contains(inputs.native-modules, 'samples') }}
