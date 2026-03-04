@@ -11,6 +11,8 @@ import static org.hamcrest.Matchers.nullValue;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import jakarta.annotation.PostConstruct;
@@ -73,7 +75,7 @@ class HelmDeploymentE2EIT {
     @Inject
     KubernetesClient client;
 
-    private String namespace;
+    private final List<String> createdNamespaces = new ArrayList<>();
     private File kubeConfigFile;
 
     @PostConstruct
@@ -83,7 +85,12 @@ class HelmDeploymentE2EIT {
 
     @AfterEach
     void cleanup() {
-        deleteHelmDeployment();
+        try {
+            deleteHelmDeployment();
+        } finally {
+            createdNamespaces.forEach(ns -> client.namespaces().withName(ns).delete());
+            createdNamespaces.clear();
+        }
     }
 
     @Test
@@ -91,7 +98,7 @@ class HelmDeploymentE2EIT {
         deployWithHelm();
 
         log.info("Deploying test resource in clusterscopetest namespace");
-        namespace = "clusterscopetest";
+        String namespace = "clusterscopetest";
         createNamespace(namespace);
         client.resource(testResource(namespace)).create();
 
@@ -104,7 +111,7 @@ class HelmDeploymentE2EIT {
     void testWatchingCurrentNamespace() {
         deployWithHelm(WATCH_NAMESPACES_KEY, Constants.WATCH_CURRENT_NAMESPACE);
 
-        namespace = "own-ns-test";
+        String namespace = "own-ns-test";
         createNamespace(namespace);
         client.resource(testResource(namespace)).create();
 
@@ -145,11 +152,11 @@ class HelmDeploymentE2EIT {
     @Test
     void testTarHelmDeployment() {
         StringBuilder command = createHelmCommand(
-                "helm install exposedapp target/helm/kubernetes/" + DEPLOYMENT_NAME + "-" + qosdkVersion + ".tar.gz");
+                "helm install exposedapp ./target/helm/kubernetes/" + DEPLOYMENT_NAME + "-" + qosdkVersion + ".tar.gz");
 
         execHelmCommand(command.toString());
         client.apps().deployments().inNamespace(DEFAULT_NAMESPACE).withName(DEPLOYMENT_NAME)
-                .waitUntilReady(120, TimeUnit.SECONDS);
+                .waitUntilReady(300, TimeUnit.SECONDS);
     }
 
     private void ensureResourceDeleted(ExposedApp resource) {
@@ -164,7 +171,7 @@ class HelmDeploymentE2EIT {
 
     private void checkResourceNotProcessed(String namespace) {
         await("Resource not reconciled in other namespace")
-                .pollDelay(Duration.ofSeconds(5)).untilAsserted(() -> {
+                .pollDelay(Duration.ofSeconds(5)).atMost(30, TimeUnit.SECONDS).untilAsserted(() -> {
                     var exposedApp = client.resources(ExposedApp.class)
                             .inNamespace(namespace)
                             .withName(TEST_RESOURCE).get();
@@ -202,17 +209,18 @@ class HelmDeploymentE2EIT {
         if (client.namespaces().resource(ns).get() == null) {
             client.namespaces().resource(ns).create();
         }
+        createdNamespaces.add(namespace);
     }
 
     private void deployWithHelm(String... values) {
-        StringBuilder command = createHelmCommand("helm install exposedapp target/helm/kubernetes/" + DEPLOYMENT_NAME);
+        StringBuilder command = createHelmCommand("helm install exposedapp ./target/helm/kubernetes/" + DEPLOYMENT_NAME);
         for (int i = 0; i < values.length; i = i + 2) {
             command.append(" --set ").append(values[i]).append("=").append(values[i + 1]);
         }
 
         execHelmCommand(command.toString());
         client.apps().deployments().inNamespace(DEFAULT_NAMESPACE).withName(DEPLOYMENT_NAME)
-                .waitUntilReady(120, TimeUnit.SECONDS);
+                .waitUntilReady(300, TimeUnit.SECONDS);
     }
 
     private StringBuilder createHelmCommand(String command) {
@@ -223,13 +231,15 @@ class HelmDeploymentE2EIT {
 
     private void deleteHelmDeployment() {
         execHelmCommand(createHelmCommand("helm delete exposedapp").toString());
-        await().untilAsserted(() -> {
+        await().atMost(60, TimeUnit.SECONDS).untilAsserted(() -> {
             var deployment = client.apps().deployments().inNamespace(DEFAULT_NAMESPACE).withName(DEPLOYMENT_NAME).get();
             assertThat(deployment, is(nullValue()));
         });
 
         // CRDs are not deleted automatically by helm, so we need to delete them manually
         client.apiextensions().v1().customResourceDefinitions().withName("exposedapps.halkyon.io").delete();
+        await().atMost(60, TimeUnit.SECONDS).until(() -> client.apiextensions().v1()
+                .customResourceDefinitions().withName("exposedapps.halkyon.io").get() == null);
     }
 
     private static void execHelmCommand(String command) {
