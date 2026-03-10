@@ -46,7 +46,7 @@ public class QuarkusControllerConfiguration<P extends HasMetadata> implements Co
         this.resourceClass = resourceClass;
     }
 
-    protected void setParent(QuarkusConfigurationService configurationService) {
+    public void setParent(QuarkusConfigurationService configurationService) {
         this.configurationService = configurationService;
     }
 

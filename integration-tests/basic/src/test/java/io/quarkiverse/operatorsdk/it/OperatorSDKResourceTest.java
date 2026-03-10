@@ -31,12 +31,6 @@ import io.quarkus.test.junit.QuarkusTest;
 @WithTestResource(CustomKubernetesServerTestResource.class)
 class OperatorSDKResourceTest {
     @Test
-    void shouldNotValidateCRs() {
-        given().when().get("/operator/config").then().statusCode(200).body(
-                "validate", equalTo(false));
-    }
-
-    @Test
     @DisabledOnIntegrationTest("Skipped because native tests are run using LaunchMode.NORMAL")
     void shouldApplyCRDsByDefaultInTestMode() {
         given().when().get("/operator/config").then().statusCode(200).body(
@@ -44,34 +38,22 @@ class OperatorSDKResourceTest {
     }
 
     @Test
-    void shouldHavePropertiesDefinedReconciliationThreads() {
+    void operatorConfigShouldConformToDifferentSetOptions() {
         given().when().get("/operator/config").then().statusCode(200).body(
-                "maxThreads", equalTo(10));
-    }
-
-    @Test
-    void shouldHavePropertiesDefinedTerminationTimeout() {
-        // both deprecated and non-deprecated property for timeout are used, only the value from the non-deprecated version should be retained
-        given().when().get("/operator/config").then().statusCode(200).body(
-                "timeout", equalTo(30));
-    }
-
-    @Test
-    void shouldHaveCustomMetricsImplementationIfDefined() {
-        given().when().get("/operator/config").then().statusCode(200).body(
-                "registryBound", equalTo(true));
-    }
-
-    @Test
-    void shouldOnlyHaveLeaderElectionActivatedInRequestedModes() {
-        given().when().get("/operator/config").then().statusCode(200).body(
-                "leaderConfig", equalTo(TestLeaderElectionConfiguration.class.getName()));
-    }
-
-    @Test
-    void shouldBeAbleToConfigureSSASupportFromProperties() {
-        given().when().get("/operator/config").then().statusCode(200).body(
-                "useSSA", equalTo(false));
+                // should not validate CRDs per application.properties
+                "validate", equalTo(false),
+                // should use max reconciliation threads from properties
+                "maxThreads", equalTo(10),
+                // both deprecated and non-deprecated property for timeout are used, only the value from the non-deprecated version should be retained
+                "timeout", equalTo(30),
+                // should have custom metrics implementation as defined by TestMetrics bean
+                "registryBound", equalTo(true),
+                // leader election configuration specified via TestLeaderElectionConfiguration bean
+                "leaderConfig", equalTo(TestLeaderElectionConfiguration.class.getName()),
+                // SSA support deactivated in application.properties
+                "useSSA", equalTo(false),
+                // default non SSA resources specified via ConfigurationServiceCustomizer bean
+                "nonSSAResources", hasItems("Pod", "Secret", "Deployment"));
     }
 
     @Test
