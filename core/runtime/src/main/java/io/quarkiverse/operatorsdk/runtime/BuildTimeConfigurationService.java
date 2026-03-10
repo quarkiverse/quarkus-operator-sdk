@@ -57,12 +57,22 @@ public class BuildTimeConfigurationService implements ConfigurationService,
         return startOperator;
     }
 
+    @Override
+    public boolean closeClientOnStop() {
+        return isCloseClientOnStop();
+    }
+
     public boolean isCloseClientOnStop() {
         return closeClientOnStop;
     }
 
     public boolean isStopOnInformerErrorDuringStartup() {
         return stopOnInformerErrorDuringStartup;
+    }
+
+    @Override
+    public boolean stopOnInformerErrorDuringStartup() {
+        return isStopOnInformerErrorDuringStartup();
     }
 
     public boolean isEnableSSA() {
@@ -79,6 +89,11 @@ public class BuildTimeConfigurationService implements ConfigurationService,
 
     public boolean isDefensiveCloning() {
         return defensiveCloning;
+    }
+
+    @Override
+    public boolean cloneSecondaryResourcesWhenGettingFromCache() {
+        return isDefensiveCloning();
     }
 
     @Override

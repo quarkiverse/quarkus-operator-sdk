@@ -17,6 +17,9 @@ import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
+import io.quarkiverse.operatorsdk.runtime.api.ConfigurationServiceCustomizer;
+import io.quarkiverse.operatorsdk.runtime.config.DefaultConfigurationService;
+import io.quarkiverse.operatorsdk.runtime.config.OverriddenConfigurationService;
 import io.quarkus.arc.Arc;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.annotations.Recorder;
@@ -37,9 +40,9 @@ public class ConfigurationServiceRecorder {
             BuildTimeConfigurationService buildTimeConfigurationService,
             Map<String, QuarkusBuildTimeControllerConfiguration<?>> configurations) {
         final var runTimeConfiguration = runTimeConfigurationRuntimeValue.getValue();
-        final var maxThreads = runTimeConfiguration.concurrentReconciliationThreads()
+        final int maxThreads = runTimeConfiguration.concurrentReconciliationThreads()
                 .orElse(ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
-        final var workflowThreads = runTimeConfiguration.concurrentWorkflowThreads()
+        final int workflowThreads = runTimeConfiguration.concurrentWorkflowThreads()
                 .orElse(ConfigurationService.DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER);
         final var cacheSyncTimeout = runTimeConfiguration.cacheSyncTimeout();
         final var asyncStart = runTimeConfiguration.asyncStart();
@@ -97,7 +100,8 @@ public class ConfigurationServiceRecorder {
                         profiles);
             }
 
-            return new QuarkusConfigurationService(
+            final QuarkusConfigurationService configurationService;
+            QuarkusConfigurationService base = new DefaultConfigurationService(
                     buildTimeConfigurationService.getVersion(),
                     runtimeConfigurations,
                     container.instance(KubernetesClient.class).get(),
@@ -111,10 +115,21 @@ public class ConfigurationServiceRecorder {
                     buildTimeConfigurationService.isStartOperator(),
                     leaderElectionConfiguration,
                     container.instance(InformerStoppedHandler.class).orElse(null),
-                    buildTimeConfigurationService.isCloseClientOnStop(),
-                    buildTimeConfigurationService.isStopOnInformerErrorDuringStartup(),
+                    buildTimeConfigurationService.closeClientOnStop(),
+                    buildTimeConfigurationService.stopOnInformerErrorDuringStartup(),
                     buildTimeConfigurationService.isEnableSSA(),
-                    buildTimeConfigurationService.isDefensiveCloning());
+                    buildTimeConfigurationService.cloneSecondaryResourcesWhenGettingFromCache());
+            final var configurationServiceCustomizer = container.instance(ConfigurationServiceCustomizer.class).get();
+            if (configurationServiceCustomizer != null) {
+                final var overridden = ConfigurationService.newOverriddenConfigurationService(base,
+                        configurationServiceCustomizer.overrider());
+
+                configurationService = new OverriddenConfigurationService(base, overridden);
+            } else {
+                configurationService = base;
+            }
+
+            return configurationService;
         };
     }
 

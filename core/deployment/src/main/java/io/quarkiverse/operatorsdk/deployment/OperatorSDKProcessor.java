@@ -34,6 +34,7 @@ import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
 import io.quarkiverse.operatorsdk.runtime.QuarkusBuildTimeControllerConfiguration;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.api.ConfigurableReconciler;
+import io.quarkiverse.operatorsdk.runtime.api.ConfigurationServiceCustomizer;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.BuildExclusionsBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
@@ -84,7 +85,8 @@ class OperatorSDKProcessor {
                 new IndexDependencyBuildItem("io.javaoperatorsdk", "operator-framework-core"));
 
         // register unremovable beans
-        unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(Metrics.class, LeaderElectionConfiguration.class));
+        unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(Metrics.class, LeaderElectionConfiguration.class,
+                ConfigurationServiceCustomizer.class));
 
         // register additional beans
         final var additionalBeansBuilder = AdditionalBeanBuildItem.builder()

@@ -155,6 +155,11 @@ public class OperatorSDKResource {
         public boolean useSSA() {
             return conf.ssaBasedCreateUpdateMatchForDependentResources();
         }
+
+        @JsonProperty("nonSSAResources")
+        public List<String> getNonSSAResources() {
+            return conf.defaultNonSSAResources().stream().map(Class::getSimpleName).toList();
+        }
     }
 
     static class JSONControllerConfiguration {
