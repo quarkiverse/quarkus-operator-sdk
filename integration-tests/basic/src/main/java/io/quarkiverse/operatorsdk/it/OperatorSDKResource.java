@@ -125,8 +125,8 @@ public class OperatorSDKResource {
         }
 
         @JsonProperty("timeout")
-        public int timeout() {
-            return conf.getTerminationTimeoutSeconds();
+        public long timeout() {
+            return conf.reconciliationTerminationTimeout().getSeconds();
         }
 
         @JsonProperty("applyCRDs")

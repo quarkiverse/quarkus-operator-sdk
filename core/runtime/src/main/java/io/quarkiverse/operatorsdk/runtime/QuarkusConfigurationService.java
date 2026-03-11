@@ -36,11 +36,9 @@ import io.quarkus.arc.InstanceHandle;
 public class QuarkusConfigurationService extends AbstractConfigurationService implements
         DependentResourceFactory<QuarkusControllerConfiguration<?>, DependentResourceSpecMetadata<?, ?, ?>>,
         ManagedWorkflowFactory<QuarkusControllerConfiguration<?>> {
-    public static final int UNSET_TERMINATION_TIMEOUT_SECONDS = -1;
     private static final Logger log = LoggerFactory.getLogger(QuarkusConfigurationService.class);
     private final CRDGenerationInfo crdInfo;
     private final int concurrentReconciliationThreads;
-    private final int terminationTimeout;
     private final Map<String, String> reconcilerClassToName;
     private final Metrics metrics;
     private final boolean startOperator;
@@ -50,6 +48,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     private final boolean stopOnInformerErrorDuringStartup;
     private final int concurrentWorkflowExecutorThreads;
     private final Duration cacheSyncTimeout;
+    private final Duration reconciliationTimeout;
     private final boolean asyncStart;
     @SuppressWarnings("rawtypes")
     private final Map<String, DependentResource> knownDependents = new ConcurrentHashMap<>();
@@ -62,7 +61,8 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
             Collection<QuarkusControllerConfiguration> configurations,
             KubernetesClient kubernetesClient,
             CRDGenerationInfo crdInfo, int maxThreads, int maxWorflowThreads,
-            int timeout, Duration cacheSyncTimeout, boolean asyncStart, Metrics metrics, boolean startOperator,
+            Duration reconciliationTimeout, Duration cacheSyncTimeout, boolean asyncStart, Metrics metrics,
+            boolean startOperator,
             LeaderElectionConfiguration leaderElectionConfiguration, InformerStoppedHandler informerStoppedHandler,
             boolean closeClientOnStop, boolean stopOnInformerErrorDuringStartup,
             boolean useSSA, boolean defensiveCloning) {
@@ -87,7 +87,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         this.crdInfo = crdInfo;
         this.concurrentReconciliationThreads = maxThreads;
         this.concurrentWorkflowExecutorThreads = maxWorflowThreads;
-        this.terminationTimeout = timeout;
+        this.reconciliationTimeout = reconciliationTimeout;
         this.cacheSyncTimeout = cacheSyncTimeout;
         this.asyncStart = asyncStart;
         this.informerStoppedHandler = informerStoppedHandler;
@@ -145,8 +145,13 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         return this.concurrentReconciliationThreads;
     }
 
-    public int getTerminationTimeoutSeconds() {
-        return terminationTimeout;
+    @Override
+    public Duration reconciliationTerminationTimeout() {
+        return getReconciliationTimeout();
+    }
+
+    public Duration getReconciliationTimeout() {
+        return reconciliationTimeout;
     }
 
     public CRDGenerationInfo getCRDGenerationInfo() {
@@ -249,6 +254,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         return dependentResource;
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public DependentResourceNode createNodeFrom(DependentResourceSpecMetadata spec,
             DependentResource dependentResource) {
@@ -265,6 +271,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
         }
     }
 
+    @SuppressWarnings("rawtypes")
     private Condition getBeanInstanceOrDefault(ArcContainer container, Condition reconcileCondition) {
         if (reconcileCondition == null) {
             return null;
