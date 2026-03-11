@@ -51,8 +51,9 @@ class OperatorSDKResourceTest {
 
     @Test
     void shouldHavePropertiesDefinedTerminationTimeout() {
+        // both deprecated and non-deprecated property for timeout are used, only the value from the non-deprecated version should be retained
         given().when().get("/operator/config").then().statusCode(200).body(
-                "timeout", equalTo(20));
+                "timeout", equalTo(30));
     }
 
     @Test

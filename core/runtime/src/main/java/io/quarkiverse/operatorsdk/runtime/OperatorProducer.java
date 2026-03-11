@@ -77,9 +77,9 @@ public class OperatorProducer {
         }
 
         // if we set a termination timeout, install a shutdown hook
-        final var terminationTimeoutSeconds = configuration.getTerminationTimeoutSeconds();
-        if (QuarkusConfigurationService.UNSET_TERMINATION_TIMEOUT_SECONDS != terminationTimeoutSeconds) {
-            operator.installShutdownHook(Duration.ofSeconds(terminationTimeoutSeconds));
+        final var terminationTimeout = configuration.reconciliationTerminationTimeout();
+        if (!terminationTimeout.isZero()) {
+            operator.installShutdownHook(terminationTimeout);
         }
 
         return operator;

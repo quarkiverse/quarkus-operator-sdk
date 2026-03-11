@@ -3,6 +3,7 @@ package io.quarkiverse.operatorsdk.runtime;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.DEFAULT_NAMESPACES_SET;
 import static io.quarkiverse.operatorsdk.runtime.Constants.QOSDK_USE_BUILDTIME_NAMESPACES_SET;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -38,12 +39,23 @@ public class ConfigurationServiceRecorder {
         final var runTimeConfiguration = runTimeConfigurationRuntimeValue.getValue();
         final var maxThreads = runTimeConfiguration.concurrentReconciliationThreads()
                 .orElse(ConfigurationService.DEFAULT_RECONCILIATION_THREADS_NUMBER);
-        final var timeout = runTimeConfiguration.terminationTimeoutSeconds()
-                .orElse(QuarkusConfigurationService.UNSET_TERMINATION_TIMEOUT_SECONDS);
         final var workflowThreads = runTimeConfiguration.concurrentWorkflowThreads()
                 .orElse(ConfigurationService.DEFAULT_WORKFLOW_EXECUTOR_THREAD_NUMBER);
         final var cacheSyncTimeout = runTimeConfiguration.cacheSyncTimeout();
         final var asyncStart = runTimeConfiguration.asyncStart();
+
+        var timeout = runTimeConfiguration.terminationTimeout();
+        final var timeoutSeconds = runTimeConfiguration.terminationTimeoutSeconds();
+        if (timeoutSeconds.isPresent()) {
+            // if value is present and the new configuration property is not set, use that value
+            if (timeout.isZero()) {
+                timeout = Duration.ofSeconds(timeoutSeconds.get());
+            } else {
+                log.warn(
+                        "Both 'quarkus.operator-sdk.termination-timeout-seconds' (deprecated) and 'quarkus.operator-sdk.termination-timeout' properties are used, only the non-deprecated value will be retained.");
+            }
+        }
+        final var finalTimetout = timeout;
 
         final var externalControllerConfigs = runTimeConfiguration.controllers();
         final List<QuarkusControllerConfiguration> runtimeConfigurations = configurations.values().stream().map(c -> {
@@ -92,7 +104,7 @@ public class ConfigurationServiceRecorder {
                     buildTimeConfigurationService.getCrdInfo(),
                     maxThreads,
                     workflowThreads,
-                    timeout,
+                    finalTimetout,
                     cacheSyncTimeout,
                     asyncStart,
                     container.instance(Metrics.class).get(),

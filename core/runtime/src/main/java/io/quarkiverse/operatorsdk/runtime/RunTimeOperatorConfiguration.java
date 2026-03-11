@@ -46,8 +46,21 @@ public interface RunTimeOperatorConfiguration {
      * install a shutdown hook to wait for termination (causing
      * {@link io.javaoperatorsdk.operator.Operator#installShutdownHook(Duration)} to be called with
      * `Duration.ofSeconds(terminationTimeoutSeconds)`).
+     *
+     * @deprecated Use {@link #terminationTimeout()} instead
      */
+    @Deprecated(forRemoval = true)
     Optional<Integer> terminationTimeoutSeconds();
+
+    /**
+     * Amount of seconds the SDK waits for reconciliation threads to terminate before shutting down. Setting this value will
+     * install a shutdown hook to wait for termination (causing
+     * {@link io.javaoperatorsdk.operator.Operator#installShutdownHook(Duration)} to be called with the specified duration).
+     *
+     * @since 7.7.0
+     */
+    @WithDefault("0")
+    Duration terminationTimeout();
 
     /**
      * An optional list of comma-separated namespace names all controllers will watch if they do not specify their own list. If

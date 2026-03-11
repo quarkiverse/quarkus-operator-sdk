@@ -462,26 +462,26 @@ endif::add-copy-button-to-env-var[]
 |int
 |
 
-a| [[quarkus-operator-sdk_quarkus-operator-sdk-termination-timeout-seconds]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-termination-timeout-seconds[`+++quarkus.operator-sdk.termination-timeout-seconds+++`]##
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-termination-timeout]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-termination-timeout[`+++quarkus.operator-sdk.termination-timeout+++`]##
 ifdef::add-copy-button-to-config-props[]
-config_property_copy_button:+++quarkus.operator-sdk.termination-timeout-seconds+++[]
+config_property_copy_button:+++quarkus.operator-sdk.termination-timeout+++[]
 endif::add-copy-button-to-config-props[]
 
 
 [.description]
 --
-Amount of seconds the SDK waits for reconciliation threads to terminate before shutting down. Setting this value will install a shutdown hook to wait for termination (causing `io.javaoperatorsdk.operator.Operator++#++installShutdownHook(Duration)` to be called with `Duration.ofSeconds(terminationTimeoutSeconds)`).
+Amount of seconds the SDK waits for reconciliation threads to terminate before shutting down. Setting this value will install a shutdown hook to wait for termination (causing `io.javaoperatorsdk.operator.Operator++#++installShutdownHook(Duration)` to be called with the specified duration).
 
 
 ifdef::add-copy-button-to-env-var[]
-Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_TERMINATION_TIMEOUT_SECONDS+++[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_TERMINATION_TIMEOUT+++[]
 endif::add-copy-button-to-env-var[]
 ifndef::add-copy-button-to-env-var[]
-Environment variable: `+++QUARKUS_OPERATOR_SDK_TERMINATION_TIMEOUT_SECONDS+++`
+Environment variable: `+++QUARKUS_OPERATOR_SDK_TERMINATION_TIMEOUT+++`
 endif::add-copy-button-to-env-var[]
 --
-|int
-|
+|link:https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/Duration.html[Duration] link:#duration-note-anchor-quarkus-operator-sdk_quarkus-operator-sdk[icon:question-circle[title=More information about the Duration format]]
+|`+++0S+++`
 
 a| [[quarkus-operator-sdk_quarkus-operator-sdk-namespaces]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-namespaces[`+++quarkus.operator-sdk.namespaces+++`]##
 ifdef::add-copy-button-to-config-props[]
@@ -849,6 +849,29 @@ endif::add-copy-button-to-env-var[]
 --
 |boolean
 |`+++false+++`
+
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-termination-timeout-seconds]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-termination-timeout-seconds[[.line-through]#`+++quarkus.operator-sdk.termination-timeout-seconds+++`#]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.operator-sdk.termination-timeout-seconds+++[]
+endif::add-copy-button-to-config-props[]
+
+
+[.description]
+--
+_This property is deprecated: Use `termination-timeout()` instead._
+
+Amount of seconds the SDK waits for reconciliation threads to terminate before shutting down. Setting this value will install a shutdown hook to wait for termination (causing `io.javaoperatorsdk.operator.Operator++#++installShutdownHook(Duration)` to be called with `Duration.ofSeconds(terminationTimeoutSeconds)`).
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_TERMINATION_TIMEOUT_SECONDS+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_TERMINATION_TIMEOUT_SECONDS+++`
+endif::add-copy-button-to-env-var[]
+--
+|int
+|
 
 |===
 
