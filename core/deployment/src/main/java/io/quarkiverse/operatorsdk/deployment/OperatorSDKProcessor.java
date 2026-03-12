@@ -81,36 +81,31 @@ class OperatorSDKProcessor {
         indexDependency.produce(
                 new IndexDependencyBuildItem("io.javaoperatorsdk", "operator-framework-core"));
 
-        // mark Metrics implementations as non-removable
-        unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(Metrics.class));
+        // register unremovable beans
+        unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(Metrics.class, LeaderElectionConfiguration.class));
 
-        // mark LeaderElectionConfiguration as non-removable
-        unremovableBeans.produce(UnremovableBeanBuildItem.beanTypes(LeaderElectionConfiguration.class));
+        // register additional beans
+        final var additionalBeansBuilder = AdditionalBeanBuildItem.builder()
+                .addBeanClass(KubernetesClientObjectMapperCustomizer.class)
+                .addBeanClass(OperatorProducer.class)
+                .addBeanClass(OperatorHealthCheck.class)
+                .setUnremovable();
 
-        // register our Kubernetes client mapper customizer
-        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(KubernetesClientObjectMapperCustomizer.class));
-
-        // register CDI Operator producer
-        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorProducer.class));
-
-        // add default bean based on whether or not micrometer is enabled
+        // add default bean based on whether micrometer is enabled
         if (metricsCapability.map(m -> m.metricsSupported(MetricsFactory.MICROMETER)).orElse(false)) {
             // we use the class name to not import any micrometer-related dependencies to prevent activation
-            additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(DEFAULT_METRIC_BINDER_CLASS_NAME));
+            additionalBeansBuilder.addBeanClass(DEFAULT_METRIC_BINDER_CLASS_NAME);
         } else {
-            additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(NoOpMetricsProvider.class));
+            additionalBeansBuilder.addBeanClass(NoOpMetricsProvider.class);
         }
-
-        // register health check
-        additionalBeans.produce(AdditionalBeanBuildItem.unremovableOf(OperatorHealthCheck.class));
+        additionalBeans.produce(additionalBeansBuilder.build());
 
         // index DefaultRateLimiter so that it can properly be configured via RateLimited annotation as expected
+        // and ConfigurableReconciler so that implementations can be found directly
         additionalIndexedClasses.produce(
                 new AdditionalIndexedClassesBuildItem(
-                        QuarkusBuildTimeControllerConfiguration.DefaultRateLimiter.class.getName()));
-
-        // index ConfigurableReconciler so that implementations can be found directly
-        additionalIndexedClasses.produce(new AdditionalIndexedClassesBuildItem(ConfigurableReconciler.class.getName()));
+                        QuarkusBuildTimeControllerConfiguration.DefaultRateLimiter.class.getName(),
+                        ConfigurableReconciler.class.getName()));
     }
 
     @BuildStep
@@ -166,15 +161,16 @@ class OperatorSDKProcessor {
     @BuildStep
     ReconcilerInfosBuildItem buildReconcilerInfos(CombinedIndexBuildItem combinedIndexBuildItem,
             BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
+        final var additionalBeansBuilder = AdditionalBeanBuildItem.builder();
         final var reconcilers = ClassUtils.getKnownReconcilers(combinedIndexBuildItem.getIndex(), log)
                 .peek(reconcilerInfo ->
                 // create Reconciler bean
-                additionalBeans.produce(AdditionalBeanBuildItem.builder()
+                additionalBeansBuilder
                         .addBeanClass(reconcilerInfo.classInfo().toString())
                         .setUnremovable()
-                        .setDefaultScope(APPLICATION_SCOPED)
-                        .build()))
+                        .setDefaultScope(APPLICATION_SCOPED))
                 .collect(Collectors.toMap(ResourceAssociatedAugmentedClassInfo::nameOrFailIfUnset, Function.identity()));
+        additionalBeans.produce(additionalBeansBuilder.build());
         return new ReconcilerInfosBuildItem(reconcilers);
     }
 
