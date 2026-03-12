@@ -38,6 +38,7 @@ import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.deployment.UnownedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.deployment.VersionBuildItem;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
+import io.quarkus.arc.deployment.BuildExclusionsBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
@@ -113,7 +114,8 @@ public class BundleProcessor {
             ApplicationInfoBuildItem appConfiguration,
             BundleGenerationConfiguration bundleConfiguration,
             CombinedIndexBuildItem combinedIndexBuildItem,
-            JarBuildItem jarBuildItem) {
+            JarBuildItem jarBuildItem,
+            BuildExclusionsBuildItem excluded) {
         final var index = combinedIndexBuildItem.getIndex();
         final var defaultName = ResourceNameUtil.getResourceName(kubernetesConfig, appConfiguration);
 
@@ -131,7 +133,7 @@ public class BundleProcessor {
         final var sharedMetadataHolders = getSharedMetadataHolders(defaultName, defaultVersion, defaultReplaces,
                 defaultBundleConfig, index);
         final var csvGroups = new HashMap<CSVMetadataHolder, List<ReconcilerAugmentedClassInfo>>();
-        ClassUtils.getKnownReconcilers(index, log)
+        ClassUtils.getKnownReconcilers(ClassUtils.context(index, log, excluded.getExcludedDeclaringClasses()))
                 .forEach(reconcilerInfo -> {
                     // figure out which group should be used to generate CSV
                     final var name = reconcilerInfo.nameOrFailIfUnset();

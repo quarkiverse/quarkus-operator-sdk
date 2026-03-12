@@ -1,11 +1,7 @@
 package io.quarkiverse.operatorsdk.common;
 
-import java.util.Map;
-
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
-import org.jboss.jandex.IndexView;
-import org.jboss.logging.Logger;
 
 public class AnnotationConfigurableAugmentedClassInfo extends SelectiveAugmentedClassInfo {
     private DotName associatedConfigurationClass;
@@ -15,7 +11,7 @@ public class AnnotationConfigurableAugmentedClassInfo extends SelectiveAugmented
     }
 
     @Override
-    protected void doAugment(IndexView index, Logger log, Map<String, Object> context) {
+    protected void doAugment(ClassUtils.IndexSearchContext context) {
         // record associated configuration annotation
         associatedConfigurationClass = typeAt(0).name();
 

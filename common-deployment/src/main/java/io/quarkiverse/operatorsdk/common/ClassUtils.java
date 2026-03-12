@@ -6,8 +6,9 @@ import static io.quarkiverse.operatorsdk.common.Constants.DEPENDENT_RESOURCE;
 import static io.quarkiverse.operatorsdk.common.Constants.OBJECT;
 import static io.quarkiverse.operatorsdk.common.Constants.RECONCILER;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.jboss.jandex.ClassInfo;
@@ -17,7 +18,6 @@ import org.jboss.jandex.Type;
 import org.jboss.logging.Logger;
 
 public class ClassUtils {
-
     private ClassUtils() {
     }
 
@@ -25,39 +25,63 @@ public class ClassUtils {
         return !Void.class.getName().equals(statusClassName);
     }
 
+    public record IndexSearchContext(IndexView indexView, Logger log, Map<String, Object> context) {
+        private static final String EXCLUDED_CLASSES_KEY = "excluded-classes";
+
+        public IndexSearchContext(IndexView indexView, Logger log, Set<String> excludedClasses) {
+            this(indexView, log, new HashMap<>(5));
+            context.put(EXCLUDED_CLASSES_KEY, excludedClasses);
+        }
+
+        public <T> T get(String key, Class<T> expectedType) {
+            return expectedType.cast(this.context.get(key));
+        }
+
+        public void put(String key, Object value) {
+            this.context.put(key, value);
+        }
+
+        public boolean isExcluded(String className) {
+            return get(EXCLUDED_CLASSES_KEY, Set.class).contains(className);
+        }
+    }
+
+    public static IndexSearchContext context(IndexView indexView, Logger log, Set<String> excludedClasses) {
+        return new IndexSearchContext(indexView, log, excludedClasses);
+    }
+
     /**
      * Only retrieve {@link io.javaoperatorsdk.operator.api.reconciler.Reconciler} implementations that should be considered by
      * the extension, excluding the SDK's own implementations and non-processable (i.e. reconcilers that are not correctly
      * parameterized) ones.
      *
-     * @param index the {@link IndexView} used to retrieve class informations
-     * @param log a {@link Logger} used to output skipped reconcilers information
+     * @param context the {@link IndexSearchContext} with which to retrieve reconcilers
      * @return a stream of {@link ReconcilerAugmentedClassInfo} providing information about processable reconcilers
      */
-    public static Stream<ReconcilerAugmentedClassInfo> getKnownReconcilers(IndexView index, Logger log) {
-        return getProcessableImplementationsOf(RECONCILER, index, log, Collections.emptyMap())
-                .map(ReconcilerAugmentedClassInfo.class::cast);
+    public static Stream<ReconcilerAugmentedClassInfo> getKnownReconcilers(IndexSearchContext context) {
+        return getProcessableImplementationsOf(RECONCILER, context).map(ReconcilerAugmentedClassInfo.class::cast);
     }
 
     public static Stream<? extends SelectiveAugmentedClassInfo> getProcessableImplementationsOf(DotName interfaceType,
-            IndexView index, Logger log, Map<String, Object> context) {
-        return getProcessableImplementationsOrExtensionsOf(interfaceType, index, log, context, true);
+            IndexSearchContext context) {
+        return getProcessableImplementationsOrExtensionsOf(interfaceType, context, true);
     }
 
     public static Stream<? extends SelectiveAugmentedClassInfo> getProcessableSubClassesOf(DotName classType,
-            IndexView index, Logger log, Map<String, Object> context) {
-        return getProcessableImplementationsOrExtensionsOf(classType, index, log, context, false);
+            IndexSearchContext context) {
+        return getProcessableImplementationsOrExtensionsOf(classType, context, false);
     }
 
     private static Stream<? extends SelectiveAugmentedClassInfo> getProcessableImplementationsOrExtensionsOf(
             DotName implementedOrExtendedClass,
-            IndexView index, Logger log, Map<String, Object> context, boolean isInterface) {
+            IndexSearchContext context, boolean isInterface) {
+        final var index = context.indexView;
         final var extensions = isInterface ? index.getAllKnownImplementations(implementedOrExtendedClass)
                 : index.getAllKnownSubclasses(implementedOrExtendedClass);
         return extensions.stream()
                 .map(classInfo -> createAugmentedClassInfoFor(implementedOrExtendedClass, classInfo))
-                .filter(fci -> fci.keep(index, log, context))
-                .peek(fci -> fci.augmentIfKept(index, log, context));
+                .filter(fci -> fci.keep(context))
+                .peek(fci -> fci.augmentIfKept(context));
     }
 
     static SelectiveAugmentedClassInfo createAugmentedClassInfoFor(DotName implementedOrExtendedClass, ClassInfo classInfo) {

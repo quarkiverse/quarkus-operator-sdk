@@ -5,12 +5,9 @@ import static io.quarkiverse.operatorsdk.common.Constants.*;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.Map;
 
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.ClassInfo;
-import org.jboss.jandex.IndexView;
-import org.jboss.logging.Logger;
 
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 
@@ -26,20 +23,20 @@ public class ReconcilerAugmentedClassInfo extends ResourceAssociatedAugmentedCla
     }
 
     @Override
-    protected boolean doKeep(IndexView index, Logger log, Map<String, Object> context) {
+    protected boolean doKeep(ClassUtils.IndexSearchContext context) {
         // if we get CustomResource instead of a subclass, ignore the controller since we cannot do anything with it
         final var primaryTypeDN = resourceTypeName();
         if (primaryTypeDN.toString() == null || CUSTOM_RESOURCE.equals(primaryTypeDN)
                 || HAS_METADATA.equals(primaryTypeDN)) {
-            logSkipping(log, "not parameterized with a CustomResource or HasMetadata sub-class");
+            logSkipping(context, "not parameterized with a CustomResource or HasMetadata sub-class");
             return false;
         }
         return true;
     }
 
     @Override
-    protected void doAugment(IndexView index, Logger log, Map<String, Object> context) {
-        super.doAugment(index, log, context);
+    protected void doAugment(ClassUtils.IndexSearchContext context) {
+        super.doAugment(context);
 
         // extract dependent information
         final var reconciler = classInfo();
@@ -54,9 +51,9 @@ public class ReconcilerAugmentedClassInfo extends ResourceAssociatedAugmentedCla
                 for (AnnotationInstance dependentConfig : dependentAnnotations) {
                     final var dependentType = ConfigurationUtils.getClassInfoForInstantiation(
                             dependentConfig.value("type"),
-                            DependentResource.class, index);
-                    final var dependent = DependentResourceAugmentedClassInfo.createFor(dependentType, dependentConfig, index,
-                            log, context, nameOrFailIfUnset());
+                            DependentResource.class, context.indexView());
+                    final var dependent = DependentResourceAugmentedClassInfo.createFor(dependentType, dependentConfig, context,
+                            nameOrFailIfUnset());
                     final var dependentName = dependent.nameOrFailIfUnset();
                     final var dependentTypeName = dependentType.name().toString();
                     if (dependentResources.containsKey(dependentName)) {

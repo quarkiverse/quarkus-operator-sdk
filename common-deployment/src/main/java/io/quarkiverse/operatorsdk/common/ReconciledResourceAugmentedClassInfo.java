@@ -1,12 +1,10 @@
 package io.quarkiverse.operatorsdk.common;
 
-import java.util.Map;
 import java.util.Objects;
 
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
-import org.jboss.logging.Logger;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
@@ -53,9 +51,9 @@ public class ReconciledResourceAugmentedClassInfo<T extends HasMetadata> extends
     }
 
     @Override
-    protected void doAugment(IndexView index, Logger log, Map<String, Object> context) {
-        super.doAugment(index, log, context);
-        hasStatus = hasStatus(index);
+    protected void doAugment(ClassUtils.IndexSearchContext context) {
+        super.doAugment(context);
+        hasStatus = hasStatus(context.indexView());
     }
 
     protected boolean hasStatus(IndexView index) {

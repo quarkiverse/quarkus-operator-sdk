@@ -13,7 +13,6 @@ import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
 import org.jboss.jandex.Type;
-import org.jboss.logging.Logger;
 
 import io.quarkus.deployment.util.JandexUtil;
 
@@ -38,30 +37,36 @@ public abstract class SelectiveAugmentedClassInfo {
         return classInfo;
     }
 
-    protected void logSkipping(Logger log, String reason) {
+    protected void logSkipping(ClassUtils.IndexSearchContext context, String reason) {
         final var targetClassName = extendedOrImplementedClassName();
         final var consideredClassName = classInfo.name();
-        log.debugf("Skipping '%s' %s. Reason: %s", consideredClassName, targetClassName, reason);
+        context.log().debugf("Skipping '%s' %s. Reason: %s", consideredClassName, targetClassName, reason);
     }
 
-    protected boolean keep(IndexView index, Logger log, Map<String, Object> context) {
+    protected boolean keep(ClassUtils.IndexSearchContext context) {
         if (Modifier.isAbstract(classInfo.flags())) {
-            logSkipping(log, "abstract class");
+            logSkipping(context, "abstract class");
             return false;
         }
 
         // Ignore implementations annotated with @Ignore
         if (classInfo.annotationsMap().containsKey(IGNORE_ANNOTATION)) {
-            logSkipping(log, "annotated with @Ignore");
+            logSkipping(context, "annotated with @Ignore");
             return false;
         }
 
-        initTypesIfNeeded(index);
+        // Ignore implementations that are excluded at build time
+        if (context.isExcluded(classInfo.name().toString())) {
+            logSkipping(context, "excluded at build time via @IfBuildProperty or similar annotation");
+            return false;
+        }
 
-        return doKeep(index, log, context);
+        initTypesIfNeeded(context.indexView());
+
+        return doKeep(context);
     }
 
-    protected boolean doKeep(IndexView index, Logger log, Map<String, Object> context) {
+    protected boolean doKeep(ClassUtils.IndexSearchContext context) {
         return true;
     }
 
@@ -103,12 +108,12 @@ public abstract class SelectiveAugmentedClassInfo {
         return extendedOrImplementedClass.withoutPackagePrefix();
     }
 
-    protected void augmentIfKept(IndexView index, Logger log, Map<String, Object> context) {
-        initTypesIfNeeded(index);
-        doAugment(index, log, context);
+    protected void augmentIfKept(ClassUtils.IndexSearchContext context) {
+        initTypesIfNeeded(context.indexView());
+        doAugment(context);
     }
 
-    protected abstract void doAugment(IndexView index, Logger log, Map<String, Object> context);
+    protected abstract void doAugment(ClassUtils.IndexSearchContext context);
 
     @SuppressWarnings({ "unchecked", "unused" })
     public <T> T getExtendedInfo(Object key, Class<T> expectedValueType) {
