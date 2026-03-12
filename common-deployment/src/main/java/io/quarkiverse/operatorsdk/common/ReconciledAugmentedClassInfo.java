@@ -3,13 +3,10 @@ package io.quarkiverse.operatorsdk.common;
 import static io.quarkiverse.operatorsdk.common.ClassLoadingUtils.loadClass;
 import static io.quarkiverse.operatorsdk.common.Constants.*;
 
-import java.util.Map;
 import java.util.Optional;
 
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
-import org.jboss.jandex.IndexView;
-import org.jboss.logging.Logger;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.quarkus.builder.BuildException;
@@ -29,7 +26,7 @@ public class ReconciledAugmentedClassInfo<T> extends SelectiveAugmentedClassInfo
     }
 
     @Override
-    protected void doAugment(IndexView index, Logger log, Map<String, Object> context) {
+    protected void doAugment(ClassUtils.IndexSearchContext context) {
         // record target resource class for later forced registration for reflection
         registerForReflection(classInfo().name().toString());
     }
@@ -65,11 +62,12 @@ public class ReconciledAugmentedClassInfo<T> extends SelectiveAugmentedClassInfo
     @SuppressWarnings("rawtypes")
     public static ReconciledAugmentedClassInfo createFor(ResourceAssociatedAugmentedClassInfo parent, ClassInfo resourceCI,
             String reconcilerName,
-            IndexView index, Logger log, Map<String, Object> context) {
+            ClassUtils.IndexSearchContext context) {
         var isResource = false;
         var isCR = false;
         var isGenericKubernetesResource = false;
         try {
+            final var index = context.indexView();
             isResource = ClassUtils.isImplementationOf(index, resourceCI, HAS_METADATA);
             if (isResource) {
                 isCR = JandexUtil.isSubclassOf(index, resourceCI, CUSTOM_RESOURCE);
@@ -80,7 +78,7 @@ public class ReconciledAugmentedClassInfo<T> extends SelectiveAugmentedClassInfo
                 }
             }
         } catch (BuildException e) {
-            log.errorf(
+            context.log().errorf(
                     "Couldn't ascertain if '%s' is a CustomResource or HasMetadata subclass. Assumed not to be.",
                     e);
         }
@@ -96,7 +94,7 @@ public class ReconciledAugmentedClassInfo<T> extends SelectiveAugmentedClassInfo
             reconciledInfo = new ReconciledAugmentedClassInfo<>(resourceCI, OBJECT, 0, reconcilerName);
         }
         // make sure the associated resource is properly initialized
-        reconciledInfo.augmentIfKept(index, log, context);
+        reconciledInfo.augmentIfKept(context);
         return reconciledInfo;
     }
 }

@@ -2,7 +2,6 @@ package io.quarkiverse.operatorsdk.common;
 
 import static io.quarkiverse.operatorsdk.common.Constants.DEPENDENT_RESOURCE;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
@@ -10,8 +9,6 @@ import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
-import org.jboss.jandex.IndexView;
-import org.jboss.logging.Logger;
 
 import io.javaoperatorsdk.operator.processing.dependent.workflow.CRDPresentActivationCondition;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
@@ -43,19 +40,20 @@ public class DependentResourceAugmentedClassInfo extends ResourceAssociatedAugme
     }
 
     public static DependentResourceAugmentedClassInfo createFor(ClassInfo classInfo,
-            AnnotationInstance dependentAnnotationFromController, IndexView index, Logger log,
-            Map<String, Object> context, String reconcilerName) {
+            AnnotationInstance dependentAnnotationFromController, ClassUtils.IndexSearchContext context,
+            String reconcilerName) {
         final var info = new DependentResourceAugmentedClassInfo(classInfo, dependentAnnotationFromController, reconcilerName);
-        info.augmentIfKept(index, log, context);
+        info.augmentIfKept(context);
         return info;
     }
 
     @Override
-    protected void doAugment(IndexView index, Logger log, Map<String, Object> context) {
-        super.doAugment(index, log, context);
+    protected void doAugment(ClassUtils.IndexSearchContext context) {
+        super.doAugment(context);
 
         // only check if dependent has an activation condition that derives from the CRD checking one here
         final var activationConditionType = getDependentAnnotationFromController().value("activationCondition");
+        final var index = context.indexView();
         if (activationConditionType != null) {
             final var conditionInfo = ConfigurationUtils.getClassInfoForInstantiation(activationConditionType, Condition.class,
                     index);

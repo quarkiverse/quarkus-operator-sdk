@@ -17,6 +17,7 @@ import io.quarkiverse.operatorsdk.runtime.CRDGenerationInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDInfo;
 import io.quarkiverse.operatorsdk.runtime.CRDInfos;
 import io.quarkiverse.operatorsdk.runtime.CRDUtils;
+import io.quarkus.arc.deployment.BuildExclusionsBuildItem;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.LaunchModeBuildItem;
@@ -37,6 +38,7 @@ class CRDGenerationBuildStep {
             LiveReloadBuildItem liveReload,
             OutputTargetBuildItem outputTarget,
             CombinedIndexBuildItem combinedIndexBuildItem,
+            BuildExclusionsBuildItem excluded,
             UnownedCRDInfoBuildItem unownedCRDInfo) {
         final var crdConfig = operatorConfiguration.crd();
         final boolean validateCustomResources = ConfigurationUtils.shouldValidateCustomResources(crdConfig.validate());
@@ -97,10 +99,11 @@ class CRDGenerationBuildStep {
                 keepResourcePredicate = (
                         CustomResourceAugmentedClassInfo crInfo) -> !scheduledForGeneration.contains(crInfo.id())
                                 && !isExcluded(crInfo, externalCRDs, excludedResourceClasses);
-                final Map<String, Object> context = Map.of(CustomResourceAugmentedClassInfo.KEEP_CR_PREDICATE_KEY,
+                final var context = ClassUtils.context(combinedIndexBuildItem.getIndex(), log,
+                        excluded.getExcludedDeclaringClasses());
+                context.put(CustomResourceAugmentedClassInfo.KEEP_CR_PREDICATE_KEY,
                         keepResourcePredicate);
-                ClassUtils.getProcessableSubClassesOf(Constants.CUSTOM_RESOURCE, combinedIndexBuildItem.getIndex(), log,
-                        context)
+                ClassUtils.getProcessableSubClassesOf(Constants.CUSTOM_RESOURCE, context)
                         .map(CustomResourceAugmentedClassInfo.class::cast)
                         .forEach(cr -> {
                             crdGeneration.withCustomResource(cr.loadAssociatedClass(), null);

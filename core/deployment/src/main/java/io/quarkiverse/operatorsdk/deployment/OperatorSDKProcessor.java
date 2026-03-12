@@ -3,7 +3,6 @@ package io.quarkiverse.operatorsdk.deployment;
 import static io.quarkus.arc.processor.DotNames.APPLICATION_SCOPED;
 
 import java.lang.annotation.Annotation;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,6 +35,7 @@ import io.quarkiverse.operatorsdk.runtime.QuarkusBuildTimeControllerConfiguratio
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.api.ConfigurableReconciler;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
+import io.quarkus.arc.deployment.BuildExclusionsBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
 import io.quarkus.deployment.IsDevelopment;
@@ -172,9 +172,12 @@ class OperatorSDKProcessor {
 
     @BuildStep
     ReconcilerInfosBuildItem buildReconcilerInfos(CombinedIndexBuildItem combinedIndexBuildItem,
+            BuildExclusionsBuildItem excluded,
             BuildProducer<AdditionalBeanBuildItem> additionalBeans) {
         final var additionalBeansBuilder = AdditionalBeanBuildItem.builder();
-        final var reconcilers = ClassUtils.getKnownReconcilers(combinedIndexBuildItem.getIndex(), log)
+        final var excludedClasses = excluded.getExcludedDeclaringClasses();
+        final var reconcilers = ClassUtils
+                .getKnownReconcilers(ClassUtils.context(combinedIndexBuildItem.getIndex(), log, excludedClasses))
                 .peek(reconcilerInfo ->
                 // create Reconciler bean
                 additionalBeansBuilder
@@ -189,13 +192,12 @@ class OperatorSDKProcessor {
     @BuildStep
     AnnotationConfigurablesBuildItem gatherAnnotationConfigurables(
             CombinedIndexBuildItem combinedIndexBuildItem,
+            BuildExclusionsBuildItem excluded,
             BuildProducer<QOSDKReflectiveClassBuildItem> reflectiveClassProducer) {
         final var index = combinedIndexBuildItem.getIndex();
         final var configurableInfos = ClassUtils.getProcessableImplementationsOf(
                 Constants.ANNOTATION_CONFIGURABLE,
-                index,
-                log,
-                Collections.emptyMap())
+                ClassUtils.context(combinedIndexBuildItem.getIndex(), log, excluded.getExcludedDeclaringClasses()))
                 .map(AnnotationConfigurableAugmentedClassInfo.class::cast)
                 .peek(ci -> reflectiveClassProducer
                         .produce(new QOSDKReflectiveClassBuildItem(ci.getClassNamesToRegisterForReflection())))
