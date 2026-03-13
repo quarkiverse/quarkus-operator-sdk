@@ -324,7 +324,6 @@ class QuarkusControllerConfigurationBuildStep {
                 name,
                 resourceFullName,
                 configExtractor.generationAware(),
-                resourceClass,
                 wereNamespacesSet,
                 getFinalizer(controllerAnnotation, resourceFullName),
                 primaryAsResource.hasNonVoidStatus(),
