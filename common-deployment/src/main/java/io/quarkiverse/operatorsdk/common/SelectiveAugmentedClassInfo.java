@@ -38,19 +38,21 @@ public abstract class SelectiveAugmentedClassInfo {
         return classInfo;
     }
 
-    protected boolean keep(IndexView index, Logger log, Map<String, Object> context) {
+    protected void logSkipping(Logger log, String reason) {
         final var targetClassName = extendedOrImplementedClassName();
         final var consideredClassName = classInfo.name();
+        log.debugf("Skipping '%s' %s. Reason: %s", consideredClassName, targetClassName, reason);
+    }
+
+    protected boolean keep(IndexView index, Logger log, Map<String, Object> context) {
         if (Modifier.isAbstract(classInfo.flags())) {
-            log.debugf("Skipping '%s' %s because it's abstract",
-                    consideredClassName, targetClassName);
+            logSkipping(log, "abstract class");
             return false;
         }
 
         // Ignore implementations annotated with @Ignore
         if (classInfo.annotationsMap().containsKey(IGNORE_ANNOTATION)) {
-            log.debugf("Skipping '%s' %s because it's annotated with @Ignore",
-                    consideredClassName, targetClassName);
+            logSkipping(log, "annotated with @Ignore");
             return false;
         }
 
@@ -98,7 +100,7 @@ public abstract class SelectiveAugmentedClassInfo {
     }
 
     protected String extendedOrImplementedClassName() {
-        return extendedOrImplementedClass.local();
+        return extendedOrImplementedClass.withoutPackagePrefix();
     }
 
     protected void augmentIfKept(IndexView index, Logger log, Map<String, Object> context) {
