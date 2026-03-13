@@ -18,6 +18,7 @@ import org.jboss.logging.Logger;
 
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.FieldSelector;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.quarkiverse.operatorsdk.common.AnnotationConfigurableAugmentedClassInfo;
 import io.quarkiverse.operatorsdk.common.ClassUtils;
@@ -51,6 +52,7 @@ import io.quarkus.deployment.builditem.RunTimeConfigurationDefaultBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ForceNonWeakReflectiveClassBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveHierarchyBuildItem;
 import io.quarkus.deployment.metrics.MetricsCapabilityBuildItem;
+import io.quarkus.deployment.recording.RecorderContext;
 import io.quarkus.gizmo.AssignableResultHandle;
 import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
@@ -141,10 +143,20 @@ class OperatorSDKProcessor {
     @BuildStep
     @Record(ExecutionTime.RUNTIME_INIT)
     void updateControllerConfigurations(
+            RecorderContext recorderContext,
             BuildTimeConfigurationServiceBuildItem buildTimeConfigurationServiceBuildItem,
             ConfigurationServiceRecorder recorder,
             BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer,
             ControllerConfigurationsBuildItem controllerConfigurations) {
+        // register substitution for non-byte-recordable FieldSelector.Field
+        try {
+            recorderContext.registerNonDefaultConstructor(
+                    FieldSelector.Field.class.getDeclaredConstructor(String.class, String.class, boolean.class),
+                    field -> List.of(field.path(), field.value(), field.negated()));
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
+
         final var supplier = recorder.configurationServiceSupplier(
                 buildTimeConfigurationServiceBuildItem.getConfigurationService(),
                 controllerConfigurations.getControllerConfigs());
