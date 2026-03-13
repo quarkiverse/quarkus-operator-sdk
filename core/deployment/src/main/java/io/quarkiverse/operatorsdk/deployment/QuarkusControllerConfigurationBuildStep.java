@@ -38,6 +38,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow
 import io.javaoperatorsdk.operator.processing.event.rate.RateLimiter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
+import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnUpdateFilter;
 import io.javaoperatorsdk.operator.processing.retry.GenericRetry;
 import io.javaoperatorsdk.operator.processing.retry.Retry;
@@ -165,6 +166,7 @@ class QuarkusControllerConfigurationBuildStep {
         OnAddFilter onAddFilter = null;
         OnUpdateFilter onUpdateFilter = null;
         GenericFilter genericFilter = null;
+        OnDeleteFilter onDeleteFilter = null;
         Retry retry = null;
         RateLimiter rateLimiter = null;
         Long nullableInformerListLimit = null;
@@ -200,6 +202,8 @@ class QuarkusControllerConfigurationBuildStep {
                 onUpdateFilter = ConfigurationUtils.instantiateImplementationClass(
                         informerConfigAnnotation, "onUpdateFilter", OnUpdateFilter.class, OnUpdateFilter.class,
                         true, index);
+                onDeleteFilter = ConfigurationUtils.instantiateImplementationClass(
+                        informerConfigAnnotation, "onDeleteFilter", OnDeleteFilter.class, OnDeleteFilter.class, true, index);
                 genericFilter = ConfigurationUtils.instantiateImplementationClass(
                         informerConfigAnnotation, "genericFilter", GenericFilter.class, GenericFilter.class,
                         true, index);
@@ -281,6 +285,7 @@ class QuarkusControllerConfigurationBuildStep {
                 .withGenericFilter(genericFilter)
                 .withOnAddFilter(onAddFilter)
                 .withOnUpdateFilter(onUpdateFilter)
+                .withOnDeleteFilter(onDeleteFilter)
                 .withItemStore(itemStore)
                 .withInformerListLimit(nullableInformerListLimit)
                 .buildForController();
