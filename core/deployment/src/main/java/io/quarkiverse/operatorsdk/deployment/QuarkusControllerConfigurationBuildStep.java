@@ -177,6 +177,7 @@ class QuarkusControllerConfigurationBuildStep {
         String labelSelector = null;
         boolean triggerReconcilerOnAllEvents = false;
         boolean followControllerNamespaceChanges = true;
+        boolean comparableResourceVersions = true;
         if (controllerAnnotation != null) {
             final var intervalFromAnnotation = ConfigurationUtils.annotationValueOrDefault(
                     controllerAnnotation, "maxReconciliationInterval", AnnotationValue::asNested,
@@ -230,6 +231,8 @@ class QuarkusControllerConfigurationBuildStep {
                         .orElse(null);
 
                 followControllerNamespaceChanges = ConfigurationUtils.annotationValueOrDefault(informerConfigAnnotation, "followControllerNamespaceChanges", AnnotationValue::asBoolean, () -> true);
+
+                comparableResourceVersions = ConfigurationUtils.annotationValueOrDefault(informerConfigAnnotation, "comparableResourceVersions", AnnotationValue::asBoolean, () -> true);
 
             }
 
@@ -293,6 +296,7 @@ class QuarkusControllerConfigurationBuildStep {
                 .withFollowControllerNamespacesChanges(followControllerNamespaceChanges)
                 .withItemStore(itemStore)
                 .withInformerListLimit(nullableInformerListLimit)
+                .withComparableResourceVersions(comparableResourceVersions)
                 .buildForController();
         final var informerConfig = new QuarkusInformerConfiguration(informerConfiguration);
 
