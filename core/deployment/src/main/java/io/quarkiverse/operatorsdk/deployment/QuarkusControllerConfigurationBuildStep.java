@@ -228,10 +228,11 @@ class QuarkusControllerConfigurationBuildStep {
                         .map(v -> new HashSet<>(Arrays.asList(v.asStringArray())))
                         .orElse(null);
 
-                // triggering on all events?
-                triggerReconcilerOnAllEvents = ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
-                        "triggerReconcilerOnAllEvents", AnnotationValue::asBoolean, () -> false);
             }
+
+            // triggering on all events?
+            triggerReconcilerOnAllEvents = ConfigurationUtils.annotationValueOrDefault(controllerAnnotation,
+                    "triggerReconcilerOnAllEvents", AnnotationValue::asBoolean, () -> false);
 
             final var retryConfigurableInfo = configurableInfos.get(retryClass.getName());
             final var retryConfigurationClass = getConfigurationAnnotationClass(reconcilerInfo, retryConfigurableInfo);
