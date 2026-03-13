@@ -107,6 +107,10 @@ public class QuarkusFieldSelector extends FieldSelector {
         }
     }
 
+    public static String asString(FieldSelector.Field fieldSelector) {
+        return fieldSelector.path() + (fieldSelector.negated() ? "!=" : "=") + fieldSelector.value();
+    }
+
     public static FieldSelector.Field from(String fieldSelector, Set<String> validFieldNames, Class<?> resourceClass) {
         if (fieldSelector == null || fieldSelector.isEmpty()) {
             return null;

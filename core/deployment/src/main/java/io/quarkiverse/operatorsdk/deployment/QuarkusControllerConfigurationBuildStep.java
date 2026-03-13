@@ -25,6 +25,7 @@ import io.javaoperatorsdk.operator.api.config.AnnotationConfigurable;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceConfigurationResolver;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.informer.FieldSelector;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -162,6 +163,9 @@ class QuarkusControllerConfigurationBuildStep {
                 externalConfiguration,
                 controllerAnnotation);
 
+        final ReconciledAugmentedClassInfo<?> primaryInfo = reconcilerInfo.associatedResourceInfo();
+        final Class<? extends HasMetadata> resourceClass = (Class<? extends HasMetadata>) primaryInfo.loadAssociatedClass();
+
         Duration maxReconciliationInterval = null;
         OnAddFilter onAddFilter = null;
         OnUpdateFilter onUpdateFilter = null;
@@ -178,6 +182,7 @@ class QuarkusControllerConfigurationBuildStep {
         boolean triggerReconcilerOnAllEvents = false;
         boolean followControllerNamespaceChanges = true;
         boolean comparableResourceVersions = true;
+        FieldSelector fieldSelector = null;
         if (controllerAnnotation != null) {
             final var intervalFromAnnotation = ConfigurationUtils.annotationValueOrDefault(
                     controllerAnnotation, "maxReconciliationInterval", AnnotationValue::asNested,
@@ -230,9 +235,24 @@ class QuarkusControllerConfigurationBuildStep {
                         .map(v -> new HashSet<>(Arrays.asList(v.asStringArray())))
                         .orElse(null);
 
-                followControllerNamespaceChanges = ConfigurationUtils.annotationValueOrDefault(informerConfigAnnotation, "followControllerNamespaceChanges", AnnotationValue::asBoolean, () -> true);
+                followControllerNamespaceChanges = ConfigurationUtils.annotationValueOrDefault(informerConfigAnnotation,
+                        "followControllerNamespaceChanges", AnnotationValue::asBoolean, () -> true);
 
-                comparableResourceVersions = ConfigurationUtils.annotationValueOrDefault(informerConfigAnnotation, "comparableResourceVersions", AnnotationValue::asBoolean, () -> true);
+                comparableResourceVersions = ConfigurationUtils.annotationValueOrDefault(informerConfigAnnotation,
+                        "comparableResourceVersions", AnnotationValue::asBoolean, () -> true);
+
+                final var fieldSelAnn = informerConfigAnnotation.value("fieldSelector");
+                if (fieldSelAnn != null) {
+                    final var fields = fieldSelAnn.asNestedArray();
+                    if (fields != null && fields.length > 0) {
+                        final var fieldList = Arrays.stream(fields)
+                                // todo: avoid string conversion
+                                .map(ann -> QuarkusFieldSelector.asString(fieldFromAnnotation(ann)))
+                                .toList();
+                        fieldSelector = QuarkusFieldSelector.from(fieldList, resourceClass, buildTimeConfigurationService);
+
+                    }
+                }
 
             }
 
@@ -280,9 +300,7 @@ class QuarkusControllerConfigurationBuildStep {
         }
 
         // create the configuration
-        final ReconciledAugmentedClassInfo<?> primaryInfo = reconcilerInfo.associatedResourceInfo();
         final var primaryAsResource = primaryInfo.asResourceTargeting();
-        final Class<? extends HasMetadata> resourceClass = (Class<? extends HasMetadata>) primaryInfo.loadAssociatedClass();
         final String resourceFullName = primaryAsResource.fullResourceName();
 
         final var informerConfiguration = InformerConfiguration.builder(resourceClass)
@@ -296,6 +314,7 @@ class QuarkusControllerConfigurationBuildStep {
                 .withFollowControllerNamespacesChanges(followControllerNamespaceChanges)
                 .withItemStore(itemStore)
                 .withInformerListLimit(nullableInformerListLimit)
+                .withFieldSelector(fieldSelector)
                 .withComparableResourceVersions(comparableResourceVersions)
                 .buildForController();
         final var informerConfig = new QuarkusInformerConfiguration(informerConfiguration);
@@ -326,6 +345,12 @@ class QuarkusControllerConfigurationBuildStep {
                 "Processed '%s' reconciler named '%s' for '%s' resource (version '%s')",
                 reconcilerClassName, name, resourceFullName, HasMetadata.getApiVersion(resourceClass));
         return configuration;
+    }
+
+    private static FieldSelector.Field fieldFromAnnotation(AnnotationInstance f) {
+        final var negated = f.value("negated");
+        return new FieldSelector.Field(f.value("path").asString(), f.value("value").asString(),
+                negated != null && negated.asBoolean());
     }
 
     @SuppressWarnings("unchecked")

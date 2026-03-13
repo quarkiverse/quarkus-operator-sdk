@@ -162,9 +162,7 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
     }
 
     void setFieldSelector(List<String> fieldSelectors) {
-        if (!Objects.equals(informerConfig.getFieldSelector(), fieldSelectors)) {
-            this.fieldSelector = QuarkusFieldSelector.from(fieldSelectors, resourceClass, parent);
-        }
+        this.fieldSelector = QuarkusFieldSelector.from(fieldSelectors, resourceClass, parent);
     }
 
     public boolean isStatusPresentAndNotVoid() {

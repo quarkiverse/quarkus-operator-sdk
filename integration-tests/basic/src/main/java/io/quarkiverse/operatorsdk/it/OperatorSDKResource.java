@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
+import io.javaoperatorsdk.operator.api.config.informer.FieldSelector;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
@@ -232,6 +233,10 @@ public class OperatorSDKResource {
 
         public ItemStore<?> getItemStore() {
             return conf.getInformerConfig().getItemStore();
+        }
+
+        public FieldSelector getFieldSelector() {
+            return conf.getInformerConfig().getFieldSelector();
         }
     }
 

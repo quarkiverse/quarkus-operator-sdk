@@ -297,6 +297,9 @@ class OperatorSDKResourceTest {
                 .then()
                 .statusCode(200)
                 .body("maxReconciliationIntervalSeconds",
-                        equalTo(Long.valueOf(Duration.ofMinutes(15).getSeconds()).intValue()));
+                        equalTo(Long.valueOf(Duration.ofMinutes(15).getSeconds()).intValue()),
+                        "fieldSelector.fields[0].path", equalTo("type"),
+                        "fieldSelector.fields[0].value", equalTo(SecretReconciler.FIELD_SELECTOR_VALUE),
+                        "fieldSelector.fields[0].negated", equalTo(false));
     }
 }
