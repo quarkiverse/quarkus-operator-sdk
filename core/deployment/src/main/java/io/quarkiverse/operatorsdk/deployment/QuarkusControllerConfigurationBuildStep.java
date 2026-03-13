@@ -176,6 +176,7 @@ class QuarkusControllerConfigurationBuildStep {
         String informerName = null;
         String labelSelector = null;
         boolean triggerReconcilerOnAllEvents = false;
+        boolean followControllerNamespaceChanges = true;
         if (controllerAnnotation != null) {
             final var intervalFromAnnotation = ConfigurationUtils.annotationValueOrDefault(
                     controllerAnnotation, "maxReconciliationInterval", AnnotationValue::asNested,
@@ -227,6 +228,8 @@ class QuarkusControllerConfigurationBuildStep {
                 namespaces = Optional.ofNullable(informerConfigAnnotation.value("namespaces"))
                         .map(v -> new HashSet<>(Arrays.asList(v.asStringArray())))
                         .orElse(null);
+
+                followControllerNamespaceChanges = ConfigurationUtils.annotationValueOrDefault(informerConfigAnnotation, "followControllerNamespaceChanges", AnnotationValue::asBoolean, () -> true);
 
             }
 
@@ -283,10 +286,11 @@ class QuarkusControllerConfigurationBuildStep {
                 .withName(informerName)
                 .withNamespaces(namespaces)
                 .withLabelSelector(labelSelector)
-                .withGenericFilter(genericFilter)
                 .withOnAddFilter(onAddFilter)
                 .withOnUpdateFilter(onUpdateFilter)
                 .withOnDeleteFilter(onDeleteFilter)
+                .withGenericFilter(genericFilter)
+                .withFollowControllerNamespacesChanges(followControllerNamespaceChanges)
                 .withItemStore(itemStore)
                 .withInformerListLimit(nullableInformerListLimit)
                 .buildForController();
