@@ -38,7 +38,6 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
     private final String resourceTypeName;
     private final boolean generationAware;
     private final boolean statusPresentAndNotVoid;
-    private final Class<R> resourceClass;
     private final List<PolicyRule> additionalRBACRules;
     private final List<RoleRef> additionalRBACRoleRefs;
     private final String fieldManager;
@@ -57,13 +56,11 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
     private QuarkusFieldSelector fieldSelector;
 
     @RecordableConstructor
-    @SuppressWarnings("unchecked")
     public QuarkusBuildTimeControllerConfiguration(
             String associatedReconcilerClassName,
             String name,
             String resourceTypeName,
             boolean generationAware,
-            Class resourceClass,
             boolean wereNamespacesSet,
             String finalizerName,
             boolean statusPresentAndNotVoid,
@@ -79,7 +76,6 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
         this.name = name;
         this.resourceTypeName = resourceTypeName;
         this.generationAware = generationAware;
-        this.resourceClass = resourceClass;
         this.additionalRBACRules = additionalRBACRules;
         this.additionalRBACRoleRefs = additionalRBACRoleRefs;
         this.wereNamespacesSet = wereNamespacesSet;
@@ -104,8 +100,9 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
     }
 
     @Override
+    @IgnoreProperty
     public Class<R> getResourceClass() {
-        return resourceClass;
+        return informerConfig.getResourceClass();
     }
 
     @Override
@@ -162,7 +159,7 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
     }
 
     void setFieldSelector(List<String> fieldSelectors) {
-        this.fieldSelector = QuarkusFieldSelector.from(fieldSelectors, resourceClass, parent);
+        this.fieldSelector = QuarkusFieldSelector.from(fieldSelectors, getResourceClass(), parent);
     }
 
     public boolean isStatusPresentAndNotVoid() {
