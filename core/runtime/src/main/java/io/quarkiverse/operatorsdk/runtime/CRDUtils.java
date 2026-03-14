@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 
@@ -11,6 +14,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionVersion;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.SelectableField;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 
@@ -63,11 +68,21 @@ public final class CRDUtils {
         return crd;
     }
 
+    public static Set<String> getSelectableFields(CustomResourceDefinition crd) {
+        return crd.getSpec().getVersions().stream()
+                .map(CustomResourceDefinitionVersion::getSelectableFields)
+                .filter(Objects::nonNull)
+                .flatMap(fields -> fields.stream().map(SelectableField::getJsonPath))
+                .collect(Collectors.toSet());
+    }
+
     public static CRDInfo loadFromAsCRDInfo(Path crdPath) {
         try {
             final var crd = loadFrom(crdPath);
             final var crdName = crd.getMetadata().getName();
-            return new CRDInfo(crdName, DEFAULT_CRD_SPEC_VERSION, crdPath.toFile().getAbsolutePath(), Collections.emptySet());
+            final var selectableFields = getSelectableFields(crd);
+            return new CRDInfo(crdName, DEFAULT_CRD_SPEC_VERSION, crdPath.toFile().getAbsolutePath(), Collections.emptySet(),
+                    selectableFields);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

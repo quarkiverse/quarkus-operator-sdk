@@ -1,12 +1,9 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import java.io.IOException;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -15,8 +12,6 @@ import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.ReplicationController;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionVersion;
-import io.fabric8.kubernetes.api.model.apiextensions.v1.SelectableField;
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.certificates.v1.CertificateSigningRequest;
@@ -86,16 +81,7 @@ public class QuarkusFieldSelector extends FieldSelector {
                 if (infos != null) {
                     final var info = infos.get(CRDUtils.DEFAULT_CRD_SPEC_VERSION);
                     if (info != null) {
-                        try {
-                            final var crd = CRDUtils.loadFrom(Path.of(info.getFilePath()));
-                            return crd.getSpec().getVersions().stream()
-                                    .map(CustomResourceDefinitionVersion::getSelectableFields)
-                                    .filter(Objects::nonNull)
-                                    .flatMap(fields -> fields.stream().map(SelectableField::getJsonPath))
-                                    .collect(Collectors.toSet());
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
+                        return info.getSelectableFields();
                     }
                 }
             }
@@ -121,15 +107,19 @@ public class QuarkusFieldSelector extends FieldSelector {
 
         final var nameAndNegated = extractNameAndNegatedStatus(fieldSelector, equalsIndex);
         final var name = nameAndNegated.name();
+        validatedName(validFieldNames, resourceClass, name);
+
+        final var value = extractValue(fieldSelector, equalsIndex);
+
+        return new Field(name, value, nameAndNegated.negated());
+    }
+
+    private static void validatedName(Set<String> validFieldNames, Class<?> resourceClass, String name) {
         if (!DEFAULT_FIELD_SELECTOR_NAMES.contains(name)
                 && (validFieldNames == null || !validFieldNames.contains(name))) {
             throw new IllegalArgumentException("'" + name + "' is not a valid field name for resource "
                     + resourceClass.getSimpleName());
         }
-
-        final var value = extractValue(fieldSelector, equalsIndex);
-
-        return new Field(name, value, nameAndNegated.negated());
     }
 
     private static NameAndNegated extractNameAndNegatedStatus(String fieldSelector, int equalsIndex) {

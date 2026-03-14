@@ -44,7 +44,7 @@ class QuarkusFieldSelectorTest {
         final var configuration = mock(BuildTimeConfigurationService.class);
         final var crds = new CRDInfos();
         crds.addCRDInfo(new CRDInfo(CRDUtils.crdNameFor(External.class), CRDUtils.DEFAULT_CRD_SPEC_VERSION,
-                "src/test/resources/external.crd.yml", Set.of()));
+                "src/test/resources/external.crd.yml", Set.of(), Set.of("spec")));
         when(configuration.getCrdInfo()).thenReturn(new CRDGenerationInfo(false, false, crds, Set.of()));
 
         assertEquals(Set.of("spec"), QuarkusFieldSelector.getValidFieldNamesOrNullIfDefault(External.class, configuration));
