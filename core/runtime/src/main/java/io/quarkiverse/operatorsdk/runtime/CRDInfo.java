@@ -1,5 +1,6 @@
 package io.quarkiverse.operatorsdk.runtime;
 
+import java.util.Collections;
 import java.util.Set;
 
 import io.quarkus.runtime.annotations.RecordableConstructor;
@@ -9,13 +10,16 @@ public class CRDInfo {
     private final String crdSpecVersion;
     private final String filePath;
     private final Set<String> dependentClassNames;
+    private final Set<String> selectableFields;
 
     @RecordableConstructor // constructor needs to be recordable for the class to be passed around by Quarkus
-    public CRDInfo(String crdName, String crdSpecVersion, String filePath, Set<String> dependentClassNames) {
+    public CRDInfo(String crdName, String crdSpecVersion, String filePath, Set<String> dependentClassNames,
+            Set<String> selectableFields) {
         this.crdName = crdName;
         this.crdSpecVersion = crdSpecVersion;
         this.filePath = filePath;
         this.dependentClassNames = dependentClassNames;
+        this.selectableFields = selectableFields != null ? selectableFields : Collections.emptySet();
     }
 
     public String getCrdName() {
@@ -32,6 +36,10 @@ public class CRDInfo {
 
     public Set<String> getDependentClassNames() {
         return this.dependentClassNames;
+    }
+
+    public Set<String> getSelectableFields() {
+        return this.selectableFields;
     }
 
     @Override

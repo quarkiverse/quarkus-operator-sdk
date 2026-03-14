@@ -33,7 +33,7 @@ class CRDGeneratorV1 implements CRDGenerator {
                         final var filePath = crdInfo.getFilePath();
                         log.infof("  - '%s' CDR spec -> %s", crdSpecVersion, filePath);
                         converted.addCRDInfo(new CRDInfo(crdName,
-                                crdSpecVersion, filePath, crdInfo.getDependentClassNames()));
+                                crdSpecVersion, filePath, crdInfo.getDependentClassNames(), Set.of()));
                     });
         });
     }
