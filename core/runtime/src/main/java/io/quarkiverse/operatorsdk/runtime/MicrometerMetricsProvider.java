@@ -4,7 +4,7 @@ import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Singleton;
 
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
-import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetrics;
+import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetricsV2;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
 import io.quarkus.arc.DefaultBean;
@@ -15,7 +15,7 @@ public class MicrometerMetricsProvider implements MeterBinder {
 
     @Override
     public void bindTo(MeterRegistry registry) {
-        metrics = MicrometerMetrics.newPerResourceCollectingMicrometerMetricsBuilder(registry).build();
+        metrics = MicrometerMetricsV2.newBuilder(registry).build();
     }
 
     @Produces
