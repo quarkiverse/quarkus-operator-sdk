@@ -25,8 +25,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
 import io.quarkus.arc.ClientProxy;
 
-public class QuarkusConfigurationService extends AbstractConfigurationService implements
-        ManagedWorkflowFactory<QuarkusControllerConfiguration<?>> {
+public class QuarkusConfigurationService extends AbstractConfigurationService {
     private static final Logger log = LoggerFactory.getLogger(QuarkusConfigurationService.class);
     private final CRDGenerationInfo crdInfo;
     private final int concurrentReconciliationThreads;
@@ -44,6 +43,7 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     private final boolean useSSA;
     private final boolean defensiveCloning;
     private DependentResourceFactory<QuarkusControllerConfiguration<?>, DependentResourceSpecMetadata<?, ?, ?>> dependentResourceFactory;
+    private ManagedWorkflowFactory<QuarkusControllerConfiguration<?>> managedWorkflowFactory;
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public QuarkusConfigurationService(
@@ -202,12 +202,10 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
 
     @Override
     public ManagedWorkflowFactory<QuarkusControllerConfiguration<?>> getWorkflowFactory() {
-        return this;
-    }
-
-    @Override
-    public ManagedWorkflow<?> workflowFor(QuarkusControllerConfiguration<?> controllerConfiguration) {
-        return controllerConfiguration.getWorkflow();
+        if (managedWorkflowFactory == null) {
+            managedWorkflowFactory = new QuarkusWorkflowFactory();
+        }
+        return managedWorkflowFactory;
     }
 
     @SuppressWarnings({ "rawtypes" })
