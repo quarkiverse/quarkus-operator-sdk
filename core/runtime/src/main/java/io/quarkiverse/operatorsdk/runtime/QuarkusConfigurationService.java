@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -19,22 +18,14 @@ import io.javaoperatorsdk.operator.api.config.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
 import io.javaoperatorsdk.operator.api.config.LeaderElectionConfiguration;
 import io.javaoperatorsdk.operator.api.config.Version;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResourceFactory;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
-import io.javaoperatorsdk.operator.processing.dependent.workflow.DependentResourceNode;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflowFactory;
-import io.quarkus.arc.Arc;
-import io.quarkus.arc.ArcContainer;
 import io.quarkus.arc.ClientProxy;
-import io.quarkus.arc.InstanceHandle;
 
 public class QuarkusConfigurationService extends AbstractConfigurationService implements
-        DependentResourceFactory<QuarkusControllerConfiguration<?>, DependentResourceSpecMetadata<?, ?, ?>>,
         ManagedWorkflowFactory<QuarkusControllerConfiguration<?>> {
     private static final Logger log = LoggerFactory.getLogger(QuarkusConfigurationService.class);
     private final CRDGenerationInfo crdInfo;
@@ -50,10 +41,9 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     private final Duration cacheSyncTimeout;
     private final Duration reconciliationTimeout;
     private final boolean asyncStart;
-    @SuppressWarnings("rawtypes")
-    private final Map<String, DependentResource> knownDependents = new ConcurrentHashMap<>();
     private final boolean useSSA;
     private final boolean defensiveCloning;
+    private DependentResourceFactory<QuarkusControllerConfiguration<?>, DependentResourceSpecMetadata<?, ?, ?>> dependentResourceFactory;
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public QuarkusConfigurationService(
@@ -98,16 +88,6 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
 
     private static <R extends HasMetadata> Reconciler<R> unwrap(Reconciler<R> reconciler) {
         return ClientProxy.unwrap(reconciler);
-    }
-
-    @SuppressWarnings("rawtypes")
-    private static String getDependentKey(QuarkusControllerConfiguration configuration,
-            DependentResourceSpec spec) {
-        return getDependentKeyFromNames(configuration.getName(), spec.getName());
-    }
-
-    private static String getDependentKeyFromNames(String controllerName, String dependentName) {
-        return controllerName + "#" + dependentName;
     }
 
     @Override
@@ -214,7 +194,10 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
 
     @Override
     public DependentResourceFactory<QuarkusControllerConfiguration<?>, DependentResourceSpecMetadata<?, ?, ?>> dependentResourceFactory() {
-        return this;
+        if (dependentResourceFactory == null) {
+            dependentResourceFactory = new QuarkusDependentResourceFactory();
+        }
+        return dependentResourceFactory;
     }
 
     @Override
@@ -225,69 +208,6 @@ public class QuarkusConfigurationService extends AbstractConfigurationService im
     @Override
     public ManagedWorkflow<?> workflowFor(QuarkusControllerConfiguration<?> controllerConfiguration) {
         return controllerConfiguration.getWorkflow();
-    }
-
-    @Override
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    public DependentResource createFrom(DependentResourceSpecMetadata spec,
-            QuarkusControllerConfiguration configuration) {
-        final var dependentKey = getDependentKey(configuration, spec);
-        var dependentResource = knownDependents.get(dependentKey);
-        if (dependentResource == null) {
-            final Class<? extends DependentResource<?, ?>> dependentResourceClass = spec.getDependentResourceClass();
-            try (final var dependentInstance = Arc.container().instance(dependentResourceClass)) {
-                final var dependent = dependentInstance.get();
-
-                if (dependent == null) {
-                    throw new IllegalStateException(
-                            "Couldn't find bean associated with DependentResource "
-                                    + dependentResourceClass.getName());
-                }
-
-                dependentResource = ClientProxy.unwrap(dependent);
-                // configure the bean
-                configure(dependentResource, spec, configuration);
-                // record the configured dependent for later retrieval if needed
-                knownDependents.put(dependentKey, dependentResource);
-            }
-        }
-        return dependentResource;
-    }
-
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    @Override
-    public DependentResourceNode createNodeFrom(DependentResourceSpecMetadata spec,
-            DependentResource dependentResource) {
-        final var container = Arc.container();
-        if (container != null) {
-            return new DependentResourceNode(
-                    getBeanInstanceOrDefault(container, spec.getReconcileCondition()),
-                    getBeanInstanceOrDefault(container, spec.getDeletePostCondition()),
-                    getBeanInstanceOrDefault(container, spec.getReadyCondition()),
-                    getBeanInstanceOrDefault(container, spec.getActivationCondition()),
-                    dependentResource);
-        } else {
-            return DependentResourceFactory.super.createNodeFrom(spec, dependentResource);
-        }
-    }
-
-    @SuppressWarnings("rawtypes")
-    private Condition getBeanInstanceOrDefault(ArcContainer container, Condition reconcileCondition) {
-        if (reconcileCondition == null) {
-            return null;
-        }
-        try (InstanceHandle<? extends Condition> instance = container.instance(reconcileCondition.getClass())) {
-            if (instance.isAvailable()) {
-                return instance.get();
-            } else {
-                return reconcileCondition;
-            }
-        }
-    }
-
-    @Override
-    public Class<?> associatedResourceType(DependentResourceSpecMetadata spec) {
-        return spec.getResourceClass();
     }
 
     @SuppressWarnings({ "rawtypes" })
