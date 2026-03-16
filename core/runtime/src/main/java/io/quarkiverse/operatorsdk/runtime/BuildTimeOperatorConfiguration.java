@@ -121,4 +121,15 @@ public interface BuildTimeOperatorConfiguration {
         final var controllerConfiguration = controllers().get(controllerName);
         return controllerConfiguration == null || !controllerConfiguration.unownedPrimary();
     }
+
+    /**
+     * Whether older metrics should be used instead of the new v2 ones provided by the Java Operator SDK as of version 5.3.0.
+     * Note that using the new implementation is recommended.
+     * Please refer to <a href="https://javaoperatorsdk.io/docs/documentation/observability/#metrics">Metrics section of the
+     * Java Operator SDK documentation</a> for more information.
+     *
+     * @since 7.7.1
+     */
+    @WithDefault("false")
+    boolean useV1Metrics();
 }

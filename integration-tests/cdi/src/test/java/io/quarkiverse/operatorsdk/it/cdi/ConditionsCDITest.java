@@ -14,8 +14,10 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.monitoring.Metrics;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.monitoring.micrometer.MicrometerMetrics;
 import io.quarkus.test.junit.QuarkusTest;
 
 /**
@@ -58,6 +60,9 @@ class ConditionsCDITest {
     @Inject
     DeletePostCondition deletePostCondition;
 
+    @Inject
+    Metrics metrics;
+
     @AfterEach
     void cleanup() {
         kubernetesClient.apiextensions().v1().customResourceDefinitions().withName("testresources.josdk.quarkiverse.io")
@@ -85,6 +90,12 @@ class ConditionsCDITest {
                 .untilAsserted(() -> assertEquals(expectedUUID, deletePostCondition.getUuid(),
                         "DeletePostCondition injection not processed"));
 
+    }
+
+    @SuppressWarnings("removal")
+    @Test
+    void shouldUseV1MetricsWhenRequested() {
+        assertEquals(MicrometerMetrics.class, metrics.getClass());
     }
 
     private static TestResource createTestResource() {
