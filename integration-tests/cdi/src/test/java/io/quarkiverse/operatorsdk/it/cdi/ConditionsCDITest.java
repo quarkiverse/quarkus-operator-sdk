@@ -8,8 +8,10 @@ import java.time.Duration;
 
 import jakarta.inject.Inject;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -38,6 +40,7 @@ import io.quarkus.test.junit.QuarkusTest;
  * to check the last deletePostcondition in the same manner.
  */
 @QuarkusTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ConditionsCDITest {
 
     private static final Duration timeout = Duration.ofSeconds(30);
@@ -66,6 +69,12 @@ class ConditionsCDITest {
     @AfterEach
     void cleanup() {
         kubernetesClient.resources(TestResource.class).withName("test-resource-sample").delete();
+    }
+
+    @AfterAll
+    void cleanupAfterAll() {
+        kubernetesClient.apiextensions().v1().customResourceDefinitions().withName("testresources.josdk.quarkiverse.io")
+                .delete();
     }
 
     @Test
