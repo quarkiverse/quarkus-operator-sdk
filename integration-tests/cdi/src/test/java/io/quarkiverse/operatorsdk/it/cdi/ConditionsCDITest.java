@@ -65,8 +65,7 @@ class ConditionsCDITest {
 
     @AfterEach
     void cleanup() {
-        kubernetesClient.apiextensions().v1().customResourceDefinitions().withName("testresources.josdk.quarkiverse.io")
-                .delete();
+        kubernetesClient.resources(TestResource.class).withName("test-resource-sample").delete();
     }
 
     @Test
