@@ -6,24 +6,39 @@ Please refer to the https://github.com/quarkiverse/quarkus-operator-sdk/blob/mai
 
 == Features
 
-- Automatically generates a main class, so that the only thing that's required is to write `Reconciler` implementation(s)
-- Automatically makes a Kubernetes/OpenShift client available for CDI injection
-- Automatically sets up an `Operator` instance, also available for CDI injection
-- Automatically processes the reconcilers' configuration at build time, exposing all the available configuration of JOSDK via application properties
-- Automatically registers reconcilers with the `Operator` and start them
-- Automatically generates CRDs for all `CustomResource` implementations used by reconcilers
-- Automatically generates Kubernetes descriptors
-- Automatically generates the bundle manifests for all reconcilers (using the `quarkus-operator-sdk-bundle-generator` extension)
-- Integrates with the Dev mode:
-    * Watches your code for changes and reload automatically your operator if needed without having to hit an endpoint
-    * Only re-generates the CRDs if a change impacting its generation is detected
-    * Only re-processes a reconciler's configuration if needed
+- Developer experience:
+    * Automatically generates a main class, so that the only thing that's required is to write `Reconciler` implementation(s)
+    * Automatically registers reconcilers with the operator and start them
+    * Automatically configures native compilation support
+- Configuration support:
+    * Configuration is processed at build time, attempting to address as many issues as possible during compilation
+    * Ability to override some configuration options at runtime via application properties or other supported Quarkus mechanism
+    * Implement `ConfigurableReconciler` and/or `ConfigurationServiceCustomizer` to further tweak reconcilers or operator-level configuration at runtime.
+    Implementations are automatically picked up.
+    * Custom configuration annotations support for select features (dependent resources, rate limiter, …)
+- CDI support:
+    * Automatically injectable Kubernetes/OpenShift client
+    * `Operator` bean is created, available for CDI injection
+    * All `Reconciler` implementations are available as CDI beans
+    * All https://javaoperatorsdk.io/docs/documentation/dependent-resource-and-workflows/dependent-resources/[`DependentResource`] implementations are available as CDI beans
+    * https://javaoperatorsdk.io/docs/documentation/dependent-resource-and-workflows/workflows/[Workflow] conditions can be implemented as CDI beans
+- Custom Resource Definition (CRD) support:
+    * Automatically generates CRDs for all `CustomResource` implementations used by reconcilers
+    * Only re-generates the CRDs when a change impacting its generation is detected
     * Automatically apply the CRD to the cluster when it has changed (only in dev mode and during tests, never in production)
-- Supports micrometer registry extensions (adding a Quarkus-supported micrometer registry extension will automatically inject said registry into the operator)
-- Automatically adds a SmallRye health check
-- Sets up reflection for native binary generation
-- [Deprecated] Customize the JSON serialization that the Fabric8 client relies on by providing an `ObjectMapperCustomizer` implementation, qualified with the `@KubernetesClientSerializationCustomizer` annotation
-    * The Quarkus kubernetes client extension now provides an official mechanism to do so by implementing the `io.quarkus.kubernetes.client.KubernetesClientObjectMapperCustomizer` interface instead so this mechanism should be used moving forward.
+- Kubernetes descriptors augmentation:
+    * Automatically generated kubernetes descriptors (using the Quarkus kubernetes extension)
+    * Generate RBACs leveraging configuration metadata (for example, automatically provide access to dependent resources with the appropriate restrictions, when using declarative dependent resources workflows)
+- https://olm.operatorframework.io/[OLM] bundle generation for reconcilers using the `quarkus-operator-sdk-bundle-generator` extension
+- https://helm.sh/[Helm] chart generation for reconcilers using the `quarkus-operator-sdk-helm` extension, leveraging the
+https://docs.quarkiverse.io/quarkus-helm/dev/index.html#helm-extension-for-quarkus[Quarkus Helm extension]
+- Quarkus Dev mode support:
+    * Live-coding experience for operators
+    * Watches your code for changes and reload automatically your operator if needed without having to hit an endpoint
+    * Optimizes re-computation of configuration to changed classes
+- Operational support:
+    * Supports micrometer registry extensions (adding a Quarkus-supported micrometer registry extension will automatically inject said registry into the operator)
+    * Automatically adds a SmallRye health check (`OperatorHealthCheck`)
 - Dev mode commands:
     * Dev commands are automatically accessible from the Dev console after typing `:` in the Quarkus terminal in Dev mode, under the `qosdk` name. Two commands currently exist: `qosdk api` to create a Kubernetes API (hint: type `qosdk api -h` for more details) and `qosdk versions` to show which versions are targeted by QOSDK.
 - CLI command:
@@ -73,7 +88,7 @@ However, it might be more convenient to use the `quarkus-operator-sdk-bom` depen
   </dependencyManagement>
 ----
 
-If you do use the BOM, please do make sure to use the same Quarkus version as the one defined in the BOM when configuring the Quarkus plugin as the Quarkus Dev Mode will not work properly otherwise, failing with an error:
+If you use the BOM, please make sure to use the same Quarkus version as the one defined in the BOM when configuring the Quarkus plugin. Quarkus Dev Mode will not work properly otherwise, failing with an error similar to:
 
 [source,shell]
 ----
@@ -96,3 +111,18 @@ You can also add the `quarkus-operator-sdk-bundle-generator` extension manually 
     <version>{project-version}</version>
 </dependency>
 ----
+
+=== Helm chart generator extension
+
+You can easily generate Helm charts for your operator by adding the `quarkus-helm` extension to your project:
+
+[source,xml,subs=attributes+]
+----
+<dependency>
+    <groupId>io.quarkiverse.helm</groupId>
+    <artifactId>quarkus-helm</artifactId>
+    <version>${io.quarkiverse.helm.version}</version>
+</dependency>
+----
+
+QOSDK will automatically augment what the Quarkus Helm extension generates to add specific information required to deploy your operators correctly.
