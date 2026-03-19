@@ -36,7 +36,7 @@ jobs:
     secrets: inherit
     with:
       version: ${{github.event.inputs.tag || github.ref_name}}
-      wait_for_release: true
+      watch_release_workflow: true
 
   update-quarkus-platform:
     needs:
