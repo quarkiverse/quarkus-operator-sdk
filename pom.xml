@@ -30,35 +30,26 @@
     </snapshotRepository>
   </distributionManagement>
   <profiles>
-      <profile>
-<!-- Quarkus BOM is added automatically via an activated by default profile, this is done so that we can override the Fabric8 client version using the override-fkc profile -->
-          <id>quarkus-bom</id>
-          <activation>
-              <activeByDefault>true</activeByDefault>
-              <property>
-                  <name>!default</name>
-              </property>
-          </activation>
-          <dependencyManagement>
-              <dependencies>
-                  <dependency>
-                      <groupId>io.quarkus</groupId>
-                      <artifactId>quarkus-bom</artifactId>
-                      <version>${quarkus.version}</version>
-                      <type>pom</type>
-                      <scope>import</scope>
-                  </dependency>
-              </dependencies>
-          </dependencyManagement>
-      </profile>
     <profile>
       <id>default</id>
       <activation>
         <activeByDefault>true</activeByDefault>
         <property>
-          <name>!default</name>
+          <name>!fkc.version</name>
         </property>
       </activation>
+      <!-- Quarkus BOM is added automatically via an activated by default profile, this is done so that we can override the Fabric8 client version by setting -Dfkc.version=<version> -->
+      <dependencyManagement>
+        <dependencies>
+          <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-bom</artifactId>
+            <version>${quarkus.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+          </dependency>
+        </dependencies>
+      </dependencyManagement>
       <modules>
         <module>bom</module>
         <module>build-parent</module>
@@ -215,8 +206,7 @@
       <id>override-fkc</id>
       <activation>
         <property>
-<!-- We need to activate the profile by using the opposite of the property used for the default profiles -->
-          <name>default</name>
+          <name>fkc.version</name>
         </property>
       </activation>
       <dependencyManagement>
