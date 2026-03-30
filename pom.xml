@@ -35,10 +35,10 @@
       <activation>
         <activeByDefault>true</activeByDefault>
         <property>
-          <name>!override-fkc</name>
+          <name>!fkc.version</name>
         </property>
       </activation>
-      <!-- Quarkus BOM is added automatically via an activated by default profile, this is done so that we can override the Fabric8 client version using the override-fkc profile -->
+      <!-- Quarkus BOM is added automatically via an activated by default profile, this is done so that we can override the Fabric8 client version by setting -Dfkc.version=<version> -->
       <dependencyManagement>
         <dependencies>
           <dependency>
@@ -206,7 +206,7 @@
       <id>override-fkc</id>
       <activation>
         <property>
-          <name>override-fkc</name>
+          <name>fkc.version</name>
         </property>
       </activation>
       <dependencyManagement>
