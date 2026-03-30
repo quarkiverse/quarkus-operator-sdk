@@ -12,5 +12,5 @@ jobs:
       java-version: 21
       native-modules: "integration-tests,samples"
       profiles: "use-snapshots,override-fkc"
-      mvnArgs: "-Dfkc.version=7.0-SNAPSHOT -Doverride-fkc"
+      mvnArgs: "-Dfkc.version=7.0-SNAPSHOT"
       branch: "main"
