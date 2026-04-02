@@ -38,10 +38,3 @@ jobs:
       version: ${{github.event.inputs.tag || github.ref_name}}
       watch_release_workflow: true
 
-  update-quarkus-platform:
-    needs:
-      - perform-release
-    uses: ./.github/workflows/release-update-quarkus-platform.yml
-    with:
-      tag: ${{github.event.inputs.tag || github.ref_name}}
-    secrets: inherit
