@@ -8,6 +8,11 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  attestations: write
+  id-token: write
+  contents: read
+
 jobs:
   release-snapshot:
     uses: ./.github/workflows/release-snapshot.yml
