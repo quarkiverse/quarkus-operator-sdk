@@ -1,7 +1,5 @@
 package io.quarkiverse.operatorsdk.helm.deployment;
 
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -10,42 +8,36 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.jboss.logging.Logger;
 
-import io.quarkiverse.helm.deployment.HelmChartConfig;
+import io.quarkiverse.helm.spi.AdditionalHelmCRDBuildItem;
 import io.quarkiverse.helm.spi.AdditionalHelmTemplateBuildItem;
-import io.quarkiverse.helm.spi.CustomHelmOutputDirBuildItem;
-import io.quarkiverse.helm.spi.HelmChartBuildItem;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
-import io.quarkiverse.operatorsdk.common.FileUtils;
 import io.quarkiverse.operatorsdk.deployment.ControllerConfigurationsBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
-import io.quarkus.deployment.annotations.Produce;
-import io.quarkus.deployment.pkg.builditem.ArtifactResultBuildItem;
-import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
 import io.quarkus.kubernetes.spi.KubernetesClusterRoleBindingBuildItem;
 import io.quarkus.qute.Qute;
 
 /**
- * This processor copies the generated CRDs into the Helm chart output directories.
+ * This processor copies the generated CRDs into the generated Helm chart.
+ * The CRDs are also included in the generated Helm tar file when
+ * {@code quarkus.helm.create-tar-file=true} is set.
  * <p>
  * It is required to be in a separate extension because we want to include the Helm
  * processing conditionally, based on the presence of the quarkus-helm extension. If
  * the user includes the quarkus-helm extension, this processor will be executed
  * and the CRDs will be copied into the Helm chart output directories. See the
- * quarkus-extension-maven-plugin configuration in the runtime modules of this and
+ * quarkus-extension-maven-plugin configuration in the runtime module of this and
  * the operator-sdk core extensions where this is configured.
  */
 public class HelmAugmentationProcessor {
 
     private static final Logger log = Logger.getLogger(HelmAugmentationProcessor.class);
 
-    public static final String CRD_DIR = "crds";
     public static final String CRD_ROLE_BINDING_TEMPLATE_PATH = "/helm/crd-role-binding-template.yaml";
     public static final String VALIDATING_CLUSTER_ROLE_BINDING_PATH = "/helm/validating-cluster-role-binding-template.yaml";
 
@@ -53,8 +45,10 @@ public class HelmAugmentationProcessor {
     void generatedKubernetesResourcesForHelm(
             ControllerConfigurationsBuildItem controllerConfigurations,
             BuildTimeOperatorConfiguration operatorConfiguration,
-            BuildProducer<AdditionalHelmTemplateBuildItem> additionalHelmTemplateBuildItemBuildProducer) {
-        // add the ClusterRoleBindings for the CRD
+            GeneratedCRDInfoBuildItem generatedCRDInfoBuildItem,
+            List<KubernetesClusterRoleBindingBuildItem> clusterRoleBindingBuildItems,
+            BuildProducer<AdditionalHelmTemplateBuildItem> additionalHelmTemplateBuildItemBuildProducer,
+            BuildProducer<AdditionalHelmCRDBuildItem> additionalHelmCRDBuildItemBuildProducer) {
         final var clusterRoleBindingTemplate = parseTemplateFile(CRD_ROLE_BINDING_TEMPLATE_PATH);
         controllerConfigurations.getControllerConfigs().values().forEach(cc -> {
             final var name = cc.getName().replaceAll("\\s+", "-");
@@ -66,50 +60,29 @@ public class HelmAugmentationProcessor {
                     rbName + ".yaml", res.getBytes(), "kubernetes"));
         });
 
-        // Copy the validating ClusterRoleBinding if requested by the configuration
         if (operatorConfiguration.crd().validate()) {
             additionalHelmTemplateBuildItemBuildProducer.produce(new AdditionalHelmTemplateBuildItem(
                     "validating-clusterrolebinding.yaml", parseTemplateFile(VALIDATING_CLUSTER_ROLE_BINDING_PATH).getBytes(),
                     "kubernetes"));
         }
-    }
 
-    @BuildStep
-    @Produce(ArtifactResultBuildItem.class)
-    void addCRDsToHelmChart(
-            List<HelmChartBuildItem> helmChartBuildItems,
-            HelmChartConfig helmChartConfig,
-            @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<CustomHelmOutputDirBuildItem> customHelmOutputDirBuildItem,
-            OutputTargetBuildItem outputTargetBuildItem,
-            GeneratedCRDInfoBuildItem generatedCRDInfoBuildItem,
-            List<KubernetesClusterRoleBindingBuildItem> clusterRoleBindingBuildItems) {
-        log.infof("Adding CRDs to the following Helm charts - %s", helmChartBuildItems);
         outputWarningIfNeeded(clusterRoleBindingBuildItems);
 
-        final var helmOutputDirectory = customHelmOutputDirBuildItem
-                .map(CustomHelmOutputDirBuildItem::getOutputDir)
-                .orElse(outputTargetBuildItem.getOutputDirectory().resolve(helmChartConfig.outputDirectory()));
-
         var crdInfos = generatedCRDInfoBuildItem.getCRDGenerationInfo().getCrds().getCRDNameToInfoMappings().values();
+        if (crdInfos.isEmpty()) {
+            return;
+        }
 
-        helmChartBuildItems.forEach(helmChartBuildItem -> {
-            Path chartDir = helmOutputDirectory
-                    .resolve(helmChartBuildItem.getDeploymentTarget())
-                    .resolve(helmChartBuildItem.getName());
-
-            // CRDs
-            final var crdDir = chartDir.resolve(CRD_DIR);
-
-            FileUtils.ensureDirectoryExists(crdDir.toFile());
-            crdInfos.forEach(crdInfo -> {
-                try {
-                    var generateCrdPath = Path.of(crdInfo.getFilePath());
-                    // replace needed since tests might generate files multiple times
-                    Files.copy(generateCrdPath, crdDir.resolve(generateCrdPath.getFileName().toString()), REPLACE_EXISTING);
-                } catch (IOException e) {
-                    throw new IllegalStateException(e);
-                }
-            });
+        log.infof("Adding %d CRD(s) to the Helm chart via AdditionalHelmCRDBuildItem", crdInfos.size());
+        crdInfos.forEach(crdInfo -> {
+            try {
+                var crdPath = Path.of(crdInfo.getFilePath());
+                byte[] content = Files.readAllBytes(crdPath);
+                additionalHelmCRDBuildItemBuildProducer.produce(
+                        new AdditionalHelmCRDBuildItem(crdPath.getFileName().toString(), content, "kubernetes"));
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
         });
     }
 
