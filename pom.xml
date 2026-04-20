@@ -18,7 +18,7 @@
     <io.quarkiverse.helm.version>1.4.0</io.quarkiverse.helm.version>
   </properties>
   <scm>
-    <connection>:git:git@github.com:quarkiverse/quarkus-operator-sdk.git</connection>
+    <connection>scm:git:git@github.com:quarkiverse/quarkus-operator-sdk.git</connection>
     <developerConnection>scm:git:git@github.com:quarkiverse/quarkus-operator-sdk.git</developerConnection>
     <url>https://github.com/quarkiverse/quarkus-operator-sdk</url>
     <tag>HEAD</tag>
