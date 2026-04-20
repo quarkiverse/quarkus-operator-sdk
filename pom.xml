@@ -18,7 +18,7 @@
     <io.quarkiverse.helm.version>1.4.0</io.quarkiverse.helm.version>
   </properties>
   <scm>
-    <connection>:git:git@github.com:quarkiverse/quarkus-operator-sdk.git</connection>
+    <connection>scm:git:git@github.com:quarkiverse/quarkus-operator-sdk.git</connection>
     <developerConnection>scm:git:git@github.com:quarkiverse/quarkus-operator-sdk.git</developerConnection>
     <url>https://github.com/quarkiverse/quarkus-operator-sdk</url>
     <tag>HEAD</tag>
@@ -77,6 +77,13 @@
       <build>
         <defaultGoal>clean install</defaultGoal>
         <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>buildnumber-maven-plugin</artifactId>
+            <configuration>
+              <shortRevisionLength>5</shortRevisionLength>
+            </configuration>
+          </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-jar-plugin</artifactId>
