@@ -38,8 +38,6 @@
               <goal>extension-descriptor</goal>
             </goals>
             <configuration>
-              <deployment>${project.groupId}:${project.artifactId}-deployment:${project.version}
-              </deployment>
               <dependencyCondition>
                 <artifact>io.quarkiverse.helm:quarkus-helm</artifact>
               </dependencyCondition>
