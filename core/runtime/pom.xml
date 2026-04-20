@@ -86,7 +86,6 @@
               <goal>extension-descriptor</goal>
             </goals>
             <configuration>
-              <deployment>${project.groupId}:${project.artifactId}-deployment:${project.version}</deployment>
               <conditionalDependencies>
                 <artifact>io.quarkiverse.operatorsdk:quarkus-operator-sdk-helm:${project.version}</artifact>
               </conditionalDependencies>
