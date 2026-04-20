@@ -40,7 +40,6 @@
     <dependency>
       <groupId>io.quarkiverse.helm</groupId>
       <artifactId>quarkus-helm</artifactId>
-      <version>${io.quarkiverse.helm.version}</version>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>

@@ -51,6 +51,16 @@
         <version>${java-operator-sdk.version}</version>
       </dependency>
       <dependency>
+        <groupId>io.javaoperatorsdk</groupId>
+        <artifactId>operator-framework-junit</artifactId>
+        <version>${java-operator-sdk.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.javaoperatorsdk</groupId>
+        <artifactId>caffeine-bounded-cache-support</artifactId>
+        <version>${java-operator-sdk.version}</version>
+      </dependency>
+      <dependency>
         <groupId>io.quarkiverse.operatorsdk</groupId>
         <artifactId>quarkus-operator-sdk</artifactId>
         <version>${project.version}</version>
@@ -84,6 +94,11 @@
         <groupId>io.quarkiverse.operatorsdk</groupId>
         <artifactId>quarkus-operator-sdk-annotations</artifactId>
         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.quarkiverse.helm</groupId>
+        <artifactId>quarkus-helm</artifactId>
+        <version>${io.quarkiverse.helm.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
