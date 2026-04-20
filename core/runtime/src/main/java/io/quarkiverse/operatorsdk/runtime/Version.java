@@ -1,19 +1,12 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.time.Instant;
 import java.util.Date;
-import java.util.Properties;
-
-import org.jboss.logging.Logger;
 
 import io.javaoperatorsdk.operator.api.config.Utils;
 import io.quarkus.runtime.annotations.IgnoreProperty;
 import io.quarkus.runtime.annotations.RecordableConstructor;
 
 public class Version extends io.javaoperatorsdk.operator.api.config.Version {
-    private static final Logger log = Logger.getLogger(Version.class.getName());
     public static final String UNKNOWN = "unknown";
 
     private final String extensionVersion;
@@ -74,36 +67,12 @@ public class Version extends io.javaoperatorsdk.operator.api.config.Version {
 
     public static Version loadFromProperties() {
         final var sdkVersion = Utils.VERSION;
-        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("extension-version.properties");
-        Properties properties = new Properties();
-        if (is != null) {
-            try {
-                properties.load(is);
-            } catch (IOException e) {
-                log.warnf("Couldn't load extension version information: %s", e.getMessage());
-            }
-        } else {
-            log.warn("Couldn't find extension-version.properties file. Default version information will be used.");
-        }
-
-        Date builtTime;
-        try {
-            String time = properties.getProperty("git.build.time");
-            if (time != null) {
-                builtTime = Date.from(Instant.parse(time));
-            } else {
-                builtTime = Date.from(Instant.EPOCH);
-            }
-        } catch (Exception e) {
-            log.debug("Couldn't parse git.build.time property", e);
-            builtTime = Date.from(Instant.EPOCH);
-        }
 
         return new Version(sdkVersion.getCommit(), sdkVersion.getBuiltTime(),
-                properties.getProperty("git.build.version", UNKNOWN),
-                properties.getProperty("git.commit.id.abbrev", UNKNOWN),
-                properties.getProperty("git.branch", UNKNOWN),
+                Versions.BUILD_VERSION,
+                Versions.COMMIT,
+                Versions.BRANCH,
                 io.fabric8.kubernetes.client.Version.clientVersion(),
-                builtTime);
+                Versions.BUILD_TIME);
     }
 }
