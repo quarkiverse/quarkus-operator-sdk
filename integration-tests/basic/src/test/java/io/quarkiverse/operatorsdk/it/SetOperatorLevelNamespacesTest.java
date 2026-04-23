@@ -23,15 +23,14 @@ public class SetOperatorLevelNamespacesTest {
                 .get("/operator/" + TestReconciler.NAME + "/config")
                 .then()
                 .statusCode(200)
-                .body(
-                        "customResourceClass", equalTo(resourceName),
-                        "name", equalTo(TestReconciler.NAME),
-                        "watchCurrentNamespace", is(false),
-                        "namespaces", hasSize(1),
-                        "namespaces", hasItem("operator-level"), // namespace is set at the operator level by the TestProfile, so the namespace value should match what was set there
-                        "retry.maxAttempts", equalTo(1),
-                        "generationAware", equalTo(false),
-                        "maxReconciliationIntervalSeconds", equalTo(TestReconciler.INTERVAL));
+                .body("customResourceClass", equalTo(resourceName))
+                .body("name", equalTo(TestReconciler.NAME))
+                .body("watchCurrentNamespace", is(false))
+                .body("namespaces", hasSize(1))
+                .body("namespaces", hasItem("operator-level")) // namespace is set at the operator level by the TestProfile, so the namespace value should match what was set there
+                .body("retry.maxAttempts", equalTo(1))
+                .body("generationAware", equalTo(false))
+                .body("maxReconciliationIntervalSeconds", equalTo(TestReconciler.INTERVAL));
     }
 
     @Test
@@ -40,17 +39,17 @@ public class SetOperatorLevelNamespacesTest {
                 .when()
                 .get("/operator/" + DependentDefiningReconciler.NAME + "/config")
                 .then()
-                .statusCode(200).body(
-                        "watchCurrentNamespace", Matchers.equalTo(false),
-                        "namespaces", hasSize(1),
-                        "namespaces", hasItem("operator-level"),
-                        "dependents", hasSize(2),
-                        "dependents.dependentClass",
+                .statusCode(200)
+                .body("watchCurrentNamespace", Matchers.equalTo(false))
+                .body("namespaces", hasSize(1))
+                .body("namespaces", hasItem("operator-level"))
+                .body("dependents", hasSize(2))
+                .body("dependents.dependentClass",
                         hasItems(ReadOnlyDependentResource.class.getCanonicalName(),
-                                CRUDDependentResource.class.getCanonicalName()),
-                        "dependents.dependentConfig.labelSelector",
-                        hasItems(ReadOnlyDependentResource.LABEL_SELECTOR, CRUDDependentResource.LABEL_SELECTOR),
-                        "dependents.dependentConfig.onAddFilter",
+                                CRUDDependentResource.class.getCanonicalName()))
+                .body("dependents.dependentConfig.labelSelector",
+                        hasItems(ReadOnlyDependentResource.LABEL_SELECTOR, CRUDDependentResource.LABEL_SELECTOR))
+                .body("dependents.dependentConfig.onAddFilter",
                         hasItem(CRUDDependentResource.TestOnAddFilter.class.getCanonicalName()));
     }
 }

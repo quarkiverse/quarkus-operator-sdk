@@ -39,21 +39,21 @@ class OperatorSDKResourceTest {
 
     @Test
     void operatorConfigShouldConformToDifferentSetOptions() {
-        given().when().get("/operator/config").then().statusCode(200).body(
+        given().when().get("/operator/config").then().statusCode(200)
                 // should not validate CRDs per application.properties
-                "validate", equalTo(false),
+                .body("validate", equalTo(false))
                 // should use max reconciliation threads from properties
-                "maxThreads", equalTo(10),
+                .body("maxThreads", equalTo(10))
                 // both deprecated and non-deprecated property for timeout are used, only the value from the non-deprecated version should be retained
-                "timeout", equalTo(30),
+                .body("timeout", equalTo(30))
                 // should have custom metrics implementation as defined by TestMetrics bean
-                "registryBound", equalTo(true),
+                .body("registryBound", equalTo(true))
                 // leader election configuration specified via TestLeaderElectionConfiguration bean
-                "leaderConfig", equalTo(TestLeaderElectionConfiguration.class.getName()),
+                .body("leaderConfig", equalTo(TestLeaderElectionConfiguration.class.getName()))
                 // SSA support deactivated in application.properties
-                "useSSA", equalTo(false),
+                .body("useSSA", equalTo(false))
                 // default non SSA resources specified via ConfigurationServiceCustomizer bean
-                "nonSSAResources", hasItems("Pod", "Secret", "Deployment"));
+                .body("nonSSAResources", hasItems("Pod", "Secret", "Deployment"));
     }
 
     @Test
@@ -97,17 +97,16 @@ class OperatorSDKResourceTest {
                 .get("/operator/" + TestReconciler.NAME + "/config")
                 .then()
                 .statusCode(200)
-                .body(
-                        "customResourceClass", equalTo(resourceName),
-                        "name", equalTo(TestReconciler.NAME),
-                        "watchCurrentNamespace", equalTo(false),
-                        // build time values are propagated at runtime if no runtime value is specified
-                        "namespaces", hasSize(2),
-                        "namespaces", hasItem("builtime-namespace1"),
-                        "namespaces", hasItem("buildtime-ns2"),
-                        "retry.maxAttempts", equalTo(1), // should use property even if no annotation exists
-                        "generationAware", equalTo(false),
-                        "maxReconciliationIntervalSeconds", equalTo(TestReconciler.INTERVAL));
+                .body("customResourceClass", equalTo(resourceName))
+                .body("name", equalTo(TestReconciler.NAME))
+                .body("watchCurrentNamespace", equalTo(false))
+                // build time values are propagated at runtime if no runtime value is specified
+                .body("namespaces", hasSize(2))
+                .body("namespaces", hasItem("builtime-namespace1"))
+                .body("namespaces", hasItem("buildtime-ns2"))
+                .body("retry.maxAttempts", equalTo(1)) // should use property even if no annotation exists
+                .body("generationAware", equalTo(false))
+                .body("maxReconciliationIntervalSeconds", equalTo(TestReconciler.INTERVAL));
     }
 
     @Test
@@ -117,13 +116,12 @@ class OperatorSDKResourceTest {
                 .get("/operator/" + ConfiguredReconciler.NAME + "/config")
                 .then()
                 .statusCode(200)
-                .body(
-                        "finalizer", equalTo("from-property/finalizer"),
-                        "namespaces", hasItem("bar"),
-                        "retry.maxAttempts", equalTo(ConfiguredReconciler.MAX_ATTEMPTS), // from annotation
-                        "retry.initialInterval", equalTo(20000), // annotation value should be overridden by property
-                        "rateLimiter.refreshPeriod", equalTo(60F), // for some reason the period is reported as a float
-                        "labelSelector", equalTo("environment=production,tier!=frontend"));
+                .body("finalizer", equalTo("from-property/finalizer"))
+                .body("namespaces", hasItem("bar"))
+                .body("retry.maxAttempts", equalTo(ConfiguredReconciler.MAX_ATTEMPTS)) // from annotation
+                .body("retry.initialInterval", equalTo(20000)) // annotation value should be overridden by property
+                .body("rateLimiter.refreshPeriod", equalTo(60F)) // for some reason the period is reported as a float
+                .body("labelSelector", equalTo("environment=production,tier!=frontend"));
 
         given()
                 .when()
@@ -146,17 +144,17 @@ class OperatorSDKResourceTest {
                 .when()
                 .get("/operator/" + DependentDefiningReconciler.NAME + "/config")
                 .then()
-                .statusCode(200).body(
-                        "watchCurrentNamespace", equalTo(false),
-                        "namespaces", hasSize(1),
-                        "namespaces", hasItem("operator-level-for-manifests"),
-                        "dependents", hasSize(2),
-                        "dependents.dependentClass",
+                .statusCode(200)
+                .body("watchCurrentNamespace", equalTo(false))
+                .body("namespaces", hasSize(1))
+                .body("namespaces", hasItem("operator-level-for-manifests"))
+                .body("dependents", hasSize(2))
+                .body("dependents.dependentClass",
                         hasItems(ReadOnlyDependentResource.class.getCanonicalName(),
-                                CRUDDependentResource.class.getCanonicalName()),
-                        "dependents.dependentConfig.labelSelector",
-                        hasItems(ReadOnlyDependentResource.LABEL_SELECTOR, CRUDDependentResource.LABEL_SELECTOR),
-                        "dependents.dependentConfig.onAddFilter",
+                                CRUDDependentResource.class.getCanonicalName()))
+                .body("dependents.dependentConfig.labelSelector",
+                        hasItems(ReadOnlyDependentResource.LABEL_SELECTOR, CRUDDependentResource.LABEL_SELECTOR))
+                .body("dependents.dependentConfig.onAddFilter",
                         hasItem(CRUDDependentResource.TestOnAddFilter.class.getCanonicalName()));
     }
 
@@ -166,14 +164,14 @@ class OperatorSDKResourceTest {
                 .when()
                 .get("/operator/" + DependentDefiningReconciler.NAME + "/workflow")
                 .then()
-                .statusCode(200).body(
-                        "cleaner", is(false),
-                        "empty", is(false),
-                        "dependents." + ReadOnlyDependentResource.NAME + ".type",
-                        startsWith(ReadOnlyDependentResource.class.getName()),
-                        "dependents." + ReadOnlyDependentResource.NAME + ".readyCondition",
-                        startsWith(ReadOnlyDependentResource.ReadOnlyReadyCondition.class.getName()),
-                        "dependents.crud.type", startsWith(CRUDDependentResource.class.getName()));
+                .statusCode(200)
+                .body("cleaner", is(false))
+                .body("empty", is(false))
+                .body("dependents." + ReadOnlyDependentResource.NAME + ".type",
+                        startsWith(ReadOnlyDependentResource.class.getName()))
+                .body("dependents." + ReadOnlyDependentResource.NAME + ".readyCondition",
+                        startsWith(ReadOnlyDependentResource.ReadOnlyReadyCondition.class.getName()))
+                .body("dependents.crud.type", startsWith(CRUDDependentResource.class.getName()));
     }
 
     @Test
@@ -194,10 +192,10 @@ class OperatorSDKResourceTest {
                 .when()
                 .get("/operator/" + NamespaceFromEnvReconciler.NAME + "/config")
                 .then()
-                .statusCode(200).body(
-                        "namespaces", hasItem(NamespaceFromEnvReconciler.FROM_ENV_VAR_NS),
-                        "namespaces", hasItem("static"),
-                        "namespaces", hasSize(2));
+                .statusCode(200)
+                .body("namespaces", hasItem(NamespaceFromEnvReconciler.FROM_ENV_VAR_NS))
+                .body("namespaces", hasItem("static"))
+                .body("namespaces", hasSize(2));
     }
 
     @Test
@@ -207,9 +205,9 @@ class OperatorSDKResourceTest {
                 .when()
                 .get("/operator/" + VariableNSReconciler.NAME + "/config")
                 .then()
-                .statusCode(200).body(
-                        "namespaces", hasItem(VariableNSReconciler.EXPECTED_NS_VALUE),
-                        "namespaces", hasSize(1));
+                .statusCode(200)
+                .body("namespaces", hasItem(VariableNSReconciler.EXPECTED_NS_VALUE))
+                .body("namespaces", hasSize(1));
     }
 
     @Test
@@ -219,21 +217,19 @@ class OperatorSDKResourceTest {
                 .get("/operator/" + EmptyReconciler.NAME + "/config")
                 .then()
                 .statusCode(200)
-                .body(
-                        "namespaces", hasItem(EmptyReconciler.FROM_ENV_NS1),
-                        "namespaces", hasItem(EmptyReconciler.FROM_ENV_NS2),
-                        "watchCurrentNamespace", equalTo(false),
-                        "namespaces", hasSize(2));
+                .body("namespaces", hasItem(EmptyReconciler.FROM_ENV_NS1))
+                .body("namespaces", hasItem(EmptyReconciler.FROM_ENV_NS2))
+                .body("watchCurrentNamespace", equalTo(false))
+                .body("namespaces", hasSize(2));
 
         given()
                 .when()
                 .get("/operator/" + ReconcilerUtilsInternal.getDefaultNameFor(KeycloakController.class) + "/config")
                 .then()
                 .statusCode(200)
-                .body(
-                        "namespaces", hasItem(KeycloakController.FROM_ENV),
-                        "watchCurrentNamespace", equalTo(false),
-                        "namespaces", hasSize(1));
+                .body("namespaces", hasItem(KeycloakController.FROM_ENV))
+                .body("watchCurrentNamespace", equalTo(false))
+                .body("namespaces", hasSize(1));
     }
 
     @Test
@@ -243,10 +239,9 @@ class OperatorSDKResourceTest {
                 .get("/operator/" + AnnotatedDependentReconciler.NAME + "/config")
                 .then()
                 .statusCode(200)
-                .body(
-                        "dependents", hasSize(1),
-                        "dependents[0].dependentClass", equalTo(AnnotatedDependentResource.class.getCanonicalName()),
-                        "dependents[0].dependentConfig.value", equalTo(AnnotatedDependentResource.VALUE));
+                .body("dependents", hasSize(1))
+                .body("dependents[0].dependentClass", equalTo(AnnotatedDependentResource.class.getCanonicalName()))
+                .body("dependents[0].dependentConfig.value", equalTo(AnnotatedDependentResource.VALUE));
     }
 
     @Test
@@ -256,9 +251,8 @@ class OperatorSDKResourceTest {
                 .get("/operator/" + CustomRateLimiterReconciler.NAME + "/config")
                 .then()
                 .statusCode(200)
-                .body(
-                        "rateLimiter.value", equalTo(42),
-                        "itemStore.name", equalTo(NullItemStore.NAME));
+                .body("rateLimiter.value", equalTo(42))
+                .body("itemStore.name", equalTo(NullItemStore.NAME));
     }
 
     @Test
@@ -279,9 +273,9 @@ class OperatorSDKResourceTest {
                 .then()
                 .statusCode(200)
                 .body("maxReconciliationIntervalSeconds",
-                        equalTo(Long.valueOf(Duration.ofMinutes(15).getSeconds()).intValue()),
-                        "fieldSelector.fields[0].path", equalTo("type"),
-                        "fieldSelector.fields[0].value", equalTo(SecretReconciler.FIELD_SELECTOR_VALUE),
-                        "fieldSelector.fields[0].negated", equalTo(false));
+                        equalTo(Long.valueOf(Duration.ofMinutes(15).getSeconds()).intValue()))
+                .body("fieldSelector.fields[0].path", equalTo("type"))
+                .body("fieldSelector.fields[0].value", equalTo(SecretReconciler.FIELD_SELECTOR_VALUE))
+                .body("fieldSelector.fields[0].negated", equalTo(false));
     }
 }
