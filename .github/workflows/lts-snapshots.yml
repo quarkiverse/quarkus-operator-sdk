@@ -1,0 +1,25 @@
+name: Build LTS branches against latest Quarkus LTS snapshots
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  build-with-quarkus-lts-snapshot:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - branch: "7.1.x-lts-3.20"
+            quarkus-snapshot-branch: "3.20"
+          - branch: "7.2.x-lts-3.27"
+            quarkus-snapshot-branch: "3.27"
+          - branch: "7.7.x-lts-3.33"
+            quarkus-snapshot-branch: "3.33"
+    uses: ./.github/workflows/build-for-quarkus-version.yml
+    with:
+      use-quarkus-snapshot: true
+      quarkus-snapshot-branch: ${{ matrix.quarkus-snapshot-branch }}
+      branch: ${{ matrix.branch }}
+      java-version: 17

@@ -50,6 +50,16 @@ on:
         type: string
         description: 'Extra maven arguments to build QOSDK'
         required: false
+      quarkus-snapshot-branch:
+        description: 'Quarkus branch to install snapshot from (e.g. main, 3.20, 3.27); empty means no snapshot'
+        type: string
+        required: false
+        default: ''
+      use-josdk-snapshot:
+        description: 'Use the latest JOSDK snapshot (999-SNAPSHOT) instead of the pinned version'
+        type: boolean
+        required: false
+        default: false
   workflow_dispatch:
     inputs:
       quarkus-version-jq-cmd:
@@ -97,8 +107,22 @@ on:
         type: string
         required: false
         default: 'default'
+      mvnArgs:
+        description: 'Extra maven arguments to build QOSDK'
+        type: string
+        required: false
       only-olm:
         description: 'Only run OLM tests'
+        type: boolean
+        required: false
+        default: false
+      quarkus-snapshot-branch:
+        description: 'Quarkus branch to install snapshot from (e.g. main, 3.20, 3.27); empty means no snapshot'
+        type: string
+        required: false
+        default: 'main'
+      use-josdk-snapshot:
+        description: 'Use the latest JOSDK snapshot (999-SNAPSHOT) instead of the pinned version'
         type: boolean
         required: false
         default: false
@@ -139,6 +163,13 @@ jobs:
           java-version: ${{ inputs.java-version }}
           cache: 'maven'
 
+      - name: Install Quarkus snapshot
+        if: ${{ inputs.quarkus-snapshot-branch != '' }}
+        id: install-quarkus-snapshot
+        uses: quarkusio/install-quarkus-snapshots-action@main
+        with:
+          branch: ${{ inputs.quarkus-snapshot-branch }}
+
       - name: Check-out JOSDK if building from PR is requested
         uses: actions/checkout@v6
         if: "${{ inputs.josdk-pr != '' }}"
@@ -167,6 +198,45 @@ jobs:
       - name: Set JOSDK version from build PR if requested
         if: "${{ inputs.josdk-pr != '' }}"
         run: yq '.project.properties."java-operator-sdk.version" = "${{ steps.build-josdk-pr.outputs.josdk_version }}"' -i  pom.xml
+
+      - name: Use latest JOSDK snapshot
+        if: ${{ inputs.use-josdk-snapshot }}
+        run: yq '.project.properties."java-operator-sdk.version" = "999-SNAPSHOT"' -i pom.xml
+
+      - name: Resolve JOSDK branch for LTS
+        if: ${{ contains(inputs.branch, '-lts-') && inputs.josdk-pr == '' && !inputs.use-josdk-snapshot }}
+        id: lts-josdk-branch
+        run: |
+          josdk_version=$(yq '.project.properties."java-operator-sdk.version"' pom.xml)
+          josdk_branch=$(echo "$josdk_version" | sed 's/\.[0-9]*$/.x/')
+          echo "JOSDK version: ${josdk_version}, candidate branch: ${josdk_branch}"
+          if git ls-remote --exit-code --heads https://github.com/operator-framework/java-operator-sdk.git "refs/heads/${josdk_branch}" > /dev/null 2>&1; then
+            echo "Branch ${josdk_branch} found, will build from source"
+            echo "josdk_branch=${josdk_branch}" >> $GITHUB_OUTPUT
+          else
+            echo "Branch ${josdk_branch} not found, using pinned version ${josdk_version}"
+          fi
+
+      - name: Check-out JOSDK LTS branch
+        if: "${{ steps.lts-josdk-branch.outputs.josdk_branch != '' }}"
+        uses: actions/checkout@v6
+        with:
+          repository: operator-framework/java-operator-sdk
+          ref: ${{ steps.lts-josdk-branch.outputs.josdk_branch }}
+          path: josdk
+
+      - name: Build JOSDK LTS branch
+        if: "${{ steps.lts-josdk-branch.outputs.josdk_branch != '' }}"
+        id: build-lts-josdk-branch
+        run: |
+          cd josdk
+          ./mvnw install -DskipTests
+          echo "josdk_version=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+          cd -
+
+      - name: Set JOSDK version from LTS branch build
+        if: "${{ steps.lts-josdk-branch.outputs.josdk_branch != '' }}"
+        run: yq '.project.properties."java-operator-sdk.version" = "${{ steps.build-lts-josdk-branch.outputs.josdk_version }}"' -i pom.xml
 
       - name: Check-out Quarkus if building from PR is requested
         uses: actions/checkout@v6
@@ -199,9 +269,13 @@ jobs:
         id: build-fkc-pr
         run: |
           cd fkc
-          git fetch origin pull/${{ inputs.fkc-pr }}/head:pr-to-check
-          git switch pr-to-check
-          ./mvnw versions:set -DnewVersion=999.${{ inputs.fkc-pr }}-SNAPSHOT -DgenerateBackupPoms=false
+          if [ "${{ inputs.fkc-pr }}" = "main" ]; then
+            echo "Using Fabric8 main branch"
+          else
+            git fetch origin pull/${{ inputs.fkc-pr }}/head:pr-to-check
+            git switch pr-to-check
+            ./mvnw versions:set -DnewVersion=999.${{ inputs.fkc-pr }}-SNAPSHOT -DgenerateBackupPoms=false
+          fi
           echo "f8_pr_version=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_OUTPUT
           make quickly
           cd -
@@ -221,7 +295,10 @@ jobs:
             quarkus_version="${{ steps.get-quarkus-version.outputs.quarkus_version }}"
           fi
           if [[ -n "${{ inputs.quarkus-version }}" ]]; then
-            quarkus_version="${{ inputs.quarkus-version }}" 
+            quarkus_version="${{ inputs.quarkus-version }}"
+          fi
+          if [[ -n "${{ steps.install-quarkus-snapshot.outputs.quarkus-version }}" ]]; then
+            quarkus_version="${{ steps.install-quarkus-snapshot.outputs.quarkus-version }}"
           fi
           if [[ -n "${{ inputs.quarkus-pr }}" ]]; then
             quarkus_version=999.${{ inputs.quarkus-pr }}-SNAPSHOT
@@ -440,5 +517,9 @@ jobs:
           echo "------------------------------"
           echo "Events:"
           kubectl get events
-          echo "" 
+          echo ""
           echo "------------------------------"
+
+      - name: Cleanup Quarkus snapshot
+        if: ${{ always() && inputs.quarkus-snapshot-branch != '' }}
+        uses: quarkusio/install-quarkus-snapshots-action/cleanup@main
