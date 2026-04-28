@@ -1,0 +1,18 @@
+name: Build next branch against all latest snapshots
+
+on:
+  push:
+    branches: [ next ]
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  build-with-all-snapshots:
+    uses: ./.github/workflows/build-for-quarkus-version.yml
+    with:
+      quarkus-snapshot-branch: main
+      use-josdk-snapshot: true
+      fkc-pr: main
+      java-version: 17
+      branch: "next"
