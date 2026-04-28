@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
-      use-quarkus-snapshot: true
+      quarkus-snapshot-branch: main
       use-josdk-snapshot: true
       fkc-pr: main
       java-version: ${{ matrix.java-version }}

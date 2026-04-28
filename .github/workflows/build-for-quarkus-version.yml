@@ -163,12 +163,22 @@ jobs:
           java-version: ${{ inputs.java-version }}
           cache: 'maven'
 
+      - name: Resolve Quarkus snapshot branch
+        id: resolve-snapshot-branch
+        run: |
+          branch="${{ inputs.quarkus-snapshot-branch }}"
+          if [ -z "$branch" ] && echo "${{ inputs.branch }}" | grep -q '\-lts\-'; then
+            branch=$(echo "${{ inputs.branch }}" | sed 's/.*-lts-//')
+            echo "Derived Quarkus snapshot branch from LTS branch name: ${branch}"
+          fi
+          echo "quarkus_snapshot_branch=${branch}" >> $GITHUB_OUTPUT
+
       - name: Install Quarkus snapshot
-        if: ${{ inputs.quarkus-snapshot-branch != '' }}
+        if: ${{ steps.resolve-snapshot-branch.outputs.quarkus_snapshot_branch != '' }}
         id: install-quarkus-snapshot
         uses: quarkusio/install-quarkus-snapshots-action@main
         with:
-          branch: ${{ inputs.quarkus-snapshot-branch }}
+          branch: ${{ steps.resolve-snapshot-branch.outputs.quarkus_snapshot_branch }}
 
       - name: Check-out JOSDK if building from PR is requested
         uses: actions/checkout@v6
@@ -521,5 +531,5 @@ jobs:
           echo "------------------------------"
 
       - name: Cleanup Quarkus snapshot
-        if: ${{ always() && inputs.quarkus-snapshot-branch != '' }}
+        if: ${{ always() && steps.resolve-snapshot-branch.outputs.quarkus_snapshot_branch != '' }}
         uses: quarkusio/install-quarkus-snapshots-action/cleanup@main
