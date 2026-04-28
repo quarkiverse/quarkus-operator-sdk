@@ -9,14 +9,10 @@ on:
 
 jobs:
   build-with-all-snapshots:
-    strategy:
-      matrix:
-        java-version: [ 17, 21, 25, 26 ]
-      fail-fast: false
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
       quarkus-snapshot-branch: main
       use-josdk-snapshot: true
       fkc-pr: main
-      java-version: ${{ matrix.java-version }}
+      java-version: 17
       branch: "next"
