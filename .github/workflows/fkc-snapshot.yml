@@ -1,0 +1,14 @@
+name: Build main branch against latest Fabric8 client snapshot
+
+on:
+  schedule:
+    - cron: '0 23 * * 1'
+  workflow_dispatch:
+
+jobs:
+  build-with-fkc-snapshot:
+    uses: ./.github/workflows/build-for-quarkus-version.yml
+    with:
+      fkc-pr: main
+      java-version: 17
+      branch: "main"
