@@ -8,7 +8,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.StrategyDeploymentPermissions;
 
@@ -16,9 +16,10 @@ class AssertGeneratedResourcesIT {
 
     @Test
     void verifyPingPongClusterServiceVersion() {
-        try (final var client = new KubernetesClientBuilder().build()) {
-            final var csv = client.getKubernetesSerialization().unmarshal(new FileInputStream(
-                    "target/bundle/pingpong-operator/manifests/pingpong-operator.clusterserviceversion.yaml"),
+        final var serialization = new KubernetesSerialization();
+        try (final var is = new FileInputStream(
+                "target/bundle/pingpong-operator/manifests/pingpong-operator.clusterserviceversion.yaml")) {
+            final var csv = serialization.unmarshal(is,
                     ClusterServiceVersion.class);
             // should have only one cluster rule permission
             List<StrategyDeploymentPermissions> clusterPermissions = csv.getSpec().getInstall().getSpec()

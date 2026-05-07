@@ -1,8 +1,5 @@
 package io.quarkiverse.operatorsdk.test;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -12,7 +9,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.quarkiverse.operatorsdk.test.sources.*;
 import io.quarkus.test.ProdBuildResults;
 import io.quarkus.test.ProdModeTestResults;
@@ -35,21 +31,15 @@ public class ExcludedCRDGenerationTest {
     private ProdModeTestResults prodModeTestResults;
 
     @Test
-    public void shouldOnlyGenerateNonExcludedCRDs() throws IOException {
-        final var kubernetesDir = prodModeTestResults.getBuildDir().resolve("kubernetes");
-        final var kubeManifest = kubernetesDir.resolve("kubernetes.yml");
-        Assertions.assertTrue(Files.exists(kubeManifest));
-
+    public void shouldOnlyGenerateNonExcludedCRDs() {
         // checks that only External CRD is generated
+        final var kubernetesDir = Manifests.kubernetesDir(prodModeTestResults);
         Assertions.assertFalse(Files.exists(kubernetesDir.resolve(CustomResource.getCRDName(SimpleCR.class) + "-v1.yml")));
         checkCRD(kubernetesDir.resolve(CustomResource.getCRDName(External.class) + "-v1.yml"));
     }
 
-    private static void checkCRD(Path crdPath) throws FileNotFoundException {
-        final KubernetesSerialization serializer = new KubernetesSerialization();
-        Assertions.assertTrue(Files.exists(crdPath));
-        final var crdIS = new FileInputStream(crdPath.toFile());
-        final var crd = (CustomResourceDefinition) serializer.unmarshal(crdIS);
+    private static void checkCRD(Path crdPath) {
+        final CustomResourceDefinition crd = Manifests.unmarshall(crdPath);
         Assertions.assertEquals(LabelAdderCRDPostProcessor.LABEL_VALUE,
                 crd.getMetadata().getLabels().get(LabelAdderCRDPostProcessor.LABEL_NAME));
     }

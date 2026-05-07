@@ -4,13 +4,9 @@ import static io.quarkiverse.operatorsdk.annotations.RBACVerbs.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -18,7 +14,6 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
-import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.quarkiverse.operatorsdk.deployment.ClusterRoles;
 import io.quarkiverse.operatorsdk.deployment.RoleBindings;
 import io.quarkiverse.operatorsdk.test.sources.WatchAllReconciler;
@@ -36,17 +31,10 @@ public class WatchAllNamespacesTest {
 
     @ProdBuildResults
     private ProdModeTestResults prodModeTestResults;
-    private static final KubernetesSerialization serialization = new KubernetesSerialization();
 
     @Test
-    public void shouldCreateRolesAndRoleBindings() throws IOException {
-        final var kubernetesDir = prodModeTestResults.getBuildDir().resolve("kubernetes");
-        final var kubeManifest = kubernetesDir.resolve("kubernetes.yml");
-        Assertions.assertTrue(Files.exists(kubeManifest));
-        final var kubeIS = new FileInputStream(kubeManifest.toFile());
-        // use unmarshall version with parameters map to ensure code goes through the proper processing wrt multiple documents
-        @SuppressWarnings("unchecked")
-        final var kubeResources = (List<HasMetadata>) serialization.unmarshal(kubeIS);
+    public void shouldCreateRolesAndRoleBindings() {
+        final var kubeResources = Manifests.unmarshallManifest(prodModeTestResults);
 
         // check cluster role
         final var clusterRoleName = ClusterRoles.getClusterRoleName(WatchAllReconciler.NAME);
