@@ -12,12 +12,12 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.quarkiverse.operatorsdk.test.sources.OneNSReconciler;
 import io.quarkiverse.operatorsdk.test.sources.TestCR;
-import io.quarkus.test.QuarkusUnitTest;
+import io.quarkus.test.QuarkusExtensionTest;
 
 public class OneNSConfigurationTest {
 
     @RegisterExtension
-    static QuarkusUnitTest runner = new QuarkusUnitTest()
+    static QuarkusExtensionTest runner = new QuarkusExtensionTest()
             .overrideConfigKey("quarkus.operator-sdk.start-operator", "false")
             .overrideConfigKey("quarkus.http.test-port", "0")
             .withApplicationRoot(

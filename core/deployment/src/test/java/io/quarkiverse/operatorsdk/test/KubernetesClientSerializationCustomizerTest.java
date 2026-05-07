@@ -17,7 +17,7 @@ import io.quarkiverse.operatorsdk.test.sources.SimpleCR;
 import io.quarkiverse.operatorsdk.test.sources.SimpleSpec;
 import io.quarkiverse.operatorsdk.test.sources.SimpleStatus;
 import io.quarkus.kubernetes.client.KubernetesClientObjectMapperCustomizer;
-import io.quarkus.test.QuarkusUnitTest;
+import io.quarkus.test.QuarkusExtensionTest;
 
 public class KubernetesClientSerializationCustomizerTest {
 
@@ -41,7 +41,7 @@ public class KubernetesClientSerializationCustomizerTest {
     }
 
     @RegisterExtension
-    static QuarkusUnitTest runner = new QuarkusUnitTest()
+    static QuarkusExtensionTest runner = new QuarkusExtensionTest()
             .withApplicationRoot(jar -> jar.addClasses(Customizer.class, ValueMixIn.class, SimpleCR.class,
                     SimpleSpec.class, SimpleStatus.class));
 
