@@ -4,8 +4,6 @@ import static io.quarkiverse.operatorsdk.annotations.RBACVerbs.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
@@ -25,7 +23,6 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkiverse.operatorsdk.annotations.RBACVerbs;
 import io.quarkiverse.operatorsdk.deployment.ClusterRoles;
@@ -84,14 +81,8 @@ public class OperatorSDKTest {
     }
 
     @Test
-    public void shouldCreateRolesAndRoleBindings() throws IOException {
-        final var kubernetesDir = prodModeTestResults.getBuildDir().resolve("kubernetes");
-        final var kubeManifest = kubernetesDir.resolve("kubernetes.yml");
-        Assertions.assertTrue(Files.exists(kubeManifest));
-        final var kubeIS = new FileInputStream(kubeManifest.toFile());
-        final var serializer = new KubernetesSerialization();
-        @SuppressWarnings("unchecked")
-        final var kubeResources = (List<HasMetadata>) serializer.unmarshal(kubeIS);
+    public void shouldCreateRolesAndRoleBindings() {
+        final var kubeResources = Manifests.unmarshallManifest(prodModeTestResults);
 
         // check cluster role for TestReconciler
         final var testReconcilerRoleName = ClusterRoles.getClusterRoleName(TestReconciler.NAME);
@@ -233,6 +224,7 @@ public class OperatorSDKTest {
                 });
 
         // checks that CRDs are generated
+        final var kubernetesDir = Manifests.kubernetesDir(prodModeTestResults);
         Assertions.assertTrue(Files.exists(kubernetesDir.resolve(CustomResource.getCRDName(TestCR.class) + "-v1.yml")));
         Assertions.assertTrue(Files.exists(kubernetesDir.resolve(CustomResource.getCRDName(SimpleCR.class) + "-v1.yml")));
     }
