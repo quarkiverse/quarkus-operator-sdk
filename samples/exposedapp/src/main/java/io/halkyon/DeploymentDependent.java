@@ -23,6 +23,7 @@ public class DeploymentDependent extends CRUDKubernetesDependentResource<Deploym
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public Deployment desired(ExposedApp exposedApp, Context context) {
         final var labels = (Map<String, String>) context.managedWorkflowAndDependentResourceContext()
                 .getMandatory(LABELS_CONTEXT_KEY, Map.class);

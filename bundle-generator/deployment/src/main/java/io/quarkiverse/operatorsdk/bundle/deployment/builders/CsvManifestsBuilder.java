@@ -276,6 +276,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         return "CSV";
     }
 
+    @Override
     public Path getFileName() {
         return Path.of(MANIFESTS, getName() + ".clusterserviceversion.yaml");
     }
@@ -296,6 +297,7 @@ public class CsvManifestsBuilder extends ManifestsBuilder {
         return null;
     }
 
+    @Override
     public byte[] getManifestData(List<ServiceAccount> serviceAccounts, List<ClusterRoleBinding> clusterRoleBindings,
             List<ClusterRole> clusterRoles, List<RoleBinding> roleBindings, List<Role> roles,
             List<Deployment> deployments) throws IOException {

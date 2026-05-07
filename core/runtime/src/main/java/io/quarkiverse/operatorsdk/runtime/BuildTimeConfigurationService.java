@@ -45,6 +45,7 @@ public class BuildTimeConfigurationService implements ConfigurationService,
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Version getVersion() {
         return version;
     }

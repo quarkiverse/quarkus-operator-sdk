@@ -204,6 +204,7 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
         return rateLimiter;
     }
 
+    @Override
     public Optional<Duration> maxReconciliationInterval() {
         return maxReconciliationInterval;
     }
