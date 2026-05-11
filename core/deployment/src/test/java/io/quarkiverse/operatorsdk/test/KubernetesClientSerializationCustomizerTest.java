@@ -52,6 +52,7 @@ public class KubernetesClientSerializationCustomizerTest {
 
     @Singleton
     public static class Customizer implements KubernetesClientObjectMapperCustomizer {
+        @Override
         public void customize(ObjectMapper objectMapper) {
             objectMapper.addMixIn(SimpleStatus.class, ValueMixIn.class);
         }
