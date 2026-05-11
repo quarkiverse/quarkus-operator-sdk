@@ -103,8 +103,8 @@ class CRDGenerationBuildStep {
                         excluded.getExcludedDeclaringClasses());
                 context.put(CustomResourceAugmentedClassInfo.KEEP_CR_PREDICATE_KEY,
                         keepResourcePredicate);
-                ClassUtils.getProcessableSubClassesOf(Constants.CUSTOM_RESOURCE, context)
-                        .map(CustomResourceAugmentedClassInfo.class::cast)
+                ClassUtils
+                        .getProcessableSubClassesOf(Constants.CUSTOM_RESOURCE, CustomResourceAugmentedClassInfo.class, context)
                         .forEach(cr -> {
                             crdGeneration.withCustomResource(cr.loadAssociatedClass(), null);
                             log.infof("Will generate CRD for non-reconciler bound resource: %s", cr.fullResourceName());
