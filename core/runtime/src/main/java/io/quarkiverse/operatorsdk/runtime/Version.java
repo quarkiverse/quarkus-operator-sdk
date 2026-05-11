@@ -46,9 +46,7 @@ public class Version extends io.javaoperatorsdk.operator.api.config.Version {
 
     @IgnoreProperty
     public String getExtensionCompleteVersion() {
-        final var branch = Version.UNKNOWN.equals(extensionBranch)
-                ? " on branch: " + extensionBranch
-                : "";
+        final var branch = Version.UNKNOWN.equals(extensionBranch) ? "" : " on branch: " + extensionBranch;
         return extensionVersion + " (commit: " + extensionCommit + branch + ") built on " + extensionBuildTime;
     }
 
