@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
@@ -67,8 +68,22 @@ public class DeploymentDependent extends CRUDKubernetesDependentResource<Deploym
         final var container = actual.getSpec().getTemplate().getSpec().getContainers()
                 .stream()
                 .findFirst();
-        return Result.nonComputed(container.map(c -> c.getImage().equals(desiredSpec.getImageRef())
-                && desiredSpec.getEnv().equals(convert(c.getEnv()))).orElse(false));
+        return Result.nonComputed(container
+                .map(c -> c.getImage().equals(desiredSpec.getImageRef()) && sameEnv(c, desiredSpec))
+                .orElse(false));
+    }
+
+    private boolean sameEnv(Container c, ExposedAppSpec desiredSpec) {
+        final var env = desiredSpec.getEnv();
+        if (env != null) {
+            final var size = env.size();
+            if (size > 0) {
+               final var converted = new HashMap<>(size);
+               env.forEach((key, value) -> converted.put(key.toUpperCase(), value));
+               return converted.equals(convert(c.getEnv()));
+            }
+        }
+        return c.getEnv() == null || c.getEnv().isEmpty();
     }
 
     private Map<String, String> convert(List<EnvVar> envVars) {
