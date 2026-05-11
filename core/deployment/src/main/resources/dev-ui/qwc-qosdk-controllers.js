@@ -1,4 +1,4 @@
-import {QwcHotReloadElement, css, html} from 'qwc-hot-reload-element';
+import {QwcHotReloadElement, html} from 'qwc-hot-reload-element';
 import {JsonRpc} from 'jsonrpc';
 import '@vaadin/details';
 import '@vaadin/list-box';
