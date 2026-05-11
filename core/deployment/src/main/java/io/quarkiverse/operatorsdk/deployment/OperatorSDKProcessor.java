@@ -197,10 +197,11 @@ class OperatorSDKProcessor {
             BuildExclusionsBuildItem excluded,
             BuildProducer<QOSDKReflectiveClassBuildItem> reflectiveClassProducer) {
         final var index = combinedIndexBuildItem.getIndex();
+        final var context = ClassUtils.context(combinedIndexBuildItem.getIndex(), log, excluded.getExcludedDeclaringClasses());
         final var configurableInfos = ClassUtils.getProcessableImplementationsOf(
                 Constants.ANNOTATION_CONFIGURABLE,
-                ClassUtils.context(combinedIndexBuildItem.getIndex(), log, excluded.getExcludedDeclaringClasses()))
-                .map(AnnotationConfigurableAugmentedClassInfo.class::cast)
+                AnnotationConfigurableAugmentedClassInfo.class,
+                context)
                 .peek(ci -> reflectiveClassProducer
                         .produce(new QOSDKReflectiveClassBuildItem(ci.getClassNamesToRegisterForReflection())))
                 .collect(Collectors.toMap(ac -> ac.classInfo().name().toString(), Function.identity()));

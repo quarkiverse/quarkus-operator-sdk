@@ -59,21 +59,24 @@ public class ClassUtils {
      * @return a stream of {@link ReconcilerAugmentedClassInfo} providing information about processable reconcilers
      */
     public static Stream<ReconcilerAugmentedClassInfo> getKnownReconcilers(IndexSearchContext context) {
-        return getProcessableImplementationsOf(RECONCILER, context).map(ReconcilerAugmentedClassInfo.class::cast);
+        return getProcessableImplementationsOf(RECONCILER, ReconcilerAugmentedClassInfo.class, context);
     }
 
-    public static Stream<? extends SelectiveAugmentedClassInfo> getProcessableImplementationsOf(DotName interfaceType,
+    public static <T extends SelectiveAugmentedClassInfo> Stream<T> getProcessableImplementationsOf(DotName interfaceType,
+            Class<T> expectedType,
             IndexSearchContext context) {
-        return getProcessableImplementationsOrExtensionsOf(interfaceType, context, true);
+        return getProcessableImplementationsOrExtensionsOf(interfaceType, expectedType, context, true);
     }
 
-    public static Stream<? extends SelectiveAugmentedClassInfo> getProcessableSubClassesOf(DotName classType,
+    public static <T extends SelectiveAugmentedClassInfo> Stream<T> getProcessableSubClassesOf(DotName classType,
+            Class<T> expectedType,
             IndexSearchContext context) {
-        return getProcessableImplementationsOrExtensionsOf(classType, context, false);
+        return getProcessableImplementationsOrExtensionsOf(classType, expectedType, context, false);
     }
 
-    private static Stream<? extends SelectiveAugmentedClassInfo> getProcessableImplementationsOrExtensionsOf(
+    private static <T extends SelectiveAugmentedClassInfo> Stream<T> getProcessableImplementationsOrExtensionsOf(
             DotName implementedOrExtendedClass,
+            Class<T> expectedClass,
             IndexSearchContext context, boolean isInterface) {
         final var index = context.indexView;
         final var extensions = isInterface ? index.getAllKnownImplementations(implementedOrExtendedClass)
@@ -81,6 +84,7 @@ public class ClassUtils {
         return extensions.stream()
                 .map(classInfo -> createAugmentedClassInfoFor(implementedOrExtendedClass, classInfo))
                 .filter(fci -> fci.keep(context))
+                .map(expectedClass::cast)
                 .peek(fci -> fci.augmentIfKept(context));
     }
 
