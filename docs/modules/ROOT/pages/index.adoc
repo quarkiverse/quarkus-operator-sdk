@@ -2,7 +2,7 @@
 
 include::./includes/attributes.adoc[]
 
-Please refer to the https://github.com/quarkiverse/quarkus-operator-sdk/blob/main/README.md[QOSDK Readme] for information on how getting started with QOSDK.
+Please refer to the https://github.com/quarkiverse/quarkus-operator-sdk/blob/main/README.md[QOSDK Readme] for information on how to get started with QOSDK.
 
 == Features
 
@@ -53,7 +53,7 @@ https://docs.quarkiverse.io/quarkus-helm/dev/index.html#helm-extension-for-quark
 The best way to use this extension is to generate a skeleton project from https://code.quarkus.io[code.quarkus.io], search for `qosdk` (or similar) and select the Operator SDK extension.
 Doing so will automatically import the Java Operator SDK dependencies in a managed way, using the BOM from the Quarkus platform.
 
-Some of these topics along with upgrading strategies are discussed in https://developers.redhat.com/articles/2023/09/19/write-operators-java-josdk-part-4-upgrading-strategies.
+Some of these topics, along with upgrading strategies, are discussed in https://developers.redhat.com/articles/2023/09/19/write-operators-java-josdk-part-4-upgrading-strategies[this article].
 
 === Managing the QOSDK extension yourself
 
