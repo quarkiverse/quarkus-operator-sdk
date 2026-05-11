@@ -1,7 +1,6 @@
 package io.quarkiverse.operatorsdk.it;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +34,7 @@ import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.runtime.QuarkusControllerConfiguration;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({ "unused", "ClassEscapesDefinedScope" })
 @Path("/operator")
 public class OperatorSDKResource {
 
@@ -220,10 +219,9 @@ public class OperatorSDKResource {
         public List<JSONDependentResourceSpec> getDependents() {
             final var dependents = conf.getWorkflowSpec().map(WorkflowSpec::getDependentResourceSpecs)
                     .orElse(Collections.emptyList());
-            final var result = new ArrayList<JSONDependentResourceSpec>(dependents.size());
             return dependents.stream()
                     .map(JSONDependentResourceSpec::new)
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         @JsonProperty("maxReconciliationIntervalSeconds")

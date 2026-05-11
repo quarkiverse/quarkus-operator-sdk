@@ -15,7 +15,7 @@ public class ExposedAppStatus {
             this.message = "reconciled-not-exposed";
         } else {
             this.message = "exposed";
-            this.host = endpoint != null && !endpoint.isBlank() ? hostname + '/' + endpoint : hostname;
+            this.host = !endpoint.isBlank() ? hostname + '/' + endpoint : hostname;
         }
     }
 
