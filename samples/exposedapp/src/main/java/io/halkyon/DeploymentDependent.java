@@ -78,9 +78,9 @@ public class DeploymentDependent extends CRUDKubernetesDependentResource<Deploym
         if (env != null) {
             final var size = env.size();
             if (size > 0) {
-               final var converted = new HashMap<>(size);
-               env.forEach((key, value) -> converted.put(key.toUpperCase(), value));
-               return converted.equals(convert(c.getEnv()));
+                final var converted = new HashMap<>(size);
+                env.forEach((key, value) -> converted.put(key.toUpperCase(), value));
+                return converted.equals(convert(c.getEnv()));
             }
         }
         return c.getEnv() == null || c.getEnv().isEmpty();
