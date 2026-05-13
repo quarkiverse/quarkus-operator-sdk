@@ -338,9 +338,9 @@ Whether to fail or emit a debug-level (when misalignment is at the minor or abov
 
 The following versions are checked for alignment:
 
- - declared Quarkus version used to build the extension vs. actually used Quarkus version at runtime
- - Fabric8 client version used by JOSDK vs. actually used Fabric8 client version
- - Fabric8 client version used by Quarkus vs. actually used Fabric8 client version
+ * declared Quarkus version used to build the extension vs. actually used Quarkus version at runtime
+ * Fabric8 client version used by JOSDK vs. actually used Fabric8 client version
+ * Fabric8 client version used by Quarkus vs. actually used Fabric8 client version
 
 
 
