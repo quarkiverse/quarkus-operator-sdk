@@ -14,6 +14,7 @@
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
     <quarkus.version>3.35.3</quarkus.version>
+    <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
     <java-operator-sdk.version>5.3.3</java-operator-sdk.version>
     <io.quarkiverse.helm.version>1.4.0</io.quarkiverse.helm.version>
   </properties>
