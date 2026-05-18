@@ -13,6 +13,7 @@
   <name>Quarkus - Operator SDK - Parent</name>
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
+    <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
     <quarkus.version>999-SNAPSHOT</quarkus.version>
     <java-operator-sdk.version>999-SNAPSHOT</java-operator-sdk.version>
     <io.quarkiverse.helm.version>1.4.0</io.quarkiverse.helm.version>
