@@ -70,6 +70,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-install-plugin</artifactId>
+        <version>${maven-install-plugin.version}</version>
         <executions>
           <execution>
             <phase>install</phase>
