@@ -1,3 +1,5 @@
+include::./includes/attributes.adoc[]
+
 = Deploying your operator with OLM
 
 The https://olm.operatorframework.io/[Operator Lifecycle Manager (OLM)] provides a declarative way to install, manage and upgrade operators on Kubernetes clusters.
