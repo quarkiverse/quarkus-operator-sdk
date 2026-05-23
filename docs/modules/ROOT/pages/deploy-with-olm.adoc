@@ -1,3 +1,5 @@
+include::./includes/attributes.adoc[]
+
 = Deploying your operator with OLM
 
 The https://olm.operatorframework.io/[Operator Lifecycle Manager (OLM)] provides a declarative way to install, manage and upgrade operators on Kubernetes clusters.
@@ -21,7 +23,7 @@ Then, you need to add the `quarkus-operator-sdk-bundle-generator` extension to y
 <dependency>
     <groupId>io.quarkiverse.operatorsdk</groupId>
     <artifactId>quarkus-operator-sdk-bundle-generator</artifactId>
-    <version>{page-component-version}</version>
+    <version>{project-version}</version>
 </dependency>
 ----
 
