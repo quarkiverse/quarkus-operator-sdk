@@ -223,6 +223,7 @@ class OperatorSDKProcessor {
         final var toRegisterSet = toRegister.stream()
                 .flatMap(QOSDKReflectiveClassBuildItem::classNamesToRegisterForReflectionStream)
                 .collect(Collectors.toSet());
+        toRegisterSet.add("io.fabric8.kubernetes.model.jackson.UnwrappedTypeResolverBuilder");
         registerAssociatedClassesForReflection(reflectionClasses, forcedReflectionClasses, toRegisterSet);
     }
 
