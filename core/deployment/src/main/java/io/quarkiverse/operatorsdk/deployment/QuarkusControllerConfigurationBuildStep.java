@@ -190,12 +190,12 @@ class QuarkusControllerConfigurationBuildStep {
             final var interval = ConfigurationUtils.annotationValueOrDefault(
                     intervalFromAnnotation, "interval", AnnotationValue::asLong,
                     () -> MaxReconciliationInterval.DEFAULT_INTERVAL);
-            final var timeUnit = ConfigurationUtils.annotationValueOrDefault(
-                    intervalFromAnnotation,
-                    "timeUnit",
-                    av -> TimeUnit.valueOf(av.asEnum()),
-                    () -> TimeUnit.HOURS);
-            if (interval > 0) {
+            if (interval != null && interval > 0) {
+                final var timeUnit = ConfigurationUtils.annotationValueOrDefault(
+                        intervalFromAnnotation,
+                        "timeUnit",
+                        av -> TimeUnit.valueOf(av.asEnum()),
+                        () -> TimeUnit.HOURS);
                 maxReconciliationInterval = Duration.of(interval, timeUnit.toChronoUnit());
             }
 

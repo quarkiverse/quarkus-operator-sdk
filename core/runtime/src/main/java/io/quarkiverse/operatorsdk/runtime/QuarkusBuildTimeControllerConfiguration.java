@@ -42,8 +42,7 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
     private final List<RoleRef> additionalRBACRoleRefs;
     private final String fieldManager;
     private final boolean triggerReconcilerOnAllEvents;
-    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private Optional<Duration> maxReconciliationInterval;
+    private Duration maxReconciliationInterval;
     private String finalizer;
     private boolean wereNamespacesSet;
     private final Retry retry;
@@ -81,8 +80,7 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
         this.wereNamespacesSet = wereNamespacesSet;
         setFinalizer(finalizerName);
         this.statusPresentAndNotVoid = statusPresentAndNotVoid;
-        this.maxReconciliationInterval = maxReconciliationInterval != null ? Optional.of(maxReconciliationInterval)
-                : ControllerConfiguration.super.maxReconciliationInterval();
+        this.maxReconciliationInterval = maxReconciliationInterval;
         this.retry = retry == null ? new GenericRetry() : retry;
         this.rateLimiter = rateLimiter == null ? new DefaultRateLimiter() : rateLimiter;
         this.fieldManager = fieldManager != null ? fieldManager : ControllerConfiguration.super.fieldManager();
@@ -206,17 +204,17 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
 
     @Override
     public Optional<Duration> maxReconciliationInterval() {
-        return maxReconciliationInterval;
+        return Optional.ofNullable(maxReconciliationInterval);
     }
 
     // for Quarkus' RecordableConstructor
     @SuppressWarnings("unused")
     public Duration getMaxReconciliationInterval() {
-        return maxReconciliationInterval.orElseThrow();
+        return maxReconciliationInterval;
     }
 
     void setMaxReconciliationInterval(Duration duration) {
-        maxReconciliationInterval = Optional.of(duration);
+        maxReconciliationInterval = duration;
     }
 
     // for Quarkus' RecordableConstructor
