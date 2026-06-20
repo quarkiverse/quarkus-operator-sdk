@@ -1,7 +1,5 @@
 package io.quarkiverse.operatorsdk.runtime;
 
-import java.time.Duration;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
@@ -12,7 +10,6 @@ import org.jboss.logging.Logger;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.config.ControllerConfigurationOverrider;
-import io.javaoperatorsdk.operator.api.reconciler.MaxReconciliationInterval;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkiverse.operatorsdk.runtime.api.ConfigurableReconciler;
 import io.quarkus.arc.DefaultBean;
@@ -30,11 +27,10 @@ public class OperatorProducer {
                 final var override = ControllerConfigurationOverrider.override(conf);
                 configurable.updateConfigurationFrom(override);
                 final var updated = override.build();
-                final Duration maxReconciliationInterval = updated.maxReconciliationInterval()
-                        .orElse(Duration.ofHours(MaxReconciliationInterval.DEFAULT_INTERVAL));
                 final var qConf = new QuarkusControllerConfiguration(updated.getInformerConfig(), updated.getName(),
                         updated.isGenerationAware(), conf.getAssociatedReconcilerClassName(), updated.getRetry(),
-                        updated.getRateLimiter(), maxReconciliationInterval, updated.getFinalizerName(), updated.fieldManager(),
+                        updated.getRateLimiter(), updated.maxReconciliationInterval().orElse(null),
+                        updated.getFinalizerName(), updated.fieldManager(),
                         conf.getWorkflow(), conf.getResourceTypeName(), conf.getResourceClass());
                 qConf.setParent(configurationService);
                 operator.register(reconciler, qConf);

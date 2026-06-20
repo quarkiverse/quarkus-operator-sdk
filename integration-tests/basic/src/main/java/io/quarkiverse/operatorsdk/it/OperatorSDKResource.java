@@ -24,6 +24,7 @@ import io.javaoperatorsdk.operator.api.config.Version;
 import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.config.informer.FieldSelector;
 import io.javaoperatorsdk.operator.api.config.workflow.WorkflowSpec;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.ManagedWorkflow;
@@ -226,7 +227,7 @@ public class OperatorSDKResource {
 
         @JsonProperty("maxReconciliationIntervalSeconds")
         public long maxReconciliationIntervalSeconds() {
-            return conf.maxReconciliationInterval().map(Duration::getSeconds).orElseThrow();
+            return conf.maxReconciliationInterval().map(Duration::getSeconds).orElse(Constants.NO_MAX_RECONCILIATION_INTERVAL);
         }
 
         @SuppressWarnings("rawtypes")

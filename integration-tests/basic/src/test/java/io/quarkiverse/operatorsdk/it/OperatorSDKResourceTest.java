@@ -9,6 +9,7 @@ import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
 import io.javaoperatorsdk.operator.ReconcilerUtilsInternal;
+import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.DisabledOnIntegrationTest;
 import io.quarkus.test.junit.QuarkusTest;
@@ -279,9 +280,28 @@ class OperatorSDKResourceTest {
                 .then()
                 .statusCode(200)
                 .body("maxReconciliationIntervalSeconds",
-                        equalTo(Long.valueOf(Duration.ofMinutes(15).getSeconds()).intValue()),
-                        "fieldSelector.fields[0].path", equalTo("type"),
+                        equalTo(Long.valueOf(Duration.ofMinutes(15).getSeconds()).intValue()));
+    }
+
+    @Test
+    void shouldUseFieldSelectorIfProvided() {
+        given()
+                .when()
+                .get("/operator/" + SecretReconciler.NAME + "/config")
+                .then()
+                .statusCode(200)
+                .body("fieldSelector.fields[0].path", equalTo("type"),
                         "fieldSelector.fields[0].value", equalTo(SecretReconciler.FIELD_SELECTOR_VALUE),
                         "fieldSelector.fields[0].negated", equalTo(false));
+    }
+
+    @Test
+    void shouldDisableMaxReconciliationIntervalIfRequested() {
+        given()
+                .when()
+                .get("/operator/" + ReconcilerUtilsInternal.getDefaultNameFor(KeycloakController.class) + "/config")
+                .then()
+                .statusCode(200)
+                .body("maxReconciliationIntervalSeconds", equalTo(Math.toIntExact(Constants.NO_MAX_RECONCILIATION_INTERVAL)));
     }
 }

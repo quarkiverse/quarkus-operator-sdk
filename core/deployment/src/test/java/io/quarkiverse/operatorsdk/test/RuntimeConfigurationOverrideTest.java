@@ -12,6 +12,8 @@ import io.quarkiverse.operatorsdk.test.sources.ConfiguredReconciler;
 import io.quarkiverse.operatorsdk.test.sources.TestCR;
 import io.quarkus.test.QuarkusExtensionTest;
 
+import java.util.Optional;
+
 public class RuntimeConfigurationOverrideTest {
 
     @RegisterExtension
@@ -39,5 +41,6 @@ public class RuntimeConfigurationOverrideTest {
                 .orElse(null);
         assertNotNull(registered);
         assertEquals(ConfiguredReconciler.LABEL_SELECTOR, registered.getConfiguration().getInformerConfig().getLabelSelector());
+        assertEquals(Optional.empty(), registered.getConfiguration().maxReconciliationInterval());
     }
 }

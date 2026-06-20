@@ -88,7 +88,7 @@ public class QuarkusControllerConfiguration<P extends HasMetadata> implements Co
 
     @Override
     public Optional<Duration> maxReconciliationInterval() {
-        return Optional.of(maxReconciliationInterval);
+        return Optional.ofNullable(maxReconciliationInterval);
     }
 
     @Override
