@@ -2,6 +2,8 @@ package io.quarkiverse.operatorsdk.test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Optional;
+
 import jakarta.inject.Inject;
 
 import org.junit.jupiter.api.Test;
@@ -11,8 +13,6 @@ import io.javaoperatorsdk.operator.Operator;
 import io.quarkiverse.operatorsdk.test.sources.ConfiguredReconciler;
 import io.quarkiverse.operatorsdk.test.sources.TestCR;
 import io.quarkus.test.QuarkusExtensionTest;
-
-import java.util.Optional;
 
 public class RuntimeConfigurationOverrideTest {
 
