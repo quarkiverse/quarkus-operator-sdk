@@ -7,7 +7,7 @@ import org.aesh.command.invocation.CommandInvocation;
 
 import io.quarkiverse.operatorsdk.runtime.Version;
 
-@GroupCommandDefinition(name = "qosdk", description = "Quarkus Operator SDK Commands")
+@CommandDefinition(name = "qosdk", description = "Quarkus Operator SDK Commands")
 @SuppressWarnings("rawtypes")
 public class ConsoleCommands implements GroupCommand {
     private final Version version;
