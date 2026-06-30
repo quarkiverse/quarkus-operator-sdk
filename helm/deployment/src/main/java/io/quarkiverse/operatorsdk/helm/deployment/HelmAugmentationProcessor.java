@@ -11,6 +11,7 @@ import java.util.Map;
 
 import org.jboss.logging.Logger;
 
+import io.quarkiverse.helm.deployment.HelmChartConfig;
 import io.quarkiverse.helm.spi.AdditionalHelmCRDBuildItem;
 import io.quarkiverse.helm.spi.AdditionalHelmTemplateBuildItem;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
@@ -46,15 +47,16 @@ public class HelmAugmentationProcessor {
             ControllerConfigurationsBuildItem controllerConfigurations,
             BuildTimeOperatorConfiguration operatorConfiguration,
             GeneratedCRDInfoBuildItem generatedCRDInfoBuildItem,
+            HelmChartConfig helmChartConfig,
             List<KubernetesClusterRoleBindingBuildItem> clusterRoleBindingBuildItems,
             BuildProducer<AdditionalHelmTemplateBuildItem> additionalHelmTemplateBuildItemBuildProducer,
             BuildProducer<AdditionalHelmCRDBuildItem> additionalHelmCRDBuildItemBuildProducer) {
-        final var clusterRoleBindingTemplate = parseTemplateFile(CRD_ROLE_BINDING_TEMPLATE_PATH);
         controllerConfigurations.getControllerConfigs().values().forEach(cc -> {
             final var name = cc.getName().replaceAll("\\s+", "-");
-            String res = Qute.fmt(clusterRoleBindingTemplate,
+            String res = Qute.fmt(parseTemplateFile(CRD_ROLE_BINDING_TEMPLATE_PATH),
                     Map.of("reconciler-name", name, "reconciler-name-config-name",
-                            ConfigurationUtils.getNamespacesPropertyName(name, true)));
+                            ConfigurationUtils.getNamespacesPropertyName(name, true),
+                            "values-root-alias", helmChartConfig.valuesRootAlias()));
             String rbName = name + "-crd-role-binding";
             additionalHelmTemplateBuildItemBuildProducer.produce(new AdditionalHelmTemplateBuildItem(
                     rbName + ".yaml", res.getBytes(), "kubernetes"));
