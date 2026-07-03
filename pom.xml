@@ -16,7 +16,7 @@
     <quarkus.version>3.37.0</quarkus.version>
     <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
     <java-operator-sdk.version>5.3.5</java-operator-sdk.version>
-    <io.quarkiverse.helm.version>1.4.0</io.quarkiverse.helm.version>
+    <io.quarkiverse.helm.version>1.4.1</io.quarkiverse.helm.version>
   </properties>
   <scm>
     <connection>scm:git:git@github.com:quarkiverse/quarkus-operator-sdk.git</connection>
