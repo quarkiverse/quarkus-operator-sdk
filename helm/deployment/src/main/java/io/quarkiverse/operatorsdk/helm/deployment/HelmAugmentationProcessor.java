@@ -14,9 +14,11 @@ import org.jboss.logging.Logger;
 import io.quarkiverse.helm.deployment.HelmChartConfig;
 import io.quarkiverse.helm.spi.AdditionalHelmCRDBuildItem;
 import io.quarkiverse.helm.spi.AdditionalHelmTemplateBuildItem;
+import io.quarkiverse.helm.spi.AdditionalHelmTemplateBuildItem.ReplacedResource;
 import io.quarkiverse.operatorsdk.common.ConfigurationUtils;
 import io.quarkiverse.operatorsdk.deployment.ControllerConfigurationsBuildItem;
 import io.quarkiverse.operatorsdk.deployment.GeneratedCRDInfoBuildItem;
+import io.quarkiverse.operatorsdk.deployment.RoleBindings;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -58,8 +60,15 @@ public class HelmAugmentationProcessor {
                             ConfigurationUtils.getNamespacesPropertyName(name, true),
                             "values-root-alias", helmChartConfig.valuesRootAlias()));
             String rbName = name + "-crd-role-binding";
+            // the base RoleBinding/ClusterRoleBinding are named from the raw (unsanitized) reconciler name
+            String rawName = cc.getName();
+            // our generated template already covers the same RoleBinding/ClusterRoleBinding that the base
+            // Kubernetes extension packages for this controller; without marking them as replaced, both would
+            // end up in the chart with identical kind/name/namespace, making `helm install` fail (#1390)
             additionalHelmTemplateBuildItemBuildProducer.produce(new AdditionalHelmTemplateBuildItem(
-                    rbName + ".yaml", res.getBytes(), "kubernetes"));
+                    rbName + ".yaml", res.getBytes(), "kubernetes",
+                    List.of(new ReplacedResource("RoleBinding", RoleBindings.getRoleBindingName(rawName)),
+                            new ReplacedResource("ClusterRoleBinding", RoleBindings.getClusterRoleBindingName(rawName)))));
         });
 
         if (operatorConfiguration.crd().validate()) {
