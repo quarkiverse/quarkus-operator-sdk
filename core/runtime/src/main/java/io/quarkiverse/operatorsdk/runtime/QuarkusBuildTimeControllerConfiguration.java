@@ -52,6 +52,7 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
     private QuarkusInformerConfiguration<R> informerConfig;
     private Set<String> namespaces;
     private String labelSelector;
+    private String shardSelector;
     private QuarkusFieldSelector fieldSelector;
 
     @RecordableConstructor
@@ -153,6 +154,12 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
     void setLabelSelector(String labelSelector) {
         if (!Objects.equals(informerConfig.getLabelSelector(), labelSelector)) {
             this.labelSelector = labelSelector;
+        }
+    }
+
+    void setShardSelector(String shardSelector) {
+        if (!Objects.equals(informerConfig.getShardSelector(), shardSelector)) {
+            this.shardSelector = shardSelector;
         }
     }
 
@@ -284,7 +291,7 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
 
     @Override
     public InformerConfiguration<R> getInformerConfig() {
-        if (labelSelector != null || fieldSelector != null || namespaces != null) {
+        if (labelSelector != null || shardSelector != null || fieldSelector != null || namespaces != null) {
             final var builder = InformerConfiguration.builder(informerConfig);
             if (namespaces != null) {
                 builder.withNamespaces(namespaces);
@@ -295,9 +302,13 @@ public class QuarkusBuildTimeControllerConfiguration<R extends HasMetadata> impl
             if (labelSelector != null) {
                 builder.withLabelSelector(labelSelector);
             }
+            if (shardSelector != null) {
+                builder.withShardSelector(shardSelector);
+            }
             informerConfig = new QuarkusInformerConfiguration<>(builder.buildForController());
             // reset so that we know that we don't need to regenerate the informer config next time if these values haven't changed since
             labelSelector = null;
+            shardSelector = null;
             fieldSelector = null;
             namespaces = null;
         }

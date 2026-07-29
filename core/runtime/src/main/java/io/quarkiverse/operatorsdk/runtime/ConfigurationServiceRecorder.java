@@ -68,6 +68,7 @@ public class ConfigurationServiceRecorder {
             if (extConfig != null) {
                 extConfig.finalizer().ifPresent(c::setFinalizer);
                 extConfig.selector().ifPresent(c::setLabelSelector);
+                extConfig.shardSelector().ifPresent(c::setShardSelector);
                 extConfig.fieldSelectors().ifPresent(c::setFieldSelector);
                 extConfig.maxReconciliationInterval().ifPresent(c::setMaxReconciliationInterval);
                 c.updateRetryConfiguration(extConfig.retry());
