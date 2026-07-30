@@ -17,11 +17,13 @@ public class QuarkusInformerConfiguration<R extends HasMetadata> extends Informe
 
     @RecordableConstructor
     public QuarkusInformerConfiguration(Class<R> resourceClass, String name, Set<String> namespaces,
-            boolean followControllerNamespaceChanges, String labelSelector, OnAddFilter<? super R> onAddFilter,
+            boolean followControllerNamespaceChanges, String labelSelector, String shardSelector,
+            OnAddFilter<? super R> onAddFilter,
             OnUpdateFilter<? super R> onUpdateFilter, OnDeleteFilter<? super R> onDeleteFilter,
             GenericFilter<? super R> genericFilter, ItemStore<R> itemStore, Long informerListLimit,
             QuarkusFieldSelector fieldSelector, boolean comparableResourceVersions) {
-        super(resourceClass, name, namespaces, followControllerNamespaceChanges, labelSelector, onAddFilter, onUpdateFilter,
+        super(resourceClass, name, namespaces, followControllerNamespaceChanges, labelSelector, shardSelector, onAddFilter,
+                onUpdateFilter,
                 onDeleteFilter, genericFilter, itemStore, informerListLimit, fieldSelector, comparableResourceVersions,
                 // hardcode this value for now as it will probably move away with a future FKC update
                 Constants.DEFAULT_GHOST_RESOURCE_CHECK_INTERVAL);
@@ -33,6 +35,7 @@ public class QuarkusInformerConfiguration<R extends HasMetadata> extends Informe
                 sanitizeNamespaces(config.getNamespaces()),
                 config.getFollowControllerNamespaceChanges(),
                 config.getLabelSelector(),
+                config.getShardSelector(),
                 config.getOnAddFilter(),
                 config.getOnUpdateFilter(),
                 config.getOnDeleteFilter(),

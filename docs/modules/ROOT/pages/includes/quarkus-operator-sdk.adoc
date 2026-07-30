@@ -806,6 +806,27 @@ endif::add-copy-button-to-env-var[]
 |string
 |
 
+a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-shard-selector]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-shard-selector[`+++quarkus.operator-sdk.controllers."controllers".shard-selector+++`]##
+ifdef::add-copy-button-to-config-props[]
+config_property_copy_button:+++quarkus.operator-sdk.controllers."controllers".shard-selector+++[]
+endif::add-copy-button-to-config-props[]
+
+
+[.description]
+--
+An optional shard selector used to restrict the set of Custom Resources the controller acts upon to a single shard, typically when the same workload is split across several operator instances. Just like `selector()` it is expressed as a label selector and can be made of multiple comma separated requirements that act as a logical AND operator. When both a label selector and a shard selector are set, the resulting informer only watches resources matching both.
+
+
+ifdef::add-copy-button-to-env-var[]
+Environment variable: env_var_with_copy_button:+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__SHARD_SELECTOR+++[]
+endif::add-copy-button-to-env-var[]
+ifndef::add-copy-button-to-env-var[]
+Environment variable: `+++QUARKUS_OPERATOR_SDK_CONTROLLERS__CONTROLLERS__SHARD_SELECTOR+++`
+endif::add-copy-button-to-env-var[]
+--
+|string
+|
+
 a| [[quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-field-selectors]] [.property-path]##link:#quarkus-operator-sdk_quarkus-operator-sdk-controllers-controllers-field-selectors[`+++quarkus.operator-sdk.controllers."controllers".field-selectors+++`]##
 ifdef::add-copy-button-to-config-props[]
 config_property_copy_button:+++quarkus.operator-sdk.controllers."controllers".field-selectors+++[]

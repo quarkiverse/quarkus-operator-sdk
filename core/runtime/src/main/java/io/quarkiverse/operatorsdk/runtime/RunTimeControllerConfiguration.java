@@ -46,6 +46,15 @@ public interface RunTimeControllerConfiguration {
     Optional<String> selector();
 
     /**
+     * An optional shard selector used to restrict the set of Custom Resources the controller acts upon to a single shard,
+     * typically when the same workload is split across several operator instances. Just like {@link #selector()} it is
+     * expressed as a label selector and can be made of multiple comma separated requirements that act as a logical AND
+     * operator. When both a label selector and a shard selector are set, the resulting informer only watches resources
+     * matching both.
+     */
+    Optional<String> shardSelector();
+
+    /**
      * An optional list of comma-separated field selectors that Custom Resources must match to trigger the controller.
      * See <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/field-selectors/">Kubernetes' field
      * selector documentation</a> for more details on

@@ -179,6 +179,7 @@ class QuarkusControllerConfigurationBuildStep {
         Set<String> namespaces = null;
         String informerName = null;
         String labelSelector = null;
+        String shardSelector = null;
         boolean triggerReconcilerOnAllEvents = false;
         boolean followControllerNamespaceChanges = true;
         boolean comparableResourceVersions = true;
@@ -226,6 +227,10 @@ class QuarkusControllerConfigurationBuildStep {
                         AnnotationValue::asString, NULL_STRING_SUPPLIER);
                 labelSelector = ConfigurationUtils.annotationValueOrDefault(informerConfigAnnotation,
                         "labelSelector",
+                        AnnotationValue::asString,
+                        NULL_STRING_SUPPLIER);
+                shardSelector = ConfigurationUtils.annotationValueOrDefault(informerConfigAnnotation,
+                        "shardSelector",
                         AnnotationValue::asString,
                         NULL_STRING_SUPPLIER);
 
@@ -307,6 +312,7 @@ class QuarkusControllerConfigurationBuildStep {
                 .withName(informerName)
                 .withNamespaces(namespaces)
                 .withLabelSelector(labelSelector)
+                .withShardSelector(shardSelector)
                 .withOnAddFilter(onAddFilter)
                 .withOnUpdateFilter(onUpdateFilter)
                 .withOnDeleteFilter(onDeleteFilter)
