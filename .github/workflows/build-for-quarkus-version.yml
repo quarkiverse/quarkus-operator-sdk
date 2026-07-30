@@ -383,7 +383,7 @@ jobs:
           registry_enable_delete: true
 
       - name: Install OPM and Operator SDK tool
-        uses: redhat-actions/openshift-tools-installer@v1
+        uses: redhat-actions/openshift-tools-installer@v2
         with:
           source: "github"
           opm: "latest"
