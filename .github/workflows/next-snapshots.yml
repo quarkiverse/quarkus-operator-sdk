@@ -13,5 +13,5 @@ jobs:
     with:
       quarkus-snapshot-branch: main
       use-josdk-snapshot: true
-      java-version: 17
+      java-version: 21
       branch: "next"
