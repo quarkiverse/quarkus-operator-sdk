@@ -489,6 +489,7 @@ jobs:
       - name: Run Joke sample into Kubernetes using OLM
         run: |
           SCRIPTS=$(pwd)/.github/scripts
+          trap '$SCRIPTS/logK8sStatus.sh; $SCRIPTS/uninstallOperatorUsingOlm.sh joke' EXIT
 
           # Install Joke operator
           if ! $SCRIPTS/installOperatorUsingOlm.sh joke $(pwd)/samples/joke ${{ steps.kind.outputs.LOCAL_REGISTRY }}; then
@@ -505,6 +506,7 @@ jobs:
       - name: Run Ping Pong sample into Kubernetes using OLM
         run: |
           SCRIPTS=$(pwd)/.github/scripts
+          trap '$SCRIPTS/logK8sStatus.sh; $SCRIPTS/uninstallOperatorUsingOlm.sh pingpong' EXIT
 
           # Install Ping Pong operator
           if ! $SCRIPTS/installOperatorUsingOlm.sh pingpong $(pwd)/samples/pingpong ${{ steps.kind.outputs.LOCAL_REGISTRY }}; then
@@ -512,7 +514,7 @@ jobs:
             exit 1;
           fi
 
-          # test joke sample
+          # test ping pong sample
           if ! $SCRIPTS/testPingPongSample.sh operators; then
             echo "Failed to interact with operator"
             exit 1;
@@ -520,23 +522,7 @@ jobs:
 
       - name: (Only if it failed) Log K8s status to troubleshoot issues
         if: failure()
-        run: |
-          echo "Pod statuses in olm namespace:"
-          kubectl get pod -n olm
-          echo "" 
-          echo "------------------------------"
-          echo "Subscriptions:"
-          kubectl get subs -n operators -o yaml
-          echo "" 
-          echo "------------------------------"
-          echo "Controllers:"
-          kubectl get pod -n operators
-          echo "" 
-          echo "------------------------------"
-          echo "Events:"
-          kubectl get events
-          echo ""
-          echo "------------------------------"
+        run: .github/scripts/logK8sStatus.sh
 
       - name: Cleanup Quarkus snapshot
         if: ${{ always() && steps.resolve-snapshot-branch.outputs.quarkus_snapshot_branch != '' }}

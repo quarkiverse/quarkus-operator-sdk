@@ -66,8 +66,16 @@ spec:
   sourceNamespace: $K8S_NAMESPACE
 EOF
 
+# Discover the CSV name via the subscription: it's not necessarily "$bundle_name.v<version>"
+# (e.g. Ping Pong's CSV is "quarkus-operator-sdk-samples-pingpong.v<version>"), but OLM always
+# names CSVs "<pkg>.v<version>", so wait for installedCSV to contain ".v" once it's populated.
+if ! "$CURRENT_PWD"/.github/scripts/waitFor.sh subscription $K8S_NAMESPACE ".v" "$NAME-subscription -o jsonpath='{.status.installedCSV}'"; then
+  exit 1;
+fi
+installed_csv=$(kubectl get subscription "$NAME-subscription" -n $K8S_NAMESPACE -o jsonpath='{.status.installedCSV}')
+
 # Wait until the operator is up and running
-if ! "$CURRENT_PWD"/.github/scripts/waitFor.sh csv $K8S_NAMESPACE Succeeded "$bundle_name -o jsonpath='{.status.phase}'"; then
+if ! "$CURRENT_PWD"/.github/scripts/waitFor.sh csv $K8S_NAMESPACE Succeeded "$installed_csv -o jsonpath='{.status.phase}'"; then
   exit 1;
 fi
 
