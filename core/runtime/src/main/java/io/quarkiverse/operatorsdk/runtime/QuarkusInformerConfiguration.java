@@ -7,6 +7,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
+import io.javaoperatorsdk.operator.processing.GroupVersionKind;
 import io.javaoperatorsdk.operator.processing.event.source.filter.GenericFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnAddFilter;
 import io.javaoperatorsdk.operator.processing.event.source.filter.OnDeleteFilter;
@@ -16,13 +17,15 @@ import io.quarkus.runtime.annotations.RecordableConstructor;
 public class QuarkusInformerConfiguration<R extends HasMetadata> extends InformerConfiguration<R> {
 
     @RecordableConstructor
-    public QuarkusInformerConfiguration(Class<R> resourceClass, String name, Set<String> namespaces,
+    public QuarkusInformerConfiguration(Class<R> resourceClass, GroupVersionKind resourceGroupVersionKind, String name,
+            Set<String> namespaces,
             boolean followControllerNamespaceChanges, String labelSelector, String shardSelector,
             OnAddFilter<? super R> onAddFilter,
             OnUpdateFilter<? super R> onUpdateFilter, OnDeleteFilter<? super R> onDeleteFilter,
             GenericFilter<? super R> genericFilter, ItemStore<R> itemStore, Long informerListLimit,
             QuarkusFieldSelector fieldSelector, boolean comparableResourceVersions) {
-        super(resourceClass, name, namespaces, followControllerNamespaceChanges, labelSelector, shardSelector, onAddFilter,
+        super(resourceClass, resourceGroupVersionKind, name, namespaces, followControllerNamespaceChanges, labelSelector,
+                shardSelector, onAddFilter,
                 onUpdateFilter,
                 onDeleteFilter, genericFilter, itemStore, informerListLimit, fieldSelector, comparableResourceVersions,
                 // hardcode this value for now as it will probably move away with a future FKC update
@@ -31,6 +34,7 @@ public class QuarkusInformerConfiguration<R extends HasMetadata> extends Informe
 
     public QuarkusInformerConfiguration(InformerConfiguration<R> config) {
         this(config.getResourceClass(),
+                config.getResourceGroupVersionKind(),
                 config.getName(),
                 sanitizeNamespaces(config.getNamespaces()),
                 config.getFollowControllerNamespaceChanges(),
