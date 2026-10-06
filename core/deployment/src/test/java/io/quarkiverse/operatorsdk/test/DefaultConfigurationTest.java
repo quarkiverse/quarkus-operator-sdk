@@ -10,12 +10,12 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.javaoperatorsdk.operator.api.config.ConfigurationService;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.quarkiverse.operatorsdk.test.sources.*;
-import io.quarkus.test.QuarkusExtensionTest;
+import io.quarkus.test.QuarkusUnitTest;
 
 public class DefaultConfigurationTest {
 
     @RegisterExtension
-    static QuarkusExtensionTest runner = new QuarkusExtensionTest()
+    static QuarkusUnitTest runner = new QuarkusUnitTest()
             .overrideConfigKey("quarkus.operator-sdk.start-operator", "false")
             .withApplicationRoot(
                     jar -> jar.addClasses(SimpleReconciler.class, SimpleCR.class, SimpleStatus.class, SimpleSpec.class));
