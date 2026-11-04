@@ -41,6 +41,7 @@ jobs:
       qosdk_quarkus_version: ${{ steps.quarkus-version.outputs.quarkus_version }}
       latest_stable_quarkus: ${{ steps.get-quarkus-version.outputs.quarkus_version }}
       same_quarkus_versions: ${{ steps.output-versions.outputs.same_quarkus_versions }}
+      same_quarkus_major: ${{ steps.output-versions.outputs.same_quarkus_major }}
     steps:
       - name: Extract branch name
         shell: bash
@@ -72,13 +73,18 @@ jobs:
           fi
           echo "Same? $same"
           echo "same_quarkus_versions=$same" >> $GITHUB_OUTPUT
+          same_major=false
+          if [ "${from_project%%.*}" = "${from_registry%%.*}" ]; then
+             same_major=true
+          fi
+          echo "same_quarkus_major=$same_major" >> $GITHUB_OUTPUT
 
   build-with-defined-quarkus-version:
     needs:
       - extract-project-metadata
     strategy:
       matrix:
-        java-version: [ 17, 21, 25 ]
+        java-version: [ 21, 25 ]
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
       quarkus-version: ${{ needs.extract-project-metadata.outputs.qosdk_quarkus_version }}
@@ -89,12 +95,13 @@ jobs:
   build-with-latest-stable-quarkus-version:
     # fromJSON to force conversion of output value to boolean
     # see https://github.com/orgs/community/discussions/163013#discussioncomment-13487972 for more details
-    if: ${{ !fromJSON(needs.extract-project-metadata.outputs.same_quarkus_versions) }}
+    # A Quarkus 4 extension cannot be built against the latest stable Quarkus 3 release.
+    if: ${{ !fromJSON(needs.extract-project-metadata.outputs.same_quarkus_versions) && fromJSON(needs.extract-project-metadata.outputs.same_quarkus_major) }}
     needs:
       - extract-project-metadata
     strategy:
       matrix:
-        java-version: [ 17, 21, 25 ]
+        java-version: [ 21, 25 ]
     uses: ./.github/workflows/build-for-quarkus-version.yml
     with:
       quarkus-version: ${{ needs.extract-project-metadata.outputs.latest_stable_quarkus }}

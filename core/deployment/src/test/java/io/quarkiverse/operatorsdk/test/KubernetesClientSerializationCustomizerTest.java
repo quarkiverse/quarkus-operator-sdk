@@ -9,15 +9,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkiverse.operatorsdk.test.sources.SimpleCR;
 import io.quarkiverse.operatorsdk.test.sources.SimpleSpec;
 import io.quarkiverse.operatorsdk.test.sources.SimpleStatus;
-import io.quarkus.kubernetes.client.KubernetesClientObjectMapperCustomizer;
+import io.quarkus.kubernetes.client.KubernetesClientJsonMapperBuilderCustomizer;
 import io.quarkus.test.QuarkusExtensionTest;
+import tools.jackson.databind.json.JsonMapper;
 
 public class KubernetesClientSerializationCustomizerTest {
 
@@ -40,9 +40,14 @@ public class KubernetesClientSerializationCustomizerTest {
         assertEquals("fromMixin", result.getStatus().value);
     }
 
+    @Test
+    public void kubernetesClientCanSerializeEmptyBeans() {
+        assertEquals("{}", kubernetesClient.getKubernetesSerialization().asJson(new EmptyBean()));
+    }
+
     @RegisterExtension
     static QuarkusExtensionTest runner = new QuarkusExtensionTest()
-            .withApplicationRoot(jar -> jar.addClasses(Customizer.class, ValueMixIn.class, SimpleCR.class,
+            .withApplicationRoot(jar -> jar.addClasses(Customizer.class, ValueMixIn.class, EmptyBean.class, SimpleCR.class,
                     SimpleSpec.class, SimpleStatus.class));
 
     private static final class ValueMixIn {
@@ -50,11 +55,14 @@ public class KubernetesClientSerializationCustomizerTest {
         String value;
     }
 
+    public static class EmptyBean {
+    }
+
     @Singleton
-    public static class Customizer implements KubernetesClientObjectMapperCustomizer {
+    public static class Customizer implements KubernetesClientJsonMapperBuilderCustomizer {
         @Override
-        public void customize(ObjectMapper objectMapper) {
-            objectMapper.addMixIn(SimpleStatus.class, ValueMixIn.class);
+        public void customize(JsonMapper.Builder builder) {
+            builder.addMixIn(SimpleStatus.class, ValueMixIn.class);
         }
     }
 }

@@ -1,8 +1,17 @@
-= Upgrading from 6.x to 7.0
+= Upgrade guide
 
-== Removed deprecated code
+== Upgrading to Quarkus 4
+
+- Java 21 or newer is required to build and run operators.
+- Fabric8 Kubernetes Client 8 uses Jackson 3. Replace `com.fasterxml.jackson.databind` and `com.fasterxml.jackson.core` imports with `tools.jackson.databind` and `tools.jackson.core` where applicable. Jackson annotations remain in `com.fasterxml.jackson.annotation`.
+- Replace `io.quarkus.kubernetes.client.KubernetesClientObjectMapperCustomizer` with `io.quarkus.kubernetes.client.KubernetesClientJsonMapperBuilderCustomizer`. Its `customize` method now accepts a `JsonMapper.Builder` because Jackson 3 mappers are immutable.
+- The deprecated CRD generator v1 and the `quarkus.operator-sdk.crd.use-deprecated-v1-crd-generator` property have been removed. CRD generation always uses generator v2.
+- Native build profiles use `quarkus.native.enabled=true` instead of the removed `quarkus.package.type=native` property.
+
+== Upgrading from 6.x to 7.0
+
+=== Removed deprecated code
 
 - `KubernetesClientSerializationCustomer` has been removed, use `io.quarkus.kubernetes.client.KubernetesClientObjectMapperCustomizer` from Quarkus instead
 - `BundleGenerationConfiguration.packageName` and associated property (`quarkus.operator-sdk.bundle.package-name`) have been removed, use `CSVMetadata.bundleName` instead
 - `SharedCSVMetadata` and `CSVMetadata` from `quarkus-operator-sdk-bundle-generator` annotations that got moved to `quarkus-operator-sdk-annotations` module for better reuse
-
