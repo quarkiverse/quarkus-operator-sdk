@@ -10,19 +10,19 @@ import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionVersion;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.SelectableField;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
+import tools.jackson.databind.json.JsonMapper;
 
 public final class CRDUtils {
 
     private static final Logger LOGGER = Logger.getLogger(CRDUtils.class.getName());
-    private static final KubernetesSerialization SERIALIZATION = new KubernetesSerialization(new ObjectMapper(), false);
+    private static final KubernetesSerialization SERIALIZATION = new KubernetesSerialization(
+            JsonMapper.builderWithJackson2Defaults().build(), false);
     public final static String DEFAULT_CRD_SPEC_VERSION = "v1";
     public static final String V1BETA1_CRD_SPEC_VERSION = "v1beta1";
 

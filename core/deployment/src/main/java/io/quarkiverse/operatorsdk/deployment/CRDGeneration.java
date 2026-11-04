@@ -35,21 +35,11 @@ class CRDGeneration {
         this.mode = mode;
         // generator MUST be initialized before we start processing classes as initializing it
         // will reset the types information held by the generator
-        final var useV1 = crdConfiguration.useV1CRDGenerator();
-        if (useV1) {
-            if (crdConfiguration.crdPostProcessorClass().isPresent()) {
-                log.warnf(
-                        "CRD post processing is only available when using the v2 version of the CRD generation API. Specified processor will be ignored: %s",
-                        crdConfiguration.crdPostProcessorClass());
-            }
-            generator = new CRDGeneratorV1(crdConfiguration.generateInParallel());
-        } else {
-            final var postProcessor = crdConfiguration.crdPostProcessorClass()
-                    .map(processorClassName -> ClassLoadingUtils.loadClass(processorClassName, CRDPostProcessor.class))
-                    .map(ClassLoadingUtils::instantiate)
-                    .orElse(CRDPostProcessor.nullProcessor);
-            generator = new CRDGeneratorV2(crdConfiguration.generateInParallel(), postProcessor);
-        }
+        final var postProcessor = crdConfiguration.crdPostProcessorClass()
+                .map(processorClassName -> ClassLoadingUtils.loadClass(processorClassName, CRDPostProcessor.class))
+                .map(ClassLoadingUtils::instantiate)
+                .orElse(CRDPostProcessor.nullProcessor);
+        generator = new CRDGeneratorV2(crdConfiguration.generateInParallel(), postProcessor);
     }
 
     static boolean shouldGenerate(Optional<Boolean> configuredGenerate, Optional<Boolean> configuredApply,

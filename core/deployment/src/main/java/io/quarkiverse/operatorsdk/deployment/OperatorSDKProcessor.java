@@ -27,7 +27,7 @@ import io.quarkiverse.operatorsdk.deployment.devui.commands.ConsoleCommands;
 import io.quarkiverse.operatorsdk.runtime.AppEventListener;
 import io.quarkiverse.operatorsdk.runtime.BuildTimeOperatorConfiguration;
 import io.quarkiverse.operatorsdk.runtime.ConfigurationServiceRecorder;
-import io.quarkiverse.operatorsdk.runtime.KubernetesClientObjectMapperCustomizer;
+import io.quarkiverse.operatorsdk.runtime.KubernetesClientJsonMapperBuilderCustomizer;
 import io.quarkiverse.operatorsdk.runtime.NoOpMetricsProvider;
 import io.quarkiverse.operatorsdk.runtime.OperatorHealthCheck;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
@@ -90,7 +90,7 @@ class OperatorSDKProcessor {
 
         // register additional beans
         final var additionalBeansBuilder = AdditionalBeanBuildItem.builder()
-                .addBeanClass(KubernetesClientObjectMapperCustomizer.class)
+                .addBeanClass(KubernetesClientJsonMapperBuilderCustomizer.class)
                 .addBeanClass(OperatorProducer.class)
                 .addBeanClass(OperatorHealthCheck.class)
                 .setUnremovable();
